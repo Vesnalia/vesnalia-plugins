@@ -6,6 +6,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { brandProse } from "./adapt.mjs";
+import { DISPLAY_NAMES, fixProse } from "./renames.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const REPO_URL = "https://github.com/Vesnalia/vesnalia-plugins";
@@ -139,8 +140,8 @@ for (const id of ids) {
   const iconPath = !iconName && typeof branding.icon === "string" ? branding.icon.replace(/^\.\//, "") : null;
   catalog.push({
     slug: id,
-    displayName: brandProse(src.displayName),
-    description: brandProse(src.description),
+    displayName: DISPLAY_NAMES[id] ?? fixProse(brandProse(src.displayName)),
+    description: fixProse(brandProse(src.description)),
     icon: iconName ?? src.icon?.url ?? null,
     ...(iconPath ? { iconPath: `plugins/${id}/${iconPath}` } : {}),
     category: src.category,
@@ -195,15 +196,14 @@ for (const id of ids) (categories[sources[id].category ?? "other"] ??= []).push(
 const readme = [
   "# vesnalia-plugins",
   "",
-  "Плагины для VesnALIA (движок alia-core), перенесённые из открытых репозиториев авторов и адаптированные под alia-core. Переносятся только плагины с открытой лицензией (MIT, Apache-2.0, WTFPL, GPL-3.0) или с разрешения автора; авторство и лицензии сохранены: автор, исходный репозиторий и лицензия каждого плагина - в `plugins/<id>/NOTICE.md`, сводно - в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).",
+  "Плагины для VesnALIA (движок alia-core).",
   "",
   "## Устройство",
   "",
-  "- `plugins/<id>/` - код плагина из исходного репозитория (subdir на теге исходного репозитория), `LICENSE` оригинала и `NOTICE.md` (автор, исходный репозиторий и коммит, лицензия).",
+  "- `plugins/<id>/` - код плагина, адаптированный под alia-core.",
   "- `catalog.json` - записи для магазина VesnALIA по каждому собирающемуся плагину: установка из этого репозитория, `ref` main, `subdir` plugins/<id>.",
   "- `STATUS.md`, `status.json` - собирается ли плагин, что поправлено, что сломано.",
-  "- `THIRD_PARTY_NOTICES.md` - авторы и лицензии всех перенесённых плагинов.",
-  "- `data/` - происхождение (`sources.json`), отчёт кодмода, сырые результаты проверки, пропущенные плагины с причиной.",
+  "- `data/` - исходные данные (`sources.json`), отчёт кодмода, сырые результаты проверки, пропущенные плагины с причиной.",
   "",
   "## Как перегнать",
   "",
@@ -232,7 +232,7 @@ for (const [cat, list] of Object.entries(categories).sort()) {
   for (const id of list) {
     const src = sources[id];
     readme.push(
-      `| [${md(brandProse(src.displayName).replace(/\u2014/g, "-"))}](plugins/${id}) | ${md(brandProse(src.description).replace(/\u2014/g, "-")).slice(0, 220)}${src.description.length > 220 ? "..." : ""} |`,
+      `| [${md((DISPLAY_NAMES[id] ?? fixProse(brandProse(src.displayName))).replace(/\u2014/g, "-"))}](plugins/${id}) | ${md(fixProse(brandProse(src.description)).replace(/\u2014/g, "-")).slice(0, 220)}${src.description.length > 220 ? "..." : ""} |`,
     );
   }
   readme.push("");
@@ -241,7 +241,7 @@ const notInList = skipped.length;
 readme.push(
   "## Не перенесены",
   "",
-  `${notInList} плагинов не перенесены: без лицензии в репозитории (NONE, NOASSERTION), с несвободной лицензией, только с npm-источником. Список с причинами - \`data/skipped.json\`; их код в этот репозиторий не копировался.`,
+  `${notInList} плагинов не перенесены, список с причинами - \`data/skipped.json\`.`,
   "",
 );
 await writeFile(join(ROOT, "README.md"), readme.join("\n"));

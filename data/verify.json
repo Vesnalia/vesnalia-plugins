@@ -239,6 +239,16 @@
     ],
     "seconds": 5
   },
+  "alium": {
+    "id": "alium",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 4
+  },
   "android-emulator": {
     "id": "android-emulator",
     "install": "ok",
@@ -287,6 +297,16 @@
       "warnings": [],
       "seconds": 2
     }
+  },
+  "antigravity-usage": {
+    "id": "antigravity-usage",
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "app-preview": {
     "id": "app-preview",
@@ -502,6 +522,20 @@
     "warnings": [],
     "seconds": 19
   },
+  "autoresearch": {
+    "id": "autoresearch",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
+      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 31
+  },
   "autoresearch-self-loop": {
     "id": "autoresearch-self-loop",
     "install": "ok",
@@ -586,177 +620,6 @@
     "warnings": [],
     "seconds": 1
   },
-  "bb-agent-toolbox": {
-    "id": "bb-agent-toolbox",
-    "install": "ok",
-    "manifest": "ok",
-    "app": null,
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-antigravity-usage": {
-    "id": "bb-antigravity-usage",
-    "install": "ok",
-    "manifest": "ok",
-    "app": null,
-    "server": "ok",
-    "host": "ok",
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-autoresearch": {
-    "id": "bb-autoresearch",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": "ok",
-    "warnings": [
-      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
-      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-    ],
-    "seconds": 22
-  },
-  "bb-better-latex": {
-    "id": "bb-better-latex",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-box": {
-    "id": "bb-box",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": "ok",
-    "warnings": [
-      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-      "app.tsx:8: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
-      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
-      "app.tsx:13: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
-      "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-    ],
-    "seconds": 4
-  },
-  "bb-copilot-usage": {
-    "id": "bb-copilot-usage",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 9,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 1
-    }
-  },
-  "bb-github-pr-dashboard": {
-    "id": "bb-github-pr-dashboard",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-kujo": {
-    "id": "bb-kujo",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-live": {
-    "id": "bb-live",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-office": {
-    "id": "bb-office",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 21
-  },
-  "bb-recap": {
-    "id": "bb-recap",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [
-      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
-      "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
-      "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-    ],
-    "seconds": 9
-  },
-  "bb-rpiv-todo-renderer": {
-    "id": "bb-rpiv-todo-renderer",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bb-sidebar": {
-    "id": "bb-sidebar",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": "ok",
-    "warnings": [
-      "app.tsx:9: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
-    ],
-    "seconds": 4
-  },
-  "bbbbs": {
-    "id": "bbbbs",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
-  "bbium": {
-    "id": "bbium",
-    "install": "ok",
-    "manifest": "ok",
-    "app": "ok",
-    "server": "ok",
-    "host": null,
-    "warnings": [],
-    "seconds": 1
-  },
   "beacon": {
     "id": "beacon",
     "install": "ok",
@@ -798,6 +661,16 @@
       "src/SidebarRow.tsx:12: experimental_useSidebarThreadPullRequest is retired from @vesnalia/plugin-sdk/app. Existing plugins remain supported. Render <experimental_ThreadRowMetadata thread={thread} /> in the row to draw alia's pull request badge, or read pull requests from the GitHub PR Status plugin: experimental_useRpcKeyedQuery({ pluginId: \"alia--github-pr-status\", contract, method: \"pullRequests\", keys: [thread.environment.id] }). See \"Migrating from experimental_useSidebarThreadPullRequest\" in the alia-plugin-authoring skill."
     ],
     "seconds": 8
+  },
+  "better-latex": {
+    "id": "better-latex",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
   },
   "boat": {
     "id": "boat",
@@ -1481,6 +1354,20 @@
     "warnings": [],
     "seconds": 1
   },
+  "copilot-usage": {
+    "id": "copilot-usage",
+    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
+    "seconds": 2,
+    "withPublishedSdk": {
+      "install": "ok",
+      "manifest": "ok",
+      "app": null,
+      "server": "ok",
+      "host": "ok",
+      "warnings": [],
+      "seconds": 14
+    }
+  },
   "copy-session-id": {
     "id": "copy-session-id",
     "install": "ok",
@@ -1558,7 +1445,7 @@
     "server": "ok",
     "host": null,
     "warnings": [],
-    "seconds": 1
+    "seconds": 6
   },
   "decisions": {
     "id": "decisions",
@@ -2418,6 +2305,16 @@
     "warnings": [],
     "seconds": 1
   },
+  "github-pr-dashboard": {
+    "id": "github-pr-dashboard",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
+  },
   "github-projects": {
     "id": "github-projects",
     "install": "ok",
@@ -3116,6 +3013,16 @@
     "warnings": [],
     "seconds": 7
   },
+  "kujo": {
+    "id": "kujo",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 1
+  },
   "lame-duck": {
     "id": "lame-duck",
     "install": "ok",
@@ -3389,15 +3296,15 @@
     "warnings": [],
     "seconds": 2
   },
-  "matt-pocock-skills-for-bb": {
-    "id": "matt-pocock-skills-for-bb",
+  "matt-pocock-skills-for-vesnalia": {
+    "id": "matt-pocock-skills-for-vesnalia",
     "install": "ok",
     "manifest": "ok",
     "app": "ok",
     "server": "ok",
     "host": null,
     "warnings": [],
-    "seconds": 2
+    "seconds": 9
   },
   "mattermost": {
     "id": "mattermost",
@@ -4556,15 +4463,15 @@
     "warnings": [],
     "seconds": 1
   },
-  "pstack-for-bb": {
-    "id": "pstack-for-bb",
+  "pstack-for-vesnalia": {
+    "id": "pstack-for-vesnalia",
     "install": "ok",
     "manifest": "ok",
     "app": "ok",
     "server": "ok",
     "host": null,
     "warnings": [],
-    "seconds": 1
+    "seconds": 9
   },
   "pulse": {
     "id": "pulse",
@@ -4718,6 +4625,21 @@
     "warnings": [],
     "seconds": 1
   },
+  "recap": {
+    "id": "recap",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
+      "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
+      "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 4
+  },
   "receipts": {
     "id": "receipts",
     "install": "ok",
@@ -4832,6 +4754,16 @@
     "warnings": [],
     "seconds": 1
   },
+  "rpiv-todo-renderer": {
+    "id": "rpiv-todo-renderer",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
+  },
   "rtk": {
     "id": "rtk",
     "install": "ok",
@@ -4870,7 +4802,7 @@
     "server": "ok",
     "host": "ok",
     "warnings": [],
-    "seconds": 1
+    "seconds": 5
   },
   "screenshot": {
     "id": "screenshot",
@@ -6117,6 +6049,74 @@
     "host": null,
     "warnings": [],
     "seconds": 1
+  },
+  "vesnalia-agent-toolbox": {
+    "id": "vesnalia-agent-toolbox",
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
+  },
+  "vesnalia-bbs": {
+    "id": "vesnalia-bbs",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 4
+  },
+  "vesnalia-box": {
+    "id": "vesnalia-box",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "app.tsx:8: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
+      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
+      "app.tsx:13: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
+      "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 32
+  },
+  "vesnalia-live": {
+    "id": "vesnalia-live",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
+  },
+  "vesnalia-office": {
+    "id": "vesnalia-office",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 25
+  },
+  "vesnalia-sidebar": {
+    "id": "vesnalia-sidebar",
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "app.tsx:9: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
+    ],
+    "seconds": 34
   },
   "vesper": {
     "id": "vesper",

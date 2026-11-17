@@ -1,14 +1,13 @@
 # vesnalia-plugins
 
-Плагины для VesnALIA (движок alia-core), перенесённые из открытых репозиториев авторов и адаптированные под alia-core. Переносятся только плагины с открытой лицензией (MIT, Apache-2.0, WTFPL, GPL-3.0) или с разрешения автора; авторство и лицензии сохранены: автор, исходный репозиторий и лицензия каждого плагина - в `plugins/<id>/NOTICE.md`, сводно - в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Плагины для VesnALIA (движок alia-core).
 
 ## Устройство
 
-- `plugins/<id>/` - код плагина из исходного репозитория (subdir на теге исходного репозитория), `LICENSE` оригинала и `NOTICE.md` (автор, исходный репозиторий и коммит, лицензия).
+- `plugins/<id>/` - код плагина, адаптированный под alia-core.
 - `catalog.json` - записи для магазина VesnALIA по каждому собирающемуся плагину: установка из этого репозитория, `ref` main, `subdir` plugins/<id>.
 - `STATUS.md`, `status.json` - собирается ли плагин, что поправлено, что сломано.
-- `THIRD_PARTY_NOTICES.md` - авторы и лицензии всех перенесённых плагинов.
-- `data/` - происхождение (`sources.json`), отчёт кодмода, сырые результаты проверки, пропущенные плагины с причиной.
+- `data/` - исходные данные (`sources.json`), отчёт кодмода, сырые результаты проверки, пропущенные плагины с причиной.
 
 ## Как перегнать
 
@@ -47,7 +46,6 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Auggie](plugins/auggie) | Registers Augment Code's Auggie CLI as the acp-auggie provider in VesnALIA. |
 | [Model Pilot](plugins/auto-router) | Choose a coding model for each task and see where your tokens go. Route work to Codex or Claude Code, delegate helper tasks, and compare recorded usage with cost estimates. Experimental support targets macOS with VesnALI... |
 | [Autorouter](plugins/autorouter) | Routes new VesnALIA threads using task difficulty, live provider quota, benchmark capability, and a configurable cost preference. Each submission first runs a short hidden classification turn on one of your installed pro... |
-| [VesnALIA Agent Toolbox](plugins/bb-agent-toolbox) | Gives any coding agent (opencode, Prime Agent, Google Antigravity, Codex, Claude Code, and more) direct tools for VesnALIA: read and edit workspace files, inspect and message other threads, delegate work by spawning thre... |
 | [Bots](plugins/bots) | Adds a Bots panel to the VesnALIA sidebar where you create named bots with their own instructions, provider, model, reasoning level and optional project, then chat with them; each bot's instructions are bound per-thread,... |
 | [Bots Sidebar](plugins/bots-sidebar) | Keep specialist bots, their memory, and their conversations together across projects. Organize chats in activity-aware trees, complete finished work, and move a thread between bots from its header. Route new project conv... |
 | [Claude Account Switcher](plugins/claude-account-switcher) | Switches one VesnALIA Claude Code thread to the verified Claude subscription login on its machine while preserving thread history. |
@@ -108,6 +106,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Souls](plugins/souls) | Give any thread a persona you define once: its job, voice, expertise and hard limits, the same in every thread that runs it. An agent interviews you in four to seven questions and puts the draft on a review card, and not... |
 | [Team](plugins/team) | Agent teams with a shared Beads or built-in task tracker, reusable roles, safe session handoffs, review gates and finite execution budgets. Edit team templates, select approved models and follow task ownership and sessio... |
 | [tokenmaxx](plugins/tokenmaxx) | Shows every Codex and Claude Code account tokenmaxx manages, with live rate-limit windows, token analytics, account switching, auto-rotation policy, sign-in, and routing control. |
+| [VesnALIA Agent Toolbox](plugins/vesnalia-agent-toolbox) | Gives any coding agent (opencode, Prime Agent, Google Antigravity, Codex, Claude Code, and more) direct tools for VesnALIA: read and edit workspace files, inspect and message other threads, delegate work by spawning thre... |
 | [Voice Input](plugins/voice-input) | Dictate into any VesnALIA chat and get clean text back, with your product names spelled right. Choose which machine does the recognition: Whisper (MLX) and GigaAM v3 keep the audio on that machine, while Groq, OpenAI and... |
 | [Voice Mode](plugins/voice-mode) | Talk to a thread's agent hands-free, like ChatGPT or Codex voice. When the composer is empty its send button becomes a waveform; click it, or press Ctrl+Shift+V, for a full-duplex realtime voice chat. The voice model han... |
 | [ZCode](plugins/zcode) | Run ZCode coding agents inside VesnALIA, with streamed replies, native tool activity, approvals, and sessions you can resume and rewind. Follow every ZCode tool call in the thread timeline, answer approvals inline, and t... |
@@ -119,7 +118,6 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | Плагин | Описание |
 | --- | --- |
 | [AWS Activate Usage](plugins/aws-activate-usage) | Keep your AWS promotional-credit runway visible while agents work. View remaining balance, amount used, expiration dates, and current-month allocations in VesnALIA, with cached results when credentials expire. Reconnect ... |
-| [VesnALIA Box](plugins/bb-box) | Give each thread its own Linux, Windows or macOS computer, or an iPhone or Android device, shared with its agent. You and the agent use the same desktop or terminal in VesnALIA's panel, and the agent waits while you have... |
 | [Boat](plugins/boat) | Run each VesnALIA thread on its own Boat cloud VM that stops when idle and resumes on demand. Start from the stock Ubuntu image or your own saved snapshot, and pick the VM size, Boat environment and org. Requires a Boat ... |
 | [Vercel Sandboxes](plugins/cloud-sandbox) | Creates VesnALIA machines on Vercel Sandboxes from reusable templates that bake in tooling and inject agent credentials at creation, so a remote machine is ready to run threads without manual setup. |
 | [Discord](plugins/discord) | Run alia agent threads from Discord, answer approvals, and manage your server with permission-gated tools. Start a dedicated conversation with a bot mention and receive final answers in its Discord thread. Choose the pro... |
@@ -127,6 +125,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Preset Sync](plugins/preset-sync) | Synchronizes portable VesnALIA plugins and settings across computers through a Git repository. |
 | [Skiff VM](plugins/skiff) | Gives every thread its own throwaway Linux VM on your Mac, so nothing the agent installs or runs touches macOS. Claude Code and GitHub tokens stay in the macOS Keychain; the VM only holds placeholders that the skiff brok... |
 | [Telegram Projects](plugins/telegram-projects) | Get VesnALIA agent reports in Telegram and answer any thread from your phone, one topic per project. When an agent finishes, waits for you or stops, its project topic gets a card with the section, thread and agent, and t... |
+| [VesnALIA Box](plugins/vesnalia-box) | Give each thread its own Linux, Windows or macOS computer, or an iPhone or Android device, shared with its agent. You and the agent use the same desktop or terminal in VesnALIA's panel, and the agent waits while you have... |
 | [VPS Watch Lite](plugins/vps-watch) | Keep an eye on your personal Linux VPS without installing a monitoring stack. See CPU, RAM, root disk and inode usage with absolute capacities and compact history charts. Read system counters over SSH or import an existi... |
 
 ### code-and-reviews
@@ -134,7 +133,6 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | Плагин | Описание |
 | --- | --- |
 | [Advisor](plugins/advisor) | Adds a persistent second-model reviewer to VesnALIA coding threads, with tracked findings and fail-closed review status. |
-| [GitHub PR Dashboard](plugins/bb-github-pr-dashboard) | See why each pull request is stuck, and get it unstuck, without leaving VesnALIA. My PRs lists your pull requests, review requests for you and your teams, the ones you reviewed, and assigned ones by repository, each with... |
 | [Branch Graph](plugins/branch-graph) | See how your repositories, branches, worktrees, and VesnALIA threads connect on one canvas. Search across registered Git projects, inspect selected checkouts, and flag detached or prunable worktrees for review. Optional ... |
 | [CoW copy](plugins/btrfs-cow) | Start a thread with your installed dependencies, build caches, and uncommitted changes already in place. Each thread gets an independent checkout that shares disk blocks until files change, using Btrfs snapshots or refli... |
 | [Call Stacks](plugins/callstack) | Agents publish call-stack flow diagrams - types moving through calls, with conditions, loops, and before/after change markers - into a live thread panel with tree, diagram, and swimlane views, drift tracking against the ... |
@@ -161,6 +159,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [GitHub Board](plugins/github-board) | See your GitHub issues, pull requests and discussions on one board, and hand any of them to an agent thread. Four columns cover what you wrote, what is open on repositories you own and what is assigned to you, and an iss... |
 | [GitHub Extended](plugins/github-extended) | Browses cached GitHub issues, pull requests, and Dependabot alerts in VesnALIA with thread actions and agent-assisted work. |
 | [GitHub Folder](plugins/github-folder) | The open GitHub pull requests that need you, as a folder at the top of the sidebar: review requests, then your own PRs with changes requested, failing checks or conflicts, and the ones ready to merge. Click a PR to start... |
+| [GitHub PR Dashboard](plugins/github-pr-dashboard) | See why each pull request is stuck, and get it unstuck, without leaving VesnALIA. My PRs lists your pull requests, review requests for you and your teams, the ones you reviewed, and assigned ones by repository, each with... |
 | [GitHub Projects](plugins/github-projects) | Creates and imports GitHub repositories directly from VesnALIA's native project picker. Injects dedicated creation and import options into the project dropdown. Automatically initializes private repositories, clones loca... |
 | [GitLab](plugins/gitlab) | Browses GitLab issues and merge requests in a VesnALIA panel, with pipelines, approvals, discussions and diffs, and spawns an agent thread on any of them. |
 | [GitLab Interface (Notion style)](plugins/gitlab-interface-notion-style) | Review, merge and fix GitLab merge requests without leaving VesnALIA. Each merge request opens on a readiness strip that names what blocks it, and counts approvals and 👍 reactions as review. Reply to and resolve threads... |
@@ -168,14 +167,14 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Guided Review](plugins/guided-review) | Organizes GitHub pull requests into chapters, with code diffs, private notes, a contextual assistant, and review feedback you edit and submit. |
 | [Image Diff](plugins/image-diff) | See exactly which pixels changed in an image before you approve it. Before, Diff and After sit side by side, with changed pixels highlighted over a white background, over the new image, or blinking, plus a changed-pixel ... |
 | [Link Hovercards](plugins/link-hovercards) | See a pull request's CI, review and merge state by hovering its link, without leaving the thread. Works on GitHub pull requests, GitHub issues and Linear issues anywhere in VesnALIA. On a phone, long-press a link to open... |
-| [Matt Pocock skills for VesnALIA](plugins/matt-pocock-skills-for-bb) | Gives your agents Matt Pocock's engineering and productivity skills as slash commands, from test-first development to issue triage. Choose which skills each project gets, or turn them on only in the projects you pick; Ma... |
+| [Matt Pocock skills for VesnALIA](plugins/matt-pocock-skills-for-vesnalia) | Gives your agents Matt Pocock's engineering and productivity skills as slash commands, from test-first development to issue triage. Choose which skills each project gets, or turn them on only in the projects you pick; Ma... |
 | [Gitea CLI](plugins/oddship-gitea) | Read Gitea issues and pull requests and prepare agent work without leaving VesnALIA. Choose an account and repository, filter the current page, and read descriptions and comments. Requires the tea CLI with an authenticat... |
 | [GitLab CLI](plugins/oddship-gitlab) | Work through GitLab issues and merge requests inside VesnALIA. Read discussions, inspect pipeline status, update supported item fields, and start agent work or reviews. Requires glab installed and authenticated on the Ve... |
 | [PR Manager](plugins/pr-manager) | Shows your open GitHub pull requests and recent merges, one project at a time, with their CI and review state summarised as failing, feedback, draft, open, approved, part approved, waiting or merged, and opens or links t... |
 | [PR Notes](plugins/pr-notes) | Review pull requests, keep private notes, and chat with agents in VesnALIA. Find assigned PRs and review requests, inspect diffs and check results, and post comments or manage PRs using your GitHub access. PR details and... |
 | [PR X-ray](plugins/pr-xray) | Understand a pull request before you judge it. PR X-ray groups the diff by concern and puts it in reading order, then explains it with a walkthrough, diagrams and the spots worth a closer look. Ask questions as you read,... |
 | [pstack](plugins/pstack) | Puts 47 pstack engineering skills in every VesnALIA thread, with one setup step to choose the models they delegate to. Run /setup-pstack once and it reads this host's model list, then asks which model each pstack role sh... |
-| [pstack for VesnALIA](plugins/pstack-for-bb) | Use Lauren Tan's pstack skills in VesnALIA, synced daily from cursor/plugins with Cursor locations adapted for VesnALIA. |
+| [pstack for VesnALIA](plugins/pstack-for-vesnalia) | Use Lauren Tan's pstack skills in VesnALIA, synced daily from cursor/plugins with Cursor locations adapted for VesnALIA. |
 | [px0 Review](plugins/px0-review) | Review changes in your active worktree and send selected-code feedback to its VesnALIA thread. Browse files and diffs, edit code, and keep the existing conversation and provider. Downloads a pinned px0 fork on first use;... |
 | [Radar](plugins/radar) | See every pull request and issue that needs you, live in the sidebar, on GitHub and Delta, plus optional read-only Gitstream history. Saved lanes are queried live through your gh and dt CLIs, and config and caches stay i... |
 | [Rewind](plugins/rewind) | Undo an agent's file changes turn by turn, and let the conversation go back with them. Checkpoints the workspace before each message and after each turn, on every provider, with no setup. Preview a restore as a per-file ... |
@@ -195,7 +194,6 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | Плагин | Описание |
 | --- | --- |
 | [Bang Shell](plugins/bang-shell) | Run a shell command from a thread's composer and hand the agent the command and its output in one message. Use it when the agent's sandbox or permission mode blocks a command that needs your secrets or access: the agent ... |
-| [aliaBBS](plugins/bbbbs) | Dial into a 1994-style bulletin board from VesnALIA to chat with other VesnALIA users and play classic multiplayer door games. Doors include Legend of the Red Dragon, Trade Wars 2, Usurper and Dice Warz, in shared worlds... |
 | [drmanhattan](plugins/drmanhattan) | Makes agents in parallel threads take turns on builds and tests, and shows each thread its queued runs. Threads on a machine with drmanhattan, a local job queue, are told to run heavy commands through it, so several agen... |
 | [Floating Terminal](plugins/floating-terminal) | Adds a draggable terminal window over VesnALIA, opened from the sidebar footer or Ctrl+`, with a tab per shell in any project checkout or machine home directory; tabs are persisted, so a reload or a VesnALIA restart reat... |
 | [Hmm Floating Terminal](plugins/hmm-floating-terminal) | Keep a shell open beside the project you are working in, without leaving the conversation for a panel or another app. The window follows the project: leave for another one and it steps aside, come back and its tabs retur... |
@@ -205,6 +203,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Terminal Toggle](plugins/terminal-toggle) | Toggle the last focused native terminal with Ctrl+backtick. Press again to hide the panel and return to the composer. |
 | [Terminals](plugins/terminals) | Open shells on any machine connected to VesnALIA from one sidebar page, and find them still running when you come back. Each tab is a terminal in that machine's home folder, with no project, thread or checkout needed; wi... |
 | [VariaQ](plugins/variaq) | Run VariaQ classical/quantum experiments from VesnALIA. Generate problems, solve, benchmark, plan and execute campaigns, analyze results, and generate reports against a standalone VariaQ install. Supports VariaQ 0.6.x an... |
+| [VesnALIA BBS](plugins/vesnalia-bbs) | Dial into a 1994-style bulletin board from VesnALIA to chat with other VesnALIA users and play classic multiplayer door games. Doors include Legend of the Red Dragon, Trade Wars 2, Usurper and Dice Warz, in shared worlds... |
 | [Wterm Terminal Preview](plugins/wterm-terminal-preview) | Adds a Ghostty-backed terminal with independent tabs, TUI mouse input, secure file transfer, and font controls. |
 
 ### file-viewers-and-editors
@@ -309,10 +308,9 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Asana Tasks](plugins/asana) | Work your Asana tickets inside VesnALIA: read them, start an agent thread from one, and hand it back when it's done. Your My Tasks list sits in the sidebar and beside every thread, in your own sections, with overdue and ... |
 | [Autopilots](plugins/automation-groups) | Organize scheduled work into folders and control groups together. Inspect run history, errors and agent transcripts. Requires the bundled Automations plugin; agent runs use provider quota. |
 | [Automation Palette](plugins/automation-palette) | Run any VesnALIA automation from the quick palette, without opening the Automations page. Each row names the automation and its project, so typing either name finds it, and selecting it starts the run as its schedule wou... |
+| [Autoresearch](plugins/autoresearch) | Orchestrates autoresearch loops: parallel agent workers try code changes, and only the ones your benchmark proves better are kept. The plugin, not the agents, runs every measurement and decides each verdict from paired r... |
 | [Autoresearch Self Loop](plugins/autoresearch-self-loop) | Let an agent iterate on one measured metric in your Git checkout, and keep a log of every attempt. Each kept run becomes a commit with its result in the message, and a keep is refused when the benchmark or checks failed.... |
 | [Backlog.MD](plugins/backlog) | Read and edit the Backlog.md files of your VesnALIA projects: a live Kanban board for tasks, and tabs for documents and decisions. Add selected text to the chat of the project with its file path. Needs VesnALIA 0.43 or l... |
-| [Autoresearch](plugins/bb-autoresearch) | Orchestrates autoresearch loops: parallel agent workers try code changes, and only the ones your benchmark proves better are kept. The plugin, not the agents, runs every measurement and decides each verdict from paired r... |
-| [VesnALIA Live](plugins/bb-live) | Talk to VesnALIA while your agents work, then redirect threads or start new project work by voice. Keeps one voice session connected while you move through projects, focus threads, and hear task results in the transcript... |
 | [Beads](plugins/beads) | Track issues and dependencies for long-running agent work with beads, so plans survive context loss. Agents call a beads tool to run bd prime, pick ready work, create tasks under epics, and record status changes in the t... |
 | [Browserbase](plugins/browserbase) | Browserbase gives VesnALIA a real browser to use the web like a human. Navigate interactive websites, perform complex actions using natural language, and extract data from pages. Each VesnALIA thread gets its own cloud b... |
 | [Bureaucat](plugins/bureaucat) | Bring assigned and project tasks into your VesnALIA workflow. Sort and filter complete task lists, inspect details, update supported task fields, and prepare agent drafts. Requires an authenticated Bureaucat CLI and conf... |
@@ -358,6 +356,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Treelanes](plugins/treelanes) | Take each coding task from idea to merged pull request in its own Git worktree, with checks before every stage moves. A board shows one card per worktree as agents move it through Design, TDD, Quality Loop, Simplify and ... |
 | [Triage](plugins/triage) | Keep agent tasks, progress, and work that needs your attention in one board. Run tasks now or schedule them, organize stages, and turn existing sessions into cards. Follow each task in its linked conversation. Requires V... |
 | [UltraGoal](plugins/ultragoal) | Keep long-running agent work moving without losing the plan when a thread ends. UltraGoal schedules dependency-ready slices across isolated workers, records defects and owner decisions durably, and can require an indepen... |
+| [VesnALIA Live](plugins/vesnalia-live) | Talk to VesnALIA while your agents work, then redirect threads or start new project work by voice. Keeps one voice session connected while you move through projects, focus threads, and hear task results in the transcript... |
 | [Visual Workflows](plugins/visual-workflows) | Connect specialist steps on a canvas and follow their outputs through each run. Includes local step profiles and can import independent copies from Agent Roles. Runs use your configured providers and their quotas. |
 | [WakaTime](plugins/wakatime) | Tracks VesnALIA agent working time locally with project, machine, model, concurrency, and activity breakdowns. |
 | [Work Map](plugins/work-map) | Spot the work that needs you and manage it without leaving the map. Expand tasks and sessions in place, keep pinned work prominent, and follow running agents and results waiting for you. Start or continue sessions, manag... |
@@ -369,13 +368,12 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | --- | --- |
 | [ACP Profile Icons](plugins/acp-profile-icons) | Recognize eight ACP providers by their brand marks in model pickers and provider controls. Amp and Devin use contrasting theme-colored tiles; other marks follow the theme foreground, with a distinct gray tile for ACP Cod... |
 | [Agent Icons](plugins/agent-icons) | Give each VesnALIA agent provider its own icon and colour: built-in glyphs or your own SVG sets, synced across devices. |
+| [Alium](plugins/alium) | Click anything in VesnALIA without the mouse: press f, type the letter label, and VesnALIA clicks it. Labels cover sidebar threads, pickers, composer controls and hover-only message actions, and most stay one or two lett... |
 | [Asciimoji](plugins/asciimoji) | Give every thread a familiar text face that stays with the conversation. Choose from five generated face families, 12 presets, or custom text through a focused four-tab picker, with thread, project, and global default pr... |
 | [Aura](plugins/aura) | Make your VesnALIA workspace your own with personal wallpapers, animated GIFs, and pixel textures. Save six backgrounds and switch in one click. Choose half or full wallpaper, keep the top bar clean or let the wallpaper ... |
 | [Aura Motion](plugins/aura-motion) | Play your own video, GIF or photo behind every VesnALIA conversation, with your messages on frosted glass so they stay readable. MP4 and WebM loops up to 24 MB play at up to 4K, and GIFs up to 8 MB play at their own fram... |
 | [Auto-hide Panel](plugins/auto-hide-panel) | Give the thread its full width back when you close the last tab in the right panel. The panel hides itself as soon as its last file or other content tab closes. Info and Diff do not count, and Info you open yourself stay... |
 | [Ayu](plugins/ayu) | Adds the three ayu themes (Light, Dark and Mirage) and a settings panel that switches between them and copies any colour from the palette. |
-| [Kujo](plugins/bb-kujo) | Give VesnALIA the paper-and-ink design of Kujo, with hard edges and quiet background signal. Switch between light and dark palettes with matching code, diffs and terminal colors. Departure Mono and Tabler icons carry the... |
-| [Bbium](plugins/bbium) | Click anything in VesnALIA without the mouse: press f, type the letter label, and VesnALIA clicks it. Labels cover sidebar threads, pickers, composer controls and hover-only message actions, and most stay one or two lett... |
 | [Beautiful Chat](plugins/beautiful-chat) | Restyles VesnALIA's chat - composer, messages, work rows, loading states - in BeautifulUI's design language, using your active theme's colors. |
 | [Breathe](plugins/breathe) | An animated pixel wave that guides your breathing while your agent works. |
 | [Calm](plugins/calm) | A little world while your agent works. Sixteen pixel-art scenes bring sheep, sailboats, a rooftop cat, and forty-eight little misadventures to VesnALIA. An amber light means it needs you. A rain cloud marks an error. Req... |
@@ -400,6 +398,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Haze](plugins/haze) | Puts your own image behind every VesnALIA conversation as a soft haze that fades out before the text. Pick one of six effects (None, Dither, ASCII, Halftone, Scanlines, Haze) and set a separate background for each projec... |
 | [Herdr Theme](plugins/herdr-theme) | Turn VesnALIA into a terminal-style workspace, with framed conversation panes and eleven color palettes in light and dark. Child threads hang from their parent as a connected tree in the sidebar. Turn on branch names to ... |
 | [Home Hero](plugins/home-hero) | Greets you on VesnALIA's home screen with the time of day and, when you set one, your name. Optionally upload a PNG, JPEG or WebP icon up to 256 KiB; it travels over VesnALIA's existing plugin connection and is stored wi... |
+| [Kujo](plugins/kujo) | Give VesnALIA the paper-and-ink design of Kujo, with hard edges and quiet background signal. Switch between light and dark palettes with matching code, diffs and terminal colors. Departure Mono and Tabler icons carry the... |
 | [Lavender](plugins/lavender) | Give your workspace a lavender palette, from charcoal-violet nights to pale-lilac days. Match conversations, menus, code previews and diffs with coordinated light and dark colors. Follow your Light, Dark or System settin... |
 | [Liquid Glass](plugins/liquid-glass) | Adds dark and light translucent themes over a configurable wallpaper layer, with adjustable glass effects and vibrant accent colors. |
 | [Maxwell](plugins/maxwell) | Keep Maxwell beside your VesnALIA conversations. |
@@ -441,9 +440,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Agent Traces](plugins/agent-traces) | See where your agents' time goes, from every thread down to each command, tool call, and subagent of a turn. A turn opens as a timeline that splits the agent's time into waiting on you, tools, subagents, thinking, writin... |
 | [Agentic Mermaid](plugins/agentic-mermaid) | Draws Mermaid diagrams in chat with outlined boxes, routed edges, and your theme's colors. Renders 15 diagram types, including gantt, pie, mindmap, timeline, and architecture, through the agentic-mermaid library. Git gra... |
 | [Auto Answer](plugins/auto-answer) | Answers an agent's question with one click per question instead of two. A countdown starts the moment you pick an option, then presses the widget's own Next or Submit answer button. It appears under the option you picked... |
-| [Better LaTeX](plugins/bb-better-latex) | Renders $...$ and leftover \[...\] / \(...\) math in VesnALIA chat. |
-| [Recap](plugins/bb-recap) | Generates concise, display-only summaries for VesnALIA threads on demand or after they become idle. |
-| [RPIV Todo](plugins/bb-rpiv-todo-renderer) | Renders Pi rpiv-todo tasks in VesnALIA's native composer to-do panel. |
+| [Better LaTeX](plugins/better-latex) | Renders $...$ and leftover \[...\] / \(...\) math in VesnALIA chat. |
 | [Bookmarks](plugins/bookmarks) | Bookmark any chat message and jump back to it from a Bookmarks tab in the thread's right panel. Clicking a bookmark opens its thread scrolled to the message, however far back it sits. A saved message keeps a filled bookm... |
 | [Browser Annotate](plugins/browser-annotate) | Give your agent page-specific feedback with a screenshot for every annotated element. Select an element in VesnALIA's desktop Browser, write a comment, and send up to 50 annotations together. Review saved comments in the... |
 | [Canvas](plugins/canvas) | Gives every thread a shared tldraw canvas that agents draw diagrams on, animate as a step-by-step walkthrough, and read back - including the shapes you add yourself. |
@@ -499,9 +496,11 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Prompts](plugins/prompts) | Stashes prompts you write while an agent is busy and injects, schedules, or auto-sends them when it next goes idle, alongside a searchable snippet library with {{fill-in}} templates. |
 | [Quick Reply](plugins/quick-reply) | Give your agent quick feedback by clicking on which lines you agree and disagree with. Ask for more detail on any line, or add a comment when a click isn't enough. |
 | [Read Aloud](plugins/read-aloud) | Listen to any assistant message while you keep working, with speech that starts playing before the whole message is synthesized. A speaker button on every message row starts playback, and the player adds pause, stop, ten... |
+| [Recap](plugins/recap) | Generates concise, display-only summaries for VesnALIA threads on demand or after they become idle. |
 | [References](plugins/references) | Organize visual moodboards, design references, and inspirational websites directly beside your thread in VesnALIA IDE. Opens automatically in the thread panel when agents collect UI references. Extracts website metadata ... |
 | [Re-phrase](plugins/rephrase) | Adds a Re-phrase button to the prompt input that rewrites your draft with an agent and puts the result back in the composer. |
 | [Reveal In Finder](plugins/reveal-in-finder) | Open the files an agent builds or exports with one click, instead of copying a path out of its reply. Each file or folder the agent hands over shows as a card with an icon, its name, format and size. A click on a file op... |
+| [RPIV Todo](plugins/rpiv-todo-renderer) | Renders Pi rpiv-todo tasks in VesnALIA's native composer to-do panel. |
 | [Session Log](plugins/session-log) | Check what an agent actually ran, changed and decided, in one live log beside the chat. Messages, thinking, commands with their output and exit codes, tool calls, file diffs and subagent steps appear in timeline order, w... |
 | [Session Notes](plugins/session-notes) | Attaches private, thread-scoped notes to individual VesnALIA timeline messages, and never sends them to the agent's context. |
 | [Side Chat Links](plugins/side-chat-links) | Reopen a side chat from the message you started it on, instead of hunting for it. A thread icon appears under every message that has side chats, with a count when there are several. Click it to open a panel tab for that ... |
@@ -538,14 +537,12 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Archived Threads Toggle](plugins/archived-toggle) | Show or hide archived threads in the sidebar with one click. An archive button in the sidebar footer adds archived threads to VesnALIA's thread list, and a second click removes them. It flips the same active/archived set... |
 | [Attention sidebar](plugins/attention-sidebar) | Puts every thread that is waiting on you, from all projects, at the top of the VesnALIA sidebar. Questions and approvals, errors, and finished-but-unread threads share one block, each marked ?, ! or ✓. Running threads ge... |
 | [Auto Pin](plugins/auto-pin) | Keeps every thread you start pinned to the top of the sidebar, so a thread stays in reach until you unpin it yourself. Pins each visible top-level thread as it is created, and leaves child threads, hidden threads, and an... |
-| [VesnALIA Office](plugins/bb-office) | Turns active VesnALIA threads into a draggable pixel-art office with live worker state, thread navigation, usage indicators, and agent-configurable behavior. |
-| [VesnALIA Sidebar](plugins/bb-sidebar) | A sidebar inspired by T3 Code that adds manual and automatic thread sorting, collapsible shelves, and bulk actions to VesnALIA. |
 | [Beside](plugins/beside) | Turns the VesnALIA sidebar into an inbox where threads keep their place and finished work waits on shelves until it has news. Snooze, settle or mute a thread from its row or from VesnALIA's thread menu, and it comes back... |
 | [Cascade](plugins/cascade) | Shows active VesnALIA threads in a tiled layout with horizontal columns and vertical groups. |
 | [Chat Sidebar](plugins/chat-sidebar) | See which threads need you at a glance in a messenger-style sidebar with live status, folders, and project colours. Sub-agents and forks fold into their parent, so each task is one row. Attention, project, and section fo... |
 | [Copy Session ID](plugins/copy-session-id) | Copy a thread's session ID from its left-sidebar context menu. |
 | [Cursor Sidebar](plugins/cursor-sidebar) | See at a glance which agents are working, which need an answer and which are done, with spawned chats nested under their parent. Group chats by project, last update, status or environment, or draw one flat list, and narr... |
-| [BBDesk](plugins/dashboard) | Keep project conversations, live activity and application shortcuts in one workspace. Read and continue chats, search project history and switch conversations with bottom tabs. Track work and requests for attention acros... |
+| [VesnALIA Desk](plugins/dashboard) | Keep project conversations, live activity and application shortcuts in one workspace. Read and continue chats, search project history and switch conversations with bottom tabs. Track work and requests for attention acros... |
 | [Dockside](plugins/dockside) | Organizes VesnALIA threads into compact project-first families with semantic status, inline child agents, persistent drag ordering, and mobile active-thread navigation. |
 | [Fast Archive](plugins/fast-archive) | Archive finished conversations from the thread header. Uses VesnALIA’s archive and restore behavior, and avoids duplicate buttons when native archiving is present. |
 | [Fast Split](plugins/fast-split) | Open a neighboring New thread pane from the sidebar footer. Keep the current pane visible while starting another conversation. Available in wide layouts, up to VesnALIA’s pane limit. |
@@ -602,6 +599,8 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Touch Bar Agent Monitor](plugins/touchbar) | Keep VesnALIA agent status and guarded controls on a MacBook Pro Touch Bar across every app. Open threads, follow provider usage, and switch to compact Host Monitor gauges. Requires macOS 11+, a Touch Bar Mac, and Xcode ... |
 | [Tree Sidebar](plugins/tree-sidebar) | Find threads by where their project lives on disk: folders nest, projects sit inside them, and each thread sits under its project. Forks and side chats nest under the thread they came from. Search reads message text as w... |
 | [Ultra Launcher](plugins/ultra-launcher) | Start a VesnALIA thread from any screen with Cmd+N, without leaving the thread you are in. Each thread starts from a saved preset of provider, model, reasoning level and service tier. Enter opens the new thread, and Cmd+... |
+| [VesnALIA Office](plugins/vesnalia-office) | Turns active VesnALIA threads into a draggable pixel-art office with live worker state, thread navigation, usage indicators, and agent-configurable behavior. |
+| [VesnALIA Sidebar](plugins/vesnalia-sidebar) | A sidebar inspired by T3 Code that adds manual and automatic thread sorting, collapsible shelves, and bulk actions to VesnALIA. |
 | [WizBar](plugins/wizbar) | An agent-first sidebar for fleets of agent threads. Cards show the issue or pull request link and child count, children open from a hover list, a live running count sits below the list with a stats panel on the footer bo... |
 | [Ultra Sidebar](plugins/workspace-sidebar) | Keep every VesnALIA thread visible as work moves across projects. Group threads by project or status, pin current work, and see subagents nested under their parent. Review pull requests, branches, failures, and scheduled... |
 
@@ -609,9 +608,8 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 
 | Плагин | Описание |
 | --- | --- |
+| [Antigravity Usage](plugins/antigravity-usage) | See separate Antigravity weekly quota windows for Gemini and Claude/GPT models in VesnALIA. Reports each model family's quota and reset time from your local Antigravity login. Requires an existing Antigravity ACP provide... |
 | [Auto Compact](plugins/auto-compact) | Compacts thread context automatically once usage reaches a configurable percentage, with a manual Compact button in every thread header. |
-| [Antigravity Usage](plugins/bb-antigravity-usage) | See separate Antigravity weekly quota windows for Gemini and Claude/GPT models in VesnALIA. Reports each model family's quota and reset time from your local Antigravity login. Requires an existing Antigravity ACP provide... |
-| [GitHub Copilot Usage](plugins/bb-copilot-usage) | See GitHub Copilot AI-credit or premium-request usage beside your other VesnALIA providers. Reads the quota shown by the authenticated Copilot CLI and reports the billing-cycle reset estimate. Requires GitHub Copilot CLI... |
 | [Burn](plugins/burn) | See what every agent thread costs in dollars while it runs, per prompt and across all your threads. A chip beside the context circle shows the thread's total and what the last prompt added; click it for where the money w... |
 | [Cache Watch [Experimental]](plugins/cache-watch) | See how much prompt caching each turn reuses and what its tokens would cost at Standard API rates. Expand the Cache panel for per-request reads and writes, first-request cache use, and estimated time left. Open the Cache... |
 | [Claude Switcher](plugins/claude-switcher) | See every Claude Code account in one usage panel, pick the account before a new thread's first message or from any thread's header, start new projects on the best account, and move a project to a free account when a turn... |
@@ -621,6 +619,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Context Meter](plugins/context-meter) | Keeps threads in the smart zone, by tracking context against a limit you set rather than the provider's full window. |
 | [Copilot AI Credits](plugins/copilot-aic-usage) | Track Copilot AI credits in your VesnALIA thread. See this session's usage, today's host total, and monthly premium requests. Install the GitHub Copilot provider from VesnALIA's marketplace and sign in to GitHub Copilot ... |
 | [Copilot session credits](plugins/copilot-session-credits) | Track reported GitHub Copilot credit usage for each VesnALIA thread. Click the indicator to see the amount, coverage, and capture status or get Pi setup instructions. Copilot CLI works directly with the official registry... |
+| [GitHub Copilot Usage](plugins/copilot-usage) | See GitHub Copilot AI-credit or premium-request usage beside your other VesnALIA providers. Reads the quota shown by the authenticated Copilot CLI and reports the billing-cycle reset estimate. Requires GitHub Copilot CLI... |
 | [Decisions](plugins/decisions) | Gets a probability for a typed question, and keeps the TypeSafe API key in one place. A thread or another plugin sends state and questions and gets probabilities back. The Decisions page shows ask counts, callers, cost, ... |
 | [Grok Build Usage](plugins/grok-build-usage) | Adds live Grok Build subscription and weekly credit usage, including reset timing, to VesnALIA's Settings → Usage Limits page. |
 | [Headroom](plugins/headroom) | Context budget monitoring - tells agents how much of the model's context window is used (real usage events, not estimates) and when to summarise or start fresh. |
@@ -679,7 +678,7 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 | [Plugin Updates](plugins/plugin-updates) | Shows which installed plugins have updates and installs them for you, including newer releases outside a plugin's version range. A count on the nav icon and a one-time toast flag each new version. Compatible updates inst... |
 | [Plugin Vault](plugins/plugin-vault) | Label and annotate VesnALIA plugins right on the Plugins page. Custom labels, an automatic Installed label, and blurred names for plugins you rejected. |
 | [Reclaim](plugins/reclaim) | Find what filled your disk and get the space back, without guessing. Indexes the whole volume with no scan cap and counts hardlinks and APFS clones once, so shared copies do not inflate folder totals. Browse any folder b... |
-| [Screen Sharing](plugins/screen-sharing) | See and control the screens of your Macs from inside VesnALIA, at your desk or from anywhere through your getbb.app address. A sidebar page shows each Mac connected to your VesnALIA with whether its Screen Sharing is on,... |
+| [Screen Sharing](plugins/screen-sharing) | See and control the screens of your Macs from inside VesnALIA, at your desk or from anywhere through remote access. A sidebar page shows each Mac connected to your VesnALIA with whether its Screen Sharing is on, and open... |
 | [Screenshot](plugins/screenshot) | Attach a selected area of your Mac's screen directly to a VesnALIA message. Use the native macOS crosshair from the camera button beside Send. Capture runs on the Mac displaying VesnALIA and preserves your draft text and... |
 | [Server Status](plugins/server-status) | Tracks host RAM usage as a ring around a sidebar footer button - amber from 80%, red above 90% - and opens a panel with CPU, memory, swap, disk, load average, uptime, and OS and kernel version. |
 | [VesnALIA Surf](plugins/steel-browser) | Operate self-hosted Steel browser sessions from VesnALIA with project-scoped sessions, selectable Playwright or Jev execution, and inline viewing. |
@@ -689,4 +688,4 @@ SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязател�
 
 ## Не перенесены
 
-31 плагинов не перенесены: без лицензии в репозитории (NONE, NOASSERTION), с несвободной лицензией, только с npm-источником. Список с причинами - `data/skipped.json`; их код в этот репозиторий не копировался.
+31 плагинов не перенесены, список с причинами - `data/skipped.json`.

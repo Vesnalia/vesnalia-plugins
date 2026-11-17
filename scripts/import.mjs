@@ -14,6 +14,7 @@ import { existsSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import semver from "semver";
+import { ourId } from "./renames.mjs";
 
 const exec = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, "..");
@@ -286,7 +287,7 @@ async function main() {
           .join("; ");
       }
 
-      const target = join(ROOT, "plugins", plugin.id);
+      const target = join(ROOT, "plugins", ourId(plugin.id));
       await rm(target, { recursive: true, force: true });
       const manifestText = JSON.stringify(pkg);
       const omitted = [];
@@ -311,7 +312,8 @@ async function main() {
       if (!existingLicense && licenseFile) await cp(licenseFile, join(target, "LICENSE"));
 
       const entry = {
-        id: plugin.id,
+        id: ourId(plugin.id),
+        originalId: plugin.id,
         displayName: plugin.displayName,
         description: plugin.description,
         icon: plugin.icon ?? null,
@@ -328,7 +330,7 @@ async function main() {
         omittedMedia: omitted,
       };
       await writeFile(join(target, "NOTICE.md"), noticeText(entry));
-      sources[plugin.id] = entry;
+      sources[ourId(plugin.id)] = entry;
     } catch (error) {
       failures.push({ id: plugin.id, reason: String(error.message ?? error).split("\n")[0] });
     } finally {

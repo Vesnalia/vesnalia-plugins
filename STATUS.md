@@ -31,10 +31,12 @@
 | agentic-mermaid | да | ok / ok / - | - | - | - |
 | aif-chat | да | ok / ok / ok | - | - | - |
 | airbender | да | ok / ok / - | - | - | - |
+| alium | да | ok / ok / - | - | - | - |
 | android-emulator | да | ok / ok / ok | - | - | - |
 | animation | да | ok / ok / - | - | - | - |
 | antigravity | да | ok / ok / - | - | - | - |
 | antigravity-cli | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается | - |
+| antigravity-usage | да | - / ok / ok | имя пакета alia-antigravity-usage даёт id "alia-antigravity-usage", переименовано в alia-plugin-bb-antigravity-usage | - | - |
 | app-preview | да | ok / ok / - | - | - | - |
 | arc-switcher | да | ok / ok / - | engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143); переименовано файлов с bb в имени: 2 | - | - |
 | archive-section | да | - / ok / - | - | - | - |
@@ -54,6 +56,7 @@
 | auto-router | после публикации SDK | - / - / - | engines.bb >=0.46.0 <0.47.0 -> engines.alia >=0.49 (alia-core 0.49.0); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается | - |
 | automation-groups | да | ok / ok / - | - | - | - |
 | automation-palette | да | ok / ok / - | - | - | 4 |
+| autoresearch | да | ok / ok / ok | имя пакета alia-autoresearch даёт id "alia-autoresearch", переименовано в alia-plugin-bb-autoresearch; переименовано файлов с bb в имени: 1 | - | 6 |
 | autoresearch-self-loop | да | ok / ok / - | - | - | - |
 | autorouter | да | ok / ok / - | - | - | - |
 | aws-activate-usage | да | ok / ok / - | - | - | - |
@@ -62,25 +65,11 @@
 | ballast | да | ok / ok / - | - | - | - |
 | bang-shell | да | ok / ok / - | - | - | - |
 | battery | да | ok / ok / - | - | - | - |
-| bb-agent-toolbox | да | - / ok / - | имя пакета alia-plugin-alia-agent-toolbox даёт id "alia-agent-toolbox", переименовано в alia-plugin-bb-agent-toolbox; переименовано файлов с bb в имени: 1 | - | - |
-| bb-antigravity-usage | да | - / ok / ok | имя пакета alia-antigravity-usage даёт id "alia-antigravity-usage", переименовано в alia-plugin-bb-antigravity-usage | - | - |
-| bb-autoresearch | да | ok / ok / ok | имя пакета alia-autoresearch даёт id "alia-autoresearch", переименовано в alia-plugin-bb-autoresearch; переименовано файлов с bb в имени: 1 | - | 6 |
-| bb-better-latex | да | ok / ok / - | имя пакета alia-better-latex даёт id "alia-better-latex", переименовано в alia-plugin-bb-better-latex | - | - |
-| bb-box | да | ok / ok / ok | имя пакета alia-plugin-alia-box даёт id "alia-box", переименовано в alia-plugin-bb-box; переименовано файлов с bb в имени: 34 | - | - |
-| bb-copilot-usage | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; имя пакета alia-copilot-usage даёт id "alia-copilot-usage", переименовано в alia-plugin-bb-copilot-usage | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается | - |
-| bb-github-pr-dashboard | да | ok / ok / - | имя пакета alia-github-pr-dashboard даёт id "alia-github-pr-dashboard", переименовано в alia-plugin-bb-github-pr-dashboard | - | - |
-| bb-kujo | да | ok / ok / - | engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0); engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143); имя пакета alia-kujo даёт id "alia-kujo", переименовано в alia-plugin-bb-kujo; переименовано файлов с bb в имени: 4 | - | - |
-| bb-live | да | ok / ok / - | имя пакета alia-plugin-alia-live даёт id "alia-live", переименовано в alia-plugin-bb-live; переименовано файлов с bb в имени: 1 | - | - |
-| bb-office | да | ok / ok / - | убрана зависимость bb-app (devDependencies); имя пакета alia-plugin-alia-office даёт id "alia-office", переименовано в alia-plugin-bb-office; переименовано файлов с bb в имени: 1 | - | - |
-| bb-recap | да | ok / ok / - | имя пакета alia-recap даёт id "alia-recap", переименовано в alia-plugin-bb-recap; переименовано файлов с bb в имени: 1 | - | - |
-| bb-rpiv-todo-renderer | да | ok / ok / - | имя пакета alia-rpiv-todo-renderer даёт id "alia-rpiv-todo-renderer", переименовано в alia-plugin-bb-rpiv-todo-renderer | - | - |
-| bb-sidebar | да | ok / ok / ok | убрана зависимость bb-app (devDependencies); имя пакета alia-plugin-alia-sidebar даёт id "alia-sidebar", переименовано в alia-plugin-bb-sidebar; переименовано файлов с bb в имени: 7 | - | - |
-| bbbbs | да | ok / ok / - | - | - | - |
-| bbium | да | ok / ok / - | - | - | - |
 | beacon | да | ok / ok / - | - | - | - |
 | beads | да | - / ok / ok | - | - | - |
 | beautiful-chat | да | ok / ok / - | - | - | - |
 | beside | да | ok / ok / - | убрана зависимость bb-app (devDependencies) | - | - |
+| better-latex | да | ok / ok / - | имя пакета alia-better-latex даёт id "alia-better-latex", переименовано в alia-plugin-bb-better-latex | - | - |
 | boat | да | - / ok / - | - | - | - |
 | bookmarks | да | ok / ok / - | - | - | - |
 | bots | да | ok / ok / - | - | - | - |
@@ -144,6 +133,7 @@
 | context-meter | да | ok / ok / - | - | - | - |
 | copilot-aic-usage | да | ok / ok / ok | engines.bbPluginSdk >=0.5.9 <0.6 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143) | - | - |
 | copilot-session-credits | да | ok / ok / ok | - | - | - |
+| copilot-usage | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; имя пакета alia-copilot-usage даёт id "alia-copilot-usage", переименовано в alia-plugin-bb-copilot-usage | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается | - |
 | copy-session-id | да | ok / ok / - | - | - | - |
 | cortado | да | - / ok / - | - | - | - |
 | crew | да | ok / ok / - | - | - | - |
@@ -224,6 +214,7 @@
 | github-board | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается | - |
 | github-extended | да | ok / ok / - | - | - | - |
 | github-folder | да | ok / ok / - | - | - | - |
+| github-pr-dashboard | да | ok / ok / - | имя пакета alia-github-pr-dashboard даёт id "alia-github-pr-dashboard", переименовано в alia-plugin-bb-github-pr-dashboard | - | - |
 | github-projects | да | ok / ok / - | - | - | - |
 | gitlab | да | ok / ok / - | - | - | - |
 | gitlab-interface-notion-style | да | ok / ok / - | - | - | - |
@@ -284,6 +275,7 @@
 | kimi-usage | да | - / ok / ok | - | - | - |
 | kodaforge | да | ok / ok / ok | - | - | - |
 | korey | да | ok / ok / ok | убрана зависимость bb-app (devDependencies) | - | - |
+| kujo | да | ok / ok / - | engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0); engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143); имя пакета alia-kujo даёт id "alia-kujo", переименовано в alia-plugin-bb-kujo; переименовано файлов с bb в имени: 4 | - | - |
 | lame-duck | да | ok / ok / - | - | - | - |
 | launchd-jobs | да | ok / ok / ok | - | - | - |
 | lavender | да | - / ok / - | - | - | - |
@@ -309,7 +301,7 @@
 | mane-control | да | ok / ok / - | - | - | - |
 | markdown-editor | да | ok / ok / - | - | - | - |
 | markdown-reader | да | ok / ok / ok | - | - | - |
-| matt-pocock-skills-for-bb | да | ok / ok / - | имя пакета alia-plugin-matt-pocock-skills-for-alia даёт id "matt-pocock-skills-for-alia", переименовано в alia-plugin-matt-pocock-skills-for-bb; переименовано файлов с bb в имени: 1 | - | - |
+| matt-pocock-skills-for-vesnalia | да | ok / ok / - | имя пакета alia-plugin-matt-pocock-skills-for-alia даёт id "matt-pocock-skills-for-alia", переименовано в alia-plugin-matt-pocock-skills-for-bb; переименовано файлов с bb в имени: 1 | - | - |
 | mattermost | да | ok / ok / ok | - | - | - |
 | maxwell | да | ok / ok / - | - | - | - |
 | mcp-hub | да | ok / ok / ok | - | - | - |
@@ -415,7 +407,7 @@
 | provider-retry-advanced | да | - / ok / - | - | - | - |
 | provider-usage | да | ok / ok / - | переименовано файлов с bb в имени: 1 | - | - |
 | pstack | да | - / ok / - | - | - | - |
-| pstack-for-bb | да | ok / ok / - | имя пакета alia-plugin-pstack-for-alia даёт id "pstack-for-alia", переименовано в alia-plugin-pstack-for-bb; переименовано файлов с bb в имени: 1 | - | - |
+| pstack-for-vesnalia | да | ok / ok / - | имя пакета alia-plugin-pstack-for-alia даёт id "pstack-for-alia", переименовано в alia-plugin-pstack-for-bb; переименовано файлов с bb в имени: 1 | - | - |
 | pulse | да | ok / ok / - | переименовано файлов с bb в имени: 1 | - | - |
 | px0 | да | ok / ok / ok | убрана зависимость bb-app (devDependencies) | - | - |
 | px0-review | да | ok / ok / ok | - | - | - |
@@ -430,6 +422,7 @@
 | radar-sidebar | да | ok / ok / - | - | - | - |
 | read-aloud | да | ok / ok / - | - | - | - |
 | realtime-gateway | да | - / ok / - | - | - | - |
+| recap | да | ok / ok / - | имя пакета alia-recap даёт id "alia-recap", переименовано в alia-plugin-bb-recap; переименовано файлов с bb в имени: 1 | - | - |
 | receipts | да | ok / ok / - | - | - | - |
 | reclaim | да | ok / ok / - | - | - | - |
 | references | да | ok / ok / - | - | - | - |
@@ -440,6 +433,7 @@
 | rewind | да | ok / ok / ok | - | - | - |
 | role-picker | да | ok / ok / - | - | - | - |
 | route | да | - / ok / - | - | - | - |
+| rpiv-todo-renderer | да | ok / ok / - | имя пакета alia-rpiv-todo-renderer даёт id "alia-rpiv-todo-renderer", переименовано в alia-plugin-bb-rpiv-todo-renderer | - | - |
 | rtk | да | - / ok / - | - | - | - |
 | save-my-model | да | ok / ok / - | убрана зависимость bb-app (devDependencies) | - | - |
 | scoped-skills | да | ok / ok / - | - | - | - |
@@ -556,6 +550,12 @@
 | variaq | да | - / ok / - | engines.bb >=0.46.0 <0.47.0 -> engines.alia >=0.49 (alia-core 0.49.0); engines.bbPluginSdk 0.6.37 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143); убрана зависимость bb-app (devDependencies) | - | - |
 | vcs-widget | да | ok / ok / ok | убрана зависимость bb-app (devDependencies) | - | - |
 | vercel-theme | да | - / ok / - | - | - | - |
+| vesnalia-agent-toolbox | да | - / ok / - | имя пакета alia-plugin-alia-agent-toolbox даёт id "alia-agent-toolbox", переименовано в alia-plugin-bb-agent-toolbox; переименовано файлов с bb в имени: 1 | - | - |
+| vesnalia-bbs | да | ok / ok / - | - | - | - |
+| vesnalia-box | да | ok / ok / ok | имя пакета alia-plugin-alia-box даёт id "alia-box", переименовано в alia-plugin-bb-box; переименовано файлов с bb в имени: 34 | - | - |
+| vesnalia-live | да | ok / ok / - | имя пакета alia-plugin-alia-live даёт id "alia-live", переименовано в alia-plugin-bb-live; переименовано файлов с bb в имени: 1 | - | - |
+| vesnalia-office | да | ok / ok / - | убрана зависимость bb-app (devDependencies); имя пакета alia-plugin-alia-office даёт id "alia-office", переименовано в alia-plugin-bb-office; переименовано файлов с bb в имени: 1 | - | - |
+| vesnalia-sidebar | да | ok / ok / ok | убрана зависимость bb-app (devDependencies); имя пакета alia-plugin-alia-sidebar даёт id "alia-sidebar", переименовано в alia-plugin-bb-sidebar; переименовано файлов с bb в имени: 7 | - | - |
 | vesper | да | - / ok / - | - | - | - |
 | vim | да | ok / ok / - | - | - | - |
 | visual-workflows | да | ok / ok / - | - | - | - |

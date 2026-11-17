@@ -28,6 +28,7 @@ import { readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import semver from "semver";
 import ts from "typescript";
+import { DISPLAY_NAMES, fixProse } from "./renames.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const REPO_URL = "https://github.com/Vesnalia/vesnalia-plugins";
@@ -383,6 +384,8 @@ export function adaptPackageJson(pkg, id, notes) {
     notes.push(`имя пакета ${out.name} даёт id "${derived}", переименовано в alia-plugin-${id}`);
     out.name = `alia-plugin-${id}`;
   }
+  if (out.alia && DISPLAY_NAMES[id]) out.alia.name = DISPLAY_NAMES[id];
+  if (typeof out.alia?.description === "string") out.alia.description = fixProse(out.alia.description);
   return out;
 }
 

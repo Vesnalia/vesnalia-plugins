@@ -1,0 +1,50 @@
+{
+  "name": "alia-plugin-better-latex",
+  "version": "0.2.8",
+  "description": "Better inline and display LaTeX for VesnALIA chat. Renders $...$, leftover \\[...\\] / \\(...\\), and currency-safe heuristics.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
+  },
+  "alia": {
+    "name": "Better LaTeX",
+    "description": "Renders $...$ and leftover \\[...\\] / \\(...\\) math in chat. Stock VesnALIA only ships $$...$$; this plugin adds currency-safe heuristics and reassembles formulas markdown splits across nodes.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "generate:katex-css": "node scripts/generate-katex-shadow-css.mjs",
+    "prepare": "npm run generate:katex-css"
+  },
+  "dependencies": {
+    "katex": "^0.16.27"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/better-latex#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/better-latex"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

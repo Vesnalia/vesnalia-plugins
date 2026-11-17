@@ -1,0 +1,45 @@
+{
+  "name": "alia-plugin-pstack-for-vesnalia",
+  "version": "0.1.13",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
+  },
+  "alia": {
+    "name": "pstack for VesnALIA",
+    "description": "Lauren Tan's pstack skills, synced daily from cursor/plugins and adapted only where Cursor locations don't exist in VesnALIA. Turn them on by default or per project.",
+    "branding": {
+      "icon": "Layers"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "pstack/skills"
+    ]
+  },
+  "dependencies": {
+    "@radix-ui/react-checkbox": "^1.3.7",
+    "@radix-ui/react-slot": "^1.3.0",
+    "zod": "^4.6.5"
+  },
+  "description": "Lauren Tan's pstack skill set for VesnALIA, synced daily from cursor/plugins. Unofficial mirror.",
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/pstack-for-vesnalia#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/pstack-for-vesnalia"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

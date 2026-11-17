@@ -9,7 +9,7 @@
     "aliaPluginSdk": ">=0.6.94 <0.7.0"
   },
   "alia": {
-    "name": "BBDesk",
+    "name": "VesnALIA Desk",
     "description": "Your VesnALIA projects, chats and applications in one workspace.",
     "branding": {
       "icon": "./assets/icon.svg",

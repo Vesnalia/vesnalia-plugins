@@ -1,0 +1,48 @@
+{
+  "name": "alia-plugin-matt-pocock-skills-for-vesnalia",
+  "version": "0.1.6",
+  "type": "module",
+  "description": "Matt Pocock's engineering and productivity skills for VesnALIA, with experimental skills available by opt-in. Synced daily from mattpocock/skills.",
+  "license": "MIT",
+  "engines": {
+    "alia": ">=0.45.0",
+    "aliaPluginSdk": ">=0.6.15"
+  },
+  "alia": {
+    "name": "Matt Pocock skills for VesnALIA",
+    "description": "Matt Pocock's engineering and productivity skills for VesnALIA, with experimental skills available by opt-in. Synced daily from mattpocock/skills.",
+    "branding": {
+      "icon": "Layers"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "matt-pocock/skills/engineering",
+      "matt-pocock/skills/productivity",
+      "matt-pocock/skills/in-progress"
+    ]
+  },
+  "dependencies": {
+    "@radix-ui/react-checkbox": "^1.3.7",
+    "@radix-ui/react-slot": "^1.3.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/matt-pocock-skills-for-vesnalia#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/matt-pocock-skills-for-vesnalia"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

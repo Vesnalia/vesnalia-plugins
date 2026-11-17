@@ -99,6 +99,10 @@
     "changedFiles": 102,
     "notes": []
   },
+  "alium": {
+    "changedFiles": 13,
+    "notes": []
+  },
   "android-emulator": {
     "changedFiles": 13,
     "notes": []
@@ -115,6 +119,12 @@
     "changedFiles": 24,
     "notes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
+    ]
+  },
+  "antigravity-usage": {
+    "changedFiles": 5,
+    "notes": [
+      "имя пакета alia-antigravity-usage даёт id \"alia-antigravity-usage\", переименовано в alia-plugin-bb-antigravity-usage"
     ]
   },
   "app-preview": {
@@ -202,6 +212,13 @@
     "changedFiles": 12,
     "notes": []
   },
+  "autoresearch": {
+    "changedFiles": 108,
+    "notes": [
+      "имя пакета alia-autoresearch даёт id \"alia-autoresearch\", переименовано в alia-plugin-bb-autoresearch",
+      "переименован bb-port.ts -> alia-port.ts"
+    ]
+  },
   "autoresearch-self-loop": {
     "changedFiles": 8,
     "notes": []
@@ -238,147 +255,6 @@
     "changedFiles": 5,
     "notes": []
   },
-  "bb-agent-toolbox": {
-    "changedFiles": 11,
-    "notes": [
-      "имя пакета alia-plugin-alia-agent-toolbox даёт id \"alia-agent-toolbox\", переименовано в alia-plugin-bb-agent-toolbox",
-      "переименован bb-agent-toolbox.svg -> alia-agent-toolbox.svg"
-    ]
-  },
-  "bb-antigravity-usage": {
-    "changedFiles": 5,
-    "notes": [
-      "имя пакета alia-antigravity-usage даёт id \"alia-antigravity-usage\", переименовано в alia-plugin-bb-antigravity-usage"
-    ]
-  },
-  "bb-autoresearch": {
-    "changedFiles": 108,
-    "notes": [
-      "имя пакета alia-autoresearch даёт id \"alia-autoresearch\", переименовано в alia-plugin-bb-autoresearch",
-      "переименован bb-port.ts -> alia-port.ts"
-    ]
-  },
-  "bb-better-latex": {
-    "changedFiles": 8,
-    "notes": [
-      "имя пакета alia-better-latex даёт id \"alia-better-latex\", переименовано в alia-plugin-bb-better-latex"
-    ]
-  },
-  "bb-box": {
-    "changedFiles": 1040,
-    "notes": [
-      "имя пакета alia-plugin-alia-box даёт id \"alia-box\", переименовано в alia-plugin-bb-box",
-      "переименован bb-daemon.sh -> alia-daemon.sh",
-      "переименован 002-bb-is-the-coordinator.md -> 002-alia-is-the-coordinator.md",
-      "переименован 017-boxes-clear-bb-daemon-state-at-boot.md -> 017-boxes-clear-alia-daemon-state-at-boot.md",
-      "переименован 042-a-docker-host-can-be-a-bb-machine.md -> 042-a-docker-host-can-be-a-alia-machine.md",
-      "переименован 066-the-monitor-is-beacon-moved-into-bb-box.md -> 066-the-monitor-is-beacon-moved-into-alia-box.md",
-      "переименован 092-a-backend-can-be-kept-for-bb-projects.md -> 092-a-backend-can-be-kept-for-alia-projects.md",
-      "переименован bb-requests.md -> alia-requests.md",
-      "переименован bb-box-device-firewall -> alia-box-device-firewall",
-      "переименован bb-box-emulator -> alia-box-emulator",
-      "переименован bb-box-h264 -> alia-box-h264",
-      "переименован bb-box-sensors.c -> alia-box-sensors.c",
-      "переименован bb-box-gpu -> alia-box-gpu",
-      "переименован bb-box-gpu-boot.service -> alia-box-gpu-boot.service",
-      "переименован bb-box-gpu-memory -> alia-box-gpu-memory",
-      "переименован bb-box-gpu-memory.service -> alia-box-gpu-memory.service",
-      "переименован bb-box-gpu-memory.timer -> alia-box-gpu-memory.timer",
-      "переименован bb-box-gpu.service -> alia-box-gpu.service",
-      "переименован bb-box-network -> alia-box-network",
-      "переименован bb-box.env.example -> alia-box.env.example",
-      "переименован bb-box-cursor.c -> alia-box-cursor.c",
-      "переименован bb-box-nofbc.c -> alia-box-nofbc.c",
-      "переименован bb-box-type.c -> alia-box-type.c",
-      "переименован bb-box-feature.sh -> alia-box-feature.sh",
-      "переименован bb-box-identity.sh -> alia-box-identity.sh",
-      "переименован bb-box-nvidia-drivers.sh -> alia-box-nvidia-drivers.sh",
-      "переименован install-bb-app.sh -> install-alia-app.sh",
-      "переименован bb-box -> alia-box",
-      "переименован bb-box-identity-macos.sh -> alia-box-identity-macos.sh",
-      "переименован bb-box-stream.cs -> alia-box-stream.cs",
-      "переименован bb-box -> alia-box",
-      "переименован bb-box-setup -> alia-box-setup",
-      "переименован reach-bb.ts -> reach-alia.ts",
-      "переименован bb-box-device.sh -> alia-box-device.sh",
-      "переименован bb-box-feature.test.ts -> alia-box-feature.test.ts"
-    ]
-  },
-  "bb-copilot-usage": {
-    "changedFiles": 3,
-    "notes": [
-      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "имя пакета alia-copilot-usage даёт id \"alia-copilot-usage\", переименовано в alia-plugin-bb-copilot-usage"
-    ]
-  },
-  "bb-github-pr-dashboard": {
-    "changedFiles": 14,
-    "notes": [
-      "имя пакета alia-github-pr-dashboard даёт id \"alia-github-pr-dashboard\", переименовано в alia-plugin-bb-github-pr-dashboard"
-    ]
-  },
-  "bb-kujo": {
-    "changedFiles": 48,
-    "notes": [
-      "engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "имя пакета alia-kujo даёт id \"alia-kujo\", переименовано в alia-plugin-bb-kujo",
-      "переименован bb-LICENSE.txt -> alia-LICENSE.txt",
-      "переименован bb-kujo.json -> alia-kujo.json",
-      "переименован bb-kujo-af480bad.svg -> alia-kujo-af480bad.svg",
-      "переименован bb-kujo.md -> alia-kujo.md"
-    ]
-  },
-  "bb-live": {
-    "changedFiles": 20,
-    "notes": [
-      "имя пакета alia-plugin-alia-live даёт id \"alia-live\", переименовано в alia-plugin-bb-live",
-      "переименован bb-live -> alia-live"
-    ]
-  },
-  "bb-office": {
-    "changedFiles": 21,
-    "notes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "имя пакета alia-plugin-alia-office даёт id \"alia-office\", переименовано в alia-plugin-bb-office",
-      "переименован bb-office-customization -> alia-office-customization"
-    ]
-  },
-  "bb-recap": {
-    "changedFiles": 10,
-    "notes": [
-      "имя пакета alia-recap даёт id \"alia-recap\", переименовано в alia-plugin-bb-recap",
-      "переименован bb-recap -> alia-recap"
-    ]
-  },
-  "bb-rpiv-todo-renderer": {
-    "changedFiles": 6,
-    "notes": [
-      "имя пакета alia-rpiv-todo-renderer даёт id \"alia-rpiv-todo-renderer\", переименовано в alia-plugin-bb-rpiv-todo-renderer"
-    ]
-  },
-  "bb-sidebar": {
-    "changedFiles": 279,
-    "notes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "имя пакета alia-plugin-alia-sidebar даёт id \"alia-sidebar\", переименовано в alia-plugin-bb-sidebar",
-      "переименован bb-bump.yml -> alia-bump.yml",
-      "переименован bb-compat.yml -> alia-compat.yml",
-      "переименован resolve-bb.mjs -> resolve-alia.mjs",
-      "переименован resolve-bb.test.mjs -> resolve-alia.test.mjs",
-      "переименован bb-compat -> alia-compat",
-      "переименован bb-sdk.test.ts -> alia-sdk.test.ts",
-      "переименован bb-sdk.ts -> alia-sdk.ts"
-    ]
-  },
-  "bbbbs": {
-    "changedFiles": 15,
-    "notes": []
-  },
-  "bbium": {
-    "changedFiles": 13,
-    "notes": []
-  },
   "beacon": {
     "changedFiles": 11,
     "notes": []
@@ -395,6 +271,12 @@
     "changedFiles": 30,
     "notes": [
       "убрана зависимость bb-app (devDependencies)"
+    ]
+  },
+  "better-latex": {
+    "changedFiles": 8,
+    "notes": [
+      "имя пакета alia-better-latex даёт id \"alia-better-latex\", переименовано в alia-plugin-bb-better-latex"
     ]
   },
   "boat": {
@@ -686,6 +568,13 @@
   "copilot-session-credits": {
     "changedFiles": 18,
     "notes": []
+  },
+  "copilot-usage": {
+    "changedFiles": 3,
+    "notes": [
+      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
+      "имя пакета alia-copilot-usage даёт id \"alia-copilot-usage\", переименовано в alia-plugin-bb-copilot-usage"
+    ]
   },
   "copy-session-id": {
     "changedFiles": 5,
@@ -1086,6 +975,12 @@
     "changedFiles": 14,
     "notes": []
   },
+  "github-pr-dashboard": {
+    "changedFiles": 14,
+    "notes": [
+      "имя пакета alia-github-pr-dashboard даёт id \"alia-github-pr-dashboard\", переименовано в alia-plugin-bb-github-pr-dashboard"
+    ]
+  },
   "github-projects": {
     "changedFiles": 9,
     "notes": []
@@ -1369,6 +1264,18 @@
       "убрана зависимость bb-app (devDependencies)"
     ]
   },
+  "kujo": {
+    "changedFiles": 48,
+    "notes": [
+      "engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
+      "engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "имя пакета alia-kujo даёт id \"alia-kujo\", переименовано в alia-plugin-bb-kujo",
+      "переименован bb-LICENSE.txt -> alia-LICENSE.txt",
+      "переименован bb-kujo.json -> alia-kujo.json",
+      "переименован bb-kujo-af480bad.svg -> alia-kujo-af480bad.svg",
+      "переименован bb-kujo.md -> alia-kujo.md"
+    ]
+  },
   "lame-duck": {
     "changedFiles": 8,
     "notes": []
@@ -1487,7 +1394,7 @@
     "changedFiles": 33,
     "notes": []
   },
-  "matt-pocock-skills-for-bb": {
+  "matt-pocock-skills-for-vesnalia": {
     "changedFiles": 24,
     "notes": [
       "имя пакета alia-plugin-matt-pocock-skills-for-alia даёт id \"matt-pocock-skills-for-alia\", переименовано в alia-plugin-matt-pocock-skills-for-bb",
@@ -1989,7 +1896,7 @@
     "changedFiles": 17,
     "notes": []
   },
-  "pstack-for-bb": {
+  "pstack-for-vesnalia": {
     "changedFiles": 45,
     "notes": [
       "имя пакета alia-plugin-pstack-for-alia даёт id \"pstack-for-alia\", переименовано в alia-plugin-pstack-for-bb",
@@ -2060,6 +1967,13 @@
     "changedFiles": 3,
     "notes": []
   },
+  "recap": {
+    "changedFiles": 10,
+    "notes": [
+      "имя пакета alia-recap даёт id \"alia-recap\", переименовано в alia-plugin-bb-recap",
+      "переименован bb-recap -> alia-recap"
+    ]
+  },
   "receipts": {
     "changedFiles": 12,
     "notes": []
@@ -2101,6 +2015,12 @@
   "route": {
     "changedFiles": 5,
     "notes": []
+  },
+  "rpiv-todo-renderer": {
+    "changedFiles": 6,
+    "notes": [
+      "имя пакета alia-rpiv-todo-renderer даёт id \"alia-rpiv-todo-renderer\", переименовано в alia-plugin-bb-rpiv-todo-renderer"
+    ]
   },
   "rtk": {
     "changedFiles": 4,
@@ -2658,6 +2578,86 @@
   "vercel-theme": {
     "changedFiles": 5,
     "notes": []
+  },
+  "vesnalia-agent-toolbox": {
+    "changedFiles": 11,
+    "notes": [
+      "имя пакета alia-plugin-alia-agent-toolbox даёт id \"alia-agent-toolbox\", переименовано в alia-plugin-bb-agent-toolbox",
+      "переименован bb-agent-toolbox.svg -> alia-agent-toolbox.svg"
+    ]
+  },
+  "vesnalia-bbs": {
+    "changedFiles": 15,
+    "notes": []
+  },
+  "vesnalia-box": {
+    "changedFiles": 1040,
+    "notes": [
+      "имя пакета alia-plugin-alia-box даёт id \"alia-box\", переименовано в alia-plugin-bb-box",
+      "переименован bb-daemon.sh -> alia-daemon.sh",
+      "переименован 002-bb-is-the-coordinator.md -> 002-alia-is-the-coordinator.md",
+      "переименован 017-boxes-clear-bb-daemon-state-at-boot.md -> 017-boxes-clear-alia-daemon-state-at-boot.md",
+      "переименован 042-a-docker-host-can-be-a-bb-machine.md -> 042-a-docker-host-can-be-a-alia-machine.md",
+      "переименован 066-the-monitor-is-beacon-moved-into-bb-box.md -> 066-the-monitor-is-beacon-moved-into-alia-box.md",
+      "переименован 092-a-backend-can-be-kept-for-bb-projects.md -> 092-a-backend-can-be-kept-for-alia-projects.md",
+      "переименован bb-requests.md -> alia-requests.md",
+      "переименован bb-box-device-firewall -> alia-box-device-firewall",
+      "переименован bb-box-emulator -> alia-box-emulator",
+      "переименован bb-box-h264 -> alia-box-h264",
+      "переименован bb-box-sensors.c -> alia-box-sensors.c",
+      "переименован bb-box-gpu -> alia-box-gpu",
+      "переименован bb-box-gpu-boot.service -> alia-box-gpu-boot.service",
+      "переименован bb-box-gpu-memory -> alia-box-gpu-memory",
+      "переименован bb-box-gpu-memory.service -> alia-box-gpu-memory.service",
+      "переименован bb-box-gpu-memory.timer -> alia-box-gpu-memory.timer",
+      "переименован bb-box-gpu.service -> alia-box-gpu.service",
+      "переименован bb-box-network -> alia-box-network",
+      "переименован bb-box.env.example -> alia-box.env.example",
+      "переименован bb-box-cursor.c -> alia-box-cursor.c",
+      "переименован bb-box-nofbc.c -> alia-box-nofbc.c",
+      "переименован bb-box-type.c -> alia-box-type.c",
+      "переименован bb-box-feature.sh -> alia-box-feature.sh",
+      "переименован bb-box-identity.sh -> alia-box-identity.sh",
+      "переименован bb-box-nvidia-drivers.sh -> alia-box-nvidia-drivers.sh",
+      "переименован install-bb-app.sh -> install-alia-app.sh",
+      "переименован bb-box -> alia-box",
+      "переименован bb-box-identity-macos.sh -> alia-box-identity-macos.sh",
+      "переименован bb-box-stream.cs -> alia-box-stream.cs",
+      "переименован bb-box -> alia-box",
+      "переименован bb-box-setup -> alia-box-setup",
+      "переименован reach-bb.ts -> reach-alia.ts",
+      "переименован bb-box-device.sh -> alia-box-device.sh",
+      "переименован bb-box-feature.test.ts -> alia-box-feature.test.ts"
+    ]
+  },
+  "vesnalia-live": {
+    "changedFiles": 20,
+    "notes": [
+      "имя пакета alia-plugin-alia-live даёт id \"alia-live\", переименовано в alia-plugin-bb-live",
+      "переименован bb-live -> alia-live"
+    ]
+  },
+  "vesnalia-office": {
+    "changedFiles": 21,
+    "notes": [
+      "убрана зависимость bb-app (devDependencies)",
+      "имя пакета alia-plugin-alia-office даёт id \"alia-office\", переименовано в alia-plugin-bb-office",
+      "переименован bb-office-customization -> alia-office-customization"
+    ]
+  },
+  "vesnalia-sidebar": {
+    "changedFiles": 279,
+    "notes": [
+      "убрана зависимость bb-app (devDependencies)",
+      "имя пакета alia-plugin-alia-sidebar даёт id \"alia-sidebar\", переименовано в alia-plugin-bb-sidebar",
+      "переименован bb-bump.yml -> alia-bump.yml",
+      "переименован bb-compat.yml -> alia-compat.yml",
+      "переименован resolve-bb.mjs -> resolve-alia.mjs",
+      "переименован resolve-bb.test.mjs -> resolve-alia.test.mjs",
+      "переименован bb-compat -> alia-compat",
+      "переименован bb-sdk.test.ts -> alia-sdk.test.ts",
+      "переименован bb-sdk.ts -> alia-sdk.ts"
+    ]
   },
   "vesper": {
     "changedFiles": 8,

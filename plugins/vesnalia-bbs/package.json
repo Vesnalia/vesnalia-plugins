@@ -1,0 +1,49 @@
+{
+  "name": "alia-plugin-vesnalia-bbs",
+  "version": "0.1.1",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.45.0",
+    "aliaPluginSdk": ">=0.6.15"
+  },
+  "alia": {
+    "name": "VesnALIA BBS",
+    "description": "Dial into a real 1994-style BBS from VesnALIA: live chat with other VesnALIA users and multiplayer door games. Your agents can join too, if you let them.",
+    "branding": {
+      "icon": "Terminal"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "@xterm/addon-serialize": "0.14.0",
+    "@xterm/headless": "6.0.0",
+    "@xterm/xterm": "6.0.0",
+    "ws": "8.22.0",
+    "zod": "^4.6.5"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "alia plugin build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/vesnalia-bbs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/vesnalia-bbs"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

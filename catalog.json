@@ -389,6 +389,26 @@
       "license": "GPL-3.0"
     },
     {
+      "slug": "alium",
+      "displayName": "Alium",
+      "description": "Click anything in VesnALIA without the mouse: press f, type the letter label, and VesnALIA clicks it. Labels cover sidebar threads, pickers, composer controls and hover-only message actions, and most stay one or two letters long. j and k scroll the chat, gg and G jump to its ends, and i puts the cursor back in the composer. Change hint letters, colors and fonts in settings or by asking an agent; changes apply live.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bbium-13cf65ee.svg",
+      "iconPath": "plugins/alium/icons/bbium.svg",
+      "category": "themes-and-appearance",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/alium",
+      "version": "0.1.5",
+      "originalAuthor": {
+        "name": "Andrej Kostal",
+        "github": "kuringer"
+      },
+      "originalRepo": "https://github.com/kuringer/bb-plugin-bbium",
+      "originalRef": "v0.1.5",
+      "originalCommit": "8c188913a656c4136ad0b881f94540b34f63c80c",
+      "license": "MIT"
+    },
+    {
       "slug": "android-emulator",
       "displayName": "Android Emulator",
       "description": "Watch and drive an Android emulator, a virtual phone, beside your thread, on the same device your agent controls. The panel streams the live screen with touch, scroll, keyboard and system buttons, and pastes Unicode text into the focused field. Agents list, start and stop AVDs and press keys through VesnALIA android-emulator commands. Needs a Windows or Linux VesnALIA host with the Android SDK and an existing AVD; the plugin installs nothing.",
@@ -446,6 +466,25 @@
       "originalRef": "v0.2.1",
       "originalCommit": "686d8adb4a49bc944867fadc045727c264d41b01",
       "license": "permission"
+    },
+    {
+      "slug": "antigravity-usage",
+      "displayName": "Antigravity Usage",
+      "description": "See separate Antigravity weekly quota windows for Gemini and Claude/GPT models in VesnALIA. Reports each model family's quota and reset time from your local Antigravity login. Requires an existing Antigravity ACP provider and a local Antigravity account.",
+      "icon": "ChartColumn",
+      "category": "token-usage-and-limits",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/antigravity-usage",
+      "version": "0.1.5",
+      "originalAuthor": {
+        "name": "defacid",
+        "github": "defacid"
+      },
+      "originalRepo": "https://github.com/defacid/bb-antigravity-usage",
+      "originalRef": "v0.1.5",
+      "originalCommit": "3ceda5e32eee067d3ba6f5d252baefe006317c25",
+      "license": "MIT"
     },
     {
       "slug": "app-preview",
@@ -795,6 +834,26 @@
       "license": "permission"
     },
     {
+      "slug": "autoresearch",
+      "displayName": "Autoresearch",
+      "description": "Orchestrates autoresearch loops: parallel agent workers try code changes, and only the ones your benchmark proves better are kept. The plugin, not the agents, runs every measurement and decides each verdict from paired runs and confidence intervals, with guardrails on secondary metrics. A Live tab shows workers, candidates and each measurement's confidence band as they move, and any study can be replayed. Harvest turns the wins into draft PRs, each with its contribution measured by reverting it. Requires git 2.38 or newer; benchmarks run your repository's own commands, and the GitHub CLI is needed only to publish PRs.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-autoresearch-bbcadbb3.svg",
+      "iconPath": "plugins/autoresearch/assets/flask.svg",
+      "category": "tasks-and-workflows",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/autoresearch",
+      "version": "1.0.2",
+      "originalAuthor": {
+        "name": "Pascal de Ladurantaye",
+        "github": "pascal-de-ladurantaye"
+      },
+      "originalRepo": "https://github.com/pascal-de-ladurantaye/bb-autoresearch",
+      "originalRef": "v1.0.2",
+      "originalCommit": "339c9343a4a4a69a99e5cbd44f051b8f02fcc7ca",
+      "license": "MIT"
+    },
+    {
       "slug": "autoresearch-self-loop",
       "displayName": "Autoresearch Self Loop",
       "description": "Let an agent iterate on one measured metric in your Git checkout, and keep a log of every attempt. Each kept run becomes a commit with its result in the message, and a keep is refused when the benchmark or checks failed. A discarded, crashed, or checks-failed run reverts the agent's changes, including new untracked files that Git does not ignore. Needs Git, a committer identity, a clean working tree when a session starts, and a benchmark that prints METRIC name=value lines.",
@@ -950,281 +1009,6 @@
       "license": "permission"
     },
     {
-      "slug": "bb-agent-toolbox",
-      "displayName": "VesnALIA Agent Toolbox",
-      "description": "Gives any coding agent (opencode, Prime Agent, Google Antigravity, Codex, Claude Code, and more) direct tools for VesnALIA: read and edit workspace files, inspect and message other threads, delegate work by spawning threads, and see running terminals.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-agent-toolbox-7ffa1afd.svg",
-      "iconPath": "plugins/bb-agent-toolbox/icons/alia-agent-toolbox.svg",
-      "category": "agents-and-providers",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-agent-toolbox",
-      "version": "0.2.2",
-      "originalAuthor": {
-        "name": "rawizhere",
-        "github": "rawizhere"
-      },
-      "originalRepo": "https://github.com/rawizhere/bb-plugin-bb-agent-toolbox",
-      "originalRef": "v0.2.2",
-      "originalCommit": "1142e110f24949b195f8fd2b19f533a07b352bd9",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-antigravity-usage",
-      "displayName": "Antigravity Usage",
-      "description": "See separate Antigravity weekly quota windows for Gemini and Claude/GPT models in VesnALIA. Reports each model family's quota and reset time from your local Antigravity login. Requires an existing Antigravity ACP provider and a local Antigravity account.",
-      "icon": "ChartColumn",
-      "category": "token-usage-and-limits",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-antigravity-usage",
-      "version": "0.1.5",
-      "originalAuthor": {
-        "name": "defacid",
-        "github": "defacid"
-      },
-      "originalRepo": "https://github.com/defacid/bb-antigravity-usage",
-      "originalRef": "v0.1.5",
-      "originalCommit": "3ceda5e32eee067d3ba6f5d252baefe006317c25",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-autoresearch",
-      "displayName": "Autoresearch",
-      "description": "Orchestrates autoresearch loops: parallel agent workers try code changes, and only the ones your benchmark proves better are kept. The plugin, not the agents, runs every measurement and decides each verdict from paired runs and confidence intervals, with guardrails on secondary metrics. A Live tab shows workers, candidates and each measurement's confidence band as they move, and any study can be replayed. Harvest turns the wins into draft PRs, each with its contribution measured by reverting it. Requires git 2.38 or newer; benchmarks run your repository's own commands, and the GitHub CLI is needed only to publish PRs.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-autoresearch-bbcadbb3.svg",
-      "iconPath": "plugins/bb-autoresearch/assets/flask.svg",
-      "category": "tasks-and-workflows",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-autoresearch",
-      "version": "1.0.2",
-      "originalAuthor": {
-        "name": "Pascal de Ladurantaye",
-        "github": "pascal-de-ladurantaye"
-      },
-      "originalRepo": "https://github.com/pascal-de-ladurantaye/bb-autoresearch",
-      "originalRef": "v1.0.2",
-      "originalCommit": "339c9343a4a4a69a99e5cbd44f051b8f02fcc7ca",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-better-latex",
-      "displayName": "Better LaTeX",
-      "description": "Renders $...$ and leftover \\[...\\] / \\(...\\) math in VesnALIA chat.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-better-latex-8274bdfa.svg",
-      "iconPath": "plugins/bb-better-latex/assets/icon.svg",
-      "category": "thread-content",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-better-latex",
-      "version": "0.2.8",
-      "originalAuthor": {
-        "name": "Zhen Huang",
-        "github": "ZhenHuangLab"
-      },
-      "originalRepo": "https://github.com/ZhenHuangLab/bb-better-latex",
-      "originalRef": "v0.2.8",
-      "originalCommit": "18dde22266c9e199d2e2294cf7c1f30c6a01cb51",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-box",
-      "displayName": "VesnALIA Box",
-      "description": "Give each thread its own Linux, Windows or macOS computer, or an iPhone or Android device, shared with its agent. You and the agent use the same desktop or terminal in VesnALIA's panel, and the agent waits while you have control. On the backends that support it, a snapshot saves a box before a risky change, and a restore with an undo or a fork brings it back. Boxes run on Docker, microsandbox, Proxmox, Tart on your Macs, or your own machines over SSH; Hetzner Cloud, Namespace and boat.dev need an account and bill you for what boxes use. Not a sandbox: VesnALIA Box assumes one trusted user.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-box-daf167ac.svg",
-      "iconPath": "plugins/bb-box/assets/icon.svg",
-      "category": "cloud-and-remote",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-box",
-      "version": "0.2.9",
-      "originalAuthor": {
-        "name": "Victor Aremu",
-        "github": "ahkohd"
-      },
-      "originalRepo": "https://github.com/ahkohd/bb-box",
-      "originalRef": "v0.2.9",
-      "originalCommit": "6ff172080a714ff92b4e64ba14a691fd9b636aa1",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-github-pr-dashboard",
-      "displayName": "GitHub PR Dashboard",
-      "description": "See why each pull request is stuck, and get it unstuck, without leaving VesnALIA. My PRs lists your pull requests, review requests for you and your teams, the ones you reviewed, and assigned ones by repository, each with its +/- lines and led by what blocks it: failing CI down to the job, changes requested, unresolved comments, conflicts or a stack. Reviewed turns amber when the author pushes after your review. Open one for its reviewers and their verdicts, labels, and tabs: Overview (the description, then comments and reviews), Checks with error annotations, Files with syntax-highlighted diffs and review threads under their lines, Commits with the ones since your review marked, and Comments. Edit the title and description, comment on a line or range, reply, delete your own comments, submit a review, mark your draft ready, and close or reopen, each only when you click. A menu links the PR to a VesnALIA thread, asks about it, explains it, or sends every finding to an agent, starting in the PR's project; Fix with agent does it for one comment or failed job. Jira keys open in VesnALIA's My Jira plugin. Search, hide or fold repositories, move by keyboard, switch gh accounts, and get alerts when CI fails or someone comments. Uses the GitHub CLI login or a token; github.com only.",
-      "icon": "GitPullRequest",
-      "category": "code-and-reviews",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-github-pr-dashboard",
-      "version": "0.3.3",
-      "originalAuthor": {
-        "name": "Muhammad Ahsan",
-        "github": "ahsan7162"
-      },
-      "originalRepo": "https://github.com/ahsan7162/bb-github-pr-dashboard",
-      "originalRef": "v0.3.3",
-      "originalCommit": "e1e1881a6beddb7419bf117c9bd1743ada73a22e",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-kujo",
-      "displayName": "Kujo",
-      "description": "Give VesnALIA the paper-and-ink design of Kujo, with hard edges and quiet background signal. Switch between light and dark palettes with matching code, diffs and terminal colors. Departure Mono and Tabler icons carry the technical details. Requires VesnALIA 0.43; no external account or service.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-kujo-af480bad.svg",
-      "iconPath": "plugins/bb-kujo/assets/kujo-mark.svg",
-      "category": "themes-and-appearance",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-kujo",
-      "version": "0.2.2",
-      "originalAuthor": {
-        "name": "Robert DeVore",
-        "github": "robertdevore"
-      },
-      "originalRepo": "https://github.com/kujolang/bb-kujo",
-      "originalRef": "v0.2.2",
-      "originalCommit": "cfe546fe5494209786552357bb253345f78a42e7",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-live",
-      "displayName": "VesnALIA Live",
-      "description": "Talk to VesnALIA while your agents work, then redirect threads or start new project work by voice. Keeps one voice session connected while you move through projects, focus threads, and hear task results in the transcript. Explicit new tasks can start project threads or go to the VesnALIA Operator for coordination, while consequential actions stay in VesnALIA's visual approval flow. Requires VesnALIA 0.43.1+, Git, npm, Node.js 22.19+, an OpenAI project with GPT-Live access, and microphone permission; OpenAI usage is billed separately.",
-      "icon": "Mic",
-      "category": "tasks-and-workflows",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-live",
-      "version": "0.1.1",
-      "originalAuthor": {
-        "name": "Jem",
-        "github": "jem-computer"
-      },
-      "originalRepo": "https://github.com/jem-computer/bb-live",
-      "originalRef": "v0.1.1",
-      "originalCommit": "34d3cf19360a84cbb2c35d7a75d3df9ffc64d29b",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-office",
-      "displayName": "VesnALIA Office",
-      "description": "Turns active VesnALIA threads into a draggable pixel-art office with live worker state, thread navigation, usage indicators, and agent-configurable behavior.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-office-201f84a0.svg",
-      "iconPath": "plugins/bb-office/assets/icon.svg",
-      "category": "thread-management",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-office",
-      "version": "1.0.1",
-      "originalAuthor": {
-        "name": "Michael Yong",
-        "github": "ymichael"
-      },
-      "originalRepo": "https://github.com/ymichael/bb-plugins",
-      "originalRef": "bb-office/v1.0.1",
-      "originalCommit": "6c5719ce22c33237f033653af244dcec494eae34",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-recap",
-      "displayName": "Recap",
-      "description": "Generates concise, display-only summaries for VesnALIA threads on demand or after they become idle.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-recap-2f018e6b.svg",
-      "iconPath": "plugins/bb-recap/assets/icon.svg",
-      "category": "thread-content",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-recap",
-      "version": "0.2.4",
-      "originalAuthor": {
-        "name": "MacHatter1",
-        "github": "MacHatter1"
-      },
-      "originalRepo": "https://github.com/MacHatter1/bb-recap",
-      "originalRef": "v0.2.4",
-      "originalCommit": "b6e8c3cd884508ab05448e018968a56af18ff814",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-rpiv-todo-renderer",
-      "displayName": "RPIV Todo",
-      "description": "Renders Pi rpiv-todo tasks in VesnALIA's native composer to-do panel.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bb-rpiv-todo-renderer-3665901c.svg",
-      "iconPath": "plugins/bb-rpiv-todo-renderer/assets/icon.svg",
-      "category": "thread-content",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-rpiv-todo-renderer",
-      "version": "0.1.2",
-      "originalAuthor": {
-        "name": "Zhen Huang",
-        "github": "ZhenHuangLab"
-      },
-      "originalRepo": "https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer",
-      "originalRef": "v0.1.2",
-      "originalCommit": "65684fd9d26afe926d1146f7a54a2f6718089ffd",
-      "license": "MIT"
-    },
-    {
-      "slug": "bb-sidebar",
-      "displayName": "VesnALIA Sidebar",
-      "description": "A sidebar inspired by T3 Code that adds manual and automatic thread sorting, collapsible shelves, and bulk actions to VesnALIA.",
-      "icon": "PanelLeft",
-      "category": "thread-management",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bb-sidebar",
-      "version": "0.3.11",
-      "originalAuthor": {
-        "name": "Yusuf Akbulut",
-        "github": "yusuf8834"
-      },
-      "originalRepo": "https://github.com/yusuf8834/bb-sidebar",
-      "originalRef": "v0.3.11",
-      "originalCommit": "8a55301983efe97e148c972b7f3b918fd068b503",
-      "license": "MIT"
-    },
-    {
-      "slug": "bbbbs",
-      "displayName": "aliaBBS",
-      "description": "Dial into a 1994-style bulletin board from VesnALIA to chat with other VesnALIA users and play classic multiplayer door games. Doors include Legend of the Red Dragon, Trade Wars 2, Usurper and Dice Warz, in shared worlds with daily turns and leaderboards. Your first call creates an account from a handle and a silly questionnaire; VesnALIA keeps the password, so there is no email or GitHub sign-in. Opted-in agents get their own [BOT] account and two tools to read the screen and press keys, limited to one chat line per 30 seconds and no board posts. Connects to the community server at bbs.gravytrain.ca, run by the author.",
-      "icon": "Terminal",
-      "category": "command-line",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bbbbs",
-      "version": "0.1.1",
-      "originalAuthor": {
-        "name": "Erik MacKinnon",
-        "github": "erikmackinnon"
-      },
-      "originalRepo": "https://github.com/erikmackinnon/bb-plugin-bbbbs",
-      "originalRef": "v0.1.1",
-      "originalCommit": "dd84fb9c5439fc0039b6a184fa35a2e18d9afe54",
-      "license": "MIT"
-    },
-    {
-      "slug": "bbium",
-      "displayName": "Bbium",
-      "description": "Click anything in VesnALIA without the mouse: press f, type the letter label, and VesnALIA clicks it. Labels cover sidebar threads, pickers, composer controls and hover-only message actions, and most stay one or two letters long. j and k scroll the chat, gg and G jump to its ends, and i puts the cursor back in the composer. Change hint letters, colors and fonts in settings or by asking an agent; changes apply live.",
-      "icon": "https://getbb.app/marketplace/v1/icons/bbium-13cf65ee.svg",
-      "iconPath": "plugins/bbium/icons/bbium.svg",
-      "category": "themes-and-appearance",
-      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
-      "ref": "main",
-      "subdir": "plugins/bbium",
-      "version": "0.1.5",
-      "originalAuthor": {
-        "name": "Andrej Kostal",
-        "github": "kuringer"
-      },
-      "originalRepo": "https://github.com/kuringer/bb-plugin-bbium",
-      "originalRef": "v0.1.5",
-      "originalCommit": "8c188913a656c4136ad0b881f94540b34f63c80c",
-      "license": "MIT"
-    },
-    {
       "slug": "beacon",
       "displayName": "Beacon",
       "description": "See CPU, memory, disk, and processes on the VesnALIA server from the footer. Optional toasts after a minute of high load. Network rates are Linux-only.",
@@ -1300,6 +1084,26 @@
       "originalRepo": "https://github.com/ahkohd/bb-plugin-beside",
       "originalRef": "v0.1.6",
       "originalCommit": "df5c6967582dcca5645cf32808d2b3e2daa65c24",
+      "license": "MIT"
+    },
+    {
+      "slug": "better-latex",
+      "displayName": "Better LaTeX",
+      "description": "Renders $...$ and leftover \\[...\\] / \\(...\\) math in VesnALIA chat.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-better-latex-8274bdfa.svg",
+      "iconPath": "plugins/better-latex/assets/icon.svg",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/better-latex",
+      "version": "0.2.8",
+      "originalAuthor": {
+        "name": "Zhen Huang",
+        "github": "ZhenHuangLab"
+      },
+      "originalRepo": "https://github.com/ZhenHuangLab/bb-better-latex",
+      "originalRef": "v0.2.8",
+      "originalCommit": "18dde22266c9e199d2e2294cf7c1f30c6a01cb51",
       "license": "MIT"
     },
     {
@@ -2594,7 +2398,7 @@
     },
     {
       "slug": "dashboard",
-      "displayName": "BBDesk",
+      "displayName": "VesnALIA Desk",
       "description": "Keep project conversations, live activity and application shortcuts in one workspace. Read and continue chats, search project history and switch conversations with bottom tabs. Track work and requests for attention across projects, open applications alongside your workspace and choose English or Russian. Requires VesnALIA 0.48+ and internet access for first-install dependencies; no separate service, account or API key.",
       "icon": "https://getbb.app/marketplace/v1/icons/dashboard-ede9c458.svg",
       "iconPath": "plugins/dashboard/assets/icon.svg",
@@ -3862,6 +3666,25 @@
       "license": "permission"
     },
     {
+      "slug": "github-pr-dashboard",
+      "displayName": "GitHub PR Dashboard",
+      "description": "See why each pull request is stuck, and get it unstuck, without leaving VesnALIA. My PRs lists your pull requests, review requests for you and your teams, the ones you reviewed, and assigned ones by repository, each with its +/- lines and led by what blocks it: failing CI down to the job, changes requested, unresolved comments, conflicts or a stack. Reviewed turns amber when the author pushes after your review. Open one for its reviewers and their verdicts, labels, and tabs: Overview (the description, then comments and reviews), Checks with error annotations, Files with syntax-highlighted diffs and review threads under their lines, Commits with the ones since your review marked, and Comments. Edit the title and description, comment on a line or range, reply, delete your own comments, submit a review, mark your draft ready, and close or reopen, each only when you click. A menu links the PR to a VesnALIA thread, asks about it, explains it, or sends every finding to an agent, starting in the PR's project; Fix with agent does it for one comment or failed job. Jira keys open in VesnALIA's My Jira plugin. Search, hide or fold repositories, move by keyboard, switch gh accounts, and get alerts when CI fails or someone comments. Uses the GitHub CLI login or a token; github.com only.",
+      "icon": "GitPullRequest",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/github-pr-dashboard",
+      "version": "0.3.3",
+      "originalAuthor": {
+        "name": "Muhammad Ahsan",
+        "github": "ahsan7162"
+      },
+      "originalRepo": "https://github.com/ahsan7162/bb-github-pr-dashboard",
+      "originalRef": "v0.3.3",
+      "originalCommit": "e1e1881a6beddb7419bf117c9bd1743ada73a22e",
+      "license": "MIT"
+    },
+    {
       "slug": "github-projects",
       "displayName": "GitHub Projects",
       "description": "Creates and imports GitHub repositories directly from VesnALIA's native project picker. Injects dedicated creation and import options into the project dropdown. Automatically initializes private repositories, clones locally, and registers projects in VesnALIA with one click. Also provides the VesnALIA gh-project CLI and agent skill.",
@@ -4840,6 +4663,26 @@
       "license": "MIT"
     },
     {
+      "slug": "kujo",
+      "displayName": "Kujo",
+      "description": "Give VesnALIA the paper-and-ink design of Kujo, with hard edges and quiet background signal. Switch between light and dark palettes with matching code, diffs and terminal colors. Departure Mono and Tabler icons carry the technical details. Requires VesnALIA 0.43; no external account or service.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-kujo-af480bad.svg",
+      "iconPath": "plugins/kujo/assets/kujo-mark.svg",
+      "category": "themes-and-appearance",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/kujo",
+      "version": "0.2.2",
+      "originalAuthor": {
+        "name": "Robert DeVore",
+        "github": "robertdevore"
+      },
+      "originalRepo": "https://github.com/kujolang/bb-kujo",
+      "originalRef": "v0.2.2",
+      "originalCommit": "cfe546fe5494209786552357bb253345f78a42e7",
+      "license": "MIT"
+    },
+    {
       "slug": "lame-duck",
       "displayName": "Lame duck",
       "description": "Make a busy VesnALIA server ready for maintenance while keeping new sends queued. Pause sends while active turns finish, and watch the active-thread and held-send counts in the sidebar. Resume queued work after the server restarts. Agents can manage the same flow through the VesnALIA CLI.",
@@ -5290,14 +5133,14 @@
       "license": "permission"
     },
     {
-      "slug": "matt-pocock-skills-for-bb",
+      "slug": "matt-pocock-skills-for-vesnalia",
       "displayName": "Matt Pocock skills for VesnALIA",
       "description": "Gives your agents Matt Pocock's engineering and productivity skills as slash commands, from test-first development to issue triage. Choose which skills each project gets, or turn them on only in the projects you pick; Matt's 6 experimental skills stay off until you opt in. A skill you already have keeps its name, and you can keep both, with Matt's as matt-pocock-<name>. Turning off a skill that another one needs asks first and names what else changes. New releases follow mattpocock/skills daily; some skills use Git or GitHub CLI, and no account is needed.",
       "icon": "Layers",
       "category": "code-and-reviews",
       "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
       "ref": "main",
-      "subdir": "plugins/matt-pocock-skills-for-bb",
+      "subdir": "plugins/matt-pocock-skills-for-vesnalia",
       "version": "0.1.6",
       "originalAuthor": {
         "name": "Erik MacKinnon",
@@ -7068,14 +6911,14 @@
       "license": "MIT"
     },
     {
-      "slug": "pstack-for-bb",
+      "slug": "pstack-for-vesnalia",
       "displayName": "pstack for VesnALIA",
       "description": "Use Lauren Tan's pstack skills in VesnALIA, synced daily from cursor/plugins with Cursor locations adapted for VesnALIA.",
       "icon": "Layers",
       "category": "code-and-reviews",
       "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
       "ref": "main",
-      "subdir": "plugins/pstack-for-bb",
+      "subdir": "plugins/pstack-for-vesnalia",
       "version": "0.1.13",
       "originalAuthor": {
         "name": "Erik MacKinnon",
@@ -7344,6 +7187,26 @@
       "license": "MIT"
     },
     {
+      "slug": "recap",
+      "displayName": "Recap",
+      "description": "Generates concise, display-only summaries for VesnALIA threads on demand or after they become idle.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-recap-2f018e6b.svg",
+      "iconPath": "plugins/recap/assets/icon.svg",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/recap",
+      "version": "0.2.4",
+      "originalAuthor": {
+        "name": "MacHatter1",
+        "github": "MacHatter1"
+      },
+      "originalRepo": "https://github.com/MacHatter1/bb-recap",
+      "originalRef": "v0.2.4",
+      "originalCommit": "b6e8c3cd884508ab05448e018968a56af18ff814",
+      "license": "MIT"
+    },
+    {
       "slug": "receipts",
       "displayName": "Receipts",
       "description": "Compare coding-agent token usage and estimated API cost in one dashboard. Switch between 7, 30 and 90 days, with daily charts and breakdowns by model, project and day. Reads Claude Code, Codex, Hermes Agent, OpenCode and Pi usage from the VesnALIA server machine. Optional Cursor support requires a signed-in Cursor desktop app and its dashboard service; estimates are not subscription invoices.",
@@ -7537,6 +7400,26 @@
       "license": "MIT"
     },
     {
+      "slug": "rpiv-todo-renderer",
+      "displayName": "RPIV Todo",
+      "description": "Renders Pi rpiv-todo tasks in VesnALIA's native composer to-do panel.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-rpiv-todo-renderer-3665901c.svg",
+      "iconPath": "plugins/rpiv-todo-renderer/assets/icon.svg",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/rpiv-todo-renderer",
+      "version": "0.1.2",
+      "originalAuthor": {
+        "name": "Zhen Huang",
+        "github": "ZhenHuangLab"
+      },
+      "originalRepo": "https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer",
+      "originalRef": "v0.1.2",
+      "originalCommit": "65684fd9d26afe926d1146f7a54a2f6718089ffd",
+      "license": "MIT"
+    },
+    {
       "slug": "rtk",
       "displayName": "Rtk",
       "description": "Agent-invoked shell tool — rewrites commands through the external rtk CLI for filtered output on verbose builds, tests, and git diffs. Requires the rtk CLI; unrestricted shell access.",
@@ -7598,7 +7481,7 @@
     {
       "slug": "screen-sharing",
       "displayName": "Screen Sharing",
-      "description": "See and control the screens of your Macs from inside VesnALIA, at your desk or from anywhere through your getbb.app address. A sidebar page shows each Mac connected to your VesnALIA with whether its Screen Sharing is on, and opens its screen in the page for your keyboard and mouse. Sessions to several Macs can be open at once, with View only, Send keys for shortcuts such as Command-Tab, Full screen, and a Clipboard menu that sends text either way or keeps both clipboards in sync, for the macOS account VesnALIA runs as on that Mac. Every new session asks for that Mac's own macOS user name and password, which VesnALIA never keeps, and a Close all pill ends every session at once. Requires VesnALIA 0.47 or later and macOS, with Screen Sharing turned on by you in System Settings on each Mac; it relies on experimental VesnALIA plugin APIs that may change between VesnALIA releases.",
+      "description": "See and control the screens of your Macs from inside VesnALIA, at your desk or from anywhere through remote access. A sidebar page shows each Mac connected to your VesnALIA with whether its Screen Sharing is on, and opens its screen in the page for your keyboard and mouse. Sessions to several Macs can be open at once, with View only, Send keys for shortcuts such as Command-Tab, Full screen, and a Clipboard menu that sends text either way or keeps both clipboards in sync, for the macOS account VesnALIA runs as on that Mac. Every new session asks for that Mac's own macOS user name and password, which VesnALIA never keeps, and a Close all pill ends every session at once. Requires VesnALIA 0.47 or later and macOS, with Screen Sharing turned on by you in System Settings on each Mac; it relies on experimental VesnALIA plugin APIs that may change between VesnALIA releases.",
       "icon": "https://getbb.app/marketplace/v1/icons/screen-sharing-e6061524.svg",
       "iconPath": "plugins/screen-sharing/icons/screen-share.svg",
       "category": "utilities",
@@ -9688,6 +9571,123 @@
       "originalRepo": "https://github.com/divyesh-puri/bb-plugin-vercel-theme",
       "originalRef": "v0.1.0",
       "originalCommit": "855b0dfcfd78f13f8f5ff753617085ea3e79800d",
+      "license": "MIT"
+    },
+    {
+      "slug": "vesnalia-agent-toolbox",
+      "displayName": "VesnALIA Agent Toolbox",
+      "description": "Gives any coding agent (opencode, Prime Agent, Google Antigravity, Codex, Claude Code, and more) direct tools for VesnALIA: read and edit workspace files, inspect and message other threads, delegate work by spawning threads, and see running terminals.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-agent-toolbox-7ffa1afd.svg",
+      "iconPath": "plugins/vesnalia-agent-toolbox/icons/alia-agent-toolbox.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/vesnalia-agent-toolbox",
+      "version": "0.2.2",
+      "originalAuthor": {
+        "name": "rawizhere",
+        "github": "rawizhere"
+      },
+      "originalRepo": "https://github.com/rawizhere/bb-plugin-bb-agent-toolbox",
+      "originalRef": "v0.2.2",
+      "originalCommit": "1142e110f24949b195f8fd2b19f533a07b352bd9",
+      "license": "MIT"
+    },
+    {
+      "slug": "vesnalia-bbs",
+      "displayName": "VesnALIA BBS",
+      "description": "Dial into a 1994-style bulletin board from VesnALIA to chat with other VesnALIA users and play classic multiplayer door games. Doors include Legend of the Red Dragon, Trade Wars 2, Usurper and Dice Warz, in shared worlds with daily turns and leaderboards. Your first call creates an account from a handle and a silly questionnaire; VesnALIA keeps the password, so there is no email or GitHub sign-in. Opted-in agents get their own [BOT] account and two tools to read the screen and press keys, limited to one chat line per 30 seconds and no board posts. Connects to the community server at bbs.gravytrain.ca, run by the author.",
+      "icon": "Terminal",
+      "category": "command-line",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/vesnalia-bbs",
+      "version": "0.1.1",
+      "originalAuthor": {
+        "name": "Erik MacKinnon",
+        "github": "erikmackinnon"
+      },
+      "originalRepo": "https://github.com/erikmackinnon/bb-plugin-bbbbs",
+      "originalRef": "v0.1.1",
+      "originalCommit": "dd84fb9c5439fc0039b6a184fa35a2e18d9afe54",
+      "license": "MIT"
+    },
+    {
+      "slug": "vesnalia-box",
+      "displayName": "VesnALIA Box",
+      "description": "Give each thread its own Linux, Windows or macOS computer, or an iPhone or Android device, shared with its agent. You and the agent use the same desktop or terminal in VesnALIA's panel, and the agent waits while you have control. On the backends that support it, a snapshot saves a box before a risky change, and a restore with an undo or a fork brings it back. Boxes run on Docker, microsandbox, Proxmox, Tart on your Macs, or your own machines over SSH; Hetzner Cloud, Namespace and boat.dev need an account and bill you for what boxes use. Not a sandbox: VesnALIA Box assumes one trusted user.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-box-daf167ac.svg",
+      "iconPath": "plugins/vesnalia-box/assets/icon.svg",
+      "category": "cloud-and-remote",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/vesnalia-box",
+      "version": "0.2.9",
+      "originalAuthor": {
+        "name": "Victor Aremu",
+        "github": "ahkohd"
+      },
+      "originalRepo": "https://github.com/ahkohd/bb-box",
+      "originalRef": "v0.2.9",
+      "originalCommit": "6ff172080a714ff92b4e64ba14a691fd9b636aa1",
+      "license": "MIT"
+    },
+    {
+      "slug": "vesnalia-live",
+      "displayName": "VesnALIA Live",
+      "description": "Talk to VesnALIA while your agents work, then redirect threads or start new project work by voice. Keeps one voice session connected while you move through projects, focus threads, and hear task results in the transcript. Explicit new tasks can start project threads or go to the VesnALIA Operator for coordination, while consequential actions stay in VesnALIA's visual approval flow. Requires VesnALIA 0.43.1+, Git, npm, Node.js 22.19+, an OpenAI project with GPT-Live access, and microphone permission; OpenAI usage is billed separately.",
+      "icon": "Mic",
+      "category": "tasks-and-workflows",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/vesnalia-live",
+      "version": "0.1.1",
+      "originalAuthor": {
+        "name": "Jem",
+        "github": "jem-computer"
+      },
+      "originalRepo": "https://github.com/jem-computer/bb-live",
+      "originalRef": "v0.1.1",
+      "originalCommit": "34d3cf19360a84cbb2c35d7a75d3df9ffc64d29b",
+      "license": "MIT"
+    },
+    {
+      "slug": "vesnalia-office",
+      "displayName": "VesnALIA Office",
+      "description": "Turns active VesnALIA threads into a draggable pixel-art office with live worker state, thread navigation, usage indicators, and agent-configurable behavior.",
+      "icon": "https://getbb.app/marketplace/v1/icons/bb-office-201f84a0.svg",
+      "iconPath": "plugins/vesnalia-office/assets/icon.svg",
+      "category": "thread-management",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/vesnalia-office",
+      "version": "1.0.1",
+      "originalAuthor": {
+        "name": "Michael Yong",
+        "github": "ymichael"
+      },
+      "originalRepo": "https://github.com/ymichael/bb-plugins",
+      "originalRef": "bb-office/v1.0.1",
+      "originalCommit": "6c5719ce22c33237f033653af244dcec494eae34",
+      "license": "MIT"
+    },
+    {
+      "slug": "vesnalia-sidebar",
+      "displayName": "VesnALIA Sidebar",
+      "description": "A sidebar inspired by T3 Code that adds manual and automatic thread sorting, collapsible shelves, and bulk actions to VesnALIA.",
+      "icon": "PanelLeft",
+      "category": "thread-management",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/vesnalia-sidebar",
+      "version": "0.3.11",
+      "originalAuthor": {
+        "name": "Yusuf Akbulut",
+        "github": "yusuf8834"
+      },
+      "originalRepo": "https://github.com/yusuf8834/bb-sidebar",
+      "originalRef": "v0.3.11",
+      "originalCommit": "8a55301983efe97e148c972b7f3b918fd068b503",
       "license": "MIT"
     },
     {

@@ -27,10 +27,12 @@
 | agentic-mermaid | bottlebrushes (github.com/bottlebrushes) | https://github.com/bottlebrushes/bb-plugin-agentic-mermaid | v0.1.0 `303c47770462` | MIT |
 | aif-chat | ichinya (github.com/ichinya) | https://github.com/ichinya/bb-aif-helper | v0.8.0 `e99cfefed5f4` | permission |
 | airbender | Mikhail Turilin (github.com/mturilin) | https://github.com/mturilin/airbender | v0.2.0 `08fec5198e6a` | GPL-3.0 (в package.json указано "GPL-3.0-only", в репозитории GPL-3.0) |
+| alium | Andrej Kostal (github.com/kuringer) | https://github.com/kuringer/bb-plugin-bbium | v0.1.5 `8c188913a656` | MIT |
 | android-emulator | Nicolay I (github.com/nicolay-i) | https://github.com/nicolay-i/bb-plugin-android-emulator | v0.1.3 `50355119c3de` | MIT |
 | animation | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-plugin-animation | v0.1.2 `91aa9b3a0a4c` | MIT |
 | antigravity | Amr Tawfik (github.com/amrtawfik160) | https://github.com/amrtawfik160/bb-plugin-antigravity | v0.2.1 `686d8adb4a49` | permission |
 | antigravity-cli | dionis-d (github.com/dionis-d) | https://github.com/ols-md/bb-plugin-antigravity | v0.1.7 `9a83545619a7` | MIT |
+| antigravity-usage | defacid (github.com/defacid) | https://github.com/defacid/bb-antigravity-usage | v0.1.5 `3ceda5e32eee` | MIT |
 | app-preview | Hung Vinh (github.com/hungv47) | https://github.com/hungv47/bb-plugin-app-preview (app) | v0.2.9 `daea8cba1b6e` | permission |
 | arc-switcher | Elliott McNary (github.com/bighitbiker3) | https://github.com/bighitbiker3/bb-plugin-arc-switcher | v0.1.0 `76a64ea6738f` | permission |
 | archive-section | Nikos Benakis (github.com/NickolasBenakis) | https://github.com/NickolasBenakis/bb-plugin-archive-section | v0.1.0 `433c6b306a5a` | MIT |
@@ -50,6 +52,7 @@
 | auto-router | Mahmoud Elsayad (github.com/MahmoudElsayad) | https://github.com/MahmoudElsayad/bb-model-pilot | v0.4.5 `642532db26d4` | MIT |
 | automation-groups | Dmitrii Kapustin (github.com/dmitriikapustin) | https://github.com/dmitriikapustin/bb-plugins-by-kapustin (plugins/automation-groups) | automation-groups/v0.1.0 `d862257ba1fa` | MIT |
 | automation-palette | Daniel Bachhuber (github.com/danielbachhuber) | https://github.com/danielbachhuber/bb-plugins (bb-plugin-automation-palette) | automation-palette/v0.1.2 `c20341c5fa50` | permission |
+| autoresearch | Pascal de Ladurantaye (github.com/pascal-de-ladurantaye) | https://github.com/pascal-de-ladurantaye/bb-autoresearch | v1.0.2 `339c9343a4a4` | MIT |
 | autoresearch-self-loop | Oleg (github.com/zom-2018) | https://github.com/zom-2018/bb-plugin-autoresearch-self-loop | v0.1.0 `7186fb1a2f5e` | MIT |
 | autorouter | Jacob Miller (github.com/jjcm) | https://github.com/jjcm/bb-plugin-autorouter | v0.2.1 `edb0c26cdfa0` | permission |
 | aws-activate-usage | Aidar Karimov (github.com/aidarkarimov) | https://github.com/aidarkarimov/bb-plugin-aws-activate-usage | v0.1.4 `ed9845507eb1` | MIT |
@@ -58,25 +61,11 @@
 | ballast | Braedon Saunders (github.com/braedonsaunders) | https://github.com/braedonsaunders/bb-plugin-ballast | v0.1.4 `1ee2a84823e8` | permission (в package.json указано "MIT", в репозитории permission) |
 | bang-shell | JonniK (github.com/JonniK) | https://github.com/jonnik-bb-plugins/bb-plugin-bang-shell | v0.3.0 `cb2a875ece1f` | permission |
 | battery | Dmitrii Maksimov (github.com/kartollikaa) | https://github.com/kartollikaa/bb-plugins (plugins/battery) | battery/v0.1.0 `32e33c976aa9` | permission (в package.json указано "MIT", в репозитории permission) |
-| bb-agent-toolbox | rawizhere (github.com/rawizhere) | https://github.com/rawizhere/bb-plugin-bb-agent-toolbox | v0.2.2 `1142e110f249` | MIT |
-| bb-antigravity-usage | defacid (github.com/defacid) | https://github.com/defacid/bb-antigravity-usage | v0.1.5 `3ceda5e32eee` | MIT |
-| bb-autoresearch | Pascal de Ladurantaye (github.com/pascal-de-ladurantaye) | https://github.com/pascal-de-ladurantaye/bb-autoresearch | v1.0.2 `339c9343a4a4` | MIT |
-| bb-better-latex | Zhen Huang (github.com/ZhenHuangLab) | https://github.com/ZhenHuangLab/bb-better-latex | v0.2.8 `18dde22266c9` | MIT |
-| bb-box | Victor Aremu (github.com/ahkohd) | https://github.com/ahkohd/bb-box | v0.2.9 `6ff172080a71` | MIT |
-| bb-copilot-usage | defacid (github.com/defacid) | https://github.com/defacid/bb-copilot-usage | v0.1.2 `827fe84a2e9d` | MIT |
-| bb-github-pr-dashboard | Muhammad Ahsan (github.com/ahsan7162) | https://github.com/ahsan7162/bb-github-pr-dashboard | v0.3.3 `e1e1881a6bed` | MIT |
-| bb-kujo | Robert DeVore (github.com/robertdevore) | https://github.com/kujolang/bb-kujo | v0.2.2 `cfe546fe5494` | MIT |
-| bb-live | Jem (github.com/jem-computer) | https://github.com/jem-computer/bb-live | v0.1.1 `34d3cf19360a` | MIT |
-| bb-office | Michael Yong (github.com/ymichael) | https://github.com/ymichael/bb-plugins (plugins/bb-office) | bb-office/v1.0.1 `6c5719ce22c3` | MIT |
-| bb-recap | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-recap | v0.2.4 `b6e8c3cd8845` | MIT |
-| bb-rpiv-todo-renderer | Zhen Huang (github.com/ZhenHuangLab) | https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer | v0.1.2 `65684fd9d26a` | MIT |
-| bb-sidebar | Yusuf Akbulut (github.com/yusuf8834) | https://github.com/yusuf8834/bb-sidebar | v0.3.11 `8a55301983ef` | MIT |
-| bbbbs | Erik MacKinnon (github.com/erikmackinnon) | https://github.com/erikmackinnon/bb-plugin-bbbbs | v0.1.1 `dd84fb9c5439` | MIT |
-| bbium | Andrej Kostal (github.com/kuringer) | https://github.com/kuringer/bb-plugin-bbium | v0.1.5 `8c188913a656` | MIT |
 | beacon | Johan Gafaro (github.com/g4f4r0) | https://github.com/g4f4r0/bb-plugins (bb-plugin-beacon) | beacon/v0.1.3 `6af00945c3c1` | permission |
 | beads | Jehu (github.com/Jehu) | https://github.com/Jehu/bb-plugin-beads | v0.1.0 `fbe228459344` | MIT |
 | beautiful-chat | Diip3sh (github.com/diip3sh) | https://github.com/diip3sh/bb-plugin-beautiful-chat | v0.1.2 `f0c0220082f7` | MIT |
 | beside | Victor Aremu (github.com/ahkohd) | https://github.com/ahkohd/bb-plugin-beside | v0.1.6 `df5c6967582d` | MIT |
+| better-latex | Zhen Huang (github.com/ZhenHuangLab) | https://github.com/ZhenHuangLab/bb-better-latex | v0.2.8 `18dde22266c9` | MIT |
 | boat | Not Quite Unicorns (github.com/georgecollier-nqu) | https://github.com/Not-Quite-Unicorns/bb-plugin-boat | v0.3.1 `c751230b61d2` | MIT |
 | bookmarks | Yurii Rebryk (github.com/rebryk) | https://github.com/rebryk/bb-plugins (bookmarks) | bookmarks/v0.1.1 `baae20ce5e0f` | permission |
 | bots | Prakash Chokalingam (github.com/prakashchokalingam) | https://github.com/prakashchokalingam/bb-plugin-bots | v1.3.0 `3949b3d3ad2d` | MIT |
@@ -140,6 +129,7 @@
 | context-meter | Roger Serra (github.com/Hazihell) | https://github.com/Hazihell/bb-plugin-context-meter | v0.1.6 `78008be560d8` | permission (в package.json указано "MIT", в репозитории permission) |
 | copilot-aic-usage | Tasi Balázs (github.com/balazstasi) | https://github.com/balazstasi/bb-plugin-copilot-aic-usage | v0.1.1 `67ecde4d54a6` | MIT |
 | copilot-session-credits | Lalit Rao (github.com/lalitjeevanrao) | https://github.com/lalitjeevanrao/bb-plugins (packages/bb-plugin-copilot-session-credits) | v0.3.4 `3654c14cecef` | MIT |
+| copilot-usage | defacid (github.com/defacid) | https://github.com/defacid/bb-copilot-usage | v0.1.2 `827fe84a2e9d` | MIT |
 | copy-session-id | Patrick Lee (github.com/patleeman) | https://github.com/patleeman/bb-plugins (packages/bb-plugin-copy-session-id) | copy-session-id/v0.1.1 `05c933a272b7` | permission |
 | cortado | Vedran Burojević (github.com/vburojevic) | https://github.com/vburojevic/bb-plugin-cortado | v1.0.0 `8a853eb00f65` | MIT |
 | crew | sajov (github.com/sajov) | https://github.com/sajov/bb-plugins (bb-plugin-crew) | crew/v0.1.1 `70d89a913f8c` | MIT |
@@ -220,6 +210,7 @@
 | github-board | Gustavo Ambrozio (github.com/gpambrozio) | https://github.com/gpambrozio/bb-plugins (github-board) | github-board/v0.6.1 `5404a980d7a0` | MIT |
 | github-extended | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-plugin-github-extended | v0.1.3 `2b41a72c8c66` | MIT |
 | github-folder | Dmitrii Maksimov (github.com/kartollikaa) | https://github.com/kartollikaa/bb-plugins (plugins/github-folder) | github-folder/v0.1.0 `3943d870efd4` | permission (в package.json указано "MIT", в репозитории permission) |
+| github-pr-dashboard | Muhammad Ahsan (github.com/ahsan7162) | https://github.com/ahsan7162/bb-github-pr-dashboard | v0.3.3 `e1e1881a6bed` | MIT |
 | github-projects | bottlebrushes (github.com/bottlebrushes) | https://github.com/bottlebrushes/bb-plugin-github-projects | v0.1.0 `8d80fd13e686` | permission |
 | gitlab | Marius Nouchet (github.com/suiramdev) | https://github.com/suiramdev/bb-plugin-gitlab | v0.1.2 `0938f296bc5b` | MIT |
 | gitlab-interface-notion-style | Max Kosach (github.com/KosachMax) | https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style | v1.3.3 `a3e61e8601d0` | MIT |
@@ -280,6 +271,7 @@
 | kimi-usage | Vladislav Chmelyuk (github.com/fgbm) | https://github.com/fgbm/bb-plugin-kimi-usage | v0.2.1 `a7799231fb5c` | MIT |
 | kodaforge | Kodaks94 (github.com/Kodaks94) | https://github.com/Kodaks94/bb-plugin-kodaforge | v0.7.0 `e0f3ec995b2e` | MIT |
 | korey | Shortcut (github.com/charpeni) | https://github.com/useshortcut/bb-plugin-korey | v1.1.0 `a3165c0bbe68` | MIT |
+| kujo | Robert DeVore (github.com/robertdevore) | https://github.com/kujolang/bb-kujo | v0.2.2 `cfe546fe5494` | MIT |
 | lame-duck | Michael Yong (github.com/ymichael) | https://github.com/ymichael/bb-plugins (plugins/lame-duck) | lame-duck/v0.1.0 `fb10cb11254a` | MIT |
 | launchd-jobs | Gustavo Ambrozio (github.com/gpambrozio) | https://github.com/gpambrozio/bb-plugins (launchd-jobs) | launchd-jobs/v0.3.1 `ea26fcf27eec` | MIT |
 | lavender | Mateo Cerquetella (github.com/MateoCerquetella) | https://github.com/MateoCerquetella/bb-plugins (plugins/lavender) | lavender/v0.1.0 `2917e3b4fb64` | MIT |
@@ -305,7 +297,7 @@
 | mane-control | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-plugin-mane-control | v0.1.2 `9a08fbf08052` | MIT (файла лицензии нет на v0.1.2; текст взят с ветки по умолчанию (коммит 518f559e257cb4bade45bcd26c6a9cdb5bc36ce8)) |
 | markdown-editor | Daniel Bachhuber (github.com/danielbachhuber) | https://github.com/danielbachhuber/bb-plugins (bb-plugin-markdown-editor) | markdown-editor/v0.2.1 `a19866ae3e29` | permission |
 | markdown-reader | koenvg (github.com/koenvg) | https://github.com/koenvg/bb-plugins (bb-plugin-markdown-reader) | markdown-reader/v0.1.0 `49a194105ced` | permission (в package.json указано "MIT", в репозитории permission) |
-| matt-pocock-skills-for-bb | Erik MacKinnon (github.com/erikmackinnon) | https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb | v0.1.6 `5057eb30fd60` | MIT |
+| matt-pocock-skills-for-vesnalia | Erik MacKinnon (github.com/erikmackinnon) | https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb | v0.1.6 `5057eb30fd60` | MIT |
 | mattermost | Oddship (github.com/rhnvrm) | https://github.com/oddship/bb-plugins (plugins/mattermost) | mattermost/v0.4.0 `808c188fd1fc` | permission |
 | maxwell | Mikołaj Nowak (github.com/m3nowak) | https://github.com/m3nowak/bb-plugin-maxwell | v0.1.0 `2f37df53013c` | permission (в package.json указано "MIT", в репозитории permission) |
 | mcp-hub | Vladislav Chmelyuk (github.com/fgbm) | https://github.com/fgbm/bb-plugin-mcp-hub | v0.1.0 `32da66b04f80` | permission (в package.json указано "MIT", в репозитории permission) |
@@ -411,7 +403,7 @@
 | provider-retry-advanced | Sergey Baus (github.com/neoromantic) | https://github.com/neoromantic/bb-plugin-provider-retry-advanced | v0.2.1 `21d0fd6157ac` | MIT |
 | provider-usage | Braedon Saunders (github.com/braedonsaunders) | https://github.com/braedonsaunders/bb-plugin-provider-usage | v0.15.1 `203cf676fc65` | MIT |
 | pstack | WYEZ (github.com/wy3z) | https://github.com/wy3z/bb-plugin-pstack | v0.1.0 `7f3882b9fd49` | MIT |
-| pstack-for-bb | Erik MacKinnon (github.com/erikmackinnon) | https://github.com/erikmackinnon/bb-plugin-pstack-for-bb | v0.1.13 `701c50207f1a` | permission (в package.json указано "MIT", в репозитории permission) |
+| pstack-for-vesnalia | Erik MacKinnon (github.com/erikmackinnon) | https://github.com/erikmackinnon/bb-plugin-pstack-for-bb | v0.1.13 `701c50207f1a` | permission (в package.json указано "MIT", в репозитории permission) |
 | pulse | Steve Frost (github.com/steveafrost) | https://github.com/steveafrost/bb-plugin-pulse | v0.1.23 `5f03f926bf80` | MIT |
 | px0 | Kavii Suri (github.com/KaviiSuri) | https://github.com/KaviiSuri/bb-plugin-px0 | v0.1.3 `9c25f947fc57` | permission (в package.json указано "MIT", в репозитории permission) |
 | px0-review | Oddship (github.com/rhnvrm) | https://github.com/oddship/bb-plugins (plugins/px0-review) | px0-review/v0.1.1 `7d415870acba` | permission |
@@ -426,6 +418,7 @@
 | radar-sidebar | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-plugin-radar-sidebar | v0.5.3 `9a20bfab7ec1` | MIT |
 | read-aloud | Chris Sells (github.com/csells) | https://github.com/csells/bb-plugins (plugins/read-aloud) | read-aloud/v0.1.4 `074e0723fdef` | MIT |
 | realtime-gateway | Steve Frost (github.com/steveafrost) | https://github.com/steveafrost/bb-plugin-realtime-gateway | v0.1.1 `c174a718ef3c` | MIT |
+| recap | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-recap | v0.2.4 `b6e8c3cd8845` | MIT |
 | receipts | Christopher Böbel (github.com/ChrBoebel) | https://github.com/ChrBoebel/bb-plugin-receipts | v0.1.1 `8410b3490f90` | MIT |
 | reclaim | Braedon Saunders (github.com/braedonsaunders) | https://github.com/braedonsaunders/bb-plugin-reclaim | v0.1.2 `6de860d75f81` | MIT |
 | references | Ivan Afanasov (github.com/VanDalkvist) | https://github.com/VanDalkvist/bb-plugin-references | v0.1.3 `d1f1b1868b9f` | permission |
@@ -436,6 +429,7 @@
 | rewind | MacHatter1 (github.com/MacHatter1) | https://github.com/MacHatter1/bb-plugin-rewind | v0.1.2 `c9bdd39bef58` | MIT |
 | role-picker | Dmitrii Kapustin (github.com/dmitriikapustin) | https://github.com/dmitriikapustin/bb-plugins-by-kapustin (plugins/role-picker) | role-picker/v0.1.0 `d862257ba1fa` | MIT |
 | route | lanjak (github.com/lanjak) | https://github.com/lanjak/bb-plugin-route | v0.1.0 `8efd98bbe6bb` | MIT |
+| rpiv-todo-renderer | Zhen Huang (github.com/ZhenHuangLab) | https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer | v0.1.2 `65684fd9d26a` | MIT |
 | rtk | prismatic7 (github.com/prismatic7) | https://github.com/prismatic7/bb-plugin-rtk | v0.2.1 `9d68b55f6a02` | permission |
 | save-my-model | Mateo Cerquetella (github.com/MateoCerquetella) | https://github.com/MateoCerquetella/bb-plugins (plugins/save-my-model) | save-my-model/v0.1.3 `f9836254c028` | MIT |
 | scoped-skills | Pritam Sharma (github.com/notpritam) | https://github.com/notpritam/bb-plugin-scoped-skills | v0.2.1 `468c5f115261` | MIT |
@@ -552,6 +546,12 @@
 | variaq | Aaron Phifer (github.com/aaronphifer) | https://github.com/aaronphifer/bb-plugin-variaq | v0.6.1 `f9cedeebfd10` | Apache-2.0 |
 | vcs-widget | Costa Fotiadis (github.com/CostaFot) | https://github.com/CostaFot/bb-plugin-vcs-widget | v0.7.0 `79d851b02714` | MIT |
 | vercel-theme | Divyesh Puri (github.com/divyesh-puri) | https://github.com/divyesh-puri/bb-plugin-vercel-theme | v0.1.0 `855b0dfcfd78` | MIT |
+| vesnalia-agent-toolbox | rawizhere (github.com/rawizhere) | https://github.com/rawizhere/bb-plugin-bb-agent-toolbox | v0.2.2 `1142e110f249` | MIT |
+| vesnalia-bbs | Erik MacKinnon (github.com/erikmackinnon) | https://github.com/erikmackinnon/bb-plugin-bbbbs | v0.1.1 `dd84fb9c5439` | MIT |
+| vesnalia-box | Victor Aremu (github.com/ahkohd) | https://github.com/ahkohd/bb-box | v0.2.9 `6ff172080a71` | MIT |
+| vesnalia-live | Jem (github.com/jem-computer) | https://github.com/jem-computer/bb-live | v0.1.1 `34d3cf19360a` | MIT |
+| vesnalia-office | Michael Yong (github.com/ymichael) | https://github.com/ymichael/bb-plugins (plugins/bb-office) | bb-office/v1.0.1 `6c5719ce22c3` | MIT |
+| vesnalia-sidebar | Yusuf Akbulut (github.com/yusuf8834) | https://github.com/yusuf8834/bb-sidebar | v0.3.11 `8a55301983ef` | MIT |
 | vesper | Dillion Verma (github.com/dillionverma) | https://github.com/dillionverma/bb-plugin-vesper | v1.0.0 `79f578a06fa3` | MIT |
 | vim | John Debay (github.com/jad) | https://github.com/jad/bb-plugin-vim | v0.1.0 `0c4a253de188` | permission |
 | visual-workflows | Dmitrii Kapustin (github.com/dmitriikapustin) | https://github.com/dmitriikapustin/bb-plugins-by-kapustin (plugins/visual-workflows) | visual-workflows/v0.1.0 `d862257ba1fa` | MIT |

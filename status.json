@@ -335,6 +335,20 @@
     ],
     "residualBbRefs": 0
   },
+  "alium": {
+    "id": "alium",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "android-emulator": {
     "id": "android-emulator",
     "builds": true,
@@ -397,6 +411,22 @@
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
     ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "antigravity-usage": {
+    "id": "antigravity-usage",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": null,
+      "server": "ok",
+      "host": "ok"
+    },
+    "fixes": [
+      "имя пакета alia-antigravity-usage даёт id \"alia-antigravity-usage\", переименовано в alia-plugin-bb-antigravity-usage"
+    ],
+    "problems": [],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -696,6 +726,27 @@
     "warnings": [],
     "residualBbRefs": 4
   },
+  "autoresearch": {
+    "id": "autoresearch",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
+    },
+    "fixes": [
+      "имя пакета alia-autoresearch даёт id \"alia-autoresearch\", переименовано в alia-plugin-bb-autoresearch",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [],
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
+      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr"
+    ],
+    "residualBbRefs": 6
+  },
   "autoresearch-self-loop": {
     "id": "autoresearch-self-loop",
     "builds": true,
@@ -815,274 +866,6 @@
     "warnings": [],
     "residualBbRefs": 0
   },
-  "bb-agent-toolbox": {
-    "id": "bb-agent-toolbox",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": null,
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "имя пакета alia-plugin-alia-agent-toolbox даёт id \"alia-agent-toolbox\", переименовано в alia-plugin-bb-agent-toolbox",
-      "переименовано файлов с bb в имени: 1"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-antigravity-usage": {
-    "id": "bb-antigravity-usage",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": null,
-      "server": "ok",
-      "host": "ok"
-    },
-    "fixes": [
-      "имя пакета alia-antigravity-usage даёт id \"alia-antigravity-usage\", переименовано в alia-plugin-bb-antigravity-usage"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-autoresearch": {
-    "id": "bb-autoresearch",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": "ok"
-    },
-    "fixes": [
-      "имя пакета alia-autoresearch даёт id \"alia-autoresearch\", переименовано в alia-plugin-bb-autoresearch",
-      "переименовано файлов с bb в имени: 1"
-    ],
-    "problems": [],
-    "warnings": [
-      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
-      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr"
-    ],
-    "residualBbRefs": 6
-  },
-  "bb-better-latex": {
-    "id": "bb-better-latex",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "имя пакета alia-better-latex даёт id \"alia-better-latex\", переименовано в alia-plugin-bb-better-latex"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-box": {
-    "id": "bb-box",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": "ok"
-    },
-    "fixes": [
-      "имя пакета alia-plugin-alia-box даёт id \"alia-box\", переименовано в alia-plugin-bb-box",
-      "переименовано файлов с bb в имени: 34"
-    ],
-    "problems": [],
-    "warnings": [
-      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-      "app.tsx:8: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contro",
-      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr",
-      "app.tsx:13: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr",
-      "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr"
-    ],
-    "residualBbRefs": 0
-  },
-  "bb-copilot-usage": {
-    "id": "bb-copilot-usage",
-    "builds": false,
-    "state": "needs-sdk",
-    "parts": {
-      "app": null,
-      "server": null,
-      "host": null
-    },
-    "fixes": [
-      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "имя пакета alia-copilot-usage даёт id \"alia-copilot-usage\", переименовано в alia-plugin-bb-copilot-usage"
-    ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-github-pr-dashboard": {
-    "id": "bb-github-pr-dashboard",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "имя пакета alia-github-pr-dashboard даёт id \"alia-github-pr-dashboard\", переименовано в alia-plugin-bb-github-pr-dashboard"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-kujo": {
-    "id": "bb-kujo",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "имя пакета alia-kujo даёт id \"alia-kujo\", переименовано в alia-plugin-bb-kujo",
-      "переименовано файлов с bb в имени: 4"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-live": {
-    "id": "bb-live",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "имя пакета alia-plugin-alia-live даёт id \"alia-live\", переименовано в alia-plugin-bb-live",
-      "переименовано файлов с bb в имени: 1"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-office": {
-    "id": "bb-office",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "имя пакета alia-plugin-alia-office даёт id \"alia-office\", переименовано в alia-plugin-bb-office",
-      "переименовано файлов с bb в имени: 1"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-recap": {
-    "id": "bb-recap",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "имя пакета alia-recap даёт id \"alia-recap\", переименовано в alia-plugin-bb-recap",
-      "переименовано файлов с bb в имени: 1"
-    ],
-    "problems": [],
-    "warnings": [
-      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
-      "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
-      "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-    ],
-    "residualBbRefs": 0
-  },
-  "bb-rpiv-todo-renderer": {
-    "id": "bb-rpiv-todo-renderer",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [
-      "имя пакета alia-rpiv-todo-renderer даёт id \"alia-rpiv-todo-renderer\", переименовано в alia-plugin-bb-rpiv-todo-renderer"
-    ],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bb-sidebar": {
-    "id": "bb-sidebar",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": "ok"
-    },
-    "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "имя пакета alia-plugin-alia-sidebar даёт id \"alia-sidebar\", переименовано в alia-plugin-bb-sidebar",
-      "переименовано файлов с bb в имени: 7"
-    ],
-    "problems": [],
-    "warnings": [
-      "app.tsx:9: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registr"
-    ],
-    "residualBbRefs": 0
-  },
-  "bbbbs": {
-    "id": "bbbbs",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
-  "bbium": {
-    "id": "bbium",
-    "builds": true,
-    "state": "ok",
-    "parts": {
-      "app": "ok",
-      "server": "ok",
-      "host": null
-    },
-    "fixes": [],
-    "problems": [],
-    "warnings": [],
-    "residualBbRefs": 0
-  },
   "beacon": {
     "id": "beacon",
     "builds": true,
@@ -1141,6 +924,22 @@
     "warnings": [
       "src/SidebarRow.tsx:12: experimental_useSidebarThreadPullRequest is retired from @vesnalia/plugin-sdk/app. Existing plugins remain supported. Render <experimental_ThreadRowMetadata thread={thread} /> in the row to draw alia's pull request badge, or read pull requests from the GitHub PR Status plugin:"
     ],
+    "residualBbRefs": 0
+  },
+  "better-latex": {
+    "id": "better-latex",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-better-latex даёт id \"alia-better-latex\", переименовано в alia-plugin-bb-better-latex"
+    ],
+    "problems": [],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "boat": {
@@ -2100,6 +1899,25 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "copilot-usage": {
+    "id": "copilot-usage",
+    "builds": false,
+    "state": "needs-sdk",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
+      "имя пакета alia-copilot-usage даёт id \"alia-copilot-usage\", переименовано в alia-plugin-bb-copilot-usage"
+    ],
+    "problems": [
+      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -3397,6 +3215,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "github-pr-dashboard": {
+    "id": "github-pr-dashboard",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-github-pr-dashboard даёт id \"alia-github-pr-dashboard\", переименовано в alia-plugin-bb-github-pr-dashboard"
+    ],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "github-projects": {
     "id": "github-projects",
     "builds": true,
@@ -4357,6 +4191,25 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "kujo": {
+    "id": "kujo",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
+      "engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "имя пакета alia-kujo даёт id \"alia-kujo\", переименовано в alia-plugin-bb-kujo",
+      "переименовано файлов с bb в имени: 4"
+    ],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "lame-duck": {
     "id": "lame-duck",
     "builds": true,
@@ -4740,8 +4593,8 @@
     "warnings": [],
     "residualBbRefs": 0
   },
-  "matt-pocock-skills-for-bb": {
-    "id": "matt-pocock-skills-for-bb",
+  "matt-pocock-skills-for-vesnalia": {
+    "id": "matt-pocock-skills-for-vesnalia",
     "builds": true,
     "state": "ok",
     "parts": {
@@ -6372,8 +6225,8 @@
     "warnings": [],
     "residualBbRefs": 0
   },
-  "pstack-for-bb": {
-    "id": "pstack-for-bb",
+  "pstack-for-vesnalia": {
+    "id": "pstack-for-vesnalia",
     "builds": true,
     "state": "ok",
     "parts": {
@@ -6603,6 +6456,28 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "recap": {
+    "id": "recap",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-recap даёт id \"alia-recap\", переименовано в alia-plugin-bb-recap",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [],
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
+      "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
+      "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "residualBbRefs": 0
+  },
   "receipts": {
     "id": "receipts",
     "builds": true,
@@ -6755,6 +6630,22 @@
       "host": null
     },
     "fixes": [],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "rpiv-todo-renderer": {
+    "id": "rpiv-todo-renderer",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-rpiv-todo-renderer даёт id \"alia-rpiv-todo-renderer\", переименовано в alia-plugin-bb-rpiv-todo-renderer"
+    ],
     "problems": [],
     "warnings": [],
     "residualBbRefs": 0
@@ -8573,6 +8464,115 @@
     "fixes": [],
     "problems": [],
     "warnings": [],
+    "residualBbRefs": 0
+  },
+  "vesnalia-agent-toolbox": {
+    "id": "vesnalia-agent-toolbox",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": null,
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-plugin-alia-agent-toolbox даёт id \"alia-agent-toolbox\", переименовано в alia-plugin-bb-agent-toolbox",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "vesnalia-bbs": {
+    "id": "vesnalia-bbs",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "vesnalia-box": {
+    "id": "vesnalia-box",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
+    },
+    "fixes": [
+      "имя пакета alia-plugin-alia-box даёт id \"alia-box\", переименовано в alia-plugin-bb-box",
+      "переименовано файлов с bb в имени: 34"
+    ],
+    "problems": [],
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "app.tsx:8: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contro",
+      "app.tsx:12: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr",
+      "app.tsx:13: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr",
+      "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr"
+    ],
+    "residualBbRefs": 0
+  },
+  "vesnalia-live": {
+    "id": "vesnalia-live",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-plugin-alia-live даёт id \"alia-live\", переименовано в alia-plugin-bb-live",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "vesnalia-office": {
+    "id": "vesnalia-office",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": null
+    },
+    "fixes": [
+      "убрана зависимость bb-app (devDependencies)",
+      "имя пакета alia-plugin-alia-office даёт id \"alia-office\", переименовано в alia-plugin-bb-office",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "vesnalia-sidebar": {
+    "id": "vesnalia-sidebar",
+    "builds": true,
+    "state": "ok",
+    "parts": {
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
+    },
+    "fixes": [
+      "убрана зависимость bb-app (devDependencies)",
+      "имя пакета alia-plugin-alia-sidebar даёт id \"alia-sidebar\", переименовано в alia-plugin-bb-sidebar",
+      "переименовано файлов с bb в имени: 7"
+    ],
+    "problems": [],
+    "warnings": [
+      "app.tsx:9: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registr"
+    ],
     "residualBbRefs": 0
   },
   "vesper": {
