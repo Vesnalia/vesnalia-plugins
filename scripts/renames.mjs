@@ -46,3 +46,11 @@ const PROSE_FIXES = [
 export function fixProse(text) {
   return PROSE_FIXES.reduce((t, [re, to]) => t.replace(re, to), String(text));
 }
+
+/**
+ * наш id -> прежние id того же плагина в магазине VesnALIA. Попадает в catalog.json как
+ * `formerSlugs`: синхронизация Hub переносит запись магазина на новый id, а не заводит
+ * вторую. Переезд с id исходного каталога (ID_RENAMES) уже применён в магазине 17.11.2026
+ * и сюда не входит.
+ */
+export const FORMER_SLUGS = {};

@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { brandProse } from "./adapt.mjs";
-import { DISPLAY_NAMES, fixProse } from "./renames.mjs";
+import { DISPLAY_NAMES, FORMER_SLUGS, fixProse } from "./renames.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const REPO_URL = "https://github.com/Vesnalia/vesnalia-plugins";
@@ -128,6 +128,7 @@ for (const id of ids) {
   const iconPath = !iconName && typeof branding.icon === "string" ? branding.icon.replace(/^\.\//, "") : null;
   catalog.push({
     slug: id,
+    ...(FORMER_SLUGS[id]?.length ? { formerSlugs: FORMER_SLUGS[id] } : {}),
     displayName: DISPLAY_NAMES[id] ?? fixProse(brandProse(src.displayName)),
     description: fixProse(brandProse(src.description)),
     // Иконка-файл - из нашего репозитория (Hub VesnALIA пускает raw.githubusercontent.com/Vesnalia/...).
