@@ -16,9 +16,6 @@
         "name": "OXI",
         "github": "OXI-717"
       },
-      "originalRepo": "https://github.com/OXI-717/bb-plugins",
-      "originalRef": "account-pool-balanced/v0.4.87",
-      "originalCommit": "a67e6bf8f23704c6aefe83572c38eeafb37d529d",
       "license": "MIT"
     },
     {
@@ -35,9 +32,6 @@
         "name": "hxy91819",
         "github": "hxy91819"
       },
-      "originalRepo": "https://github.com/hxy91819/bb-plugin-acp-profile-icons",
-      "originalRef": "v0.1.4",
-      "originalCommit": "8c8ce334fbd4c937b36b54c57a07814da0402558",
       "license": "MIT"
     },
     {
@@ -55,9 +49,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "action-topbar/v0.1.5",
-      "originalCommit": "3e333355b29548c8e86b4fd563a0e4de3de577d6",
       "license": "MIT"
     },
     {
@@ -74,9 +65,6 @@
         "name": "Salem Sayed Abdel Gawad",
         "github": "salemsayed"
       },
-      "originalRepo": "https://github.com/salemsayed/bb-plugin-advisor",
-      "originalRef": "v0.1.15",
-      "originalCommit": "e48bc5095b4664d4463e848a4f5ee066dcf048ec",
       "license": "MIT"
     },
     {
@@ -93,9 +81,6 @@
         "name": "Aaron Phifer",
         "github": "aaronphifer"
       },
-      "originalRepo": "https://github.com/aaronphifer/bb-plugin-agent-board",
-      "originalRef": "v0.7.1",
-      "originalCommit": "b285bce927714edcb4f35931dd9acb6458491f8d",
       "license": "MIT"
     },
     {
@@ -113,9 +98,6 @@
         "name": "Nicolas Charpentier",
         "github": "charpeni"
       },
-      "originalRepo": "https://github.com/charpeni/bb-plugins",
-      "originalRef": "agent-calendar/v1.0.0",
-      "originalCommit": "c00fd2885cd4d2fe3e1c2e336b5f74e96938e266",
       "license": "MIT"
     },
     {
@@ -132,9 +114,6 @@
         "name": "Patrick Lee",
         "github": "patleeman"
       },
-      "originalRepo": "https://github.com/patleeman/bb-plugins",
-      "originalRef": "agent-checklists/v0.2.0",
-      "originalCommit": "046a11b6088068ccccaf6da5b51b10deeb166094",
       "license": "permission"
     },
     {
@@ -151,9 +130,6 @@
         "name": "Nathan Colgate",
         "github": "nathancolgate"
       },
-      "originalRepo": "https://github.com/nathancolgate/bb-plugin-agent-graph",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3fd202e9af4721a240193939c0cf07eaf7094f6b",
       "license": "MIT"
     },
     {
@@ -171,9 +147,6 @@
         "name": "Tom McKenzie",
         "github": "grrowl"
       },
-      "originalRepo": "https://github.com/grrowl/bb-lanes",
-      "originalRef": "agent-lanes/v0.1.4",
-      "originalCommit": "01d6b6c73a97c1bff4d439e034f23cb6b1baa54a",
       "license": "MIT"
     },
     {
@@ -190,9 +163,6 @@
         "name": "Patrick Lee",
         "github": "patleeman"
       },
-      "originalRepo": "https://github.com/patleeman/bb-plugins",
-      "originalRef": "agent-plugins/v0.3.1",
-      "originalCommit": "a956b4792b991f6ef2a183de8166d935db2d3c45",
       "license": "permission"
     },
     {
@@ -210,9 +180,6 @@
         "name": "Scott Sunarto",
         "github": "smsunarto"
       },
-      "originalRepo": "https://github.com/smsunarto/bb-plugins",
-      "originalRef": "agent-proxy/v0.2.4",
-      "originalCommit": "2bb1b7e8f5845378edc614fe81f01dc44071667a",
       "license": "MIT"
     },
     {
@@ -229,9 +196,6 @@
         "name": "Dennis Zimmermann",
         "github": "dennzimm"
       },
-      "originalRepo": "https://github.com/dennzimm/bb-plugin-agent-reload",
-      "originalRef": "v0.1.0",
-      "originalCommit": "fdd7897d9fa951327c82555104b457cf13f0a78f",
       "license": "MIT"
     },
     {
@@ -248,9 +212,6 @@
         "name": "Euan Guo",
         "github": "euanguo"
       },
-      "originalRepo": "https://github.com/euanguo/bb-plugin-agent-retry",
-      "originalRef": "v0.2.4",
-      "originalCommit": "6ce8e481a4bc510fa08179e15a06416bd28413dd",
       "license": "MIT"
     },
     {
@@ -267,9 +228,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "agent-roles/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -286,9 +244,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-agent-tools",
-      "originalRef": "v0.2.32",
-      "originalCommit": "b1790445ca2df77eb2cc4801be6f8f245135d562",
       "license": "MIT"
     },
     {
@@ -306,9 +261,6 @@
         "name": "Nicolas Charpentier",
         "github": "charpeni"
       },
-      "originalRepo": "https://github.com/charpeni/bb-plugins",
-      "originalRef": "agent-traces/v1.0.0",
-      "originalCommit": "de00e14f21632bbedebd0f957ab2b1bb5f25e58d",
       "license": "MIT"
     },
     {
@@ -325,9 +277,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-agent-tv",
-      "originalRef": "v0.1.1",
-      "originalCommit": "3add2e469138803ced5d27a57a86857c26943531",
       "license": "MIT"
     },
     {
@@ -345,9 +294,6 @@
         "name": "bottlebrushes",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-agentic-mermaid",
-      "originalRef": "v0.1.0",
-      "originalCommit": "303c477704628334f50d0ae9f3e2530bd0fe8c69",
       "license": "MIT"
     },
     {
@@ -364,9 +310,6 @@
         "name": "ichinya",
         "github": "ichinya"
       },
-      "originalRepo": "https://github.com/ichinya/bb-aif-helper",
-      "originalRef": "v0.8.0",
-      "originalCommit": "e99cfefed5f4d1ee6eb69d9046315e876dc53a0c",
       "license": "permission"
     },
     {
@@ -383,9 +326,6 @@
         "name": "Mikhail Turilin",
         "github": "mturilin"
       },
-      "originalRepo": "https://github.com/mturilin/airbender",
-      "originalRef": "v0.2.0",
-      "originalCommit": "08fec5198e6ad3f1dbf73c05721bf6747e448c02",
       "license": "GPL-3.0"
     },
     {
@@ -403,9 +343,6 @@
         "name": "Andrej Kostal",
         "github": "kuringer"
       },
-      "originalRepo": "https://github.com/kuringer/bb-plugin-bbium",
-      "originalRef": "v0.1.5",
-      "originalCommit": "8c188913a656c4136ad0b881f94540b34f63c80c",
       "license": "MIT"
     },
     {
@@ -422,9 +359,6 @@
         "name": "Nicolay I",
         "github": "nicolay-i"
       },
-      "originalRepo": "https://github.com/nicolay-i/bb-plugin-android-emulator",
-      "originalRef": "v0.1.3",
-      "originalCommit": "50355119c3de81f74078c589e3aef98803c0370c",
       "license": "MIT"
     },
     {
@@ -442,9 +376,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-animation",
-      "originalRef": "v0.1.2",
-      "originalCommit": "91aa9b3a0a4c6b02688e2390dee5cd5fef60c083",
       "license": "MIT"
     },
     {
@@ -462,9 +393,6 @@
         "name": "Amr Tawfik",
         "github": "amrtawfik160"
       },
-      "originalRepo": "https://github.com/amrtawfik160/bb-plugin-antigravity",
-      "originalRef": "v0.2.1",
-      "originalCommit": "686d8adb4a49bc944867fadc045727c264d41b01",
       "license": "permission"
     },
     {
@@ -481,9 +409,6 @@
         "name": "defacid",
         "github": "defacid"
       },
-      "originalRepo": "https://github.com/defacid/bb-antigravity-usage",
-      "originalRef": "v0.1.5",
-      "originalCommit": "3ceda5e32eee067d3ba6f5d252baefe006317c25",
       "license": "MIT"
     },
     {
@@ -500,9 +425,6 @@
         "name": "Hung Vinh",
         "github": "hungv47"
       },
-      "originalRepo": "https://github.com/hungv47/bb-plugin-app-preview",
-      "originalRef": "v0.2.9",
-      "originalCommit": "daea8cba1b6ecc78b0fbdb69f80ec51d5bbad719",
       "license": "permission"
     },
     {
@@ -519,9 +441,6 @@
         "name": "Elliott McNary",
         "github": "bighitbiker3"
       },
-      "originalRepo": "https://github.com/bighitbiker3/bb-plugin-arc-switcher",
-      "originalRef": "v0.1.0",
-      "originalCommit": "76a64ea6738f94102bede6565524de7a0dd88885",
       "license": "permission"
     },
     {
@@ -538,9 +457,6 @@
         "name": "Nikos Benakis",
         "github": "NickolasBenakis"
       },
-      "originalRepo": "https://github.com/NickolasBenakis/bb-plugin-archive-section",
-      "originalRef": "v0.1.0",
-      "originalCommit": "433c6b306a5af5d89c3af15d141150b19b83a40a",
       "license": "MIT"
     },
     {
@@ -557,9 +473,6 @@
         "name": "Nikolai Berezovskii",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "archived-toggle/v0.1.0",
-      "originalCommit": "42a7a8b2662fdccfc9e9a21873df8e2cf9a579e4",
       "license": "MIT"
     },
     {
@@ -577,9 +490,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "artifacts/v0.1.1",
-      "originalCommit": "0dc5005496c5c0c50132302c61ea06b24f7a6482",
       "license": "permission"
     },
     {
@@ -596,9 +506,6 @@
         "name": "Jack Shedd",
         "github": "etchalon"
       },
-      "originalRepo": "https://github.com/etchalon/bb-plugin-asana",
-      "originalRef": "v1.0.1",
-      "originalCommit": "fb66e24e791af2ff21f11293fea49f4209ba4bdf",
       "license": "MIT"
     },
     {
@@ -615,9 +522,6 @@
         "name": "rigerc",
         "github": "rigerc"
       },
-      "originalRepo": "https://github.com/rigerc/bb-plugin-asciimoji",
-      "originalRef": "v1.0.0",
-      "originalCommit": "f208645354555fff1c2e6c866e8688216aa542db",
       "license": "permission"
     },
     {
@@ -634,9 +538,6 @@
         "name": "nosenss",
         "github": "nosenss"
       },
-      "originalRepo": "https://github.com/nosenss/bb-plugin-attention-sidebar",
-      "originalRef": "v0.1.0",
-      "originalCommit": "08a60d69e53bc05a26b6a24043035e2586c99052",
       "license": "MIT"
     },
     {
@@ -654,9 +555,6 @@
         "name": "Braedon Saunders",
         "github": "braedonsaunders"
       },
-      "originalRepo": "https://github.com/braedonsaunders/bb-plugin-audio-preview",
-      "originalRef": "v0.1.1",
-      "originalCommit": "5b906094621d8ab63474a626b5b356d96a2cc558",
       "license": "MIT"
     },
     {
@@ -674,9 +572,6 @@
         "name": "ai-ecoverse",
         "github": "trieloff"
       },
-      "originalRepo": "https://github.com/ai-ecoverse/bb-auggie",
-      "originalRef": "v0.3.0",
-      "originalCommit": "6dbfa61b144ced28990b5a74ea61bd68da629483",
       "license": "MIT"
     },
     {
@@ -694,9 +589,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "aura/v0.2.8",
-      "originalCommit": "a34ac7f71dc0c219fe53ab5d82658beb6cc17287",
       "license": "MIT"
     },
     {
@@ -714,9 +606,6 @@
         "name": "Nikos Benakis",
         "github": "NickolasBenakis"
       },
-      "originalRepo": "https://github.com/NickolasBenakis/bb-plugin-aura-motion",
-      "originalRef": "v0.3.4",
-      "originalCommit": "168a249544df5ba20e95dfc33c4d729778c903b3",
       "license": "MIT"
     },
     {
@@ -733,9 +622,6 @@
         "name": "VladPolet",
         "github": "VladPolet"
       },
-      "originalRepo": "https://github.com/VladPolet/bb-plugin-auto-answer",
-      "originalRef": "v0.1.0",
-      "originalCommit": "80706c6ad4488d0232e446092a6a80fdf510aa94",
       "license": "MIT"
     },
     {
@@ -752,9 +638,6 @@
         "name": "Dummy-pixel-hash",
         "github": "Dummy-pixel-hash"
       },
-      "originalRepo": "https://github.com/Dummy-pixel-hash/bb-plugin-auto-compact",
-      "originalRef": "v0.1.0",
-      "originalCommit": "f580248bb0ea038187d0f542db9d0a4ab66d9c22",
       "license": "MIT"
     },
     {
@@ -771,9 +654,6 @@
         "name": "brzvsk",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "auto-hide-panel/v0.2.0",
-      "originalCommit": "2ad2897e6ff95c4792e557d3280abe49ad412cdf",
       "license": "MIT"
     },
     {
@@ -790,9 +670,6 @@
         "name": "Chris Sells",
         "github": "csells"
       },
-      "originalRepo": "https://github.com/csells/bb-plugins",
-      "originalRef": "auto-pin/v0.1.0",
-      "originalCommit": "f6a37aa1ba74a442d22428d968e7eeb0466998d5",
       "license": "MIT"
     },
     {
@@ -809,9 +686,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "automation-groups/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -828,9 +702,6 @@
         "name": "Daniel Bachhuber",
         "github": "danielbachhuber"
       },
-      "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
-      "originalRef": "automation-palette/v0.1.2",
-      "originalCommit": "c20341c5fa5087ace5be3df77f9579c1a85b2bcc",
       "license": "permission"
     },
     {
@@ -848,9 +719,6 @@
         "name": "Pascal de Ladurantaye",
         "github": "pascal-de-ladurantaye"
       },
-      "originalRepo": "https://github.com/pascal-de-ladurantaye/bb-autoresearch",
-      "originalRef": "v1.0.2",
-      "originalCommit": "339c9343a4a4a69a99e5cbd44f051b8f02fcc7ca",
       "license": "MIT"
     },
     {
@@ -867,9 +735,6 @@
         "name": "Oleg",
         "github": "zom-2018"
       },
-      "originalRepo": "https://github.com/zom-2018/bb-plugin-autoresearch-self-loop",
-      "originalRef": "v0.1.0",
-      "originalCommit": "7186fb1a2f5e7d24c7a0ec766608ef3976569949",
       "license": "MIT"
     },
     {
@@ -886,9 +751,6 @@
         "name": "Jacob Miller",
         "github": "jjcm"
       },
-      "originalRepo": "https://github.com/jjcm/bb-plugin-autorouter",
-      "originalRef": "v0.2.1",
-      "originalCommit": "edb0c26cdfa0ac9cd6f0a409448ed131b1dbf53a",
       "license": "permission"
     },
     {
@@ -905,9 +767,6 @@
         "name": "Aidar Karimov",
         "github": "aidarkarimov"
       },
-      "originalRepo": "https://github.com/aidarkarimov/bb-plugin-aws-activate-usage",
-      "originalRef": "v0.1.4",
-      "originalCommit": "ed9845507eb17cf2e9e6d9a46abb6fffcd1152fc",
       "license": "MIT"
     },
     {
@@ -925,9 +784,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-ayu",
-      "originalRef": "v0.3.0",
-      "originalCommit": "d63512ac6852daecbc8387d9a3747a7260953f4a",
       "license": "MIT"
     },
     {
@@ -944,9 +800,6 @@
         "name": "StreamlinedStartup",
         "github": "StreamlinedStartup"
       },
-      "originalRepo": "https://github.com/StreamlinedStartup/bb-plugin-backlog",
-      "originalRef": "v1.0.0",
-      "originalCommit": "7f5235e54e5bb19120ba9c179428854d8ddf593a",
       "license": "MIT"
     },
     {
@@ -964,9 +817,6 @@
         "name": "Braedon Saunders",
         "github": "braedonsaunders"
       },
-      "originalRepo": "https://github.com/braedonsaunders/bb-plugin-ballast",
-      "originalRef": "v0.1.4",
-      "originalCommit": "1ee2a84823e8c5c5396eb3977fd7bcf0c588aa60",
       "license": "permission"
     },
     {
@@ -983,9 +833,6 @@
         "name": "JonniK",
         "github": "JonniK"
       },
-      "originalRepo": "https://github.com/jonnik-bb-plugins/bb-plugin-bang-shell",
-      "originalRef": "v0.3.0",
-      "originalCommit": "cb2a875ece1fe7d8abfc5a1544f70cd3fc45f547",
       "license": "permission"
     },
     {
@@ -1003,9 +850,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "battery/v0.1.0",
-      "originalCommit": "32e33c976aa94c8de5cd440cbae318095de8d080",
       "license": "permission"
     },
     {
@@ -1023,9 +867,6 @@
         "name": "Johan Gafaro",
         "github": "g4f4r0"
       },
-      "originalRepo": "https://github.com/g4f4r0/bb-plugins",
-      "originalRef": "beacon/v0.1.3",
-      "originalCommit": "6af00945c3c1cd3e99e5bb7e00fb87757451898d",
       "license": "permission"
     },
     {
@@ -1042,9 +883,6 @@
         "name": "Jehu",
         "github": "Jehu"
       },
-      "originalRepo": "https://github.com/Jehu/bb-plugin-beads",
-      "originalRef": "v0.1.0",
-      "originalCommit": "fbe228459344d3450d82a3b69162ba417c3093d5",
       "license": "MIT"
     },
     {
@@ -1062,9 +900,6 @@
         "name": "Diip3sh",
         "github": "diip3sh"
       },
-      "originalRepo": "https://github.com/diip3sh/bb-plugin-beautiful-chat",
-      "originalRef": "v0.1.2",
-      "originalCommit": "f0c0220082f7ba625fb3ae650385b9be91576f8e",
       "license": "MIT"
     },
     {
@@ -1081,9 +916,6 @@
         "name": "Victor Aremu",
         "github": "ahkohd"
       },
-      "originalRepo": "https://github.com/ahkohd/bb-plugin-beside",
-      "originalRef": "v0.1.6",
-      "originalCommit": "df5c6967582dcca5645cf32808d2b3e2daa65c24",
       "license": "MIT"
     },
     {
@@ -1101,9 +933,6 @@
         "name": "Zhen Huang",
         "github": "ZhenHuangLab"
       },
-      "originalRepo": "https://github.com/ZhenHuangLab/bb-better-latex",
-      "originalRef": "v0.2.8",
-      "originalCommit": "18dde22266c9e199d2e2294cf7c1f30c6a01cb51",
       "license": "MIT"
     },
     {
@@ -1121,9 +950,6 @@
         "name": "Not Quite Unicorns",
         "github": "georgecollier-nqu"
       },
-      "originalRepo": "https://github.com/Not-Quite-Unicorns/bb-plugin-boat",
-      "originalRef": "v0.3.1",
-      "originalCommit": "c751230b61d28cb4f335643792a76bfe2ef8c451",
       "license": "MIT"
     },
     {
@@ -1141,9 +967,6 @@
         "name": "Yurii Rebryk",
         "github": "rebryk"
       },
-      "originalRepo": "https://github.com/rebryk/bb-plugins",
-      "originalRef": "bookmarks/v0.1.1",
-      "originalCommit": "baae20ce5e0f448f51a70e8b0bc3ebe971704f4f",
       "license": "permission"
     },
     {
@@ -1161,9 +984,6 @@
         "name": "Prakash Chokalingam",
         "github": "prakashchokalingam"
       },
-      "originalRepo": "https://github.com/prakashchokalingam/bb-plugin-bots",
-      "originalRef": "v1.3.0",
-      "originalCommit": "3949b3d3ad2dc5ef53030108f1c453c0fa121853",
       "license": "MIT"
     },
     {
@@ -1181,9 +1001,6 @@
         "name": "Tobias Lütke",
         "github": "tobi"
       },
-      "originalRepo": "https://github.com/tobi/bb-bots-sidebar",
-      "originalRef": "v1.1.0",
-      "originalCommit": "ff5853061ea1cffda1992b85dd4dc6631a1f085a",
       "license": "permission"
     },
     {
@@ -1200,9 +1017,6 @@
         "name": "Tim Briggs",
         "github": "t-i-m-b-r-i-g-g-s"
       },
-      "originalRepo": "https://github.com/t-i-m-b-r-i-g-g-s/bb-plugin-branch-graph",
-      "originalRef": "v0.1.0",
-      "originalCommit": "16806ee3132fdc1f687616297363eb5b2f51d36a",
       "license": "MIT"
     },
     {
@@ -1220,9 +1034,6 @@
         "name": "Nikko Foti",
         "github": "Nikko-Foti"
       },
-      "originalRepo": "https://github.com/Nikko-Foti/bb-plugin-breathe",
-      "originalRef": "v0.1.1",
-      "originalCommit": "89bcff8af60fe3dd08a66b0c3e983581a2b792f8",
       "license": "MIT"
     },
     {
@@ -1239,9 +1050,6 @@
         "name": "Timur Khakhalev",
         "github": "timurkhakhalev"
       },
-      "originalRepo": "https://github.com/timurkhakhalev/timurkhakhalev-bb-plugins",
-      "originalRef": "browser-annotate/v0.1.1",
-      "originalCommit": "c1a1a263256ab482347118b9b6248096ce5d8c5d",
       "license": "permission"
     },
     {
@@ -1258,9 +1066,6 @@
         "name": "GantisStorm",
         "github": "GantisStorm"
       },
-      "originalRepo": "https://github.com/GantisStorm/bb-plugin-browser-copy",
-      "originalRef": "v0.2.3",
-      "originalCommit": "179c60e076fef4745253aa1ae304bb06b102b5be",
       "license": "MIT"
     },
     {
@@ -1278,9 +1083,6 @@
         "name": "Nikolai Berezovskii",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "browser-gestures/v0.1.1",
-      "originalCommit": "2d60fd06c5b519a252355d07dc5945ba87354260",
       "license": "MIT"
     },
     {
@@ -1297,9 +1099,6 @@
         "name": "GantisStorm",
         "github": "GantisStorm"
       },
-      "originalRepo": "https://github.com/GantisStorm/bb-plugin-browser-session-import",
-      "originalRef": "v0.5.0",
-      "originalCommit": "07dda62b893113bf869dd4c6a8102f1b4f3113e4",
       "license": "MIT"
     },
     {
@@ -1316,9 +1115,6 @@
         "name": "Divyesh",
         "github": "divyesh-puri"
       },
-      "originalRepo": "https://github.com/divyesh-puri/bb-plugin-browser-tools",
-      "originalRef": "v0.1.0",
-      "originalCommit": "01fb8058ca1fbf2afb64904e9aff04a3f1ddd2f4",
       "license": "MIT"
     },
     {
@@ -1336,9 +1132,6 @@
         "name": "Shriya Lolabattu",
         "github": "shriyatheunicorn"
       },
-      "originalRepo": "https://github.com/browserbase/bb-plugin",
-      "originalRef": "v0.1.0",
-      "originalCommit": "36edde2d8ddc672c767d906d0a6956e8fde6336c",
       "license": "MIT"
     },
     {
@@ -1355,9 +1148,6 @@
         "name": "Oddship",
         "github": "rhnvrm"
       },
-      "originalRepo": "https://github.com/oddship/bb-plugins",
-      "originalRef": "bureaucat/v0.2.0",
-      "originalCommit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
       "license": "permission"
     },
     {
@@ -1375,9 +1165,6 @@
         "name": "Kalindu De Costa",
         "github": "kalindudc"
       },
-      "originalRepo": "https://github.com/kalindudc/burn",
-      "originalRef": "v0.9.4",
-      "originalCommit": "9b27b3e049b0191d51e4e2fcdd5b2a974e006a69",
       "license": "MIT"
     },
     {
@@ -1394,9 +1181,6 @@
         "name": "Sergey Zhukov",
         "github": "SergeyZh"
       },
-      "originalRepo": "https://github.com/SergeyZh/bb-plugin-cache-watch",
-      "originalRef": "v0.4.2",
-      "originalCommit": "2b12ee32efec677e94ecf7da9b3303534b5389af",
       "license": "MIT"
     },
     {
@@ -1413,9 +1197,6 @@
         "name": "Ethan Greenfeld",
         "github": "ebg1223"
       },
-      "originalRepo": "https://github.com/ebg1223/bb-plugin-callstack",
-      "originalRef": "v0.3.1",
-      "originalCommit": "e41776b93332bf84ba6d9f5a36562e0bcad029c4",
       "license": "permission"
     },
     {
@@ -1432,9 +1213,6 @@
         "name": "David Eiffert",
         "github": "davideiffert"
       },
-      "originalRepo": "https://github.com/davideiffert/bb-plugin-calm",
-      "originalRef": "v1.3.0",
-      "originalCommit": "4e73acd1425c00bcd452c51feb7dd65f9b510bcd",
       "license": "MIT"
     },
     {
@@ -1451,9 +1229,6 @@
         "name": "Borja MPM",
         "github": "Borjampm"
       },
-      "originalRepo": "https://github.com/Borjampm/bb-plugin-canvas",
-      "originalRef": "v0.1.5",
-      "originalCommit": "da1c1a36fdc03993e4d4b1bdd2cea328f0776cff",
       "license": "permission"
     },
     {
@@ -1470,9 +1245,6 @@
         "name": "Deimantas Norkeliunas",
         "github": "deimantasnork"
       },
-      "originalRepo": "https://github.com/deimantasnork/bb-plugin-captains-deck",
-      "originalRef": "v0.3.1",
-      "originalCommit": "6c76b481c441ce836307bd413f925e61d75ac2bc",
       "license": "MIT"
     },
     {
@@ -1490,9 +1262,6 @@
         "name": "Rustambek Umarov",
         "github": "Rustam1010"
       },
-      "originalRepo": "https://github.com/Rustam1010/ai-agents",
-      "originalRef": "career-hub/v0.2.1",
-      "originalCommit": "f77d5fa89e78b100fbde7b493004c6f3525fbca3",
       "license": "permission"
     },
     {
@@ -1510,9 +1279,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "cascade/v0.1.0",
-      "originalCommit": "8b535729dd2251ceb293c7caf74e43e477f942a3",
       "license": "MIT"
     },
     {
@@ -1529,9 +1295,6 @@
         "name": "Serge Baranov",
         "github": "CrazyCoder"
       },
-      "originalRepo": "https://github.com/CrazyCoder/bb-plugin-catchup",
-      "originalRef": "v0.3.1",
-      "originalCommit": "3cc19be75e6c9204145d1b077c2253899aff977c",
       "license": "MIT"
     },
     {
@@ -1549,9 +1312,6 @@
         "name": "Alexander Kashin",
         "github": "AlexKashin29"
       },
-      "originalRepo": "https://github.com/AlexKashin29/bb-plugins",
-      "originalRef": "change-gate/v0.1.0",
-      "originalCommit": "e980afd55f2ac31d1feafb682fcb948dcb057e27",
       "license": "MIT"
     },
     {
@@ -1568,9 +1328,6 @@
         "name": "nfour",
         "github": "nfour"
       },
-      "originalRepo": "https://github.com/nfour/bb-plugins",
-      "originalRef": "chat-dock/v0.1.7",
-      "originalCommit": "cc498f8c8a06e0497bacc1fa7b4c764b462552ef",
       "license": "MIT"
     },
     {
@@ -1587,9 +1344,6 @@
         "name": "bottlebrushes",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-chat-find",
-      "originalRef": "v0.1.1",
-      "originalCommit": "5804da283ca52274d38606a90e768a5130683e36",
       "license": "MIT"
     },
     {
@@ -1606,9 +1360,6 @@
         "name": "Yusuf Akbulut",
         "github": "yusuf8834"
       },
-      "originalRepo": "https://github.com/yusuf8834/bb-chat-search",
-      "originalRef": "v0.1.4",
-      "originalCommit": "0efa59d9fb48a8af4e7520d25f6909aae8e83788",
       "license": "permission"
     },
     {
@@ -1626,9 +1377,6 @@
         "name": "Evgeniy Perin",
         "github": "seoperin"
       },
-      "originalRepo": "https://github.com/seoperin/bb-plugin-chat-sidebar",
-      "originalRef": "v0.2.11",
-      "originalCommit": "0045b99c00fef75c92a1370b67343400d71b0eec",
       "license": "MIT"
     },
     {
@@ -1646,9 +1394,6 @@
         "name": "werserk",
         "github": "werserk"
       },
-      "originalRepo": "https://github.com/werserk/bb-plugin-chat-width",
-      "originalRef": "v0.1.0",
-      "originalCommit": "007b5751662bffa673f1529710b2bff426ff8fa1",
       "license": "MIT"
     },
     {
@@ -1666,9 +1411,6 @@
         "name": "Euan Guo",
         "github": "euanguo"
       },
-      "originalRepo": "https://github.com/euanguo/euanguo-plugins",
-      "originalRef": "chatgpt-skin/v0.2.0",
-      "originalCommit": "8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0",
       "license": "permission"
     },
     {
@@ -1685,9 +1427,6 @@
         "name": "Divyesh",
         "github": "divyesh-puri"
       },
-      "originalRepo": "https://github.com/divyesh-puri/bb-plugin-chief",
-      "originalRef": "v0.1.0",
-      "originalCommit": "64ac8bc3613efbdd5841af0487b31e9003ed5efe",
       "license": "MIT"
     },
     {
@@ -1705,9 +1444,6 @@
         "name": "Guilherme J. Tramontina",
         "github": "gtramontina"
       },
-      "originalRepo": "https://github.com/gtramontina/bb-plugin-chime",
-      "originalRef": "v0.1.0",
-      "originalCommit": "7cc8ee395b451ef7743da3863c75d6b492ad1f50",
       "license": "MIT"
     },
     {
@@ -1724,9 +1460,6 @@
         "name": "David Beyer",
         "github": "benegessarit"
       },
-      "originalRepo": "https://github.com/benegessarit/bb-plugin-claude-account-switcher",
-      "originalRef": "v0.1.2",
-      "originalCommit": "05403bb1cea6f25d4270abd4adea375e227e362d",
       "license": "MIT"
     },
     {
@@ -1743,9 +1476,6 @@
         "name": "Yuriy Egorov",
         "github": "fzrx-ego"
       },
-      "originalRepo": "https://github.com/fzrx-ego/bb-plugin-claude-accounts",
-      "originalRef": "v0.5.0",
-      "originalCommit": "27a4ff17d4505ed57fd27dacab308119a2254297",
       "license": "permission"
     },
     {
@@ -1762,9 +1492,6 @@
         "name": "Roger Serra",
         "github": "Hazihell"
       },
-      "originalRepo": "https://github.com/Hazihell/bb-plugin-claude-auth",
-      "originalRef": "v0.1.1",
-      "originalCommit": "d242a8b7ba46511c0edb072772c56162e46da2bf",
       "license": "permission"
     },
     {
@@ -1782,9 +1509,6 @@
         "name": "Aitor Mariscal",
         "github": "Finolaina"
       },
-      "originalRepo": "https://github.com/Finolaina/bb-plugin-claude-switcher",
-      "originalRef": "v0.2.54",
-      "originalCommit": "4870a4d9bd21231efb5b35dfe93c69727549d99b",
       "license": "MIT"
     },
     {
@@ -1802,9 +1526,6 @@
         "name": "Treo-Solutions",
         "github": "jtattreo"
       },
-      "originalRepo": "https://github.com/Treo-Solutions/bb-plugin-claude-theme",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3a10a27d8810d838914cb7247a753b1590fc8c5d",
       "license": "MIT"
     },
     {
@@ -1822,9 +1543,6 @@
         "name": "Muhammad Ahsan",
         "github": "ahsan7162"
       },
-      "originalRepo": "https://github.com/ahsan7162/bb-plugin-claude-usage",
-      "originalRef": "v0.1.2",
-      "originalCommit": "ec9be5ef5cd3e2bf4b026220b6713729be96843b",
       "license": "MIT"
     },
     {
@@ -1842,9 +1560,6 @@
         "name": "VKirill",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-cli-agents",
-      "originalRef": "v0.2.5",
-      "originalCommit": "2bbd2217763123d3d366d8bbb982207ba6d230b6",
       "license": "MIT"
     },
     {
@@ -1862,9 +1577,6 @@
         "name": "Sergey Kalachev",
         "github": "meanwhile17"
       },
-      "originalRepo": "https://github.com/meanwhile17/bb-plugin-clickable-local-link",
-      "originalRef": "v0.1.0",
-      "originalCommit": "4a3bcfab9e8d5a1f180bcd21107544da29c4c283",
       "license": "MIT"
     },
     {
@@ -1881,9 +1593,6 @@
         "name": "Yuriy Egorov",
         "github": "fzrx-ego"
       },
-      "originalRepo": "https://github.com/fzrx-ego/bb-plugin-close-tab",
-      "originalRef": "v0.3.1",
-      "originalCommit": "f2853ff1470f1ed07b16f0a85f63de0b5681e0a6",
       "license": "permission"
     },
     {
@@ -1901,9 +1610,6 @@
         "name": "Andrew Chan",
         "github": "andrewkchan"
       },
-      "originalRepo": "https://github.com/andrewkchan/bb-plugin-cloud-sandbox",
-      "originalRef": "v0.1.7",
-      "originalCommit": "249b36c44739e5fcb027ac2e1efc00a1c7ef309a",
       "license": "permission"
     },
     {
@@ -1921,9 +1627,6 @@
         "name": "Rob Ennals",
         "github": "robennals"
       },
-      "originalRepo": "https://github.com/robennals/bb-plugins",
-      "originalRef": "code-review/v0.2.0",
-      "originalCommit": "fe0fd2636f2a45c64e6f1ad21bc6bd782a2cbe18",
       "license": "permission"
     },
     {
@@ -1941,9 +1644,6 @@
         "name": "Andrew Bird",
         "github": "AndrewBird81"
       },
-      "originalRepo": "https://github.com/AndrewBird81/bb-plugin-code-review-workspace",
-      "originalRef": "v1.13.0",
-      "originalCommit": "5c0fa681687fa36b3c83f5da81eaf0fdefefaa24",
       "license": "MIT"
     },
     {
@@ -1961,9 +1661,6 @@
         "name": "aotd1",
         "github": "aotd1"
       },
-      "originalRepo": "https://github.com/aotd1/bb-plugin-codex-migrate",
-      "originalRef": "v0.3.13",
-      "originalCommit": "f136cd8613ae999b06137e3bc19fdace059764b8",
       "license": "permission"
     },
     {
@@ -1980,9 +1677,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "codex-realtime/v0.1.0",
-      "originalCommit": "46bc1307a8bda51bf322a990349136d820d463b9",
       "license": "MIT"
     },
     {
@@ -2000,9 +1694,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-theme-codex",
-      "originalRef": "v0.2.1",
-      "originalCommit": "6bbabf8b366f8c148404c27b4bf88f08dfa0ba4d",
       "license": "MIT"
     },
     {
@@ -2019,9 +1710,6 @@
         "name": "VanDalkvist",
         "github": "VanDalkvist"
       },
-      "originalRepo": "https://github.com/VanDalkvist/bb-plugin-collapsible-navigation",
-      "originalRef": "v0.1.0",
-      "originalCommit": "d6409f32619482d5ed16bdd11fdba355f628fc5e",
       "license": "MIT"
     },
     {
@@ -2039,9 +1727,6 @@
         "name": "brsbl",
         "github": "brsbl"
       },
-      "originalRepo": "https://github.com/brsbl/bb-plugins",
-      "originalRef": "color-swatches/v0.1.1",
-      "originalCommit": "eda4308b68d07ed34bc22a262d777ebb37ae6d45",
       "license": "permission"
     },
     {
@@ -2058,9 +1743,6 @@
         "name": "Dilip Venkatesh",
         "github": "dilipgv"
       },
-      "originalRepo": "https://github.com/dilipgv/bb-plugin-command-center",
-      "originalRef": "v0.7.1",
-      "originalCommit": "48292143517cd389c6831ec8920400048e02ccac",
       "license": "permission"
     },
     {
@@ -2078,9 +1760,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "compact-nav/v0.2.0",
-      "originalCommit": "d4c32e3ebb9f0a962e6ba566cf71505bcf1fdc8e",
       "license": "MIT"
     },
     {
@@ -2097,9 +1776,6 @@
         "name": "MattBot",
         "github": "mgmobrien"
       },
-      "originalRepo": "https://github.com/mgmobrien/bb-plugin-compact-ui",
-      "originalRef": "v0.9.5",
-      "originalCommit": "e7b023439097b1771c27db286c125eefa37ac615",
       "license": "permission"
     },
     {
@@ -2117,9 +1793,6 @@
         "name": "Yuriy Egorov",
         "github": "fzrx-ego"
       },
-      "originalRepo": "https://github.com/fzrx-ego/bb-plugin-compact-rail",
-      "originalRef": "v0.1.3",
-      "originalCommit": "f58a927107a5a48896d3e1b467031c3627bf6409",
       "license": "permission"
     },
     {
@@ -2136,9 +1809,6 @@
         "name": "Divyesh",
         "github": "divyesh-puri"
       },
-      "originalRepo": "https://github.com/divyesh-puri/bb-plugin-companion-chat",
-      "originalRef": "v0.1.3",
-      "originalCommit": "20c7024830dce91148cf037c2a18c32fcb36af77",
       "license": "MIT"
     },
     {
@@ -2155,9 +1825,6 @@
         "name": "Lalit Rao",
         "github": "lalitjeevanrao"
       },
-      "originalRepo": "https://github.com/lalitjeevanrao/bb-plugins",
-      "originalRef": "composer-autocollapse/v0.1.0",
-      "originalCommit": "51f165adcb62af37f007845f6452cefd96e6ad74",
       "license": "MIT"
     },
     {
@@ -2175,9 +1842,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-composer-predictions",
-      "originalRef": "v0.4.7",
-      "originalCommit": "63a1fadd03fc5c104c543d565deb519fe3e64aa7",
       "license": "MIT"
     },
     {
@@ -2195,9 +1859,6 @@
         "name": "bottlebrushes",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-conductor-theme",
-      "originalRef": "v0.1.0",
-      "originalCommit": "f640f51b6f52f6de566ab2c4471a53ee1bdbd13e",
       "license": "MIT"
     },
     {
@@ -2214,9 +1875,6 @@
         "name": "RoRoGitr",
         "github": "RoRoGitr"
       },
-      "originalRepo": "https://github.com/RoRoGitr/bb-plugin-context-handoff",
-      "originalRef": "v0.4.1",
-      "originalCommit": "0c5a4a3050f93fad31257828924835ae3a1ef0e6",
       "license": "MIT"
     },
     {
@@ -2234,9 +1892,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-context-health",
-      "originalRef": "v0.1.2",
-      "originalCommit": "28da500ae4565efdb8586001612ecfbfe457ef25",
       "license": "MIT"
     },
     {
@@ -2254,9 +1909,6 @@
         "name": "Roger Serra",
         "github": "Hazihell"
       },
-      "originalRepo": "https://github.com/Hazihell/bb-plugin-context-meter",
-      "originalRef": "v0.1.6",
-      "originalCommit": "78008be560d8f58ea96f19c84064bdfbc6d8fe34",
       "license": "permission"
     },
     {
@@ -2273,9 +1925,6 @@
         "name": "Tasi Balázs",
         "github": "balazstasi"
       },
-      "originalRepo": "https://github.com/balazstasi/bb-plugin-copilot-aic-usage",
-      "originalRef": "v0.1.1",
-      "originalCommit": "67ecde4d54a6ebbd90ef3735e2e254792e6d58a3",
       "license": "MIT"
     },
     {
@@ -2292,9 +1941,6 @@
         "name": "Lalit Rao",
         "github": "lalitjeevanrao"
       },
-      "originalRepo": "https://github.com/lalitjeevanrao/bb-plugins",
-      "originalRef": "v0.3.4",
-      "originalCommit": "3654c14cecef57f748965e258888fa23871d6c31",
       "license": "MIT"
     },
     {
@@ -2311,9 +1957,6 @@
         "name": "Patrick Lee",
         "github": "patleeman"
       },
-      "originalRepo": "https://github.com/patleeman/bb-plugins",
-      "originalRef": "copy-session-id/v0.1.1",
-      "originalCommit": "05c933a272b7dd2077897a6a0fbb64a4e78dc1e3",
       "license": "permission"
     },
     {
@@ -2331,9 +1974,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-cortado",
-      "originalRef": "v1.0.0",
-      "originalCommit": "8a853eb00f655dc05358c0d9f0aafaa88d48c559",
       "license": "MIT"
     },
     {
@@ -2351,9 +1991,6 @@
         "name": "sajov",
         "github": "sajov"
       },
-      "originalRepo": "https://github.com/sajov/bb-plugins",
-      "originalRef": "crew/v0.1.1",
-      "originalCommit": "70d89a913f8c1033771066dbb78be1726078bf47",
       "license": "MIT"
     },
     {
@@ -2371,9 +2008,6 @@
         "name": "artbear",
         "github": "artbear"
       },
-      "originalRepo": "https://github.com/artbear/bb-plugin-ctrl-enter-send",
-      "originalRef": "v0.2.1",
-      "originalCommit": "3df55a0310581fc992037d5265d5a33302ca702c",
       "license": "permission"
     },
     {
@@ -2391,9 +2025,6 @@
         "name": "Juan Bermudez",
         "github": "juanbermudez"
       },
-      "originalRepo": "https://github.com/juanbermudez/bb-plugin-cua-driver",
-      "originalRef": "v0.1.0",
-      "originalCommit": "b2cd7c918ae0a15c6d09d89a54980bb82e1a4691",
       "license": "MIT"
     },
     {
@@ -2411,9 +2042,6 @@
         "name": "devalextelematika",
         "github": "devalextelematika"
       },
-      "originalRepo": "https://github.com/devalextelematika/BBDesk",
-      "originalRef": "v0.1.8",
-      "originalCommit": "9b9ffaaeb353905358cffcfc42892b2d98b794cd",
       "license": "MIT"
     },
     {
@@ -2430,9 +2058,6 @@
         "name": "Robert Sinke",
         "github": "robertsinke"
       },
-      "originalRepo": "https://github.com/robertsinke/bb-plugin-decisions",
-      "originalRef": "v0.1.1",
-      "originalCommit": "cc2c6cca2de763b50cb5ad68195f97a0a8da73e1",
       "license": "permission"
     },
     {
@@ -2449,9 +2074,6 @@
         "name": "Hemang Vellore",
         "github": "hv-V6"
       },
-      "originalRepo": "https://github.com/hv-V6/bb-plugin-deepseek-harness",
-      "originalRef": "v0.2.0",
-      "originalCommit": "537b5709f50ae5e153901a15d8d943fa75a3813f",
       "license": "MIT"
     },
     {
@@ -2469,9 +2091,6 @@
         "name": "Nicolas Charpentier",
         "github": "charpeni"
       },
-      "originalRepo": "https://github.com/charpeni/bb-plugins",
-      "originalRef": "dependabot/v1.0.1",
-      "originalCommit": "89d326e355648f9ca9cab969f6ae25a66d8c790c",
       "license": "MIT"
     },
     {
@@ -2488,9 +2107,6 @@
         "name": "Jason Prunty",
         "github": "j-withmission"
       },
-      "originalRepo": "https://github.com/j-withmission/design-director",
-      "originalRef": "v1.2.0",
-      "originalCommit": "cb146a8af0583629d7ed677a9f3a528c68678f26",
       "license": "MIT"
     },
     {
@@ -2508,9 +2124,6 @@
         "name": "Boros Máté",
         "github": "qwadrox"
       },
-      "originalRepo": "https://github.com/qwadrox/bb-plugin-desktop-browser-agent",
-      "originalRef": "v0.5.4",
-      "originalCommit": "3efd554806ee5f00f77c0a61d9e25cf4f5af54c5",
       "license": "MIT"
     },
     {
@@ -2527,9 +2140,6 @@
         "name": "Artur",
         "github": "architawr"
       },
-      "originalRepo": "https://github.com/architawr/bb-plugin-diagram-fences",
-      "originalRef": "v0.2.1",
-      "originalCommit": "db63c397f4964f764b3e71f8a6075650817441e1",
       "license": "permission"
     },
     {
@@ -2547,9 +2157,6 @@
         "name": "Artur Karapetyan",
         "github": "architawr"
       },
-      "originalRepo": "https://github.com/architawr/bb-plugin-dictation-shortcuts",
-      "originalRef": "v0.2.1",
-      "originalCommit": "2f87366af3b44cae6f6d03d8d155e2b7db98f11f",
       "license": "MIT"
     },
     {
@@ -2566,9 +2173,6 @@
         "name": "Arash Outadi",
         "github": "arashout"
       },
-      "originalRepo": "https://github.com/bitcomplete/bb-plugins",
-      "originalRef": "diff-explorer/v0.1.3",
-      "originalCommit": "7bbcefc19872d2533ff789ec18e4ad1a884e8359",
       "license": "MIT"
     },
     {
@@ -2585,9 +2189,6 @@
         "name": "nfour",
         "github": "nfour"
       },
-      "originalRepo": "https://github.com/nfour/bb-plugins",
-      "originalRef": "diff-plus/v1.2.1",
-      "originalCommit": "c4db88709d84052381facccab54ca6c8eb6a8d02",
       "license": "MIT"
     },
     {
@@ -2604,9 +2205,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "diff-review/v0.5.1",
-      "originalCommit": "240f0372f9292084756612227624f5f6185a341a",
       "license": "MIT"
     },
     {
@@ -2624,9 +2222,6 @@
         "name": "Sergey Gavrilov",
         "github": "SergeyGavrilov"
       },
-      "originalRepo": "https://github.com/SergeyGavrilov/bb-diff-tree",
-      "originalRef": "v0.1.3",
-      "originalCommit": "523f9a5ce4c700fb3a89cf65bd868a25ab1ca822",
       "license": "MIT"
     },
     {
@@ -2643,9 +2238,6 @@
         "name": "Jonas Brusman",
         "github": "himynameisjonas"
       },
-      "originalRepo": "https://github.com/himynameisjonas/bb-plugin-diffdad",
-      "originalRef": "v0.1.0",
-      "originalCommit": "26e56f4f94d07cd579b0b8cf84ccc07d7e3fc1ac",
       "license": "permission"
     },
     {
@@ -2663,9 +2255,6 @@
         "name": "Mayank",
         "github": "MayankBansal12"
       },
-      "originalRepo": "https://github.com/MayankBansal12/bb-plugin-discord",
-      "originalRef": "v0.1.2",
-      "originalCommit": "61aa2855a232ba7aead0f0e35df50b0afcfa4cc1",
       "license": "permission"
     },
     {
@@ -2683,9 +2272,6 @@
         "name": "Nicolas Charpentier",
         "github": "charpeni"
       },
-      "originalRepo": "https://github.com/charpeni/bb-plugins",
-      "originalRef": "disk-usage/v1.0.0",
-      "originalCommit": "19f984aa3aa28978f5063fe570288f150c44421e",
       "license": "MIT"
     },
     {
@@ -2703,9 +2289,6 @@
         "name": "Foma",
         "github": "xMinor-1"
       },
-      "originalRepo": "https://github.com/xMinor-1/bb-plugins",
-      "originalRef": "doc-review/v0.8.1",
-      "originalCommit": "948b2279b31ae1634bbe1075652284ceb607796b",
       "license": "MIT"
     },
     {
@@ -2723,9 +2306,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "dockside/v0.1.8",
-      "originalCommit": "e8736f3858d0a544b70573ddbc92db0291faed53",
       "license": "MIT"
     },
     {
@@ -2743,9 +2323,6 @@
         "name": "ai-ecoverse",
         "github": "trieloff"
       },
-      "originalRepo": "https://github.com/ai-ecoverse/bb-droid",
-      "originalRef": "v0.4.0",
-      "originalCommit": "d38dc1cb03d01f4969e5c554f231cdfbeb4a0a24",
       "license": "MIT"
     },
     {
@@ -2762,9 +2339,6 @@
         "name": "D-Town",
         "github": "D-Town"
       },
-      "originalRepo": "https://github.com/D-Town/bb-plugins",
-      "originalRef": "dynamic-file-tree/v1.1.2",
-      "originalCommit": "4c38271f6fb3bfbe78a350785e9138291fb077a7",
       "license": "MIT"
     },
     {
@@ -2782,9 +2356,6 @@
         "name": "Gabor Kis-Hegedus",
         "github": "xcke"
       },
-      "originalRepo": "https://github.com/xcke/bb-plugin-e-corp",
-      "originalRef": "v0.1.1",
-      "originalCommit": "387556417f094b55cdde1565087c191444cc12e5",
       "license": "MIT"
     },
     {
@@ -2802,9 +2373,6 @@
         "name": "Marco Michely",
         "github": "Jehu"
       },
-      "originalRepo": "https://github.com/Jehu/bb-elephant-goldfish",
-      "originalRef": "v0.1.0",
-      "originalCommit": "6631db274886038c921acc87c3dbbdc248890296",
       "license": "MIT"
     },
     {
@@ -2822,9 +2390,6 @@
         "name": "Patrick Lee",
         "github": "patleeman"
       },
-      "originalRepo": "https://github.com/patleeman/bb-plugins",
-      "originalRef": "emoji-react/v0.2.1",
-      "originalCommit": "a56f9d5e064eefc7c7167a2dd9746513aa5ab7c7",
       "license": "permission"
     },
     {
@@ -2842,9 +2407,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-env-catalog",
-      "originalRef": "v0.3.3",
-      "originalCommit": "2dcc1f479e5679bfc89a0775d05ae87d7d0a63d6",
       "license": "MIT"
     },
     {
@@ -2862,9 +2424,6 @@
         "name": "Anvar Bakiyev",
         "github": "AnvarBakiyev"
       },
-      "originalRepo": "https://github.com/AnvarBakiyev/bb-plugin-extella",
-      "originalRef": "v0.1.0",
-      "originalCommit": "0f0e9a7dac6cc0f9d90c983fce02c3849c789b1d",
       "license": "MIT"
     },
     {
@@ -2882,9 +2441,6 @@
         "name": "lpbaril",
         "github": "lpbaril"
       },
-      "originalRepo": "https://github.com/lpbaril/bb-plugin-factory",
-      "originalRef": "v0.1.10",
-      "originalCommit": "5c789b205e79b75441aaa0bd364cef6e4d9b5582",
       "license": "Apache-2.0"
     },
     {
@@ -2901,9 +2457,6 @@
         "name": "Ben Tossell",
         "github": "bentossell"
       },
-      "originalRepo": "https://github.com/bentossell/bb-plugin-factory-droid",
-      "originalRef": "v0.2.1",
-      "originalCommit": "e89974d6f6e24bdd26d37d3a3c7c845ebe5df76c",
       "license": "permission"
     },
     {
@@ -2920,9 +2473,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "fast-archive/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -2939,9 +2489,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "fast-split/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -2958,9 +2505,6 @@
         "name": "Chris Sells",
         "github": "csells"
       },
-      "originalRepo": "https://github.com/csells/bb-plugins",
-      "originalRef": "fat-fingers/v0.1.2",
-      "originalCommit": "74ac084117773301940d69f0e3c8efed89557526",
       "license": "MIT"
     },
     {
@@ -2977,9 +2521,6 @@
         "name": "Maciej Kucharek",
         "github": "mkucharek"
       },
-      "originalRepo": "https://github.com/mkucharek/bb-plugin-feature-flags",
-      "originalRef": "v0.3.1",
-      "originalCommit": "18f9258f0801aa34349b4f7c249a078b44d11485",
       "license": "permission"
     },
     {
@@ -2996,9 +2537,6 @@
         "name": "Ryan Brown",
         "github": "ryanbbrown"
       },
-      "originalRepo": "https://github.com/ryanbbrown/bb-plugin-feed",
-      "originalRef": "v0.1.0",
-      "originalCommit": "d51e16b480d27f3230c0f6c457cc1cff7d51699a",
       "license": "MIT"
     },
     {
@@ -3015,9 +2553,6 @@
         "name": "mifhud",
         "github": "mifhud"
       },
-      "originalRepo": "https://github.com/mifhud/bb-plugin-file-explorer",
-      "originalRef": "v0.1.1",
-      "originalCommit": "dbae6b1367732a41fc7a5554702ca78e4a8cc84e",
       "license": "permission"
     },
     {
@@ -3035,9 +2570,6 @@
         "name": "VKirill",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-file-gateway",
-      "originalRef": "v0.1.1",
-      "originalCommit": "47abb983456eae83c3e8a313fb90001dc6cc248f",
       "license": "MIT"
     },
     {
@@ -3054,9 +2586,6 @@
         "name": "Foma",
         "github": "xMinor-1"
       },
-      "originalRepo": "https://github.com/xMinor-1/bb-plugins",
-      "originalRef": "file-manager/v0.11.0",
-      "originalCommit": "74f9aa874b6df5b2ed0cd462dee2317159bc5ab9",
       "license": "MIT"
     },
     {
@@ -3074,9 +2603,6 @@
         "name": "brsbl",
         "github": "brsbl"
       },
-      "originalRepo": "https://github.com/brsbl/bb-plugins",
-      "originalRef": "file-pins/v0.1.11",
-      "originalCommit": "e312e6d73644b509b89dbbcf496e9956dd3a3329",
       "license": "permission"
     },
     {
@@ -3093,9 +2619,6 @@
         "name": "Oleg",
         "github": "zom-2018"
       },
-      "originalRepo": "https://github.com/zom-2018/bb-plugin-file-pretty",
-      "originalRef": "v0.1.0",
-      "originalCommit": "62e66a9f66284e627f5ad8338e447a482309095f",
       "license": "MIT"
     },
     {
@@ -3113,9 +2636,6 @@
         "name": "Yuriy Egorov",
         "github": "fzrx-ego"
       },
-      "originalRepo": "https://github.com/fzrx-ego/bb-plugin-file-tree",
-      "originalRef": "v0.19.14",
-      "originalCommit": "17c6fe948404835ddbf35f39e116bece29665773",
       "license": "permission"
     },
     {
@@ -3133,9 +2653,6 @@
         "name": "Alexander Kashin",
         "github": "AlexKashin29"
       },
-      "originalRepo": "https://github.com/AlexKashin29/bb-plugins",
-      "originalRef": "file-versions/v0.1.0",
-      "originalCommit": "e980afd55f2ac31d1feafb682fcb948dcb057e27",
       "license": "MIT"
     },
     {
@@ -3152,9 +2669,6 @@
         "name": "Andrew Kiryushkin",
         "github": "Diffuzmetall"
       },
-      "originalRepo": "https://github.com/Diffuzmetall/bb-plugin-files",
-      "originalRef": "v0.1.4",
-      "originalCommit": "0967403edc38b4c785c21af991990abd8a6a4b57",
       "license": "MIT"
     },
     {
@@ -3172,9 +2686,6 @@
         "name": "AbdElrahman Telb",
         "github": "abdoutelb"
       },
-      "originalRepo": "https://github.com/abdoutelb/bb-plugin-files-editor",
-      "originalRef": "v0.1.8",
-      "originalCommit": "4f525264e9367117afa27ff3cd899914c83c1d74",
       "license": "MIT"
     },
     {
@@ -3191,9 +2702,6 @@
         "name": "Naufal Riza Fatahillah",
         "github": "rayzalzero"
       },
-      "originalRepo": "https://github.com/rayzalzero/bb-plugin-finder",
-      "originalRef": "v0.4.0",
-      "originalCommit": "1dac98f95ec8bce18819f00c52fbfc9525b184cf",
       "license": "permission"
     },
     {
@@ -3210,9 +2718,6 @@
         "name": "amrtawfik160",
         "github": "amrtawfik160"
       },
-      "originalRepo": "https://github.com/amrtawfik160/bb-plugin-firstmate",
-      "originalRef": "v0.4.0",
-      "originalCommit": "7de6f20addb2080cc62903c07c90ba64359e19a0",
       "license": "MIT"
     },
     {
@@ -3230,9 +2735,6 @@
         "name": "Shashank Pachava",
         "github": "spachava753"
       },
-      "originalRepo": "https://github.com/spachava753/bb-plugin-flexible-worktrees",
-      "originalRef": "v0.3.2",
-      "originalCommit": "bc94f30753626eedd47c8bf5c795d511d2b46ec7",
       "license": "MIT"
     },
     {
@@ -3250,9 +2752,6 @@
         "name": "ponomr",
         "github": "ponomr"
       },
-      "originalRepo": "https://github.com/ponomr/bb-plugin-flexoki",
-      "originalRef": "v0.1.5",
-      "originalCommit": "ced199cef6948919d449560a7a2f5cb7af70f9e6",
       "license": "MIT"
     },
     {
@@ -3270,9 +2769,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-floating-notes",
-      "originalRef": "v1.3.0",
-      "originalCommit": "d1b9844f4557991e539926aa58d83e906af826fc",
       "license": "MIT"
     },
     {
@@ -3289,9 +2785,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-floating-terminal",
-      "originalRef": "v0.7.0",
-      "originalCommit": "5f2b63738cd779a1fd00bb7791db32afa8db4149",
       "license": "MIT"
     },
     {
@@ -3309,9 +2802,6 @@
         "name": "Cristos L-C",
         "github": "cristoslc"
       },
-      "originalRepo": "https://github.com/cristoslc/bb-plugin-focus-board",
-      "originalRef": "v1.7.15",
-      "originalCommit": "48213a75c294cdfbb0880908653d626c175b85ab",
       "license": "MIT"
     },
     {
@@ -3329,9 +2819,6 @@
         "name": "Ayush Thakur",
         "github": "Ayushlm10"
       },
-      "originalRepo": "https://github.com/Ayushlm10/bb-plugin-focus-mode",
-      "originalRef": "v0.2.0",
-      "originalCommit": "bdc7591cb5a294003f5f102efcead32ca8e4e4f0",
       "license": "MIT"
     },
     {
@@ -3348,9 +2835,6 @@
         "name": "Grigory Shimichev",
         "github": "grishaster80"
       },
-      "originalRepo": "https://github.com/grishaster80/bb-plugin-focus-sidebar",
-      "originalRef": "v0.1.5",
-      "originalCommit": "a605f9a857053bfd0a01f445ad88e98df1dd6843",
       "license": "MIT"
     },
     {
@@ -3367,9 +2851,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-followups",
-      "originalRef": "v0.6.6",
-      "originalCommit": "764d90de723c29032795a8cf917f8ae08d624272",
       "license": "MIT"
     },
     {
@@ -3387,9 +2868,6 @@
         "name": "Guilherme J. Tramontina",
         "github": "gtramontina"
       },
-      "originalRepo": "https://github.com/gtramontina/bb-plugin-fonts",
-      "originalRef": "v0.2.0",
-      "originalCommit": "729d1f41430b7aca41b7bb52db234cb607288abb",
       "license": "MIT"
     },
     {
@@ -3407,9 +2885,6 @@
         "name": "Kalindu De Costa",
         "github": "kalindudc"
       },
-      "originalRepo": "https://github.com/kalindudc/bb-marketplace",
-      "originalRef": "forage/v0.3.2",
-      "originalCommit": "e544732c7f61f8f86b68b91cc74644a47915e1aa",
       "license": "MIT"
     },
     {
@@ -3426,9 +2901,6 @@
         "name": "ComicBit",
         "github": "ComicBit"
       },
-      "originalRepo": "https://github.com/ComicBit/bb-plugin-genui",
-      "originalRef": "v0.3.2",
-      "originalCommit": "d8cac8d1781bac336214cc38981aba4a58d9c1c0",
       "license": "Apache-2.0"
     },
     {
@@ -3446,9 +2918,6 @@
         "name": "ai-ecoverse",
         "github": "trieloff"
       },
-      "originalRepo": "https://github.com/ai-ecoverse/bb-gh-copilot",
-      "originalRef": "v1.0.0",
-      "originalCommit": "896a8e1aef350d17fea9fecd6403091601e2f438",
       "license": "MIT"
     },
     {
@@ -3465,9 +2934,6 @@
         "name": "James Klein",
         "github": "kleinjm"
       },
-      "originalRepo": "https://github.com/kleinjm/bb-plugin-gh-projects-board",
-      "originalRef": "v0.1.5",
-      "originalCommit": "e3413a824351e77018d4292abda5b1c2a96c96c5",
       "license": "MIT"
     },
     {
@@ -3485,9 +2951,6 @@
         "name": "Scott Sunarto",
         "github": "smsunarto"
       },
-      "originalRepo": "https://github.com/smsunarto/bb-plugins",
-      "originalRef": "gh-stack/v0.2.3",
-      "originalCommit": "2bb1b7e8f5845378edc614fe81f01dc44071667a",
       "license": "MIT"
     },
     {
@@ -3505,9 +2968,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "ghostrunner/v0.1.0",
-      "originalCommit": "b8a843ed6ba44d60b12781e696a44eb0469a7bdd",
       "license": "MIT"
     },
     {
@@ -3525,9 +2985,6 @@
         "name": "AiXenix",
         "github": "AiXenix"
       },
-      "originalRepo": "https://github.com/AiXenix/bb-plugin-gigaam",
-      "originalRef": "v0.1.3",
-      "originalCommit": "df572900fdce5070d86f1eda326f0b49c06411c1",
       "license": "MIT"
     },
     {
@@ -3544,9 +3001,6 @@
         "name": "Gabrielle Neveu",
         "github": "GabZoFar"
       },
-      "originalRepo": "https://github.com/GabZoFar/bb-plugin-git-graph",
-      "originalRef": "v0.1.3",
-      "originalCommit": "0f994bb355ccfc8d252930a8f96a0b0e68b8ee86",
       "license": "MIT"
     },
     {
@@ -3564,9 +3018,6 @@
         "name": "Diip3sh",
         "github": "diip3sh"
       },
-      "originalRepo": "https://github.com/diip3sh/bb-plugin-git-panel",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3013ffcf49bf810c0be89be2297a0e1d4551fca5",
       "license": "MIT"
     },
     {
@@ -3584,9 +3035,6 @@
         "name": "Nick Motion",
         "github": "Nick-Motion"
       },
-      "originalRepo": "https://github.com/Nick-Motion/bb-plugin-gitea",
-      "originalRef": "v1.1.3",
-      "originalCommit": "9481cc2f785ba356e9d60006d3a6fbc8ba5ad8a9",
       "license": "MIT"
     },
     {
@@ -3603,9 +3051,6 @@
         "name": "pers0na2dev",
         "github": "pers0na2dev"
       },
-      "originalRepo": "https://github.com/pers0na2dev/bb-github-actions",
-      "originalRef": "v0.1.1",
-      "originalCommit": "337890140c9503fedde7dd7da8e8ea4ed24c7f0b",
       "license": "MIT"
     },
     {
@@ -3622,9 +3067,6 @@
         "name": "grrowl",
         "github": "grrowl"
       },
-      "originalRepo": "https://github.com/grrowl/bb-github-app-auth",
-      "originalRef": "v0.1.5",
-      "originalCommit": "aecd45d5b8afb8e512768cd356f34e4dfaea03fa",
       "license": "MIT"
     },
     {
@@ -3641,9 +3083,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-github-extended",
-      "originalRef": "v0.1.3",
-      "originalCommit": "2b41a72c8c66cbd314b2c2cfb94933964461fa86",
       "license": "MIT"
     },
     {
@@ -3660,9 +3099,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "github-folder/v0.1.0",
-      "originalCommit": "3943d870efd4cdbba9d0b57668712e0dcc10bd05",
       "license": "permission"
     },
     {
@@ -3679,9 +3115,6 @@
         "name": "Muhammad Ahsan",
         "github": "ahsan7162"
       },
-      "originalRepo": "https://github.com/ahsan7162/bb-github-pr-dashboard",
-      "originalRef": "v0.3.3",
-      "originalCommit": "e1e1881a6beddb7419bf117c9bd1743ada73a22e",
       "license": "MIT"
     },
     {
@@ -3698,9 +3131,6 @@
         "name": "bottlebrushes",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-github-projects",
-      "originalRef": "v0.1.0",
-      "originalCommit": "8d80fd13e686c034ee1a5a2ee8f0a233fcde9de6",
       "license": "permission"
     },
     {
@@ -3718,9 +3148,6 @@
         "name": "Marius Nouchet",
         "github": "suiramdev"
       },
-      "originalRepo": "https://github.com/suiramdev/bb-plugin-gitlab",
-      "originalRef": "v0.1.2",
-      "originalCommit": "0938f296bc5b6cece9be6ae0c64f26e17aed8f58",
       "license": "MIT"
     },
     {
@@ -3738,9 +3165,6 @@
         "name": "Max Kosach",
         "github": "KosachMax"
       },
-      "originalRepo": "https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style",
-      "originalRef": "v1.3.3",
-      "originalCommit": "a3e61e8601d0902834eafe3da416a0a6f5ebda79",
       "license": "MIT"
     },
     {
@@ -3758,9 +3182,6 @@
         "name": "Pritam Sharma",
         "github": "notpritam"
       },
-      "originalRepo": "https://github.com/notpritam/bb-plugin-glass",
-      "originalRef": "v0.2.0",
-      "originalCommit": "795d69b1773b1c04b1c84395f02badfb920bba34",
       "license": "permission"
     },
     {
@@ -3777,9 +3198,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "goals/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -3797,9 +3215,6 @@
         "name": "Nicolas Charpentier",
         "github": "charpeni"
       },
-      "originalRepo": "https://github.com/charpeni/bb-plugins",
-      "originalRef": "gone-fishing/v1.0.0",
-      "originalCommit": "be151da69886a7c2edeaf5ac5065c23da55f141e",
       "license": "MIT"
     },
     {
@@ -3817,9 +3232,6 @@
         "name": "sajov",
         "github": "sajov"
       },
-      "originalRepo": "https://github.com/sajov/bb-plugins",
-      "originalRef": "graph-studio/v0.1.4",
-      "originalCommit": "896dd60e2ec3260585fac836a5e6819e7558732c",
       "license": "MIT"
     },
     {
@@ -3837,9 +3249,6 @@
         "name": "ponomr",
         "github": "ponomr"
       },
-      "originalRepo": "https://github.com/ponomr/bb-plugin-graphite-mono",
-      "originalRef": "v0.1.0",
-      "originalCommit": "838270d6088af668e28b71a218844db8186c48de",
       "license": "permission"
     },
     {
@@ -3857,9 +3266,6 @@
         "name": "nfour",
         "github": "nfour"
       },
-      "originalRepo": "https://github.com/nfour/bb-plugins",
-      "originalRef": "guest-view/v0.2.1",
-      "originalCommit": "d62b226f5edaf2820f5e7dd8a905c85ead5636ca",
       "license": "MIT"
     },
     {
@@ -3877,9 +3283,6 @@
         "name": "Pritam Sharma",
         "github": "notpritam"
       },
-      "originalRepo": "https://github.com/notpritam/bb-plugin-guided-review",
-      "originalRef": "v0.2.1",
-      "originalCommit": "765d2cf3b3be667bb793de150eafb9bc03299a52",
       "license": "MIT"
     },
     {
@@ -3897,9 +3300,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-handoff",
-      "originalRef": "v0.8.1",
-      "originalCommit": "1286e545210eedf65ca04158a2968c3cf2dae5b9",
       "license": "MIT"
     },
     {
@@ -3916,9 +3316,6 @@
         "name": "Matt Wynne",
         "github": "mattwynne"
       },
-      "originalRepo": "https://github.com/mattwynne/bb-plugin-hands-free",
-      "originalRef": "v0.2.3",
-      "originalCommit": "9ce2e9815883a15be5b96dcf306acd98925d187b",
       "license": "permission"
     },
     {
@@ -3936,9 +3333,6 @@
         "name": "Swair Shah",
         "github": "swairshah"
       },
-      "originalRepo": "https://github.com/swairshah/bb-handsfree",
-      "originalRef": "v0.1.6",
-      "originalCommit": "a1cf21c64a0a27e4046d7d67f0af4d12ec33055a",
       "license": "permission"
     },
     {
@@ -3956,9 +3350,6 @@
         "name": "lutfikeskin",
         "github": "lutfikeskin"
       },
-      "originalRepo": "https://github.com/lutfikeskin/bb-plugin-harness",
-      "originalRef": "v0.1.1",
-      "originalCommit": "d1a096edcd7ff7be6ea572963450c2904ea70a24",
       "license": "MIT"
     },
     {
@@ -3976,9 +3367,6 @@
         "name": "Streamlined Startup",
         "github": "StreamlinedStartup"
       },
-      "originalRepo": "https://github.com/StreamlinedStartup/hashstash",
-      "originalRef": "v0.1.0",
-      "originalCommit": "539378ed21d5895ee876576b832857c490cf242d",
       "license": "permission"
     },
     {
@@ -3996,9 +3384,6 @@
         "name": "zaymonoid",
         "github": "zaymonoid"
       },
-      "originalRepo": "https://github.com/zaymonoid/bb-hats",
-      "originalRef": "v0.1.1",
-      "originalCommit": "b23602574549a7f1593c60b386734f80477fdc80",
       "license": "MIT"
     },
     {
@@ -4015,9 +3400,6 @@
         "name": "AdzeB",
         "github": "AdzeB"
       },
-      "originalRepo": "https://github.com/AdzeB/bb-plugin-haze",
-      "originalRef": "v0.2.1",
-      "originalCommit": "dd36be9d3aec6436b7b3138309f944a80e1fcf89",
       "license": "MIT"
     },
     {
@@ -4034,9 +3416,6 @@
         "name": "Yuriy Egorov",
         "github": "fzrx-ego"
       },
-      "originalRepo": "https://github.com/fzrx-ego/bb-plugin-header-pins",
-      "originalRef": "v0.1.1",
-      "originalCommit": "8fe8b8b4f7c8a8cf04d39e404eb7d69ae81c1a80",
       "license": "MIT"
     },
     {
@@ -4053,9 +3432,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-headroom",
-      "originalRef": "v0.2.1",
-      "originalCommit": "4caa7546bdab0aa900234c3909eb1e383b4c0d23",
       "license": "permission"
     },
     {
@@ -4073,9 +3449,6 @@
         "name": "David Eiffert",
         "github": "davideiffert"
       },
-      "originalRepo": "https://github.com/davideiffert/bb-plugin-herdr-theme",
-      "originalRef": "v0.5.1",
-      "originalCommit": "492eab80a8d2239fad25f8658cf06c3464fad5cc",
       "license": "MIT"
     },
     {
@@ -4093,9 +3466,6 @@
         "name": "Braedon Saunders",
         "github": "braedonsaunders"
       },
-      "originalRepo": "https://github.com/braedonsaunders/bb-plugin-hex",
-      "originalRef": "v0.1.1",
-      "originalCommit": "a3e91f813e821dbbebdd791f471900b5345bdc08",
       "license": "MIT"
     },
     {
@@ -4113,9 +3483,6 @@
         "name": "VladPolet",
         "github": "VladPolet"
       },
-      "originalRepo": "https://github.com/VladPolet/bb-plugin-higgsfield",
-      "originalRef": "v0.1.0",
-      "originalCommit": "8571cae36b50e7ad82eef3f57ba35c51c22bc3bb",
       "license": "MIT"
     },
     {
@@ -4132,9 +3499,6 @@
         "name": "Fadli Hidayatullah",
         "github": "fadlihdytullah"
       },
-      "originalRepo": "https://github.com/fadlihdytullah/bb-plugin-hmm-floating-terminal",
-      "originalRef": "v0.3.0",
-      "originalCommit": "c0aa546f330d5e1d8ce6069b29976a104859716b",
       "license": "MIT"
     },
     {
@@ -4151,9 +3515,6 @@
         "name": "Yusuf Akbulut",
         "github": "yusuf8834"
       },
-      "originalRepo": "https://github.com/yusuf8834/bb-homepage",
-      "originalRef": "v0.2.7",
-      "originalCommit": "dbcb6f59362579fec5ff40b9fae094a541b29794",
       "license": "MIT"
     },
     {
@@ -4171,9 +3532,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-hooks",
-      "originalRef": "v0.4.1",
-      "originalCommit": "5f26641b6e282a697468976977ed3bf5516bdccb",
       "license": "MIT"
     },
     {
@@ -4191,9 +3549,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "host-monitor/v0.1.7",
-      "originalCommit": "b4f9ded67021c5586e9b31b7d667b4b96ae8fe8b",
       "license": "MIT"
     },
     {
@@ -4211,9 +3566,6 @@
         "name": "maryanovas",
         "github": "maryanovas"
       },
-      "originalRepo": "https://github.com/maryanovas/bb-plugin-host-pulse",
-      "originalRef": "v0.1.9",
-      "originalCommit": "66eab00e161ad7c647526101973aa90763cacadc",
       "license": "permission"
     },
     {
@@ -4231,9 +3583,6 @@
         "name": "Roger Serra",
         "github": "Hazihell"
       },
-      "originalRepo": "https://github.com/Hazihell/bb-plugin-hotspot",
-      "originalRef": "v0.1.0",
-      "originalCommit": "2c1fc02cd0baab5495f36249972ff5509b0d7735",
       "license": "MIT"
     },
     {
@@ -4251,9 +3600,6 @@
         "name": "Konstantin Valiotti",
         "github": "kvaliotti"
       },
-      "originalRepo": "https://github.com/kvaliotti/bb-plugin-human-tasks",
-      "originalRef": "v0.1.1",
-      "originalCommit": "013c4b2b8e1729f224d4b457cac27665133a3aa5",
       "license": "MIT"
     },
     {
@@ -4271,9 +3617,6 @@
         "name": "Pavel Serezhin",
         "github": "20koneek"
       },
-      "originalRepo": "https://github.com/20koneek/bb-plugin-image-diff",
-      "originalRef": "v0.1.1",
-      "originalCommit": "a081a35a743137eb9db7daba8d9984eeac4602d5",
       "license": "MIT"
     },
     {
@@ -4290,9 +3633,6 @@
         "name": "Dwite",
         "github": "Dwite"
       },
-      "originalRepo": "https://github.com/Dwite/bb-plugin-image-preview",
-      "originalRef": "v0.1.0",
-      "originalCommit": "6c730433b20826c6359b0ae733b8eb00d539ffae",
       "license": "permission"
     },
     {
@@ -4309,9 +3649,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-image-studio",
-      "originalRef": "v0.10.4",
-      "originalCommit": "e7c14e6186921d1d826f79410353ba39605a3f79",
       "license": "MIT"
     },
     {
@@ -4329,9 +3666,6 @@
         "name": "Pritam Sharma",
         "github": "notpritam"
       },
-      "originalRepo": "https://github.com/notpritam/bb-plugin-inbox",
-      "originalRef": "v0.2.1",
-      "originalCommit": "077a7be9356f220a093a1e9df264e1537a4899fa",
       "license": "MIT"
     },
     {
@@ -4348,9 +3682,6 @@
         "name": "Boros Máté",
         "github": "qwadrox"
       },
-      "originalRepo": "https://github.com/qwadrox/bb-plugin-inline-comments",
-      "originalRef": "v0.1.3",
-      "originalCommit": "c6f90acb4b5d6e94db85faf3e2c6a2a28295b9eb",
       "license": "WTFPL"
     },
     {
@@ -4367,9 +3698,6 @@
         "name": "rdanhau",
         "github": "rdanhau"
       },
-      "originalRepo": "https://github.com/rdanhau/bb-plugin-inline-review",
-      "originalRef": "v1.0.1",
-      "originalCommit": "82b42637cb1c313aa2c90558d63bd6958399e3f8",
       "license": "MIT"
     },
     {
@@ -4386,9 +3714,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "inline-terminal/v0.1.2",
-      "originalCommit": "652f364df9e5e633d30717cf1c2cb0e22346df53",
       "license": "permission"
     },
     {
@@ -4405,9 +3730,6 @@
         "name": "Peter Abu",
         "github": "peteabu"
       },
-      "originalRepo": "https://github.com/peteabu/bb-plugin-ios-simulator",
-      "originalRef": "v0.1.1",
-      "originalCommit": "1a1b505df36c7df16f9815d4545ab483acbd665b",
       "license": "MIT"
     },
     {
@@ -4425,9 +3747,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-iris",
-      "originalRef": "v1.15.2",
-      "originalCommit": "5eb33055c7bb6d4aecd08095550aa831b78864ad",
       "license": "Apache-2.0"
     },
     {
@@ -4444,9 +3763,6 @@
         "name": "Johannes Berggren",
         "github": "Johannes-Berggren"
       },
-      "originalRepo": "https://github.com/Johannes-Berggren/bb-plugin-jb-flow",
-      "originalRef": "v0.1.11",
-      "originalCommit": "16c0afb9cfc236be04ae0f789a9acd4ab713b5f7",
       "license": "MIT"
     },
     {
@@ -4464,9 +3780,6 @@
         "name": "Lawrence Luk",
         "github": "lawrenceluk"
       },
-      "originalRepo": "https://github.com/lawrenceluk/bb-plugin-jev-please-proceed",
-      "originalRef": "v0.1.1",
-      "originalCommit": "81f5740a43713ccb342222cac275762b44c4b9cd",
       "license": "MIT"
     },
     {
@@ -4483,9 +3796,6 @@
         "name": "Willhong",
         "github": "Willhong"
       },
-      "originalRepo": "https://github.com/Willhong/bb-plugin-jira",
-      "originalRef": "v0.1.3",
-      "originalCommit": "e47dd1d474d9287da33b9af57b64979b5c537679",
       "license": "MIT"
     },
     {
@@ -4503,9 +3813,6 @@
         "name": "Vyacheslav Artemyev",
         "github": "viartemev"
       },
-      "originalRepo": "https://github.com/viartemev/bb-jira",
-      "originalRef": "v0.3.0",
-      "originalCommit": "bef68878574d5d2278277b289be691f04f5ebb42",
       "license": "MIT"
     },
     {
@@ -4522,9 +3829,6 @@
         "name": "Michael Verkhovykh",
         "github": "mihver1"
       },
-      "originalRepo": "https://github.com/mihver1/bb-plugin-jira-dc",
-      "originalRef": "v0.1.1",
-      "originalCommit": "4ef812880221ccd84ad5095d4b05f0c36e76624e",
       "license": "MIT"
     },
     {
@@ -4541,9 +3845,6 @@
         "name": "Zaymonoid",
         "github": "zaymonoid"
       },
-      "originalRepo": "https://github.com/zaymonoid/bb-kata-tracker",
-      "originalRef": "v0.1.1",
-      "originalCommit": "88b6935959f4411c4607f5cbc0ebf5448ec8a608",
       "license": "MIT"
     },
     {
@@ -4560,9 +3861,6 @@
         "name": "zom-2018",
         "github": "zom-2018"
       },
-      "originalRepo": "https://github.com/zom-2018/bb-plugin-keep-last-blocks-open",
-      "originalRef": "v0.1.2",
-      "originalCommit": "a3a19e30b0390ac8cb1d9c6d79ee9660ab79b84a",
       "license": "MIT"
     },
     {
@@ -4579,9 +3877,6 @@
         "name": "KERNEL",
         "github": "kernel"
       },
-      "originalRepo": "https://github.com/kernel/bb-ide-plugin",
-      "originalRef": "v0.1.4",
-      "originalCommit": "381695284a9a7fdd0d8b720f70280bf6ee56528c",
       "license": "MIT"
     },
     {
@@ -4598,9 +3893,6 @@
         "name": "Anatolt",
         "github": "Anatolt"
       },
-      "originalRepo": "https://github.com/Anatolt/bb-plugin-kimi-quota",
-      "originalRef": "v0.1.1",
-      "originalCommit": "1efb4abde12e193ce8fef37a32d397668f9c945f",
       "license": "MIT"
     },
     {
@@ -4617,9 +3909,6 @@
         "name": "Vladislav Chmelyuk",
         "github": "fgbm"
       },
-      "originalRepo": "https://github.com/fgbm/bb-plugin-kimi-usage",
-      "originalRef": "v0.2.1",
-      "originalCommit": "a7799231fb5c001841a9614f8b07e95f07f0456e",
       "license": "MIT"
     },
     {
@@ -4637,9 +3926,6 @@
         "name": "Kodaks94",
         "github": "Kodaks94"
       },
-      "originalRepo": "https://github.com/Kodaks94/bb-plugin-kodaforge",
-      "originalRef": "v0.7.0",
-      "originalCommit": "e0f3ec995b2eb20d78d6bc510e02f98c4cf4521a",
       "license": "MIT"
     },
     {
@@ -4657,9 +3943,6 @@
         "name": "Shortcut",
         "github": "charpeni"
       },
-      "originalRepo": "https://github.com/useshortcut/bb-plugin-korey",
-      "originalRef": "v1.1.0",
-      "originalCommit": "a3165c0bbe6842717a9290f0df974e7167b80d03",
       "license": "MIT"
     },
     {
@@ -4677,9 +3960,6 @@
         "name": "Robert DeVore",
         "github": "robertdevore"
       },
-      "originalRepo": "https://github.com/kujolang/bb-kujo",
-      "originalRef": "v0.2.2",
-      "originalCommit": "cfe546fe5494209786552357bb253345f78a42e7",
       "license": "MIT"
     },
     {
@@ -4697,9 +3977,6 @@
         "name": "Michael Yong",
         "github": "ymichael"
       },
-      "originalRepo": "https://github.com/ymichael/bb-plugins",
-      "originalRef": "lame-duck/v0.1.0",
-      "originalCommit": "fb10cb11254a58570fb778565c811e51c2864b71",
       "license": "MIT"
     },
     {
@@ -4716,9 +3993,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "launchd-jobs/v0.3.1",
-      "originalCommit": "ea26fcf27eec8a2dbefe8f98fe60aa9901adc0e0",
       "license": "MIT"
     },
     {
@@ -4736,9 +4010,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "lavender/v0.1.0",
-      "originalCommit": "2917e3b4fb64ee536aaf41c2d215153f8961f428",
       "license": "MIT"
     },
     {
@@ -4755,9 +4026,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "learning-exercises/v0.3.0",
-      "originalCommit": "becc08dfdfd39fc923ba400e2498c4389f0fc2e5",
       "license": "MIT"
     },
     {
@@ -4775,9 +4043,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-lego",
-      "originalRef": "v0.1.0",
-      "originalCommit": "fea3329b4701adedf9a22930896bf500c59a0d4a",
       "license": "MIT"
     },
     {
@@ -4794,9 +4059,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-letta-agents",
-      "originalRef": "v0.3.32",
-      "originalCommit": "4722025e068d188798cc53ef270fb71fb6c73a3d",
       "license": "MIT"
     },
     {
@@ -4813,9 +4075,6 @@
         "name": "Aleksandr Poliakov",
         "github": "artwist-polyakov"
       },
-      "originalRepo": "https://github.com/artwist-polyakov/bb-plugins",
-      "originalRef": "limits/v1.1.8",
-      "originalCommit": "d91e9adf5242beb3d6f58fdb3a1c47a5a8955cb7",
       "license": "permission"
     },
     {
@@ -4833,9 +4092,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-linear",
-      "originalRef": "v0.7.0",
-      "originalCommit": "62d2401baf920301c37bc60744d60dc092eb8500",
       "license": "MIT"
     },
     {
@@ -4853,9 +4109,6 @@
         "name": "bottlebrushes",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-linear-card",
-      "originalRef": "v0.1.0",
-      "originalCommit": "7427fb9c16171dcafb3932b4d896ec85d579de39",
       "license": "MIT"
     },
     {
@@ -4873,9 +4126,6 @@
         "name": "Bruno Bornsztein",
         "github": "bborn"
       },
-      "originalRepo": "https://github.com/bborn/bb-plugin-link-hovercards",
-      "originalRef": "v0.1.2",
-      "originalCommit": "2a6cb288e8ccf6333bb7259c4937424d4584d091",
       "license": "MIT"
     },
     {
@@ -4893,9 +4143,6 @@
         "name": "Luis Llenin",
         "github": "luisllenin02"
       },
-      "originalRepo": "https://github.com/luisllenin02/bb-plugin-liquid-glass",
-      "originalRef": "v0.5.21",
-      "originalCommit": "800e51227bd972d839ab7da90bf0ade0151f9781",
       "license": "MIT"
     },
     {
@@ -4912,9 +4159,6 @@
         "name": "bottlebrushes",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-live-markdown",
-      "originalRef": "v0.1.0",
-      "originalCommit": "743fae79f18ce607c554eab568f017cfcd5e2929",
       "license": "MIT"
     },
     {
@@ -4932,9 +4176,6 @@
         "name": "Lobu",
         "github": "buremba"
       },
-      "originalRepo": "https://github.com/lobu-ai/bb-plugin-lobu",
-      "originalRef": "v0.8.0",
-      "originalCommit": "f7e9fef0474fcdcdc902889cc1f6635c7119382d",
       "license": "Apache-2.0"
     },
     {
@@ -4951,9 +4192,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "lock-area/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -4970,9 +4208,6 @@
         "name": "Artur Karapetyan",
         "github": "architawr"
       },
-      "originalRepo": "https://github.com/architawr/bb-plugin-mac-watch",
-      "originalRef": "v0.1.0",
-      "originalCommit": "69b9784f748990bcd6e456835f0f33060b71c833",
       "license": "MIT"
     },
     {
@@ -4990,9 +4225,6 @@
         "name": "Victor Aremu",
         "github": "ahkohd"
       },
-      "originalRepo": "https://github.com/ahkohd/bb-plugin-machine-monitor",
-      "originalRef": "v0.2.1",
-      "originalCommit": "5e3210e26f866f074a3243a1607c60377b6d557e",
       "license": "permission"
     },
     {
@@ -5009,9 +4241,6 @@
         "name": "Kevin Kern",
         "github": "regenrek"
       },
-      "originalRepo": "https://github.com/regenrek/bb-plugin-machine-sidebar",
-      "originalRef": "v0.3.0",
-      "originalCommit": "77821ae30d3f19dc6fb4876822a0418ec1c9e959",
       "license": "MIT"
     },
     {
@@ -5029,9 +4258,6 @@
         "name": "Noel Blaschke",
         "github": "noelblaschke"
       },
-      "originalRepo": "https://github.com/noelblaschke/bb-plugin-machine-status",
-      "originalRef": "v1.0.0",
-      "originalCommit": "7c33a6a026b22c7d325e8c13387da1425522d29d",
       "license": "MIT"
     },
     {
@@ -5049,9 +4275,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "magic-compose/v0.1.0",
-      "originalCommit": "99cf957220eb4998cf7d918326a1b0f380b77822",
       "license": "MIT"
     },
     {
@@ -5069,9 +4292,6 @@
         "name": "Vaayne",
         "github": "vaayne"
       },
-      "originalRepo": "https://github.com/vaayne/agent-kit",
-      "originalRef": "magpie/v0.2.1",
-      "originalCommit": "7c1e6671e10152bc3cacf6b7d83eded200267a88",
       "license": "MIT"
     },
     {
@@ -5089,9 +4309,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-mane-control",
-      "originalRef": "v0.1.2",
-      "originalCommit": "9a08fbf080527bc74f976e8c15ee5bc244c1ae1f",
       "license": "MIT"
     },
     {
@@ -5108,9 +4325,6 @@
         "name": "Daniel Bachhuber",
         "github": "danielbachhuber"
       },
-      "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
-      "originalRef": "markdown-editor/v0.2.1",
-      "originalCommit": "a19866ae3e29de627c2538bd5af6eadc3a72d768",
       "license": "permission"
     },
     {
@@ -5127,9 +4341,6 @@
         "name": "koenvg",
         "github": "koenvg"
       },
-      "originalRepo": "https://github.com/koenvg/bb-plugins",
-      "originalRef": "markdown-reader/v0.1.0",
-      "originalCommit": "49a194105ced945b85727f23ac7347f2092488ba",
       "license": "permission"
     },
     {
@@ -5146,9 +4357,6 @@
         "name": "Erik MacKinnon",
         "github": "erikmackinnon"
       },
-      "originalRepo": "https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb",
-      "originalRef": "v0.1.6",
-      "originalCommit": "5057eb30fd60e2f29e7ac147d09d09770e2099f0",
       "license": "MIT"
     },
     {
@@ -5165,9 +4373,6 @@
         "name": "Oddship",
         "github": "rhnvrm"
       },
-      "originalRepo": "https://github.com/oddship/bb-plugins",
-      "originalRef": "mattermost/v0.4.0",
-      "originalCommit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
       "license": "permission"
     },
     {
@@ -5185,9 +4390,6 @@
         "name": "Mikołaj Nowak",
         "github": "m3nowak"
       },
-      "originalRepo": "https://github.com/m3nowak/bb-plugin-maxwell",
-      "originalRef": "v0.1.0",
-      "originalCommit": "2f37df53013c7b43c13247172fe2d3a462767c7d",
       "license": "permission"
     },
     {
@@ -5205,9 +4407,6 @@
         "name": "Vladislav Chmelyuk",
         "github": "fgbm"
       },
-      "originalRepo": "https://github.com/fgbm/bb-plugin-mcp-hub",
-      "originalRef": "v0.1.0",
-      "originalCommit": "32da66b04f80bcf83dcc1e39ddc887264d555a17",
       "license": "permission"
     },
     {
@@ -5225,9 +4424,6 @@
         "name": "Sankalpa Acharya",
         "github": "sankalpaacharya"
       },
-      "originalRepo": "https://github.com/sankalpaacharya/bb-mcp-manager",
-      "originalRef": "v0.1.1",
-      "originalCommit": "c42f91fa8343691002412f7e2307fdc6f9f667e7",
       "license": "permission"
     },
     {
@@ -5244,9 +4440,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-md-editor",
-      "originalRef": "v0.1.9",
-      "originalCommit": "3f4ce193fec5fb5e19e2acd8e42cd6110168cd6c",
       "license": "MIT"
     },
     {
@@ -5264,9 +4457,6 @@
         "name": "Adebola",
         "github": "AdzeB"
       },
-      "originalRepo": "https://github.com/AdzeB/bb-plugin-md-prompt",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3b99ea8402ee290e22be93e2aba23622cf34b84d",
       "license": "MIT"
     },
     {
@@ -5283,9 +4473,6 @@
         "name": "Dhiyaan Nirmal",
         "github": "dhiyaancnirmal"
       },
-      "originalRepo": "https://github.com/dhiyaancnirmal/bb-plugin-media-viewer",
-      "originalRef": "v0.1.0",
-      "originalCommit": "ddd479521587733bd0ec4bd7dec5b196a02add73",
       "license": "MIT"
     },
     {
@@ -5303,9 +4490,6 @@
         "name": "AiXenix",
         "github": "AiXenix"
       },
-      "originalRepo": "https://github.com/AiXenix/bb-plugin-meetings",
-      "originalRef": "v0.3.1",
-      "originalCommit": "641c6b719c3491e7c617969a7c42426f8d70f4cd",
       "license": "MIT"
     },
     {
@@ -5322,9 +4506,6 @@
         "name": "David Asensio Cañas",
         "github": "d-asensio"
       },
-      "originalRepo": "https://github.com/d-asensio/bb-plugin-memory-explorer",
-      "originalRef": "v0.2.3",
-      "originalCommit": "bc02538cddb349f7bd774af18b3dead63fdee03c",
       "license": "MIT"
     },
     {
@@ -5342,9 +4523,6 @@
         "name": "Sergey Kalachev",
         "github": "meanwhile17"
       },
-      "originalRepo": "https://github.com/meanwhile17/bb-plugin-message-date-time",
-      "originalRef": "v0.1.0",
-      "originalCommit": "8ae8f4257ad8f244f24578add87da23afb96dcca",
       "license": "MIT"
     },
     {
@@ -5361,9 +4539,6 @@
         "name": "Elliott McNary",
         "github": "bighitbiker3"
       },
-      "originalRepo": "https://github.com/bighitbiker3/bb-plugin-message-timestamps",
-      "originalRef": "v0.1.0",
-      "originalCommit": "fc365a7dde2cc12eef9fdc952c810b9798df8784",
       "license": "permission"
     },
     {
@@ -5380,9 +4555,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "miku/v0.7.0",
-      "originalCommit": "b44d2e0958ecc1ae726a2e81b6e2d3467efde3d5",
       "license": "MIT"
     },
     {
@@ -5399,9 +4571,6 @@
         "name": "Hemang Vellore",
         "github": "hv-V6"
       },
-      "originalRepo": "https://github.com/hv-V6/bb-plugin-millivolt",
-      "originalRef": "v0.1.1",
-      "originalCommit": "b6c1d3516a9a02892ca14cae359358f7f8af5bc5",
       "license": "MIT"
     },
     {
@@ -5418,9 +4587,6 @@
         "name": "nfour",
         "github": "nfour"
       },
-      "originalRepo": "https://github.com/nfour/bb-plugins",
-      "originalRef": "minimap/v0.1.7",
-      "originalCommit": "b578f2bb508bb5cf317008c80dee4fe89eb4b9d3",
       "license": "MIT"
     },
     {
@@ -5437,9 +4603,6 @@
         "name": "n30g30",
         "github": "n30g30"
       },
-      "originalRepo": "https://github.com/n30g30/bb-plugin-minus",
-      "originalRef": "v0.2.1",
-      "originalCommit": "bffa4ad0995a5ec950bcd6a29ffe852eb0203ed6",
       "license": "MIT"
     },
     {
@@ -5456,9 +4619,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-moa",
-      "originalRef": "v0.1.0-beta.9",
-      "originalCommit": "6c88aaf1e9ca0a08ee97d78b9742383205286176",
       "license": "MIT"
     },
     {
@@ -5475,9 +4635,6 @@
         "name": "Sergey Baus",
         "github": "neoromantic"
       },
-      "originalRepo": "https://github.com/neoromantic/bb-plugin-model-effort-badges",
-      "originalRef": "v0.7.3",
-      "originalCommit": "db93091dc6ee958d3423e1f38111988085416117",
       "license": "MIT"
     },
     {
@@ -5494,9 +4651,6 @@
         "name": "Sancho",
         "github": "linncolnx"
       },
-      "originalRepo": "https://github.com/linncolnx/bb-plugin-model-favicons",
-      "originalRef": "v0.1.0",
-      "originalCommit": "f3fb3b4583a43f30470a2899b1fd9fc8aea22c5c",
       "license": "MIT"
     },
     {
@@ -5513,9 +4667,6 @@
         "name": "Krzysztof Kraszewski",
         "github": "xkrsz"
       },
-      "originalRepo": "https://github.com/xkrsz/bb-model-presets",
-      "originalRef": "v0.1.0",
-      "originalCommit": "c528e2dac9eb021094575553140cfa3777cedcfe",
       "license": "MIT"
     },
     {
@@ -5532,9 +4683,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "model-pricing/v0.1.1",
-      "originalCommit": "2f00b87999c513ab831641202e791ebff6f9f557",
       "license": "MIT"
     },
     {
@@ -5551,9 +4699,6 @@
         "name": "brzvsk",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "model-visibility/v0.1.1",
-      "originalCommit": "d1933ba6383fce2a6b08610cfc9b96274897a01d",
       "license": "MIT"
     },
     {
@@ -5571,9 +4716,6 @@
         "name": "Scott Sunarto",
         "github": "smsunarto"
       },
-      "originalRepo": "https://github.com/smsunarto/bb-plugins",
-      "originalRef": "monokai/v0.3.2",
-      "originalCommit": "2bb1b7e8f5845378edc614fe81f01dc44071667a",
       "license": "MIT"
     },
     {
@@ -5590,9 +4732,6 @@
         "name": "Nicolay I",
         "github": "nicolay-i"
       },
-      "originalRepo": "https://github.com/nicolay-i/bb-plugin-multi-repo-git",
-      "originalRef": "v0.1.4",
-      "originalCommit": "615b0bba443f40f56304a09375c4fff57aefaceb",
       "license": "MIT"
     },
     {
@@ -5609,9 +4748,6 @@
         "name": "Muhammad Ahsan",
         "github": "ahsan7162"
       },
-      "originalRepo": "https://github.com/ahsan7162/bb-plugin-my-jira",
-      "originalRef": "v0.4.0",
-      "originalCommit": "442a0155aac7ea1dde6907af75f389238a038d6c",
       "license": "MIT"
     },
     {
@@ -5628,9 +4764,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "my-tasks/v0.3.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -5648,9 +4781,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "nav-rail/v0.1.0",
-      "originalCommit": "83a4fdb368db88d10cbb6fbb006f2a6069d7f4c9",
       "license": "MIT"
     },
     {
@@ -5668,9 +4798,6 @@
         "name": "Euan Guo",
         "github": "euanguo"
       },
-      "originalRepo": "https://github.com/euanguo/euanguo-plugins",
-      "originalRef": "nested-sidebar/v0.5.0",
-      "originalCommit": "8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0",
       "license": "permission"
     },
     {
@@ -5687,9 +4814,6 @@
         "name": "Serge Baranov",
         "github": "CrazyCoder"
       },
-      "originalRepo": "https://github.com/CrazyCoder/bb-plugin-next-prompt",
-      "originalRef": "v0.4.0",
-      "originalCommit": "3ff3742a6569a397b298168bc47cce739d04853b",
       "license": "MIT"
     },
     {
@@ -5706,9 +4830,6 @@
         "name": "rutracker152",
         "github": "rutracker152"
       },
-      "originalRepo": "https://github.com/rutracker152/bb-plugin-next-step",
-      "originalRef": "b650928fb34c8d146edfa332b53c6aabebccc9d3",
-      "originalCommit": "b650928fb34c8d146edfa332b53c6aabebccc9d3",
       "license": "MIT"
     },
     {
@@ -5725,9 +4846,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-noema",
-      "originalRef": "v0.2.1",
-      "originalCommit": "e2d25eace305b460951b44e268ba1f821d220269",
       "license": "permission"
     },
     {
@@ -5744,9 +4862,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-noisegate",
-      "originalRef": "v0.2.1",
-      "originalCommit": "bd3de8e2c5a19454be4d8a253fbadee909207442",
       "license": "permission"
     },
     {
@@ -5764,9 +4879,6 @@
         "name": "MPIV",
         "github": "MPIsaac-Per"
       },
-      "originalRepo": "https://github.com/mpiv-ai/noted",
-      "originalRef": "v0.2.0",
-      "originalCommit": "451ab780406ed26ef4e6a18a2be9c50cce4c4240",
       "license": "MIT"
     },
     {
@@ -5784,9 +4896,6 @@
         "name": "Scott Sunarto",
         "github": "smsunarto"
       },
-      "originalRepo": "https://github.com/smsunarto/bb-plugins",
-      "originalRef": "notify/v0.2.2",
-      "originalCommit": "8bc27b91333e2228607b137d09b195d90e6aecfa",
       "license": "MIT"
     },
     {
@@ -5804,9 +4913,6 @@
         "name": "Sargares22",
         "github": "Sargares22"
       },
-      "originalRepo": "https://github.com/Sargares22/bb-plugin-notify-feed",
-      "originalRef": "v0.3.3",
-      "originalCommit": "a97b7c272675aa2a777514de10dd98861c75c87b",
       "license": "MIT"
     },
     {
@@ -5823,9 +4929,6 @@
         "name": "Max Kosach",
         "github": "KosachMax"
       },
-      "originalRepo": "https://github.com/KosachMax/bb-plugin-notion-theme",
-      "originalRef": "v0.1.0",
-      "originalCommit": "86b465626d1d836b470364432c2c72b7d1435318",
       "license": "MIT"
     },
     {
@@ -5843,9 +4946,6 @@
         "name": "Chris Abra",
         "github": "chrisabra-co"
       },
-      "originalRepo": "https://github.com/chrisabra-co/bb-plugin-now-playing",
-      "originalRef": "v0.4.1",
-      "originalCommit": "e5e1a4787143a2bac2a2fb988ea2d3204367c745",
       "license": "MIT"
     },
     {
@@ -5862,9 +4962,6 @@
         "name": "Evan Simpson",
         "github": "e-simpson"
       },
-      "originalRepo": "https://github.com/e-simpson/bb-plugin-nudge",
-      "originalRef": "v0.1.0",
-      "originalCommit": "c2ee69ef0bbaf19e32918d7f8f20096024bc1195",
       "license": "MIT"
     },
     {
@@ -5882,9 +4979,6 @@
         "name": "ComicBit",
         "github": "ComicBit"
       },
-      "originalRepo": "https://github.com/ComicBit/bb-plugin-nudger",
-      "originalRef": "v0.1.1",
-      "originalCommit": "9005a737f6c171900f07f38d1c90678c7520190f",
       "license": "Apache-2.0"
     },
     {
@@ -5902,9 +4996,6 @@
         "name": "Treo-Solutions",
         "github": "jtattreo"
       },
-      "originalRepo": "https://github.com/Treo-Solutions/bb-plugin-ocean-dark",
-      "originalRef": "v0.1.0",
-      "originalCommit": "842a0a6616d20a49b24f16240123eacbcc19e5da",
       "license": "MIT"
     },
     {
@@ -5921,9 +5012,6 @@
         "name": "Oddship",
         "github": "rhnvrm"
       },
-      "originalRepo": "https://github.com/oddship/bb-plugins",
-      "originalRef": "oddship-gitea/v0.1.0",
-      "originalCommit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
       "license": "permission"
     },
     {
@@ -5940,9 +5028,6 @@
         "name": "Oddship",
         "github": "rhnvrm"
       },
-      "originalRepo": "https://github.com/oddship/bb-plugins",
-      "originalRef": "oddship-gitlab/v0.1.0",
-      "originalCommit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
       "license": "permission"
     },
     {
@@ -5959,9 +5044,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-office-viewer",
-      "originalRef": "v0.8.17",
-      "originalCommit": "dcaaae50f84e8c701db521501d357b2fec59ffbf",
       "license": "MIT"
     },
     {
@@ -5978,9 +5060,6 @@
         "name": "Aaron Phifer",
         "github": "aaronphifer"
       },
-      "originalRepo": "https://github.com/aaronphifer/bb-plugin-ollama-fleet",
-      "originalRef": "v0.6.0",
-      "originalCommit": "ca473a2f6f4962fe97b6e4efb7c49043fad2ed05",
       "license": "MIT"
     },
     {
@@ -5997,9 +5076,6 @@
         "name": "Vladislav Chmelyuk",
         "github": "fgbm"
       },
-      "originalRepo": "https://github.com/fgbm/bb-plugin-ollama-usage",
-      "originalRef": "v0.1.1",
-      "originalCommit": "0ae918aea211ca893c01014bd85824a584ecec58",
       "license": "MIT"
     },
     {
@@ -6017,9 +5093,6 @@
         "name": "Salem Sayed Abdel Gawad",
         "github": "salemsayed"
       },
-      "originalRepo": "https://github.com/salemsayed/bb-plugin-omarchy",
-      "originalRef": "v0.1.5",
-      "originalCommit": "3781a2f58c8382fa257a8d5281da435e9c5f7963",
       "license": "MIT"
     },
     {
@@ -6036,9 +5109,6 @@
         "name": "Naufal Riza Fatahillah",
         "github": "rayzalzero"
       },
-      "originalRepo": "https://github.com/rayzalzero/bb-plugin-omp-agent",
-      "originalRef": "v0.1.0",
-      "originalCommit": "0f5306b1c612aba1f4e720127feb3759c88b0556",
       "license": "permission"
     },
     {
@@ -6055,9 +5125,6 @@
         "name": "Andrey Dagaev",
         "github": "IMPOSTOR15"
       },
-      "originalRepo": "https://github.com/IMPOSTOR15/bb-plugin-omp-subagents",
-      "originalRef": "v0.1.2",
-      "originalCommit": "6df43b43c19961ec293c1eb9bf3cbadffa165f86",
       "license": "MIT"
     },
     {
@@ -6074,9 +5141,6 @@
         "name": "Chris Sells",
         "github": "csells"
       },
-      "originalRepo": "https://github.com/csells/bb-plugins",
-      "originalRef": "open-in-window/v0.1.0",
-      "originalCommit": "1c66e84c37dbd3f4a396d42dc55ac1a1bcf159a7",
       "license": "MIT"
     },
     {
@@ -6093,9 +5157,6 @@
         "name": "Nicolay I",
         "github": "nicolay-i"
       },
-      "originalRepo": "https://github.com/nicolay-i/bb-plugin-openspec-review",
-      "originalRef": "v0.1.3",
-      "originalCommit": "16ce8003f9a2b1449bb7d52bcc68c80a8371781a",
       "license": "MIT"
     },
     {
@@ -6112,9 +5173,6 @@
         "name": "Muhammad Ahsan",
         "github": "ahsan7162"
       },
-      "originalRepo": "https://github.com/ahsan7162/bb-plugin-openui",
-      "originalRef": "v0.1.0",
-      "originalCommit": "963efcb91ad45aa91fb1e7a5cf697b46dbf9a1c0",
       "license": "MIT"
     },
     {
@@ -6132,9 +5190,6 @@
         "name": "pixexid",
         "github": "pixexid"
       },
-      "originalRepo": "https://github.com/pixexid/bb-plugin-operator-inbox",
-      "originalRef": "v0.1.9",
-      "originalCommit": "6200778341d7452a82e5a701ecb09d56b1a949b1",
       "license": "MIT"
     },
     {
@@ -6152,9 +5207,6 @@
         "name": "lanjak",
         "github": "lanjak"
       },
-      "originalRepo": "https://github.com/lanjak/bb-plugin-otel",
-      "originalRef": "v0.1.1",
-      "originalCommit": "20902117a7626f9b9c51b2758dc586119a28d686",
       "license": "MIT"
     },
     {
@@ -6172,9 +5224,6 @@
         "name": "itsbariscan",
         "github": "itsbariscan"
       },
-      "originalRepo": "https://github.com/itsbariscan/bb-pad",
-      "originalRef": "v0.2.0",
-      "originalCommit": "8571274655a3e24a8aa881e23e6f96388ea33177",
       "license": "MIT"
     },
     {
@@ -6191,9 +5240,6 @@
         "name": "MattBot",
         "github": "mgmobrien"
       },
-      "originalRepo": "https://github.com/mgmobrien/bb-plugin-pane-workspaces",
-      "originalRef": "v0.3.5",
-      "originalCommit": "b4047517c1b3e4b8ed420eb88f333378b40b4f1a",
       "license": "permission"
     },
     {
@@ -6210,9 +5256,6 @@
         "name": "rayzalzero",
         "github": "rayzalzero"
       },
-      "originalRepo": "https://github.com/rayzalzero/bb-plugin-password-gate",
-      "originalRef": "v0.1.0",
-      "originalCommit": "f4a68ab869a466b6b6ebdca1d613175b26d27d34",
       "license": "permission"
     },
     {
@@ -6229,9 +5272,6 @@
         "name": "Valentino Bonato",
         "github": "valentino-bonato"
       },
-      "originalRepo": "https://github.com/valentino-bonato/bb-plugin-peek",
-      "originalRef": "v1.0.1",
-      "originalCommit": "2c9f16f09fda6bd9b88d8660ff5e18e68e8b6db3",
       "license": "permission"
     },
     {
@@ -6249,9 +5289,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-pets",
-      "originalRef": "v0.3.1",
-      "originalCommit": "1b7f048d3450ab115a48f5805c41b1e2c26b0477",
       "license": "MIT"
     },
     {
@@ -6268,9 +5305,6 @@
         "name": "gsxdsm",
         "github": "gsxdsm"
       },
-      "originalRepo": "https://github.com/gsxdsm/bb-plugin-pinch-zoom",
-      "originalRef": "v0.2.2",
-      "originalCommit": "a70bcf9a41245b22d36965b316b6f0b313bf6005",
       "license": "MIT"
     },
     {
@@ -6287,9 +5321,6 @@
         "name": "nfour",
         "github": "nfour"
       },
-      "originalRepo": "https://github.com/nfour/bb-plugins",
-      "originalRef": "pinned-turns/v0.1.6",
-      "originalCommit": "ddc74a49e4dd20dd8d97abbceab4997b4d16f4a8",
       "license": "MIT"
     },
     {
@@ -6306,9 +5337,6 @@
         "name": "Dmitry Makarov",
         "github": "dimiboi"
       },
-      "originalRepo": "https://github.com/dimiboi/bb-plugin-plain-paste",
-      "originalRef": "v0.1.0",
-      "originalCommit": "dbe7e49fb40f281b8671b73e9825217bea4a3f28",
       "license": "MIT"
     },
     {
@@ -6325,9 +5353,6 @@
         "name": "Daniel Walker",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-plan-mode",
-      "originalRef": "v0.1.0",
-      "originalCommit": "4ebc33d5b51b12973dc1ac83cf78be72850df2f1",
       "license": "permission"
     },
     {
@@ -6344,9 +5369,6 @@
         "name": "Yuri Smirnov",
         "github": "mrsu-smirnov"
       },
-      "originalRepo": "https://github.com/mrsu-smirnov/bb-plugin-plan-progress",
-      "originalRef": "v0.6.0",
-      "originalCommit": "3be8ee2702021f73db6919bc024834254304b8f3",
       "license": "permission"
     },
     {
@@ -6363,9 +5385,6 @@
         "name": "brzvsk",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "play-continue/v0.1.1",
-      "originalCommit": "eaa696703b0a6e93b9740df079f899430c8fd254",
       "license": "MIT"
     },
     {
@@ -6383,9 +5402,6 @@
         "name": "Frank Manno",
         "github": "frankieshakes"
       },
-      "originalRepo": "https://github.com/frankieshakes/bb-plugin-updates",
-      "originalRef": "v0.1.6",
-      "originalCommit": "856436dafedd1edac584a00d5d515e03da0c9eb6",
       "license": "MIT"
     },
     {
@@ -6402,9 +5418,6 @@
         "name": "Maxim Tkachenko",
         "github": "mtkachenk0"
       },
-      "originalRepo": "https://github.com/mtkachenk0/bb-plugin-plugin-vault",
-      "originalRef": "v0.2.0",
-      "originalCommit": "4ee9eaa4a787d3687e3cf44cfcc9eb9ed06e24fa",
       "license": "permission"
     },
     {
@@ -6422,9 +5435,6 @@
         "name": "Plugin Workshop contributors",
         "github": "mosmanlaw"
       },
-      "originalRepo": "https://github.com/mosmanlaw/plugin-workshop",
-      "originalRef": "v0.1.1",
-      "originalCommit": "cd01806ff6cd88e85970771a203257ade86baf71",
       "license": "MIT"
     },
     {
@@ -6442,9 +5452,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "pokemon/v0.1.2",
-      "originalCommit": "d3424f24e2cebe91da4e72cb38feb023da808922",
       "license": "MIT"
     },
     {
@@ -6462,9 +5469,6 @@
         "name": "Mel Stanbery",
         "github": "melindastanbery"
       },
-      "originalRepo": "https://github.com/melindastanbery/bb-pokemon-collection",
-      "originalRef": "v0.1.1",
-      "originalCommit": "8e5040ca6326a94303faf9030e169e3e90e8f7ea",
       "license": "MIT"
     },
     {
@@ -6481,9 +5485,6 @@
         "name": "Yurii Rebryk",
         "github": "rebryk"
       },
-      "originalRepo": "https://github.com/rebryk/bb-plugins",
-      "originalRef": "pool-usage/v0.2.7",
-      "originalCommit": "be9eefb2a52c16b8b212f3dc8ea117da06c821b0",
       "license": "permission"
     },
     {
@@ -6501,9 +5502,6 @@
         "name": "Rob Ennals",
         "github": "robennals"
       },
-      "originalRepo": "https://github.com/robennals/bb-plugins",
-      "originalRef": "pr-manager/v0.2.0",
-      "originalCommit": "fe0fd2636f2a45c64e6f1ad21bc6bd782a2cbe18",
       "license": "permission"
     },
     {
@@ -6521,9 +5519,6 @@
         "name": "Adebola",
         "github": "AdzeB"
       },
-      "originalRepo": "https://github.com/AdzeB/bb-plugin-pr-notes",
-      "originalRef": "v0.1.0",
-      "originalCommit": "36781366f71cc9889bc70482354201cd958f3c70",
       "license": "MIT"
     },
     {
@@ -6540,9 +5535,6 @@
         "name": "AlsoKnownAs-Ax",
         "github": "AlsoKnownAs-Ax"
       },
-      "originalRepo": "https://github.com/AlsoKnownAs-Ax/bb-plugin-pr-xray",
-      "originalRef": "v1.5.1",
-      "originalCommit": "eeedc27f9d246b70542eed90d5686f329ea28f13",
       "license": "MIT"
     },
     {
@@ -6559,9 +5551,6 @@
         "name": "Maros Pekarik",
         "github": "marospekarik"
       },
-      "originalRepo": "https://github.com/marospekarik/bb-plugin-preset-buttons",
-      "originalRef": "v0.1.0",
-      "originalCommit": "6c22ac37fd39c1d23c37305a88eab1629ffd8286",
       "license": "MIT"
     },
     {
@@ -6578,9 +5567,6 @@
         "name": "y5k",
         "github": "imyeskela"
       },
-      "originalRepo": "https://github.com/imyeskela/bb-plugin-preset-sync",
-      "originalRef": "v0.2.2",
-      "originalCommit": "6bca6e10c4706820bcc62072a3e7f4b9f007d47f",
       "license": "MIT"
     },
     {
@@ -6597,9 +5583,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-progressive-skill",
-      "originalRef": "v0.2.1",
-      "originalCommit": "3a867de6b20d50fdd5522af8a6ff1a410aec0788",
       "license": "MIT"
     },
     {
@@ -6616,9 +5599,6 @@
         "name": "NinjasWeb",
         "github": "ninjasweb"
       },
-      "originalRepo": "https://github.com/ninjasweb/bb-project-colors",
-      "originalRef": "v0.1.4",
-      "originalCommit": "aca04c16703421365f160369f7af8edd604cc246",
       "license": "permission"
     },
     {
@@ -6635,9 +5615,6 @@
         "name": "NinjasWeb",
         "github": "ninjasweb"
       },
-      "originalRepo": "https://github.com/ninjasweb/bb-plugin-project-explorer",
-      "originalRef": "v0.1.4",
-      "originalCommit": "6b1781acb2d5e3bcc4f6d7ef0a940e0f2d56c7ca",
       "license": "MIT"
     },
     {
@@ -6654,9 +5631,6 @@
         "name": "Roger Serra",
         "github": "Hazihell"
       },
-      "originalRepo": "https://github.com/Hazihell/bb-plugin-project-instructions",
-      "originalRef": "v0.1.0",
-      "originalCommit": "1fdc01b6d6afb88c717a64384288e2b7f2324869",
       "license": "MIT"
     },
     {
@@ -6673,9 +5647,6 @@
         "name": "Jem",
         "github": "jem-computer"
       },
-      "originalRepo": "https://github.com/jem-computer/bb-project-page",
-      "originalRef": "v0.1.0",
-      "originalCommit": "923459ea961fa295e89c087737517ee804700a25",
       "license": "MIT"
     },
     {
@@ -6692,9 +5663,6 @@
         "name": "lumenikoly",
         "github": "lumenikoly"
       },
-      "originalRepo": "https://github.com/lumenikoly/useful-bb-plugins",
-      "originalRef": "project-themes-v0.1.0",
-      "originalCommit": "e3d7dcaeb47c37e456f9bb1765338eb98f698188",
       "license": "MIT"
     },
     {
@@ -6711,9 +5679,6 @@
         "name": "Willhong",
         "github": "Willhong"
       },
-      "originalRepo": "https://github.com/Willhong/bb-plugin-project-usage-sort",
-      "originalRef": "v0.1.0",
-      "originalCommit": "e33c91c16f2f31893e5f1286c260e77db75e7705",
       "license": "MIT"
     },
     {
@@ -6731,9 +5696,6 @@
         "name": "Daniel Proskurka",
         "github": "danielproj"
       },
-      "originalRepo": "https://github.com/danielproj/bb-plugin-prolepsia",
-      "originalRef": "v0.1.1",
-      "originalCommit": "6df9a39fda719d0d4388c494bb325299fbfdc439",
       "license": "permission"
     },
     {
@@ -6750,9 +5712,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-prompt-enhancer",
-      "originalRef": "v0.3.0",
-      "originalCommit": "987949f8ac1d83ed0dc6d88339f115b929309193",
       "license": "MIT"
     },
     {
@@ -6769,9 +5728,6 @@
         "name": "Pablo Oliva",
         "github": "pablooliva"
       },
-      "originalRepo": "https://github.com/pablooliva/bb-ide-session-prompts",
-      "originalRef": "prompt-log/v0.1.0",
-      "originalCommit": "8b64f80c2d5330cfd0d8ff6d26c5f87147dd8e98",
       "license": "permission"
     },
     {
@@ -6788,9 +5744,6 @@
         "name": "brsbl",
         "github": "brsbl"
       },
-      "originalRepo": "https://github.com/brsbl/bb-plugins",
-      "originalRef": "prompt-shaper/v0.1.6",
-      "originalCommit": "8c694a3a66b20191f13683c30bed69043057d8cb",
       "license": "permission"
     },
     {
@@ -6808,9 +5761,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-prompts",
-      "originalRef": "v0.4.0",
-      "originalCommit": "41222c67d4acd75695a36ec950dd35b12946fa68",
       "license": "MIT"
     },
     {
@@ -6827,9 +5777,6 @@
         "name": "wjin17",
         "github": "wjin17"
       },
-      "originalRepo": "https://github.com/wjin17/bb-plugin-provider-authentication",
-      "originalRef": "v0.1.0",
-      "originalCommit": "e0fb7fdcefcb60a846b18202f9b45bded3e33382",
       "license": "permission"
     },
     {
@@ -6847,9 +5794,6 @@
         "name": "Christopher Böbel",
         "github": "ChrBoebel"
       },
-      "originalRepo": "https://github.com/ChrBoebel/bb-plugin-provider-brand-marks",
-      "originalRef": "v0.1.3",
-      "originalCommit": "7a326de2e69b4cff80d2c6fbad9a424dd7dccf73",
       "license": "MIT"
     },
     {
@@ -6866,9 +5810,6 @@
         "name": "Sergey Baus",
         "github": "neoromantic"
       },
-      "originalRepo": "https://github.com/neoromantic/bb-plugin-provider-retry-advanced",
-      "originalRef": "v0.2.1",
-      "originalCommit": "21d0fd6157ac89a7185c5626fec49afbebe004be",
       "license": "MIT"
     },
     {
@@ -6886,9 +5827,6 @@
         "name": "Braedon Saunders",
         "github": "braedonsaunders"
       },
-      "originalRepo": "https://github.com/braedonsaunders/bb-plugin-provider-usage",
-      "originalRef": "v0.15.1",
-      "originalCommit": "203cf676fc6545867033e912bdc9ea1f1228b1e3",
       "license": "MIT"
     },
     {
@@ -6905,9 +5843,6 @@
         "name": "WYEZ",
         "github": "wy3z"
       },
-      "originalRepo": "https://github.com/wy3z/bb-plugin-pstack",
-      "originalRef": "v0.1.0",
-      "originalCommit": "7f3882b9fd495a6075d9c8c82717e6564c6d8029",
       "license": "MIT"
     },
     {
@@ -6924,9 +5859,6 @@
         "name": "Erik MacKinnon",
         "github": "erikmackinnon"
       },
-      "originalRepo": "https://github.com/erikmackinnon/bb-plugin-pstack-for-bb",
-      "originalRef": "v0.1.13",
-      "originalCommit": "701c50207f1ae2719e3318a758c753ee7969dd8d",
       "license": "permission"
     },
     {
@@ -6944,9 +5876,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-pulse",
-      "originalRef": "v0.1.23",
-      "originalCommit": "5f03f926bf80be130ce5bfc1e254f6e2651e049b",
       "license": "MIT"
     },
     {
@@ -6963,9 +5892,6 @@
         "name": "Kavii Suri",
         "github": "KaviiSuri"
       },
-      "originalRepo": "https://github.com/KaviiSuri/bb-plugin-px0",
-      "originalRef": "v0.1.3",
-      "originalCommit": "9c25f947fc57fda78e2efeefbb39bb0305d50c31",
       "license": "permission"
     },
     {
@@ -6982,9 +5908,6 @@
         "name": "Oddship",
         "github": "rhnvrm"
       },
-      "originalRepo": "https://github.com/oddship/bb-plugins",
-      "originalRef": "px0-review/v0.1.1",
-      "originalCommit": "7d415870acba6b05e6b0209053f04148ccb01f68",
       "license": "permission"
     },
     {
@@ -7002,9 +5925,6 @@
         "name": "Foma",
         "github": "xMinor-1"
       },
-      "originalRepo": "https://github.com/xMinor-1/bb-plugins",
-      "originalRef": "qlik-sense/v0.1.2",
-      "originalCommit": "63957bb0df40aa7f84a6a2788b258e488031950d",
       "license": "MIT"
     },
     {
@@ -7022,9 +5942,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "quick-chat/v0.1.1",
-      "originalCommit": "99cf957220eb4998cf7d918326a1b0f380b77822",
       "license": "MIT"
     },
     {
@@ -7042,9 +5959,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "quick-compose/v0.1.0",
-      "originalCommit": "99cf957220eb4998cf7d918326a1b0f380b77822",
       "license": "MIT"
     },
     {
@@ -7062,9 +5976,6 @@
         "name": "Mikhail Turilin",
         "github": "mturilin"
       },
-      "originalRepo": "https://github.com/mturilin/bb-plugin-quick-reply",
-      "originalRef": "v0.2.2",
-      "originalCommit": "3d1b7229826651229acdddd0f599c583c0b5814a",
       "license": "GPL-3.0"
     },
     {
@@ -7081,9 +5992,6 @@
         "name": "Maros Pekarik",
         "github": "marospekarik"
       },
-      "originalRepo": "https://github.com/marospekarik/bb-plugin-quick-thread",
-      "originalRef": "v0.1.0",
-      "originalCommit": "e34a6ce23d8d7ca950becd05bd4c2b4e43cef28f",
       "license": "MIT"
     },
     {
@@ -7101,9 +6009,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-theme-rad-binder",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3d6a30ddf275f822f4d7db3d1289127b88219533",
       "license": "MIT"
     },
     {
@@ -7121,9 +6026,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-radar",
-      "originalRef": "v0.5.4",
-      "originalCommit": "9bad0be13ca7a795e6c7eff6be402b63af66173f",
       "license": "MIT"
     },
     {
@@ -7141,9 +6043,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-radar-sidebar",
-      "originalRef": "v0.5.3",
-      "originalCommit": "9a20bfab7ec1dcb098c5bd9b3e4fac6a975cd613",
       "license": "MIT"
     },
     {
@@ -7161,9 +6060,6 @@
         "name": "Chris Sells",
         "github": "csells"
       },
-      "originalRepo": "https://github.com/csells/bb-plugins",
-      "originalRef": "read-aloud/v0.1.4",
-      "originalCommit": "074e0723fdefeeab4639efdd0c4cccca659683e8",
       "license": "MIT"
     },
     {
@@ -7181,9 +6077,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-realtime-gateway",
-      "originalRef": "v0.1.1",
-      "originalCommit": "c174a718ef3cf32b6141c8156cfe1812cfb96f0a",
       "license": "MIT"
     },
     {
@@ -7201,9 +6094,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-recap",
-      "originalRef": "v0.2.4",
-      "originalCommit": "b6e8c3cd884508ab05448e018968a56af18ff814",
       "license": "MIT"
     },
     {
@@ -7221,9 +6111,6 @@
         "name": "Christopher Böbel",
         "github": "ChrBoebel"
       },
-      "originalRepo": "https://github.com/ChrBoebel/bb-plugin-receipts",
-      "originalRef": "v0.1.1",
-      "originalCommit": "8410b3490f902390a0c9378c503b6d81da7a9447",
       "license": "MIT"
     },
     {
@@ -7241,9 +6128,6 @@
         "name": "Braedon Saunders",
         "github": "braedonsaunders"
       },
-      "originalRepo": "https://github.com/braedonsaunders/bb-plugin-reclaim",
-      "originalRef": "v0.1.2",
-      "originalCommit": "6de860d75f8144bdd6fdd72fb28477080e4567d7",
       "license": "MIT"
     },
     {
@@ -7260,9 +6144,6 @@
         "name": "Ivan Afanasov",
         "github": "VanDalkvist"
       },
-      "originalRepo": "https://github.com/VanDalkvist/bb-plugin-references",
-      "originalRef": "v0.1.3",
-      "originalCommit": "d1f1b1868b9fd0b91ae17518149e98685d31b2d5",
       "license": "permission"
     },
     {
@@ -7279,9 +6160,6 @@
         "name": "suiramdev",
         "github": "suiramdev"
       },
-      "originalRepo": "https://github.com/suiramdev/bb-plugin-rephrase",
-      "originalRef": "v0.2.1",
-      "originalCommit": "957bbc881339473c6606b9c892675bc296bf8a8b",
       "license": "MIT"
     },
     {
@@ -7298,9 +6176,6 @@
         "name": "Sergey Baus",
         "github": "neoromantic"
       },
-      "originalRepo": "https://github.com/neoromantic/bb-plugin-responsibilities",
-      "originalRef": "v0.2.3",
-      "originalCommit": "477211526b2509e3f11b9f897250d33785a395f5",
       "license": "MIT"
     },
     {
@@ -7317,9 +6192,6 @@
         "name": "Charles Lee",
         "github": "chug2k"
       },
-      "originalRepo": "https://github.com/chug2k/bb-plugin-retitle",
-      "originalRef": "v0.1.2",
-      "originalCommit": "88213f25100b32a3581f9b8fa9ccf7286ab5747f",
       "license": "MIT"
     },
     {
@@ -7336,9 +6208,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "reveal-in-finder/v0.1.1",
-      "originalCommit": "d9e817dd743812366a207d363f8d38e3285eb222",
       "license": "permission"
     },
     {
@@ -7356,9 +6225,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-rewind",
-      "originalRef": "v0.1.2",
-      "originalCommit": "c9bdd39bef58217901da59ee0be3b703608943f6",
       "license": "MIT"
     },
     {
@@ -7375,9 +6241,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "role-picker/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -7394,9 +6257,6 @@
         "name": "lanjak",
         "github": "lanjak"
       },
-      "originalRepo": "https://github.com/lanjak/bb-plugin-route",
-      "originalRef": "v0.1.0",
-      "originalCommit": "8efd98bbe6bb41e6614656d2713fd728dd0315c1",
       "license": "MIT"
     },
     {
@@ -7414,9 +6274,6 @@
         "name": "Zhen Huang",
         "github": "ZhenHuangLab"
       },
-      "originalRepo": "https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer",
-      "originalRef": "v0.1.2",
-      "originalCommit": "65684fd9d26afe926d1146f7a54a2f6718089ffd",
       "license": "MIT"
     },
     {
@@ -7433,9 +6290,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-rtk",
-      "originalRef": "v0.2.1",
-      "originalCommit": "9d68b55f6a029e34b2c4f3739d055ebf67a63d9e",
       "license": "permission"
     },
     {
@@ -7453,9 +6307,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "save-my-model/v0.1.3",
-      "originalCommit": "f9836254c0286296d36f2b2af4c03cd7160823b8",
       "license": "MIT"
     },
     {
@@ -7473,9 +6324,6 @@
         "name": "Pritam Sharma",
         "github": "notpritam"
       },
-      "originalRepo": "https://github.com/notpritam/bb-plugin-scoped-skills",
-      "originalRef": "v0.2.1",
-      "originalCommit": "468c5f11526182854512d4c8d56be5dca2257a81",
       "license": "MIT"
     },
     {
@@ -7493,9 +6341,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "screen-sharing/v0.5.0",
-      "originalCommit": "bab2ef0e9400fc6914ebc4f339681f63aa3f0576",
       "license": "MIT"
     },
     {
@@ -7513,9 +6358,6 @@
         "name": "strelov1",
         "github": "strelov1"
       },
-      "originalRepo": "https://github.com/strelov1/bb-plugin-screenshot",
-      "originalRef": "3e837910a531e4e927b71da7371e4a14a0b6070f",
-      "originalCommit": "3e837910a531e4e927b71da7371e4a14a0b6070f",
       "license": "permission"
     },
     {
@@ -7532,9 +6374,6 @@
         "name": "siluthfi",
         "github": "siluthfi"
       },
-      "originalRepo": "https://github.com/siluthfi/bb-plugin-section-load-more",
-      "originalRef": "v0.1.1",
-      "originalCommit": "1b25ce2faa1e2e6e497e4b8268d448f8263c5d35",
       "license": "MIT"
     },
     {
@@ -7551,9 +6390,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-security-guidance",
-      "originalRef": "v0.2.1",
-      "originalCommit": "b7a9e43991b15055f9f71bec25ac2846a5fab2bb",
       "license": "Apache-2.0"
     },
     {
@@ -7570,9 +6406,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-sentry-issues",
-      "originalRef": "v0.1.2",
-      "originalCommit": "e061a880210906f84c95665619d804d27c554e13",
       "license": "MIT"
     },
     {
@@ -7590,9 +6423,6 @@
         "name": "Foma",
         "github": "xMinor-1"
       },
-      "originalRepo": "https://github.com/xMinor-1/bb-plugins",
-      "originalRef": "server-status/v0.1.2",
-      "originalCommit": "9080ce570ed201ee855c51d7b5d37ae5ced87aad",
       "license": "MIT"
     },
     {
@@ -7609,9 +6439,6 @@
         "name": "Nikolai Marchenko",
         "github": "neonick"
       },
-      "originalRepo": "https://github.com/neonick/bb-plugin-session-history",
-      "originalRef": "v0.1.1",
-      "originalCommit": "1aaf8b594b0af2cc142badf0cc2c23ddc8e3e049",
       "license": "MIT"
     },
     {
@@ -7629,9 +6456,6 @@
         "name": "Kalindu De Costa",
         "github": "kalindudc"
       },
-      "originalRepo": "https://github.com/kalindudc/bb-marketplace",
-      "originalRef": "session-log/v0.5.0",
-      "originalCommit": "e4283e246176fcf6d86497f0a0c3088598c0483f",
       "license": "MIT"
     },
     {
@@ -7648,9 +6472,6 @@
         "name": "Pablo Oliva",
         "github": "pablooliva"
       },
-      "originalRepo": "https://github.com/pablooliva/bb-ide-session-notes-plugin",
-      "originalRef": "v0.1.1",
-      "originalCommit": "fcf6a6feca017eded9f67e808e8360bc20c69d5a",
       "license": "MIT"
     },
     {
@@ -7667,9 +6488,6 @@
         "name": "brzvsk",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "sessions-switcher/v0.1.1",
-      "originalCommit": "34cd0bed8842001524c693e42ed29efe560c94b6",
       "license": "MIT"
     },
     {
@@ -7687,9 +6505,6 @@
         "name": "Victor Aremu",
         "github": "ahkohd"
       },
-      "originalRepo": "https://github.com/ahkohd/bb-plugin-shell-tasks",
-      "originalRef": "v0.1.44",
-      "originalCommit": "81e02359474ec53c6a4128430660f7eb3cc7e518",
       "license": "MIT"
     },
     {
@@ -7707,9 +6522,6 @@
         "name": "Chris Abra",
         "github": "chrisabra-co"
       },
-      "originalRepo": "https://github.com/chrisabra-co/bb-plugin-shipyard",
-      "originalRef": "v0.2.0",
-      "originalCommit": "b8dac3e5aee3ef1b02a49def8d97f0a49c6b7a04",
       "license": "permission"
     },
     {
@@ -7726,9 +6538,6 @@
         "name": "Muhammad Siddeek",
         "github": "muhammad-siddeek"
       },
-      "originalRepo": "https://github.com/muhammad-siddeek/bb-plugin-shop-kanban",
-      "originalRef": "v0.16.2",
-      "originalCommit": "938ef3aa8ebae8a9e3a1c51fda03217be78fd470",
       "license": "MIT"
     },
     {
@@ -7746,9 +6555,6 @@
         "name": "Andreas McDermott",
         "github": "andreasmcdermott"
       },
-      "originalRepo": "https://github.com/andreasmcdermott/bb-plugin-shortcut",
-      "originalRef": "main",
-      "originalCommit": "81ffd128dab6315a3f84872c2a918bfc1417a38b",
       "license": "MIT"
     },
     {
@@ -7766,9 +6572,6 @@
         "name": "Sergey Kalachev",
         "github": "meanwhile17"
       },
-      "originalRepo": "https://github.com/meanwhile17/bb-plugin-show-latest-threads",
-      "originalRef": "v0.1.2",
-      "originalCommit": "03eb90389717ff98b38fc80357b0d694291e402d",
       "license": "MIT"
     },
     {
@@ -7786,9 +6589,6 @@
         "name": "Kalindu De Costa",
         "github": "kalindudc"
       },
-      "originalRepo": "https://github.com/kalindudc/bb-marketplace",
-      "originalRef": "shuttle/v0.10.2",
-      "originalCommit": "15d6ecbd9bf7792f92ebe3fb2107511aa7e8cee9",
       "license": "MIT"
     },
     {
@@ -7805,9 +6605,6 @@
         "name": "Job de Noo",
         "github": "devnoo"
       },
-      "originalRepo": "https://github.com/devnoo/bb-side-board",
-      "originalRef": "v0.1.0",
-      "originalCommit": "1d7f4ab0d41159b311a43a62f83647281e8425bc",
       "license": "MIT"
     },
     {
@@ -7824,9 +6621,6 @@
         "name": "Juan Turk",
         "github": "juanem1"
       },
-      "originalRepo": "https://github.com/juanem1/bb-sidebar-plus-plugin",
-      "originalRef": "main",
-      "originalCommit": "5e2d73aaed57402a543a446e762428b9220eb4f1",
       "license": "MIT"
     },
     {
@@ -7843,9 +6637,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "sidebar-subtitles/v0.1.2",
-      "originalCommit": "0413c6498f683eeb3d5161f1cc5956b5d7639499",
       "license": "MIT"
     },
     {
@@ -7862,9 +6653,6 @@
         "name": "Charles Lee",
         "github": "chug2k"
       },
-      "originalRepo": "https://github.com/chug2k/bb-plugin-simple-sidebar-folders",
-      "originalRef": "v0.1.0",
-      "originalCommit": "1e21ce94294e2f37373b69019c71aa13913bc434",
       "license": "MIT"
     },
     {
@@ -7882,9 +6670,6 @@
         "name": "Daniel",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-simple-summaries",
-      "originalRef": "v0.1.0",
-      "originalCommit": "6afb58cbeee515f78dc0a5584eb5be751f3e88a5",
       "license": "MIT"
     },
     {
@@ -7901,9 +6686,6 @@
         "name": "Florian Fiedler",
         "github": "flo-sovyn-eu"
       },
-      "originalRepo": "https://github.com/sovyn-eu/bb-plugin-skiff",
-      "originalRef": "v0.2.1",
-      "originalCommit": "6c06102e1db6c2ba97d7de1b65be546e630a3e2b",
       "license": "permission"
     },
     {
@@ -7920,9 +6702,6 @@
         "name": "Ayan Masood",
         "github": "Ayan-M-Dev"
       },
-      "originalRepo": "https://github.com/Ayan-M-Dev/bb-plugin-skill-library",
-      "originalRef": "v0.1.0",
-      "originalCommit": "a99c584fe57719ee396c7a3bbda4f349795ca19d",
       "license": "permission"
     },
     {
@@ -7940,9 +6719,6 @@
         "name": "Sankalpa Acharya",
         "github": "sankalpaacharya"
       },
-      "originalRepo": "https://github.com/sankalpaacharya/bb-skill-manager",
-      "originalRef": "v0.1.1",
-      "originalCommit": "ffb6d6339a55789b783d71f0ad52b5ed7d97aae7",
       "license": "MIT"
     },
     {
@@ -7959,9 +6735,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "skills/v0.3.2",
-      "originalCommit": "f556a07740f36195148a365fa63c109e97f5bfa8",
       "license": "MIT"
     },
     {
@@ -7979,9 +6752,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "slopcop/v0.1.6",
-      "originalCommit": "99cf957220eb4998cf7d918326a1b0f380b77822",
       "license": "MIT"
     },
     {
@@ -7998,9 +6768,6 @@
         "name": "Patrick Lee",
         "github": "patleeman"
       },
-      "originalRepo": "https://github.com/patleeman/bb-plugins",
-      "originalRef": "smart-queue/v0.2.0",
-      "originalCommit": "ce940fc22f50129210cd76a083f0db732701d08a",
       "license": "permission"
     },
     {
@@ -8017,9 +6784,6 @@
         "name": "Mikhail Turilin",
         "github": "mturilin"
       },
-      "originalRepo": "https://github.com/mturilin/bb-plugin-sops",
-      "originalRef": "v0.1.1",
-      "originalCommit": "254364c6f3c9ea697d8973a03c3c32c1f352eca2",
       "license": "GPL-3.0"
     },
     {
@@ -8036,9 +6800,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-souls",
-      "originalRef": "v0.1.1",
-      "originalCommit": "7576cbef5453d99f200564c6f9bba40a2e8c267f",
       "license": "MIT"
     },
     {
@@ -8055,9 +6816,6 @@
         "name": "Siarhei Tarasenka",
         "github": "tarasenko-by"
       },
-      "originalRepo": "https://github.com/tarasenko-by/bb-plugin-spaces",
-      "originalRef": "v0.4.1",
-      "originalCommit": "8a12efd80db0253ffed3df30548f308926c674cd",
       "license": "MIT"
     },
     {
@@ -8075,9 +6833,6 @@
         "name": "Peter Abu-Ekpeshie",
         "github": "peteabu"
       },
-      "originalRepo": "https://github.com/peteabu/bb-plugin-specs",
-      "originalRef": "v0.1.9",
-      "originalCommit": "f47d25ce5d46745d6ce46d128a41f55834107892",
       "license": "MIT"
     },
     {
@@ -8094,9 +6849,6 @@
         "name": "yazydzhi",
         "github": "yazydzhi"
       },
-      "originalRepo": "https://github.com/yazydzhi/bb-plugin-sql",
-      "originalRef": "v0.6.3",
-      "originalCommit": "07333453090d6f3f45821c9fc1c3b59617d02ccf",
       "license": "MIT"
     },
     {
@@ -8114,9 +6866,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "steel-browser/v0.2.0",
-      "originalCommit": "b83f909dc95cd8307b719a84ac8dfffb1994723b",
       "license": "MIT"
     },
     {
@@ -8133,9 +6882,6 @@
         "name": "calionauta",
         "github": "calionauta"
       },
-      "originalRepo": "https://github.com/calionauta/bb-plugin-stelow",
-      "originalRef": "v0.104.0",
-      "originalCommit": "3dd14dc2ccc866f0ffec74c354353f072996f8f4",
       "license": "permission"
     },
     {
@@ -8152,9 +6898,6 @@
         "name": "Victor Aremu",
         "github": "ahkohd"
       },
-      "originalRepo": "https://github.com/ahkohd/bb-plugin-sticky-prompt",
-      "originalRef": "v0.2.4",
-      "originalCommit": "9d846129f0e9bf95c1cf19e28f8587ed50c62487",
       "license": "MIT"
     },
     {
@@ -8172,9 +6915,6 @@
         "name": "Ogi",
         "github": "obostjancic"
       },
-      "originalRepo": "https://github.com/obostjancic/bb-plugin-stl-preview",
-      "originalRef": "v0.1.0",
-      "originalCommit": "e73e4ecca76bb1bae41085b55bd5c466930df634",
       "license": "MIT"
     },
     {
@@ -8192,9 +6932,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-subscription-pace",
-      "originalRef": "v0.2.6",
-      "originalCommit": "c6ffa20bbc16c22f3ce10c14438e2c33984ec4f8",
       "license": "MIT"
     },
     {
@@ -8212,9 +6949,6 @@
         "name": "grrowl",
         "github": "grrowl"
       },
-      "originalRepo": "https://github.com/grrowl/bb-subscriptions",
-      "originalRef": "v0.3.4",
-      "originalCommit": "b7fac1bf046f63141b76084cab6be4896f3b7dfb",
       "license": "permission"
     },
     {
@@ -8231,9 +6965,6 @@
         "name": "Sergey Baus",
         "github": "neoromantic"
       },
-      "originalRepo": "https://github.com/neoromantic/bb-plugin-subthread-columns",
-      "originalRef": "v0.1.0",
-      "originalCommit": "b40723a771e201051b48a6bff256554898450a19",
       "license": "MIT"
     },
     {
@@ -8250,9 +6981,6 @@
         "name": "Daniel Bachhuber",
         "github": "danielbachhuber"
       },
-      "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
-      "originalRef": "super-diff/v0.1.1",
-      "originalCommit": "a6071fc842fcb3177920d84ae2323de4cf424ccd",
       "license": "permission"
     },
     {
@@ -8270,9 +6998,6 @@
         "name": "Kalindu De Costa",
         "github": "kalindudc"
       },
-      "originalRepo": "https://github.com/kalindudc/bb-marketplace",
-      "originalRef": "switchboard/v0.4.1",
-      "originalCommit": "b7e5554ef157b38a4871d6ab3767cbc79fbf0e62",
       "license": "MIT"
     },
     {
@@ -8289,9 +7014,6 @@
         "name": "Syns",
         "github": "BartSoj"
       },
-      "originalRepo": "https://github.com/synsdev/syns-bb-plugin",
-      "originalRef": "v0.12.4",
-      "originalCommit": "4137f9c829576d58e26340449cc7f52ee57f23d4",
       "license": "MIT"
     },
     {
@@ -8308,9 +7030,6 @@
         "name": "FlowGoCrazy",
         "github": "FlowGoCrazy"
       },
-      "originalRepo": "https://github.com/FlowGoCrazy/bb-plugin-system-messages-tab",
-      "originalRef": "v0.2.0",
-      "originalCommit": "062f8498832d141cfcb2ea832f45749eb5f50e89",
       "license": "MIT"
     },
     {
@@ -8327,9 +7046,6 @@
         "name": "Karol Chudzik",
         "github": "iipanda"
       },
-      "originalRepo": "https://github.com/iipanda/bb-plugin-t3-import",
-      "originalRef": "v0.1.1",
-      "originalCommit": "e1ed65578517ebaffc24a1bf82e1e577cc57512f",
       "license": "MIT"
     },
     {
@@ -8346,9 +7062,6 @@
         "name": "Sawyer Hood",
         "github": "SawyerHood"
       },
-      "originalRepo": "https://github.com/SawyerHood/sawyer-plugins",
-      "originalRef": "t3sidebar/v0.1.0",
-      "originalCommit": "8b535729dd2251ceb293c7caf74e43e477f942a3",
       "license": "MIT"
     },
     {
@@ -8366,9 +7079,6 @@
         "name": "Nikolai Berezovskii",
         "github": "brzvsk"
       },
-      "originalRepo": "https://github.com/brzvsk/bb-plugins",
-      "originalRef": "tab-close-right/v0.1.0",
-      "originalCommit": "32b57847b62656314908255c22657f07e67a35a5",
       "license": "MIT"
     },
     {
@@ -8385,9 +7095,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-table-expand",
-      "originalRef": "v0.1.1",
-      "originalCommit": "c5e8ed3b79367e85779c64f98e6ca5f89b95d2fb",
       "license": "MIT"
     },
     {
@@ -8405,9 +7112,6 @@
         "name": "Nicolay I",
         "github": "nicolay-i"
       },
-      "originalRepo": "https://github.com/nicolay-i/bb-plugin-tabs",
-      "originalRef": "v0.1.16",
-      "originalCommit": "20885ad155de8e727ef01eafb8ae729d5a9faa5d",
       "license": "MIT"
     },
     {
@@ -8425,9 +7129,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "taskboard/v0.3.7",
-      "originalCommit": "3e333355b29548c8e86b4fd563a0e4de3de577d6",
       "license": "MIT"
     },
     {
@@ -8444,9 +7145,6 @@
         "name": "Lev Kovalenko",
         "github": "levkovalenko"
       },
-      "originalRepo": "https://github.com/levkovalenko/bb-tasks-kanban",
-      "originalRef": "v0.2.3",
-      "originalCommit": "17d7c2b6522923a6cceb1086a9d31c24c65b2c12",
       "license": "MIT"
     },
     {
@@ -8463,9 +7161,6 @@
         "name": "Kirill Vechkasov",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-telegram-projects",
-      "originalRef": "v0.9.0",
-      "originalCommit": "5df96087ed612822891af4a0dbf5dbf570a50f93",
       "license": "MIT"
     },
     {
@@ -8482,9 +7177,6 @@
         "name": "Ryan Brown",
         "github": "ryanbbrown"
       },
-      "originalRepo": "https://github.com/ryanbbrown/bb-plugin-terminal-jobs",
-      "originalRef": "v0.2.0",
-      "originalCommit": "fee1c9782376def0b17c100a1c510bf0bcd256eb",
       "license": "MIT"
     },
     {
@@ -8501,9 +7193,6 @@
         "name": "ekaragodin",
         "github": "ekaragodin"
       },
-      "originalRepo": "https://github.com/ekaragodin/bb-plugin-terminal-toggle",
-      "originalRef": "v0.1.0",
-      "originalCommit": "8bb49a38999255f9e582bb6addbad86b2f99a6c1",
       "license": "MIT"
     },
     {
@@ -8520,9 +7209,6 @@
         "name": "Gustavo Ambrozio",
         "github": "gpambrozio"
       },
-      "originalRepo": "https://github.com/gpambrozio/bb-plugins",
-      "originalRef": "terminals/v0.4.0",
-      "originalCommit": "18daa40d134151132b64f1dfe2db65d698f43304",
       "license": "MIT"
     },
     {
@@ -8539,9 +7225,6 @@
         "name": "rayzalzero",
         "github": "rayzalzero"
       },
-      "originalRepo": "https://github.com/rayzalzero/bb-plugin-theme-glass",
-      "originalRef": "v0.1.2",
-      "originalCommit": "a468cec9d43aac3980284d1f929fe48e80a6ebba",
       "license": "permission"
     },
     {
@@ -8559,9 +7242,6 @@
         "name": "Foma",
         "github": "xMinor-1"
       },
-      "originalRepo": "https://github.com/xMinor-1/bb-plugins",
-      "originalRef": "theme-toggle/v0.3.2",
-      "originalCommit": "413d214cfeea09572450ed8dd3d116b1dd33308c",
       "license": "MIT"
     },
     {
@@ -8578,9 +7258,6 @@
         "name": "aMoonshine",
         "github": "aMoonshine"
       },
-      "originalRepo": "https://github.com/aMoonshine/bb-plugin-thread-glow",
-      "originalRef": "v0.1.1",
-      "originalCommit": "38037b5795e2a2ebe88df923fea67cdc91909f09",
       "license": "permission"
     },
     {
@@ -8597,9 +7274,6 @@
         "name": "brsbl",
         "github": "brsbl"
       },
-      "originalRepo": "https://github.com/brsbl/bb-plugins",
-      "originalRef": "thread-hover-cards/v0.1.5",
-      "originalCommit": "242abb67d257e45b89c0423e3cc7743b167a6e4f",
       "license": "permission"
     },
     {
@@ -8617,9 +7291,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugin-thread-images",
-      "originalRef": "v0.1.3",
-      "originalCommit": "d58373faf9dad738be42051192513458d1161abf",
       "license": "MIT"
     },
     {
@@ -8636,9 +7307,6 @@
         "name": "Marius Nouchet",
         "github": "suiramdev"
       },
-      "originalRepo": "https://github.com/suiramdev/bb-plugin-thread-namer",
-      "originalRef": "v0.1.0",
-      "originalCommit": "023d1229db020330a940e4bff060e23bd4b278d8",
       "license": "MIT"
     },
     {
@@ -8655,9 +7323,6 @@
         "name": "nikushiks",
         "github": "nikushiks"
       },
-      "originalRepo": "https://github.com/nikushiks/bb-plugin-thread-names",
-      "originalRef": "v0.1.0",
-      "originalCommit": "125f5eaa3b5a14dbe53026d9a9a8fb78c8191bc7",
       "license": "MIT"
     },
     {
@@ -8674,9 +7339,6 @@
         "name": "MattBot",
         "github": "mgmobrien"
       },
-      "originalRepo": "https://github.com/mgmobrien/bb-plugin-thread-nicknames",
-      "originalRef": "v0.2.1",
-      "originalCommit": "a35393aff02144cd88ada3158ade04eb49d496f3",
       "license": "permission"
     },
     {
@@ -8693,9 +7355,6 @@
         "name": "unifedev",
         "github": "BartSoj"
       },
-      "originalRepo": "https://github.com/unifedev/bb-thread-pages",
-      "originalRef": "v1.14.13",
-      "originalCommit": "a35be26827b0dd6fba37f1ae05e1fea53bcf5363",
       "license": "MIT"
     },
     {
@@ -8712,9 +7371,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-thread-reference",
-      "originalRef": "v0.1.0",
-      "originalCommit": "d49d17385ba0a12431fdf465ee94673bc4455c75",
       "license": "MIT"
     },
     {
@@ -8731,9 +7387,6 @@
         "name": "artbear",
         "github": "artbear"
       },
-      "originalRepo": "https://github.com/artbear/bb-plugin-thread-reveal",
-      "originalRef": "v0.1.0",
-      "originalCommit": "5d2093cd86885ca9e12ef6be5dda0e7db89581ed",
       "license": "permission"
     },
     {
@@ -8751,9 +7404,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "thread-switcher/v0.1.1",
-      "originalCommit": "22458de3fefc47ea8b2b115c6274a06e227548d9",
       "license": "permission"
     },
     {
@@ -8770,9 +7420,6 @@
         "name": "Anirudh Ranganath",
         "github": "anirudhranganath"
       },
-      "originalRepo": "https://github.com/anirudhranganath/bb-plugin-thread-tabs",
-      "originalRef": "v0.1.0",
-      "originalCommit": "d1956b1a62ffc5a6f968a9bbaafa28a729fc7e6f",
       "license": "MIT"
     },
     {
@@ -8789,9 +7436,6 @@
         "name": "VladPolet",
         "github": "VladPolet"
       },
-      "originalRepo": "https://github.com/VladPolet/bb-plugin-thread-tags",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3c8f23a81b5f8e80273720778e81baf2cca4cc8d",
       "license": "MIT"
     },
     {
@@ -8808,9 +7452,6 @@
         "name": "MacHatter1",
         "github": "MacHatter1"
       },
-      "originalRepo": "https://github.com/MacHatter1/bb-plugin-thread-time-machine",
-      "originalRef": "v0.1.1",
-      "originalCommit": "8cbc85f18ea00d99e9c4dd4584bd1ef36392a880",
       "license": "MIT"
     },
     {
@@ -8827,9 +7468,6 @@
         "name": "Dmitrii Maksimov",
         "github": "kartollikaa"
       },
-      "originalRepo": "https://github.com/kartollikaa/bb-plugins",
-      "originalRef": "thread-tree/v0.2.37",
-      "originalCommit": "0d651ee9062d79f58dcf0743e2d5c1ff4e57487d",
       "license": "permission"
     },
     {
@@ -8847,9 +7485,6 @@
         "name": "frankieshakes",
         "github": "frankieshakes"
       },
-      "originalRepo": "https://github.com/frankieshakes/bb-plugin-threadline",
-      "originalRef": "v0.1.6",
-      "originalCommit": "b0371efd9159622eecd149a4c702ed8053e742a2",
       "license": "permission"
     },
     {
@@ -8866,9 +7501,6 @@
         "name": "KosachMax",
         "github": "KosachMax"
       },
-      "originalRepo": "https://github.com/KosachMax/threadspace",
-      "originalRef": "v0.2.2",
-      "originalCommit": "20b53ff8194b99e533b575e94c8effebd882a625",
       "license": "MIT"
     },
     {
@@ -8885,9 +7517,6 @@
         "name": "Ivan Afanasov",
         "github": "VanDalkvist"
       },
-      "originalRepo": "https://github.com/VanDalkvist/bb-plugin-timer",
-      "originalRef": "v0.1.4",
-      "originalCommit": "95c5220e7c52d05e68b09cccecbf0e5334adc785",
       "license": "permission"
     },
     {
@@ -8904,9 +7533,6 @@
         "name": "Tom McKenzie",
         "github": "grrowl"
       },
-      "originalRepo": "https://github.com/grrowl/bb-tinted-threads",
-      "originalRef": "v0.1.4",
-      "originalCommit": "02ef6748b9c8cdfc30147fc12092956943649723",
       "license": "MIT"
     },
     {
@@ -8924,9 +7550,6 @@
         "name": "Alexander Kashin",
         "github": "AlexKashin29"
       },
-      "originalRepo": "https://github.com/AlexKashin29/bb-plugins",
-      "originalRef": "token-guard/v0.1.1",
-      "originalCommit": "a43d7ad2f7d3b5609166e8e346a670bed38cd646",
       "license": "MIT"
     },
     {
@@ -8944,9 +7567,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-token-pass-pace",
-      "originalRef": "v1.0.0",
-      "originalCommit": "8566335eda1ca9bba4b9d500ea25a8236b42442c",
       "license": "MIT"
     },
     {
@@ -8964,9 +7584,6 @@
         "name": "Pedro Filho",
         "github": "pedroapfilho"
       },
-      "originalRepo": "https://github.com/pedroapfilho/bb-plugin-tokenmaxx",
-      "originalRef": "v0.1.3",
-      "originalCommit": "3f90fe614180b35c718d9a4a80ed1d33dbb0ac37",
       "license": "MIT"
     },
     {
@@ -8984,9 +7601,6 @@
         "name": "Daniel Bachhuber",
         "github": "danielbachhuber"
       },
-      "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
-      "originalRef": "tokenomics/v0.2.2",
-      "originalCommit": "b5614806ae4456546fcf00d25ea6be302ada4382",
       "license": "permission"
     },
     {
@@ -9004,9 +7618,6 @@
         "name": "Justin Krehel",
         "github": "krehel"
       },
-      "originalRepo": "https://github.com/krehel/bb-plugin-tokyo-night",
-      "originalRef": "v0.1.0",
-      "originalCommit": "a5234d1a72e1fa58f3826cb239acd485701f76fe",
       "license": "MIT"
     },
     {
@@ -9023,9 +7634,6 @@
         "name": "nikushiks",
         "github": "nikushiks"
       },
-      "originalRepo": "https://github.com/nikushiks/bb-plugin-top-tabs",
-      "originalRef": "v0.1.2",
-      "originalCommit": "d62f58a4fcdaa43c0c5dfb39b107743fed6a37ce",
       "license": "MIT"
     },
     {
@@ -9043,9 +7651,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "touchbar/v0.1.2",
-      "originalCommit": "f9836254c0286296d36f2b2af4c03cd7160823b8",
       "license": "MIT"
     },
     {
@@ -9063,9 +7668,6 @@
         "name": "Nikolai Vysotskyi",
         "github": "nikolai-vysotskyi"
       },
-      "originalRepo": "https://github.com/nikolai-vysotskyi/trace-mcp",
-      "originalRef": "bb-plugin-trace-mcp/v0.2.0",
-      "originalCommit": "5d1f74e9d62776d527fcb4574951eb26ea6456cd",
       "license": "MIT"
     },
     {
@@ -9082,9 +7684,6 @@
         "name": "Patrick Lee",
         "github": "patleeman"
       },
-      "originalRepo": "https://github.com/patleeman/bb-plugins",
-      "originalRef": "traces/v0.1.1",
-      "originalCommit": "05c933a272b7dd2077897a6a0fbb64a4e78dc1e3",
       "license": "permission"
     },
     {
@@ -9102,9 +7701,6 @@
         "name": "Vyacheslav Artemyev",
         "github": "viartemev"
       },
-      "originalRepo": "https://github.com/viartemev/bb-tracing",
-      "originalRef": "v0.1.0",
-      "originalCommit": "52880a364a8778b02f511dcebc96cee9ee7eec66",
       "license": "permission"
     },
     {
@@ -9121,9 +7717,6 @@
         "name": "Chad Bailey",
         "github": "chadbailey59"
       },
-      "originalRepo": "https://github.com/chadbailey59/bb-plugin-tree-sidebar",
-      "originalRef": "v0.1.0",
-      "originalCommit": "4a6e5b4d560f3cbe59c7016219791c65f7081757",
       "license": "MIT"
     },
     {
@@ -9141,9 +7734,6 @@
         "name": "Ahmed Hesham Abdelkader",
         "github": "ahmedhesham6"
       },
-      "originalRepo": "https://github.com/ahmedhesham6/bb-plugin-treelanes",
-      "originalRef": "v0.2.2",
-      "originalCommit": "9ff46867b78dc4a63261fa64e804b2fa35b776cc",
       "license": "MIT"
     },
     {
@@ -9160,9 +7750,6 @@
         "name": "Mayank Bansal",
         "github": "MayankBansal12"
       },
-      "originalRepo": "https://github.com/MayankBansal12/bb-plugin-triage",
-      "originalRef": "5e74ed686c03a853c5ff3bf33883b91e75c16c2f",
-      "originalCommit": "5e74ed686c03a853c5ff3bf33883b91e75c16c2f",
       "license": "MIT"
     },
     {
@@ -9180,9 +7767,6 @@
         "name": "Alexander Kashin",
         "github": "AlexKashin29"
       },
-      "originalRepo": "https://github.com/AlexKashin29/bb-plugins",
-      "originalRef": "try-it/v0.1.0",
-      "originalCommit": "e980afd55f2ac31d1feafb682fcb948dcb057e27",
       "license": "MIT"
     },
     {
@@ -9199,9 +7783,6 @@
         "name": "Daniel Walker",
         "github": "bottlebrushes"
       },
-      "originalRepo": "https://github.com/bottlebrushes/bb-plugin-turn-tps",
-      "originalRef": "v0.1.0",
-      "originalCommit": "2ce207b1b7bff3a8cc78c3ea78679cd1ebcb0e01",
       "license": "permission"
     },
     {
@@ -9218,9 +7799,6 @@
         "name": "creshka",
         "github": "creshka"
       },
-      "originalRepo": "https://github.com/creshka/bb-plugin-typewriter",
-      "originalRef": "v0.1.1",
-      "originalCommit": "96f14ca17d7d45742bc8a20664391b3c978125d5",
       "license": "MIT"
     },
     {
@@ -9238,9 +7816,6 @@
         "name": "Andrey Yazev",
         "github": "n30g30"
       },
-      "originalRepo": "https://github.com/n30g30/bb-plugin-typography",
-      "originalRef": "v0.1.1",
-      "originalCommit": "97b0167ed232b08a19d3975ab4851af5eb883553",
       "license": "MIT"
     },
     {
@@ -9257,9 +7832,6 @@
         "name": "Mathieu Post",
         "github": "m9tdev"
       },
-      "originalRepo": "https://github.com/m9tdev/bb-plugin-ui-scale",
-      "originalRef": "v0.1.0",
-      "originalCommit": "b45df621fea8b6a164a72cdf371968cdf5c43fbe",
       "license": "MIT"
     },
     {
@@ -9276,9 +7848,6 @@
         "name": "WYEZ",
         "github": "wy3z"
       },
-      "originalRepo": "https://github.com/wy3z/bb-cursor-suite",
-      "originalRef": "ui-tweaks/v0.30.2",
-      "originalCommit": "3b898ba70f0d29f944e409094409c84620e6a538",
       "license": "MIT"
     },
     {
@@ -9296,9 +7865,6 @@
         "name": "Dillion Verma",
         "github": "dillionverma"
       },
-      "originalRepo": "https://github.com/dillionverma/bb-plugin-ultra-launcher",
-      "originalRef": "v1.0.0",
-      "originalCommit": "c76bb06f4da699b725b6a2ccaf8d2dd63abe384b",
       "license": "MIT"
     },
     {
@@ -9316,9 +7882,6 @@
         "name": "Braedon Saunders",
         "github": "braedonsaunders"
       },
-      "originalRepo": "https://github.com/braedonsaunders/bb-plugin-ultragoal",
-      "originalRef": "v0.29.0",
-      "originalCommit": "9d26e51f1069b8834d5f55216f5ef2fafdb019e6",
       "license": "MIT"
     },
     {
@@ -9336,9 +7899,6 @@
         "name": "Robert Sinke",
         "github": "robertsinke"
       },
-      "originalRepo": "https://github.com/robertsinke/bb-plugin-unified-inbox",
-      "originalRef": "v0.1.0",
-      "originalCommit": "bff38d885ea29373e091e5185d668bea2f456b8c",
       "license": "permission"
     },
     {
@@ -9355,9 +7915,6 @@
         "name": "prismatic7",
         "github": "prismatic7"
       },
-      "originalRepo": "https://github.com/prismatic7/bb-plugin-unslop",
-      "originalRef": "v0.2.1",
-      "originalCommit": "89c3a24b3867f313ce92e3206aa450f730bacba9",
       "license": "permission"
     },
     {
@@ -9374,9 +7931,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "uptime/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -9393,9 +7947,6 @@
         "name": "Mayank Bansal",
         "github": "MayankBansal12"
       },
-      "originalRepo": "https://github.com/MayankBansal12/bb-plugin-usage",
-      "originalRef": "v0.3.27",
-      "originalCommit": "bef704c1129425936e72b8db2e7b436990f39c68",
       "license": "MIT"
     },
     {
@@ -9412,9 +7963,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "usage-bar/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -9431,9 +7979,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "usage-limits/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -9451,9 +7996,6 @@
         "name": "Foma",
         "github": "xMinor-1"
       },
-      "originalRepo": "https://github.com/xMinor-1/bb-plugins",
-      "originalRef": "usage-meter/v0.2.5",
-      "originalCommit": "9080ce570ed201ee855c51d7b5d37ae5ced87aad",
       "license": "MIT"
     },
     {
@@ -9470,9 +8012,6 @@
         "name": "Evan",
         "github": "iamEvanYT"
       },
-      "originalRepo": "https://github.com/iamEvanYT/bb-usage-page",
-      "originalRef": "v1.2.0",
-      "originalCommit": "558a021d27da4064c342bb73ac3ca53c650b7e2b",
       "license": "MIT"
     },
     {
@@ -9490,9 +8029,6 @@
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
       },
-      "originalRepo": "https://github.com/MateoCerquetella/bb-plugins",
-      "originalRef": "usage-tracker/v0.1.17",
-      "originalCommit": "3e333355b29548c8e86b4fd563a0e4de3de577d6",
       "license": "MIT"
     },
     {
@@ -9510,9 +8046,6 @@
         "name": "Kalindu De Costa",
         "github": "kalindudc"
       },
-      "originalRepo": "https://github.com/kalindudc/bb-marketplace",
-      "originalRef": "vantage/v0.10.0",
-      "originalCommit": "e4d152bcf9a10dcb30252af9298244b0cae35dd1",
       "license": "MIT"
     },
     {
@@ -9529,9 +8062,6 @@
         "name": "Aaron Phifer",
         "github": "aaronphifer"
       },
-      "originalRepo": "https://github.com/aaronphifer/bb-plugin-variaq",
-      "originalRef": "v0.6.1",
-      "originalCommit": "f9cedeebfd1096dc8726ab5de6e891e1ad3ed55a",
       "license": "Apache-2.0"
     },
     {
@@ -9548,9 +8078,6 @@
         "name": "Costa Fotiadis",
         "github": "CostaFot"
       },
-      "originalRepo": "https://github.com/CostaFot/bb-plugin-vcs-widget",
-      "originalRef": "v0.7.0",
-      "originalCommit": "79d851b02714e9b640021e3e287e38d3921895e5",
       "license": "MIT"
     },
     {
@@ -9568,9 +8095,6 @@
         "name": "Divyesh Puri",
         "github": "divyesh-puri"
       },
-      "originalRepo": "https://github.com/divyesh-puri/bb-plugin-vercel-theme",
-      "originalRef": "v0.1.0",
-      "originalCommit": "855b0dfcfd78f13f8f5ff753617085ea3e79800d",
       "license": "MIT"
     },
     {
@@ -9588,9 +8112,6 @@
         "name": "rawizhere",
         "github": "rawizhere"
       },
-      "originalRepo": "https://github.com/rawizhere/bb-plugin-bb-agent-toolbox",
-      "originalRef": "v0.2.2",
-      "originalCommit": "1142e110f24949b195f8fd2b19f533a07b352bd9",
       "license": "MIT"
     },
     {
@@ -9607,9 +8128,6 @@
         "name": "Erik MacKinnon",
         "github": "erikmackinnon"
       },
-      "originalRepo": "https://github.com/erikmackinnon/bb-plugin-bbbbs",
-      "originalRef": "v0.1.1",
-      "originalCommit": "dd84fb9c5439fc0039b6a184fa35a2e18d9afe54",
       "license": "MIT"
     },
     {
@@ -9627,9 +8145,6 @@
         "name": "Victor Aremu",
         "github": "ahkohd"
       },
-      "originalRepo": "https://github.com/ahkohd/bb-box",
-      "originalRef": "v0.2.9",
-      "originalCommit": "6ff172080a714ff92b4e64ba14a691fd9b636aa1",
       "license": "MIT"
     },
     {
@@ -9646,9 +8161,6 @@
         "name": "Jem",
         "github": "jem-computer"
       },
-      "originalRepo": "https://github.com/jem-computer/bb-live",
-      "originalRef": "v0.1.1",
-      "originalCommit": "34d3cf19360a84cbb2c35d7a75d3df9ffc64d29b",
       "license": "MIT"
     },
     {
@@ -9666,9 +8178,6 @@
         "name": "Michael Yong",
         "github": "ymichael"
       },
-      "originalRepo": "https://github.com/ymichael/bb-plugins",
-      "originalRef": "bb-office/v1.0.1",
-      "originalCommit": "6c5719ce22c33237f033653af244dcec494eae34",
       "license": "MIT"
     },
     {
@@ -9685,9 +8194,6 @@
         "name": "Yusuf Akbulut",
         "github": "yusuf8834"
       },
-      "originalRepo": "https://github.com/yusuf8834/bb-sidebar",
-      "originalRef": "v0.3.11",
-      "originalCommit": "8a55301983efe97e148c972b7f3b918fd068b503",
       "license": "MIT"
     },
     {
@@ -9705,9 +8211,6 @@
         "name": "Dillion Verma",
         "github": "dillionverma"
       },
-      "originalRepo": "https://github.com/dillionverma/bb-plugin-vesper",
-      "originalRef": "v1.0.0",
-      "originalCommit": "79f578a06fa349c872d73ea3964bc17d6d126b7e",
       "license": "MIT"
     },
     {
@@ -9724,9 +8227,6 @@
         "name": "John Debay",
         "github": "jad"
       },
-      "originalRepo": "https://github.com/jad/bb-plugin-vim",
-      "originalRef": "v0.1.0",
-      "originalCommit": "0c4a253de1886f67b644b003cdef02fdf313024d",
       "license": "permission"
     },
     {
@@ -9743,9 +8243,6 @@
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
       },
-      "originalRepo": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin",
-      "originalRef": "visual-workflows/v0.1.0",
-      "originalCommit": "d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c",
       "license": "MIT"
     },
     {
@@ -9762,9 +8259,6 @@
         "name": "VKirill",
         "github": "VKirill"
       },
-      "originalRepo": "https://github.com/VKirill/bb-plugin-voice-input",
-      "originalRef": "v0.2.20",
-      "originalCommit": "4813ec7afacb3ddbd04721b3c7797591652e8c0b",
       "license": "permission"
     },
     {
@@ -9782,9 +8276,6 @@
         "name": "Steve Frost",
         "github": "steveafrost"
       },
-      "originalRepo": "https://github.com/steveafrost/bb-plugin-voice-mode",
-      "originalRef": "v0.1.15",
-      "originalCommit": "cc7b3c077250147eaf85a9e4765f45da14075a7d",
       "license": "MIT"
     },
     {
@@ -9801,9 +8292,6 @@
         "name": "Artur Karapetyan",
         "github": "architawr"
       },
-      "originalRepo": "https://github.com/architawr/bb-plugin-vps-watch",
-      "originalRef": "v0.1.0",
-      "originalCommit": "682a3c50833f565b904df1e1c2bf5e786a9547b5",
       "license": "MIT"
     },
     {
@@ -9821,9 +8309,6 @@
         "name": "GantisStorm",
         "github": "GantisStorm"
       },
-      "originalRepo": "https://github.com/GantisStorm/bb-plugin-vscode-server",
-      "originalRef": "v0.1.18",
-      "originalCommit": "c4e9611849c67ab552f0c14b194f430b5856246a",
       "license": "MIT"
     },
     {
@@ -9841,9 +8326,6 @@
         "name": "qwent71",
         "github": "qwent71"
       },
-      "originalRepo": "https://github.com/qwent71/bb-plugin-waiting-on-you",
-      "originalRef": "v0.1.0",
-      "originalCommit": "3af7eb2d7e1c81fde09767b54793a82637f997cf",
       "license": "MIT"
     },
     {
@@ -9861,9 +8343,6 @@
         "name": "Mayank",
         "github": "MayankBansal12"
       },
-      "originalRepo": "https://github.com/MayankBansal12/bb-plugin-wakatime",
-      "originalRef": "v0.5.3",
-      "originalCommit": "e242ec3fab2fa012df4fdf32bb8338e753f9f8e9",
       "license": "MIT"
     },
     {
@@ -9880,9 +8359,6 @@
         "name": "Mayank Bansal",
         "github": "MayankBansal12"
       },
-      "originalRepo": "https://github.com/MayankBansal12/bb-plugin-web-push-notify",
-      "originalRef": "v0.2.0",
-      "originalCommit": "f10d3d68c852f8ff6031f266f828ac4676d376a8",
       "license": "permission"
     },
     {
@@ -9900,9 +8376,6 @@
         "name": "Jonas Brusman",
         "github": "himynameisjonas"
       },
-      "originalRepo": "https://github.com/himynameisjonas/bb-plugin-wiki",
-      "originalRef": "v0.1.0",
-      "originalCommit": "b37c2b96995d26c5a012093ed9b6da871ea4419f",
       "license": "permission"
     },
     {
@@ -9920,9 +8393,6 @@
         "name": "Robert Haisfield",
         "github": "classicrob"
       },
-      "originalRepo": "https://github.com/classicrob/obsidian-at-home",
-      "originalRef": "v0.1.0",
-      "originalCommit": "630e8c854bf8d0a9833aa69f27404798205a50a0",
       "license": "MIT"
     },
     {
@@ -9939,9 +8409,6 @@
         "name": "OpenWiz",
         "github": "openwizdev"
       },
-      "originalRepo": "https://github.com/openwizdev/WizPlugins",
-      "originalRef": "wizbar/v0.3.0",
-      "originalCommit": "db759b971f90c0d31452ef9557e7ac8c60c525a5",
       "license": "permission"
     },
     {
@@ -9958,9 +8425,6 @@
         "name": "Pawel Jozefiak",
         "github": "joozio"
       },
-      "originalRepo": "https://github.com/joozio/bb-plugin-work-map",
-      "originalRef": "v0.1.19",
-      "originalCommit": "c0d38954cdf48599c907e1fd66ed3d121198264c",
       "license": "MIT"
     },
     {
@@ -9978,9 +8442,6 @@
         "name": "architawr",
         "github": "architawr"
       },
-      "originalRepo": "https://github.com/architawr/bb-plugin-workbench-explorer",
-      "originalRef": "v0.3.0",
-      "originalCommit": "46084c626fb827ba3fe273ffc21d7c2fd9d4478b",
       "license": "MIT"
     },
     {
@@ -9997,9 +8458,6 @@
         "name": "Dillion Verma",
         "github": "dillionverma"
       },
-      "originalRepo": "https://github.com/dillionverma/bb-plugin-ultra-sidebar",
-      "originalRef": "v1.0.0",
-      "originalCommit": "48d43ec84ea01d754a3be29f5fdc88522ea19b8d",
       "license": "MIT"
     },
     {
@@ -10016,9 +8474,6 @@
         "name": "VanDalkvist",
         "github": "VanDalkvist"
       },
-      "originalRepo": "https://github.com/VanDalkvist/bb-plugin-workspace-skills",
-      "originalRef": "v0.1.2",
-      "originalCommit": "1baa7415f01904cf2a7eefdf156680391e62c8e6",
       "license": "permission"
     },
     {
@@ -10035,9 +8490,6 @@
         "name": "wishcreator",
         "github": "wishcreator"
       },
-      "originalRepo": "https://github.com/wishcreator/bb-plugin-workspaces",
-      "originalRef": "v0.3.1",
-      "originalCommit": "49bd6f36b99a9284a3c235e6f113e2f33caf724a",
       "license": "MIT"
     },
     {
@@ -10054,9 +8506,6 @@
         "name": "xlightxyearx",
         "github": "xlightxyearx"
       },
-      "originalRepo": "https://github.com/to-infinity-labs/bb-plugin-worktree-ports",
-      "originalRef": "v0.1.2",
-      "originalCommit": "36a2098f5bf8129ab4fe39c71203bb5e5ea6a749",
       "license": "MIT"
     },
     {
@@ -10073,9 +8522,6 @@
         "name": "Kavii Suri",
         "github": "KaviiSuri"
       },
-      "originalRepo": "https://github.com/KaviiSuri/bb-plugin-worktree-setup",
-      "originalRef": "v0.1.1",
-      "originalCommit": "3302d7bd01326f765b67158c06981fabe4cecf2f",
       "license": "permission"
     },
     {
@@ -10092,9 +8538,6 @@
         "name": "Andrew Kiryushkin",
         "github": "Diffuzmetall"
       },
-      "originalRepo": "https://github.com/Diffuzmetall/bb-wterm-terminal-plugin",
-      "originalRef": "v0.3.18",
-      "originalCommit": "2c0d281812b352eaf8d2a6ba02702c24180dac99",
       "license": "MIT"
     },
     {
@@ -10111,9 +8554,6 @@
         "name": "Jing Reyhan",
         "github": "j1ngg"
       },
-      "originalRepo": "https://github.com/j1ngg/bb-plugin-x-viral",
-      "originalRef": "v0.1.0",
-      "originalCommit": "a16219bbc540058d29a250aa1863633f40314c9b",
       "license": "MIT"
     },
     {
@@ -10130,9 +8570,6 @@
         "name": "Vedran Burojević",
         "github": "vburojevic"
       },
-      "originalRepo": "https://github.com/vburojevic/bb-plugin-xcode",
-      "originalRef": "v0.5.0",
-      "originalCommit": "6fa9fea6dee58e8e152dbd1c5ac46c62d4b30c01",
       "license": "MIT"
     },
     {
@@ -10150,9 +8587,6 @@
         "name": "Reja Revaldy F",
         "github": "rejarevaldy"
       },
-      "originalRepo": "https://github.com/rejarevaldy/zen-koi",
-      "originalRef": "v0.6.3",
-      "originalCommit": "8bd04e1efeaaed8b832029ec63c62b42091e2db0",
       "license": "MIT"
     },
     {
@@ -10169,9 +8603,6 @@
         "name": "Yuusei",
         "github": "YuuseiP"
       },
-      "originalRepo": "https://github.com/YuuseiP/bb-plugin-zh-cn",
-      "originalRef": "v0.1.0",
-      "originalCommit": "ced343e75225774999cddc2ac93b7578b0578036",
       "license": "MIT"
     }
   ]

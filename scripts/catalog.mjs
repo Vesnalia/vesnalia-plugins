@@ -163,9 +163,6 @@ for (const id of ids) {
     subdir: `plugins/${id}`,
     version: pkg.version,
     originalAuthor: src.author,
-    originalRepo: src.originalRepo,
-    originalRef: src.ref,
-    originalCommit: src.commit,
     license: src.license,
   });
 }
