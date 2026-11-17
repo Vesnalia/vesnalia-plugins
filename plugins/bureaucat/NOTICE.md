@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Oddship (https://github.com/rhnvrm)
-- Исходный репозиторий: https://github.com/oddship/bb-plugins
-- Каталог в репозитории: plugins/bureaucat
-- Версия: bureaucat/v0.2.0, коммит 808c188fd1fcc8c53630b396ccee9ffe9ecedf9d
-- Ссылка на исходник: https://github.com/oddship/bb-plugins/tree/808c188fd1fcc8c53630b396ccee9ffe9ecedf9d/plugins/bureaucat
+- Версия: v0.2.0, коммит 808c188fd1fcc8c53630b396ccee9ffe9ecedf9d
 - Лицензия: лицензия не указана в исходном репозитории
 - Не перенесены демо-медиа из документации (5 файлов, есть в исходном репозитории)
 

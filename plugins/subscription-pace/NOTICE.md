@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Steve Frost (https://github.com/steveafrost)
-- Исходный репозиторий: https://github.com/steveafrost/bb-plugin-subscription-pace
-- Каталог в репозитории: (корень)
 - Версия: v0.2.6, коммит c6ffa20bbc16c22f3ce10c14438e2c33984ec4f8
-- Ссылка на исходник: https://github.com/steveafrost/bb-plugin-subscription-pace/tree/c6ffa20bbc16c22f3ce10c14438e2c33984ec4f8
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

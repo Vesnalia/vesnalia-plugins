@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Sancho (https://github.com/linncolnx)
-- Исходный репозиторий: https://github.com/linncolnx/bb-plugin-model-favicons
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит f3fb3b4583a43f30470a2899b1fd9fc8aea22c5c
-- Ссылка на исходник: https://github.com/linncolnx/bb-plugin-model-favicons/tree/f3fb3b4583a43f30470a2899b1fd9fc8aea22c5c
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

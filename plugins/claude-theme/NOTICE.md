@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Treo-Solutions (https://github.com/jtattreo)
-- Исходный репозиторий: https://github.com/Treo-Solutions/bb-plugin-claude-theme
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 3a10a27d8810d838914cb7247a753b1590fc8c5d
-- Ссылка на исходник: https://github.com/Treo-Solutions/bb-plugin-claude-theme/tree/3a10a27d8810d838914cb7247a753b1590fc8c5d
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

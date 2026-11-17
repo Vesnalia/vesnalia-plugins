@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: MattBot (https://github.com/mgmobrien)
-- Исходный репозиторий: https://github.com/mgmobrien/bb-plugin-thread-nicknames
-- Каталог в репозитории: (корень)
 - Версия: v0.2.1, коммит a35393aff02144cd88ada3158ade04eb49d496f3
-- Ссылка на исходник: https://github.com/mgmobrien/bb-plugin-thread-nicknames/tree/a35393aff02144cd88ada3158ade04eb49d496f3
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

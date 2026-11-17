@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: MacHatter1 (https://github.com/MacHatter1)
-- Исходный репозиторий: https://github.com/MacHatter1/bb-plugin-lego
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит fea3329b4701adedf9a22930896bf500c59a0d4a
-- Ссылка на исходник: https://github.com/MacHatter1/bb-plugin-lego/tree/fea3329b4701adedf9a22930896bf500c59a0d4a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

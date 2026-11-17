@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: dionis-d (https://github.com/dionis-d)
-- Исходный репозиторий: https://github.com/ols-md/bb-plugin-antigravity
-- Каталог в репозитории: (корень)
 - Версия: v0.1.7, коммит 9a83545619a7cbbe5c1b38c3700c1e227e3c1493
-- Ссылка на исходник: https://github.com/ols-md/bb-plugin-antigravity/tree/9a83545619a7cbbe5c1b38c3700c1e227e3c1493
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

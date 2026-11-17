@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: nfour (https://github.com/nfour)
-- Исходный репозиторий: https://github.com/nfour/bb-plugins
-- Каталог в репозитории: bb-plugin-pinned-turns
-- Версия: pinned-turns/v0.1.6, коммит ddc74a49e4dd20dd8d97abbceab4997b4d16f4a8
-- Ссылка на исходник: https://github.com/nfour/bb-plugins/tree/ddc74a49e4dd20dd8d97abbceab4997b4d16f4a8/bb-plugin-pinned-turns
+- Версия: v0.1.6, коммит ddc74a49e4dd20dd8d97abbceab4997b4d16f4a8
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

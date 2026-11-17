@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Lalit Rao (https://github.com/lalitjeevanrao)
-- Исходный репозиторий: https://github.com/lalitjeevanrao/bb-plugins
-- Каталог в репозитории: packages/bb-plugin-home-hero
-- Версия: home-hero/v0.1.3, коммит 5bc8db09a82d8863def245fa8728eec7d7a7bafe
-- Ссылка на исходник: https://github.com/lalitjeevanrao/bb-plugins/tree/5bc8db09a82d8863def245fa8728eec7d7a7bafe/packages/bb-plugin-home-hero
+- Версия: v0.1.3, коммит 5bc8db09a82d8863def245fa8728eec7d7a7bafe
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

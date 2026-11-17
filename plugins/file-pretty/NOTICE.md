@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Oleg (https://github.com/zom-2018)
-- Исходный репозиторий: https://github.com/zom-2018/bb-plugin-file-pretty
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 62e66a9f66284e627f5ad8338e447a482309095f
-- Ссылка на исходник: https://github.com/zom-2018/bb-plugin-file-pretty/tree/62e66a9f66284e627f5ad8338e447a482309095f
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

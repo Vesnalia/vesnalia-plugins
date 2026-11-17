@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Dmitrii Maksimov (https://github.com/kartollikaa)
-- Исходный репозиторий: https://github.com/kartollikaa/bb-plugins
-- Каталог в репозитории: plugins/thread-switcher
-- Версия: thread-switcher/v0.1.1, коммит 22458de3fefc47ea8b2b115c6274a06e227548d9
-- Ссылка на исходник: https://github.com/kartollikaa/bb-plugins/tree/22458de3fefc47ea8b2b115c6274a06e227548d9/plugins/thread-switcher
+- Версия: v0.1.1, коммит 22458de3fefc47ea8b2b115c6274a06e227548d9
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

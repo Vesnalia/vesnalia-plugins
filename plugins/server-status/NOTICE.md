@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Foma (https://github.com/xMinor-1)
-- Исходный репозиторий: https://github.com/xMinor-1/bb-plugins
-- Каталог в репозитории: plugins/server-status
-- Версия: server-status/v0.1.2, коммит 9080ce570ed201ee855c51d7b5d37ae5ced87aad
-- Ссылка на исходник: https://github.com/xMinor-1/bb-plugins/tree/9080ce570ed201ee855c51d7b5d37ae5ced87aad/plugins/server-status
+- Версия: v0.1.2, коммит 9080ce570ed201ee855c51d7b5d37ae5ced87aad
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

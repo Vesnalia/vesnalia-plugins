@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Reja Revaldy F (https://github.com/rejarevaldy)
-- Исходный репозиторий: https://github.com/rejarevaldy/zen-koi
-- Каталог в репозитории: (корень)
 - Версия: v0.6.3, коммит 8bd04e1efeaaed8b832029ec63c62b42091e2db0
-- Ссылка на исходник: https://github.com/rejarevaldy/zen-koi/tree/8bd04e1efeaaed8b832029ec63c62b42091e2db0
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

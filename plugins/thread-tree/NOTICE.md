@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Dmitrii Maksimov (https://github.com/kartollikaa)
-- Исходный репозиторий: https://github.com/kartollikaa/bb-plugins
-- Каталог в репозитории: plugins/thread-tree
-- Версия: thread-tree/v0.2.37, коммит 0d651ee9062d79f58dcf0743e2d5c1ff4e57487d
-- Ссылка на исходник: https://github.com/kartollikaa/bb-plugins/tree/0d651ee9062d79f58dcf0743e2d5c1ff4e57487d/plugins/thread-tree
+- Версия: v0.2.37, коммит 0d651ee9062d79f58dcf0743e2d5c1ff4e57487d
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Tom McKenzie (https://github.com/grrowl)
-- Исходный репозиторий: https://github.com/grrowl/bb-lanes
-- Каталог в репозитории: (корень)
-- Версия: agent-lanes/v0.1.4, коммит 01d6b6c73a97c1bff4d439e034f23cb6b1baa54a
-- Ссылка на исходник: https://github.com/grrowl/bb-lanes/tree/01d6b6c73a97c1bff4d439e034f23cb6b1baa54a
+- Версия: v0.1.4, коммит 01d6b6c73a97c1bff4d439e034f23cb6b1baa54a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (43 файлов, есть в исходном репозитории)
 

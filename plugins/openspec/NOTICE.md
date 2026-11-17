@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Aleksander Khanteev (https://github.com/khaale)
-- Исходный репозиторий: https://github.com/khaale/bb-openspec
-- Каталог в репозитории: (корень)
 - Версия: main, коммит 2798fd7edcb67d67031c3c8245c7a92980854b82
-- Ссылка на исходник: https://github.com/khaale/bb-openspec/tree/2798fd7edcb67d67031c3c8245c7a92980854b82
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

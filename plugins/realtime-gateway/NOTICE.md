@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Steve Frost (https://github.com/steveafrost)
-- Исходный репозиторий: https://github.com/steveafrost/bb-plugin-realtime-gateway
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит c174a718ef3cf32b6141c8156cfe1812cfb96f0a
-- Ссылка на исходник: https://github.com/steveafrost/bb-plugin-realtime-gateway/tree/c174a718ef3cf32b6141c8156cfe1812cfb96f0a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

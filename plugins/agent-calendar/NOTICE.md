@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Nicolas Charpentier (https://github.com/charpeni)
-- Исходный репозиторий: https://github.com/charpeni/bb-plugins
-- Каталог в репозитории: plugins/agent-calendar
-- Версия: agent-calendar/v1.0.0, коммит c00fd2885cd4d2fe3e1c2e336b5f74e96938e266
-- Ссылка на исходник: https://github.com/charpeni/bb-plugins/tree/c00fd2885cd4d2fe3e1c2e336b5f74e96938e266/plugins/agent-calendar
+- Версия: v1.0.0, коммит c00fd2885cd4d2fe3e1c2e336b5f74e96938e266
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Ivan Afanasov (https://github.com/VanDalkvist)
-- Исходный репозиторий: https://github.com/VanDalkvist/bb-plugin-references
-- Каталог в репозитории: (корень)
 - Версия: v0.1.3, коммит d1f1b1868b9fd0b91ae17518149e98685d31b2d5
-- Ссылка на исходник: https://github.com/VanDalkvist/bb-plugin-references/tree/d1f1b1868b9fd0b91ae17518149e98685d31b2d5
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

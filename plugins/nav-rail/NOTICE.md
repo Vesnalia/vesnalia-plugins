@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Sawyer Hood (https://github.com/SawyerHood)
-- Исходный репозиторий: https://github.com/SawyerHood/sawyer-plugins
-- Каталог в репозитории: plugins/nav-rail
-- Версия: nav-rail/v0.1.0, коммит 83a4fdb368db88d10cbb6fbb006f2a6069d7f4c9
-- Ссылка на исходник: https://github.com/SawyerHood/sawyer-plugins/tree/83a4fdb368db88d10cbb6fbb006f2a6069d7f4c9/plugins/nav-rail
+- Версия: v0.1.0, коммит 83a4fdb368db88d10cbb6fbb006f2a6069d7f4c9
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

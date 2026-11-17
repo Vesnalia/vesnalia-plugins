@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: rawizhere (https://github.com/rawizhere)
-- Исходный репозиторий: https://github.com/rawizhere/bb-plugin-bb-agent-toolbox
-- Каталог в репозитории: (корень)
 - Версия: v0.2.2, коммит 1142e110f24949b195f8fd2b19f533a07b352bd9
-- Ссылка на исходник: https://github.com/rawizhere/bb-plugin-bb-agent-toolbox/tree/1142e110f24949b195f8fd2b19f533a07b352bd9
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

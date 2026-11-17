@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Daniel Bachhuber (https://github.com/danielbachhuber)
-- Исходный репозиторий: https://github.com/danielbachhuber/bb-plugins
-- Каталог в репозитории: bb-plugin-diff-viewed
-- Версия: diff-viewed/v0.2.3, коммит a52b84b536ca1c16194c0c018cc375a04f78ca19
-- Ссылка на исходник: https://github.com/danielbachhuber/bb-plugins/tree/a52b84b536ca1c16194c0c018cc375a04f78ca19/bb-plugin-diff-viewed
+- Версия: v0.2.3, коммит a52b84b536ca1c16194c0c018cc375a04f78ca19
 - Лицензия: лицензия не указана в исходном репозитории
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

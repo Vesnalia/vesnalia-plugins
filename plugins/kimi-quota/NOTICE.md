@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Anatolt (https://github.com/Anatolt)
-- Исходный репозиторий: https://github.com/Anatolt/bb-plugin-kimi-quota
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 1efb4abde12e193ce8fef37a32d397668f9c945f
-- Ссылка на исходник: https://github.com/Anatolt/bb-plugin-kimi-quota/tree/1efb4abde12e193ce8fef37a32d397668f9c945f
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

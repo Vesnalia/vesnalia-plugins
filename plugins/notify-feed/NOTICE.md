@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Sargares22 (https://github.com/Sargares22)
-- Исходный репозиторий: https://github.com/Sargares22/bb-plugin-notify-feed
-- Каталог в репозитории: (корень)
 - Версия: v0.3.3, коммит a97b7c272675aa2a777514de10dd98861c75c87b
-- Ссылка на исходник: https://github.com/Sargares22/bb-plugin-notify-feed/tree/a97b7c272675aa2a777514de10dd98861c75c87b
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

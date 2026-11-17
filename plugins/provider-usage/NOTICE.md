@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Braedon Saunders (https://github.com/braedonsaunders)
-- Исходный репозиторий: https://github.com/braedonsaunders/bb-plugin-provider-usage
-- Каталог в репозитории: (корень)
 - Версия: v0.15.1, коммит 203cf676fc6545867033e912bdc9ea1f1228b1e3
-- Ссылка на исходник: https://github.com/braedonsaunders/bb-plugin-provider-usage/tree/203cf676fc6545867033e912bdc9ea1f1228b1e3
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

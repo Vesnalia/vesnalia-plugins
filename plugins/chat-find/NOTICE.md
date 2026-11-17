@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: bottlebrushes (https://github.com/bottlebrushes)
-- Исходный репозиторий: https://github.com/bottlebrushes/bb-plugin-chat-find
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 5804da283ca52274d38606a90e768a5130683e36
-- Ссылка на исходник: https://github.com/bottlebrushes/bb-plugin-chat-find/tree/5804da283ca52274d38606a90e768a5130683e36
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Foma (https://github.com/xMinor-1)
-- Исходный репозиторий: https://github.com/xMinor-1/bb-plugins
-- Каталог в репозитории: plugins/file-manager
-- Версия: file-manager/v0.11.0, коммит 74f9aa874b6df5b2ed0cd462dee2317159bc5ab9
-- Ссылка на исходник: https://github.com/xMinor-1/bb-plugins/tree/74f9aa874b6df5b2ed0cd462dee2317159bc5ab9/plugins/file-manager
+- Версия: v0.11.0, коммит 74f9aa874b6df5b2ed0cd462dee2317159bc5ab9
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

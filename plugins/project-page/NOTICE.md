@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Jem (https://github.com/jem-computer)
-- Исходный репозиторий: https://github.com/jem-computer/bb-project-page
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 923459ea961fa295e89c087737517ee804700a25
-- Ссылка на исходник: https://github.com/jem-computer/bb-project-page/tree/923459ea961fa295e89c087737517ee804700a25
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

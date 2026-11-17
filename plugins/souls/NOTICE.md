@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: MacHatter1 (https://github.com/MacHatter1)
-- Исходный репозиторий: https://github.com/MacHatter1/bb-plugin-souls
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 7576cbef5453d99f200564c6f9bba40a2e8c267f
-- Ссылка на исходник: https://github.com/MacHatter1/bb-plugin-souls/tree/7576cbef5453d99f200564c6f9bba40a2e8c267f
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (4 файлов, есть в исходном репозитории)
 

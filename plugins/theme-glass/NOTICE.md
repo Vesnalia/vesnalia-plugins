@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: rayzalzero (https://github.com/rayzalzero)
-- Исходный репозиторий: https://github.com/rayzalzero/bb-plugin-theme-glass
-- Каталог в репозитории: (корень)
 - Версия: v0.1.2, коммит a468cec9d43aac3980284d1f929fe48e80a6ebba
-- Ссылка на исходник: https://github.com/rayzalzero/bb-plugin-theme-glass/tree/a468cec9d43aac3980284d1f929fe48e80a6ebba
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

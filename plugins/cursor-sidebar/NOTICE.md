@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: WYEZ (https://github.com/wy3z)
-- Исходный репозиторий: https://github.com/wy3z/bb-cursor-suite
-- Каталог в репозитории: plugins/cursor-sidebar
-- Версия: cursor-sidebar/v0.3.5, коммит 45c22303f60b88ec965b593c03b1d07cac24dc8c
-- Ссылка на исходник: https://github.com/wy3z/bb-cursor-suite/tree/45c22303f60b88ec965b593c03b1d07cac24dc8c/plugins/cursor-sidebar
+- Версия: v0.3.5, коммит 45c22303f60b88ec965b593c03b1d07cac24dc8c
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

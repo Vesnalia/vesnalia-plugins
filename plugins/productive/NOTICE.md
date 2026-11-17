@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kristof Feys (https://github.com/kristoffeys)
-- Исходный репозиторий: https://github.com/kristoffeys/bb-plugin-productive
-- Каталог в репозитории: (корень)
 - Версия: v0.2.0, коммит 272f58a33b229e383a325b72c00277970d1ee152
-- Ссылка на исходник: https://github.com/kristoffeys/bb-plugin-productive/tree/272f58a33b229e383a325b72c00277970d1ee152
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

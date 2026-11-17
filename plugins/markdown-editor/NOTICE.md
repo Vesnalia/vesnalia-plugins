@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Daniel Bachhuber (https://github.com/danielbachhuber)
-- Исходный репозиторий: https://github.com/danielbachhuber/bb-plugins
-- Каталог в репозитории: bb-plugin-markdown-editor
-- Версия: markdown-editor/v0.2.1, коммит a19866ae3e29de627c2538bd5af6eadc3a72d768
-- Ссылка на исходник: https://github.com/danielbachhuber/bb-plugins/tree/a19866ae3e29de627c2538bd5af6eadc3a72d768/bb-plugin-markdown-editor
+- Версия: v0.2.1, коммит a19866ae3e29de627c2538bd5af6eadc3a72d768
 - Лицензия: лицензия не указана в исходном репозитории
 - Не перенесены демо-медиа из документации (5 файлов, есть в исходном репозитории)
 

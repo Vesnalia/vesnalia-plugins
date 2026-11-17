@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Nicolas Charpentier (https://github.com/charpeni)
-- Исходный репозиторий: https://github.com/charpeni/bb-plugins
-- Каталог в репозитории: plugins/agent-traces
-- Версия: agent-traces/v1.0.0, коммит de00e14f21632bbedebd0f957ab2b1bb5f25e58d
-- Ссылка на исходник: https://github.com/charpeni/bb-plugins/tree/de00e14f21632bbedebd0f957ab2b1bb5f25e58d/plugins/agent-traces
+- Версия: v1.0.0, коммит de00e14f21632bbedebd0f957ab2b1bb5f25e58d
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

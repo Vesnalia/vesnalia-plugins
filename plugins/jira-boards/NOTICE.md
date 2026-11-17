@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Vyacheslav Artemyev (https://github.com/viartemev)
-- Исходный репозиторий: https://github.com/viartemev/bb-jira
-- Каталог в репозитории: (корень)
 - Версия: v0.3.0, коммит bef68878574d5d2278277b289be691f04f5ebb42
-- Ссылка на исходник: https://github.com/viartemev/bb-jira/tree/bef68878574d5d2278277b289be691f04f5ebb42
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

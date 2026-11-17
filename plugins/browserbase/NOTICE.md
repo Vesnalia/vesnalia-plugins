@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Shriya Lolabattu (https://github.com/shriyatheunicorn)
-- Исходный репозиторий: https://github.com/browserbase/bb-plugin
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 36edde2d8ddc672c767d906d0a6956e8fde6336c
-- Ссылка на исходник: https://github.com/browserbase/bb-plugin/tree/36edde2d8ddc672c767d906d0a6956e8fde6336c
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

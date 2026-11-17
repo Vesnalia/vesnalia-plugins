@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Sankalpa Acharya (https://github.com/sankalpaacharya)
-- Исходный репозиторий: https://github.com/sankalpaacharya/bb-mcp-manager
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит c42f91fa8343691002412f7e2307fdc6f9f667e7
-- Ссылка на исходник: https://github.com/sankalpaacharya/bb-mcp-manager/tree/c42f91fa8343691002412f7e2307fdc6f9f667e7
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

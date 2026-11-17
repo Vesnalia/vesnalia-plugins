@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Pedro Filho (https://github.com/pedroapfilho)
-- Исходный репозиторий: https://github.com/pedroapfilho/bb-plugin-tokenmaxx
-- Каталог в репозитории: (корень)
 - Версия: v0.1.3, коммит 3f90fe614180b35c718d9a4a80ed1d33dbb0ac37
-- Ссылка на исходник: https://github.com/pedroapfilho/bb-plugin-tokenmaxx/tree/3f90fe614180b35c718d9a4a80ed1d33dbb0ac37
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

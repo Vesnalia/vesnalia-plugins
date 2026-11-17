@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kirill Vechkasov (https://github.com/VKirill)
-- Исходный репозиторий: https://github.com/VKirill/bb-plugin-agent-tools
-- Каталог в репозитории: (корень)
 - Версия: v0.2.32, коммит b1790445ca2df77eb2cc4801be6f8f245135d562
-- Ссылка на исходник: https://github.com/VKirill/bb-plugin-agent-tools/tree/b1790445ca2df77eb2cc4801be6f8f245135d562
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (5 файлов, есть в исходном репозитории)
 

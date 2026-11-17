@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: D-Town (https://github.com/D-Town)
-- Исходный репозиторий: https://github.com/D-Town/bb-plugins
-- Каталог в репозитории: plugins/dynamic-file-tree
-- Версия: dynamic-file-tree/v1.1.2, коммит 4c38271f6fb3bfbe78a350785e9138291fb077a7
-- Ссылка на исходник: https://github.com/D-Town/bb-plugins/tree/4c38271f6fb3bfbe78a350785e9138291fb077a7/plugins/dynamic-file-tree
+- Версия: v1.1.2, коммит 4c38271f6fb3bfbe78a350785e9138291fb077a7
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

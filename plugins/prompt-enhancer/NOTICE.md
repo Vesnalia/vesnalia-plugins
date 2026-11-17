@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Vedran Burojević (https://github.com/vburojevic)
-- Исходный репозиторий: https://github.com/vburojevic/bb-plugin-prompt-enhancer
-- Каталог в репозитории: (корень)
 - Версия: v0.3.0, коммит 987949f8ac1d83ed0dc6d88339f115b929309193
-- Ссылка на исходник: https://github.com/vburojevic/bb-plugin-prompt-enhancer/tree/987949f8ac1d83ed0dc6d88339f115b929309193
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (12 файлов, есть в исходном репозитории)
 

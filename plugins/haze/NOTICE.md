@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: AdzeB (https://github.com/AdzeB)
-- Исходный репозиторий: https://github.com/AdzeB/bb-plugin-haze
-- Каталог в репозитории: (корень)
 - Версия: v0.2.1, коммит dd36be9d3aec6436b7b3138309f944a80e1fcf89
-- Ссылка на исходник: https://github.com/AdzeB/bb-plugin-haze/tree/dd36be9d3aec6436b7b3138309f944a80e1fcf89
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (4 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Admin (https://github.com/masked8knights)
-- Исходный репозиторий: https://github.com/masked8knights/bb-kilocode
-- Каталог в репозитории: (корень)
 - Версия: v0.1.4, коммит a30acec01a33551a29921780185308fe4484e84a
-- Ссылка на исходник: https://github.com/masked8knights/bb-kilocode/tree/a30acec01a33551a29921780185308fe4484e84a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (7 файлов, есть в исходном репозитории)
 

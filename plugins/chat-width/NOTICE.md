@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: werserk (https://github.com/werserk)
-- Исходный репозиторий: https://github.com/werserk/bb-plugin-chat-width
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 007b5751662bffa673f1529710b2bff426ff8fa1
-- Ссылка на исходник: https://github.com/werserk/bb-plugin-chat-width/tree/007b5751662bffa673f1529710b2bff426ff8fa1
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

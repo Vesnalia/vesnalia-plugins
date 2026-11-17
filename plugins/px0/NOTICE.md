@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Kavii Suri (https://github.com/KaviiSuri)
-- Исходный репозиторий: https://github.com/KaviiSuri/bb-plugin-px0
-- Каталог в репозитории: (корень)
 - Версия: v0.1.3, коммит 9c25f947fc57fda78e2efeefbb39bb0305d50c31
-- Ссылка на исходник: https://github.com/KaviiSuri/bb-plugin-px0/tree/9c25f947fc57fda78e2efeefbb39bb0305d50c31
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

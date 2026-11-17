@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Diip3sh (https://github.com/diip3sh)
-- Исходный репозиторий: https://github.com/diip3sh/bb-plugin-git-panel
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 3013ffcf49bf810c0be89be2297a0e1d4551fca5
-- Ссылка на исходник: https://github.com/diip3sh/bb-plugin-git-panel/tree/3013ffcf49bf810c0be89be2297a0e1d4551fca5
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

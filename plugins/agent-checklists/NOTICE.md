@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Patrick Lee (https://github.com/patleeman)
-- Исходный репозиторий: https://github.com/patleeman/bb-plugins
-- Каталог в репозитории: packages/bb-plugin-agent-checklists
-- Версия: agent-checklists/v0.2.0, коммит 046a11b6088068ccccaf6da5b51b10deeb166094
-- Ссылка на исходник: https://github.com/patleeman/bb-plugins/tree/046a11b6088068ccccaf6da5b51b10deeb166094/packages/bb-plugin-agent-checklists
+- Версия: v0.2.0, коммит 046a11b6088068ccccaf6da5b51b10deeb166094
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

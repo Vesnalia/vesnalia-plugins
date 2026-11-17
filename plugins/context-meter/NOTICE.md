@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Roger Serra (https://github.com/Hazihell)
-- Исходный репозиторий: https://github.com/Hazihell/bb-plugin-context-meter
-- Каталог в репозитории: (корень)
 - Версия: v0.1.6, коммит 78008be560d8f58ea96f19c84064bdfbc6d8fe34
-- Ссылка на исходник: https://github.com/Hazihell/bb-plugin-context-meter/tree/78008be560d8f58ea96f19c84064bdfbc6d8fe34
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: mifhud (https://github.com/mifhud)
-- Исходный репозиторий: https://github.com/mifhud/bb-plugin-file-explorer
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит dbae6b1367732a41fc7a5554702ca78e4a8cc84e
-- Ссылка на исходник: https://github.com/mifhud/bb-plugin-file-explorer/tree/dbae6b1367732a41fc7a5554702ca78e4a8cc84e
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

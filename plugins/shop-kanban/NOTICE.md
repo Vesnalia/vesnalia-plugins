@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Muhammad Siddeek (https://github.com/muhammad-siddeek)
-- Исходный репозиторий: https://github.com/muhammad-siddeek/bb-plugin-shop-kanban
-- Каталог в репозитории: (корень)
 - Версия: v0.16.2, коммит 938ef3aa8ebae8a9e3a1c51fda03217be78fd470
-- Ссылка на исходник: https://github.com/muhammad-siddeek/bb-plugin-shop-kanban/tree/938ef3aa8ebae8a9e3a1c51fda03217be78fd470
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

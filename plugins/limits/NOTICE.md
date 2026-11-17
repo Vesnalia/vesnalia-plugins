@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Aleksandr Poliakov (https://github.com/artwist-polyakov)
-- Исходный репозиторий: https://github.com/artwist-polyakov/bb-plugins
-- Каталог в репозитории: limits
-- Версия: limits/v1.1.8, коммит d91e9adf5242beb3d6f58fdb3a1c47a5a8955cb7
-- Ссылка на исходник: https://github.com/artwist-polyakov/bb-plugins/tree/d91e9adf5242beb3d6f58fdb3a1c47a5a8955cb7/limits
+- Версия: v1.1.8, коммит d91e9adf5242beb3d6f58fdb3a1c47a5a8955cb7
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

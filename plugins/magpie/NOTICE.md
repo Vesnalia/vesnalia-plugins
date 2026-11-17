@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Vaayne (https://github.com/vaayne)
-- Исходный репозиторий: https://github.com/vaayne/agent-kit
-- Каталог в репозитории: bb-extensions/magpie
-- Версия: magpie/v0.2.1, коммит 7c1e6671e10152bc3cacf6b7d83eded200267a88
-- Ссылка на исходник: https://github.com/vaayne/agent-kit/tree/7c1e6671e10152bc3cacf6b7d83eded200267a88/bb-extensions/magpie
+- Версия: v0.2.1, коммит 7c1e6671e10152bc3cacf6b7d83eded200267a88
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

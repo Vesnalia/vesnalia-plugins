@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Konstantin Valiotti (https://github.com/kvaliotti)
-- Исходный репозиторий: https://github.com/kvaliotti/bb-plugin-human-tasks
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 013c4b2b8e1729f224d4b457cac27665133a3aa5
-- Ссылка на исходник: https://github.com/kvaliotti/bb-plugin-human-tasks/tree/013c4b2b8e1729f224d4b457cac27665133a3aa5
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

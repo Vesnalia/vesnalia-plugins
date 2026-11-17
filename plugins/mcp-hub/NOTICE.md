@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Vladislav Chmelyuk (https://github.com/fgbm)
-- Исходный репозиторий: https://github.com/fgbm/bb-plugin-mcp-hub
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 32da66b04f80bcf83dcc1e39ddc887264d555a17
-- Ссылка на исходник: https://github.com/fgbm/bb-plugin-mcp-hub/tree/32da66b04f80bcf83dcc1e39ddc887264d555a17
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

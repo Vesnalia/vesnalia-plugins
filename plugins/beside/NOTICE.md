@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Victor Aremu (https://github.com/ahkohd)
-- Исходный репозиторий: https://github.com/ahkohd/bb-plugin-beside
-- Каталог в репозитории: (корень)
 - Версия: v0.1.6, коммит df5c6967582dcca5645cf32808d2b3e2daa65c24
-- Ссылка на исходник: https://github.com/ahkohd/bb-plugin-beside/tree/df5c6967582dcca5645cf32808d2b3e2daa65c24
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (9 файлов, есть в исходном репозитории)
 

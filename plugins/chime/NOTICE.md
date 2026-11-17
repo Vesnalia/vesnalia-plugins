@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Guilherme J. Tramontina (https://github.com/gtramontina)
-- Исходный репозиторий: https://github.com/gtramontina/bb-plugin-chime
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 7cc8ee395b451ef7743da3863c75d6b492ad1f50
-- Ссылка на исходник: https://github.com/gtramontina/bb-plugin-chime/tree/7cc8ee395b451ef7743da3863c75d6b492ad1f50
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

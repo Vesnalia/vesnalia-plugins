@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: pixexid (https://github.com/pixexid)
-- Исходный репозиторий: https://github.com/pixexid/bb-plugin-operator-inbox
-- Каталог в репозитории: (корень)
 - Версия: v0.1.9, коммит 6200778341d7452a82e5a701ecb09d56b1a949b1
-- Ссылка на исходник: https://github.com/pixexid/bb-plugin-operator-inbox/tree/6200778341d7452a82e5a701ecb09d56b1a949b1
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

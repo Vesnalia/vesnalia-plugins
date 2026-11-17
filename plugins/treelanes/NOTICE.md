@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Ahmed Hesham Abdelkader (https://github.com/ahmedhesham6)
-- Исходный репозиторий: https://github.com/ahmedhesham6/bb-plugin-treelanes
-- Каталог в репозитории: (корень)
 - Версия: v0.2.2, коммит 9ff46867b78dc4a63261fa64e804b2fa35b776cc
-- Ссылка на исходник: https://github.com/ahmedhesham6/bb-plugin-treelanes/tree/9ff46867b78dc4a63261fa64e804b2fa35b776cc
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (7 файлов, есть в исходном репозитории)
 

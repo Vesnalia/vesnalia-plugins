@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Foma (https://github.com/xMinor-1)
-- Исходный репозиторий: https://github.com/xMinor-1/bb-plugins
-- Каталог в репозитории: plugins/usage-meter
-- Версия: usage-meter/v0.2.5, коммит 9080ce570ed201ee855c51d7b5d37ae5ced87aad
-- Ссылка на исходник: https://github.com/xMinor-1/bb-plugins/tree/9080ce570ed201ee855c51d7b5d37ae5ced87aad/plugins/usage-meter
+- Версия: v0.2.5, коммит 9080ce570ed201ee855c51d7b5d37ae5ced87aad
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

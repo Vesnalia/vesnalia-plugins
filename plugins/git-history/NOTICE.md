@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Yusuf Akbulut (https://github.com/yusuf8834)
-- Исходный репозиторий: https://github.com/yusuf8834/bb-git-history
-- Каталог в репозитории: (корень)
 - Версия: v0.4.5, коммит 816bc8c329bcea6276cd9be5fd19dec1926aa584
-- Ссылка на исходник: https://github.com/yusuf8834/bb-git-history/tree/816bc8c329bcea6276cd9be5fd19dec1926aa584
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

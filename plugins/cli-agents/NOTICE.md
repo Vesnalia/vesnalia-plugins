@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: VKirill (https://github.com/VKirill)
-- Исходный репозиторий: https://github.com/VKirill/bb-plugin-cli-agents
-- Каталог в репозитории: (корень)
 - Версия: v0.2.5, коммит 2bbd2217763123d3d366d8bbb982207ba6d230b6
-- Ссылка на исходник: https://github.com/VKirill/bb-plugin-cli-agents/tree/2bbd2217763123d3d366d8bbb982207ba6d230b6
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

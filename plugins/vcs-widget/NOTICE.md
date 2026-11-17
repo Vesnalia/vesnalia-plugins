@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Costa Fotiadis (https://github.com/CostaFot)
-- Исходный репозиторий: https://github.com/CostaFot/bb-plugin-vcs-widget
-- Каталог в репозитории: (корень)
 - Версия: v0.7.0, коммит 79d851b02714e9b640021e3e287e38d3921895e5
-- Ссылка на исходник: https://github.com/CostaFot/bb-plugin-vcs-widget/tree/79d851b02714e9b640021e3e287e38d3921895e5
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (13 файлов, есть в исходном репозитории)
 

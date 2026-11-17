@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Vedran Burojević (https://github.com/vburojevic)
-- Исходный репозиторий: https://github.com/vburojevic/bb-plugin-cortado
-- Каталог в репозитории: (корень)
 - Версия: v1.0.0, коммит 8a853eb00f655dc05358c0d9f0aafaa88d48c559
-- Ссылка на исходник: https://github.com/vburojevic/bb-plugin-cortado/tree/8a853eb00f655dc05358c0d9f0aafaa88d48c559
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: MacHatter1 (https://github.com/MacHatter1)
-- Исходный репозиторий: https://github.com/MacHatter1/bb-recap
-- Каталог в репозитории: (корень)
 - Версия: v0.2.4, коммит b6e8c3cd884508ab05448e018968a56af18ff814
-- Ссылка на исходник: https://github.com/MacHatter1/bb-recap/tree/b6e8c3cd884508ab05448e018968a56af18ff814
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

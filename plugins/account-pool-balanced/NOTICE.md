@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: OXI (https://github.com/OXI-717)
-- Исходный репозиторий: https://github.com/OXI-717/bb-plugins
-- Каталог в репозитории: plugins/account-pool-balanced
-- Версия: account-pool-balanced/v0.4.87, коммит a67e6bf8f23704c6aefe83572c38eeafb37d529d
-- Ссылка на исходник: https://github.com/OXI-717/bb-plugins/tree/a67e6bf8f23704c6aefe83572c38eeafb37d529d/plugins/account-pool-balanced
+- Версия: v0.4.87, коммит a67e6bf8f23704c6aefe83572c38eeafb37d529d
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

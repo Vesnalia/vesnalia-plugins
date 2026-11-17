@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Lalit Rao (https://github.com/lalitjeevanrao)
-- Исходный репозиторий: https://github.com/lalitjeevanrao/bb-plugins
-- Каталог в репозитории: packages/bb-plugin-copilot-session-credits
 - Версия: v0.3.4, коммит 3654c14cecef57f748965e258888fa23871d6c31
-- Ссылка на исходник: https://github.com/lalitjeevanrao/bb-plugins/tree/3654c14cecef57f748965e258888fa23871d6c31/packages/bb-plugin-copilot-session-credits
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Dmitrii Maksimov (https://github.com/kartollikaa)
-- Исходный репозиторий: https://github.com/kartollikaa/bb-plugins
-- Каталог в репозитории: plugins/reveal-in-finder
-- Версия: reveal-in-finder/v0.1.1, коммит d9e817dd743812366a207d363f8d38e3285eb222
-- Ссылка на исходник: https://github.com/kartollikaa/bb-plugins/tree/d9e817dd743812366a207d363f8d38e3285eb222/plugins/reveal-in-finder
+- Версия: v0.1.1, коммит d9e817dd743812366a207d363f8d38e3285eb222
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

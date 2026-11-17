@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: artgas1 (https://github.com/artgas1)
-- Исходный репозиторий: https://github.com/artgas1/bb-plugin-machine-load
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 5a48985d0980fc0b866f0431e75c6cdf3b803a20
-- Ссылка на исходник: https://github.com/artgas1/bb-plugin-machine-load/tree/5a48985d0980fc0b866f0431e75c6cdf3b803a20
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

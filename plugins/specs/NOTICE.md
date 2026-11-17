@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Peter Abu-Ekpeshie (https://github.com/peteabu)
-- Исходный репозиторий: https://github.com/peteabu/bb-plugin-specs
-- Каталог в репозитории: (корень)
 - Версия: v0.1.9, коммит f47d25ce5d46745d6ce46d128a41f55834107892
-- Ссылка на исходник: https://github.com/peteabu/bb-plugin-specs/tree/f47d25ce5d46745d6ce46d128a41f55834107892
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Rustambek Umarov (https://github.com/Rustam1010)
-- Исходный репозиторий: https://github.com/Rustam1010/ai-agents
-- Каталог в репозитории: plugins/career-hub
-- Версия: career-hub/v0.2.1, коммит f77d5fa89e78b100fbde7b493004c6f3525fbca3
-- Ссылка на исходник: https://github.com/Rustam1010/ai-agents/tree/f77d5fa89e78b100fbde7b493004c6f3525fbca3/plugins/career-hub
+- Версия: v0.2.1, коммит f77d5fa89e78b100fbde7b493004c6f3525fbca3
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)

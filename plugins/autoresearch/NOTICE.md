@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Pascal de Ladurantaye (https://github.com/pascal-de-ladurantaye)
-- Исходный репозиторий: https://github.com/pascal-de-ladurantaye/bb-autoresearch
-- Каталог в репозитории: (корень)
 - Версия: v1.0.2, коммит 339c9343a4a4a69a99e5cbd44f051b8f02fcc7ca
-- Ссылка на исходник: https://github.com/pascal-de-ladurantaye/bb-autoresearch/tree/339c9343a4a4a69a99e5cbd44f051b8f02fcc7ca
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

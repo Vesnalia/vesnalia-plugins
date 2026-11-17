@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Lev Kovalenko (https://github.com/levkovalenko)
-- Исходный репозиторий: https://github.com/levkovalenko/bb-tasks-kanban
-- Каталог в репозитории: (корень)
 - Версия: v0.2.3, коммит 17d7c2b6522923a6cceb1086a9d31c24c65b2c12
-- Ссылка на исходник: https://github.com/levkovalenko/bb-tasks-kanban/tree/17d7c2b6522923a6cceb1086a9d31c24c65b2c12
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

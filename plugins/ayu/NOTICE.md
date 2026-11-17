@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Vedran Burojević (https://github.com/vburojevic)
-- Исходный репозиторий: https://github.com/vburojevic/bb-plugin-ayu
-- Каталог в репозитории: (корень)
 - Версия: v0.3.0, коммит d63512ac6852daecbc8387d9a3747a7260953f4a
-- Ссылка на исходник: https://github.com/vburojevic/bb-plugin-ayu/tree/d63512ac6852daecbc8387d9a3747a7260953f4a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (17 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Scott Sunarto (https://github.com/smsunarto)
-- Исходный репозиторий: https://github.com/smsunarto/bb-plugins
-- Каталог в репозитории: plugins/agent-proxy
-- Версия: agent-proxy/v0.2.4, коммит 2bb1b7e8f5845378edc614fe81f01dc44071667a
-- Ссылка на исходник: https://github.com/smsunarto/bb-plugins/tree/2bb1b7e8f5845378edc614fe81f01dc44071667a/plugins/agent-proxy
+- Версия: v0.2.4, коммит 2bb1b7e8f5845378edc614fe81f01dc44071667a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (4 файлов, есть в исходном репозитории)
 

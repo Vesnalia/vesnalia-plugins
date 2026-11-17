@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Pritam Sharma (https://github.com/notpritam)
-- Исходный репозиторий: https://github.com/notpritam/bb-plugin-guided-review
-- Каталог в репозитории: (корень)
 - Версия: v0.2.1, коммит 765d2cf3b3be667bb793de150eafb9bc03299a52
-- Ссылка на исходник: https://github.com/notpritam/bb-plugin-guided-review/tree/765d2cf3b3be667bb793de150eafb9bc03299a52
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

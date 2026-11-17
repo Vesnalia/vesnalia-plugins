@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: MacHatter1 (https://github.com/MacHatter1)
-- Исходный репозиторий: https://github.com/MacHatter1/bb-plugin-hooks
-- Каталог в репозитории: (корень)
 - Версия: v0.4.1, коммит 5f26641b6e282a697468976977ed3bf5516bdccb
-- Ссылка на исходник: https://github.com/MacHatter1/bb-plugin-hooks/tree/5f26641b6e282a697468976977ed3bf5516bdccb
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (5 файлов, есть в исходном репозитории)
 

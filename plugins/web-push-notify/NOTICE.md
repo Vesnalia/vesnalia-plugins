@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Mayank Bansal (https://github.com/MayankBansal12)
-- Исходный репозиторий: https://github.com/MayankBansal12/bb-plugin-web-push-notify
-- Каталог в репозитории: (корень)
 - Версия: v0.2.0, коммит f10d3d68c852f8ff6031f266f828ac4676d376a8
-- Ссылка на исходник: https://github.com/MayankBansal12/bb-plugin-web-push-notify/tree/f10d3d68c852f8ff6031f266f828ac4676d376a8
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

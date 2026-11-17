@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Gustavo Ambrozio (https://github.com/gpambrozio)
-- Исходный репозиторий: https://github.com/gpambrozio/bb-plugins
-- Каталог в репозитории: learning-exercises
-- Версия: learning-exercises/v0.3.0, коммит becc08dfdfd39fc923ba400e2498c4389f0fc2e5
-- Ссылка на исходник: https://github.com/gpambrozio/bb-plugins/tree/becc08dfdfd39fc923ba400e2498c4389f0fc2e5/learning-exercises
+- Версия: v0.3.0, коммит becc08dfdfd39fc923ba400e2498c4389f0fc2e5
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Примечание о лицензии: в package.json указано "MIT AND CC-BY-4.0", в репозитории MIT
 

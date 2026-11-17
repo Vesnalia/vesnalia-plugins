@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Pawel Jozefiak (https://github.com/joozio)
-- Исходный репозиторий: https://github.com/joozio/bb-plugin-work-map
-- Каталог в репозитории: (корень)
 - Версия: v0.1.19, коммит c0d38954cdf48599c907e1fd66ed3d121198264c
-- Ссылка на исходник: https://github.com/joozio/bb-plugin-work-map/tree/c0d38954cdf48599c907e1fd66ed3d121198264c
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

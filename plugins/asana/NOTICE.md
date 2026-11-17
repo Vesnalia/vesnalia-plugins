@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Jack Shedd (https://github.com/etchalon)
-- Исходный репозиторий: https://github.com/etchalon/bb-plugin-asana
-- Каталог в репозитории: (корень)
 - Версия: v1.0.1, коммит fb66e24e791af2ff21f11293fea49f4209ba4bdf
-- Ссылка на исходник: https://github.com/etchalon/bb-plugin-asana/tree/fb66e24e791af2ff21f11293fea49f4209ba4bdf
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

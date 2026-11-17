@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: sajov (https://github.com/sajov)
-- Исходный репозиторий: https://github.com/sajov/bb-plugins
-- Каталог в репозитории: bb-plugin-crew
-- Версия: crew/v0.1.1, коммит 70d89a913f8c1033771066dbb78be1726078bf47
-- Ссылка на исходник: https://github.com/sajov/bb-plugins/tree/70d89a913f8c1033771066dbb78be1726078bf47/bb-plugin-crew
+- Версия: v0.1.1, коммит 70d89a913f8c1033771066dbb78be1726078bf47
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

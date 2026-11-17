@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kalindu De Costa (https://github.com/kalindudc)
-- Исходный репозиторий: https://github.com/kalindudc/burn
-- Каталог в репозитории: (корень)
 - Версия: v0.9.4, коммит 9b27b3e049b0191d51e4e2fcdd5b2a974e006a69
-- Ссылка на исходник: https://github.com/kalindudc/burn/tree/9b27b3e049b0191d51e4e2fcdd5b2a974e006a69
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (9 файлов, есть в исходном репозитории)
 

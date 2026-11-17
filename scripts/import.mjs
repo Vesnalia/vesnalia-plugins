@@ -187,10 +187,7 @@ function noticeText(entry) {
       : "Плагин адаптирован для VesnALIA.",
     "",
     `- Оригинальный автор: ${entry.author.name}${entry.author.github ? ` (https://github.com/${entry.author.github})` : ""}`,
-    `- Исходный репозиторий: ${entry.originalRepo}`,
-    `- Каталог в репозитории: ${entry.subdir || "(корень)"}`,
-    `- Версия: ${entry.ref}, коммит ${entry.commit}`,
-    `- Ссылка на исходник: ${entry.originalRepo}/tree/${entry.commit}${entry.subdir ? `/${entry.subdir}` : ""}`,
+    `- Версия: ${String(entry.ref).split("/").at(-1)}, коммит ${entry.commit}`,
     entry.license === "permission"
       ? "- Лицензия: лицензия не указана в исходном репозитории"
       : `- Лицензия: ${entry.license} (текст в файле LICENSE рядом)`,

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kalindu De Costa (https://github.com/kalindudc)
-- Исходный репозиторий: https://github.com/kalindudc/bb-marketplace
-- Каталог в репозитории: plugins/flare
-- Версия: flare/v0.3.2, коммит b725476eb25c162e532dd028e949e578fbe5701b
-- Ссылка на исходник: https://github.com/kalindudc/bb-marketplace/tree/b725476eb25c162e532dd028e949e578fbe5701b/plugins/flare
+- Версия: v0.3.2, коммит b725476eb25c162e532dd028e949e578fbe5701b
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Victor Aremu (https://github.com/ahkohd)
-- Исходный репозиторий: https://github.com/ahkohd/bb-plugin-sticky-prompt
-- Каталог в репозитории: (корень)
 - Версия: v0.2.4, коммит 9d846129f0e9bf95c1cf19e28f8587ed50c62487
-- Ссылка на исходник: https://github.com/ahkohd/bb-plugin-sticky-prompt/tree/9d846129f0e9bf95c1cf19e28f8587ed50c62487
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (4 файлов, есть в исходном репозитории)
 

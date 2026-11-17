@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Aidar Karimov (https://github.com/aidarkarimov)
-- Исходный репозиторий: https://github.com/aidarkarimov/bb-plugin-aws-activate-usage
-- Каталог в репозитории: (корень)
 - Версия: v0.1.4, коммит ed9845507eb17cf2e9e6d9a46abb6fffcd1152fc
-- Ссылка на исходник: https://github.com/aidarkarimov/bb-plugin-aws-activate-usage/tree/ed9845507eb17cf2e9e6d9a46abb6fffcd1152fc
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

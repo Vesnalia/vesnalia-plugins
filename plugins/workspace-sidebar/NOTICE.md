@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Dillion Verma (https://github.com/dillionverma)
-- Исходный репозиторий: https://github.com/dillionverma/bb-plugin-ultra-sidebar
-- Каталог в репозитории: (корень)
 - Версия: v1.0.0, коммит 48d43ec84ea01d754a3be29f5fdc88522ea19b8d
-- Ссылка на исходник: https://github.com/dillionverma/bb-plugin-ultra-sidebar/tree/48d43ec84ea01d754a3be29f5fdc88522ea19b8d
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

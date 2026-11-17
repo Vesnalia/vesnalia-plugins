@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: ponomr (https://github.com/ponomr)
-- Исходный репозиторий: https://github.com/ponomr/bb-plugin-flexoki
-- Каталог в репозитории: (корень)
 - Версия: v0.1.5, коммит ced199cef6948919d449560a7a2f5cb7af70f9e6
-- Ссылка на исходник: https://github.com/ponomr/bb-plugin-flexoki/tree/ced199cef6948919d449560a7a2f5cb7af70f9e6
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

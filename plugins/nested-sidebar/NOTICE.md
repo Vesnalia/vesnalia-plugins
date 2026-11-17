@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Euan Guo (https://github.com/euanguo)
-- Исходный репозиторий: https://github.com/euanguo/euanguo-plugins
-- Каталог в репозитории: plugins/nested-sidebar
-- Версия: nested-sidebar/v0.5.0, коммит 8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0
-- Ссылка на исходник: https://github.com/euanguo/euanguo-plugins/tree/8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0/plugins/nested-sidebar
+- Версия: v0.5.0, коммит 8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 - Не перенесены демо-медиа из документации (6 файлов, есть в исходном репозитории)

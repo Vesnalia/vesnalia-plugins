@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Sawyer Hood (https://github.com/SawyerHood)
-- Исходный репозиторий: https://github.com/SawyerHood/sawyer-plugins
-- Каталог в репозитории: plugins/cascade
-- Версия: cascade/v0.1.0, коммит 8b535729dd2251ceb293c7caf74e43e477f942a3
-- Ссылка на исходник: https://github.com/SawyerHood/sawyer-plugins/tree/8b535729dd2251ceb293c7caf74e43e477f942a3/plugins/cascade
+- Версия: v0.1.0, коммит 8b535729dd2251ceb293c7caf74e43e477f942a3
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

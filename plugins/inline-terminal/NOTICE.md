@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Dmitrii Maksimov (https://github.com/kartollikaa)
-- Исходный репозиторий: https://github.com/kartollikaa/bb-plugins
-- Каталог в репозитории: plugins/inline-terminal
-- Версия: inline-terminal/v0.1.2, коммит 652f364df9e5e633d30717cf1c2cb0e22346df53
-- Ссылка на исходник: https://github.com/kartollikaa/bb-plugins/tree/652f364df9e5e633d30717cf1c2cb0e22346df53/plugins/inline-terminal
+- Версия: v0.1.2, коммит 652f364df9e5e633d30717cf1c2cb0e22346df53
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Vyacheslav Artemyev (https://github.com/viartemev)
-- Исходный репозиторий: https://github.com/viartemev/bb-tracing
-- Каталог в репозитории: bb-plugin-tracing
 - Версия: v0.1.0, коммит 52880a364a8778b02f511dcebc96cee9ee7eec66
-- Ссылка на исходник: https://github.com/viartemev/bb-tracing/tree/52880a364a8778b02f511dcebc96cee9ee7eec66/bb-plugin-tracing
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

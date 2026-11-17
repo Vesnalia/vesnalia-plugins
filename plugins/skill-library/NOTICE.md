@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Ayan Masood (https://github.com/Ayan-M-Dev)
-- Исходный репозиторий: https://github.com/Ayan-M-Dev/bb-plugin-skill-library
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит a99c584fe57719ee396c7a3bbda4f349795ca19d
-- Ссылка на исходник: https://github.com/Ayan-M-Dev/bb-plugin-skill-library/tree/a99c584fe57719ee396c7a3bbda4f349795ca19d
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

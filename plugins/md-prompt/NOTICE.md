@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Adebola (https://github.com/AdzeB)
-- Исходный репозиторий: https://github.com/AdzeB/bb-plugin-md-prompt
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 3b99ea8402ee290e22be93e2aba23622cf34b84d
-- Ссылка на исходник: https://github.com/AdzeB/bb-plugin-md-prompt/tree/3b99ea8402ee290e22be93e2aba23622cf34b84d
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

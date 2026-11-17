@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kalindu De Costa (https://github.com/kalindudc)
-- Исходный репозиторий: https://github.com/kalindudc/bb-marketplace
-- Каталог в репозитории: plugins/loom
-- Версия: loom/v0.34.2, коммит 87b26d095a28574c67a4359b1336bb48ec02540f
-- Ссылка на исходник: https://github.com/kalindudc/bb-marketplace/tree/87b26d095a28574c67a4359b1336bb48ec02540f/plugins/loom
+- Версия: v0.34.2, коммит 87b26d095a28574c67a4359b1336bb48ec02540f
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

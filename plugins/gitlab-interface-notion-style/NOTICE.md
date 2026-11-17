@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Max Kosach (https://github.com/KosachMax)
-- Исходный репозиторий: https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style
-- Каталог в репозитории: (корень)
 - Версия: v1.3.3, коммит a3e61e8601d0902834eafe3da416a0a6f5ebda79
-- Ссылка на исходник: https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style/tree/a3e61e8601d0902834eafe3da416a0a6f5ebda79
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (6 файлов, есть в исходном репозитории)
 

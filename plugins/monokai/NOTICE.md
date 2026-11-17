@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Scott Sunarto (https://github.com/smsunarto)
-- Исходный репозиторий: https://github.com/smsunarto/bb-plugins
-- Каталог в репозитории: plugins/monokai
-- Версия: monokai/v0.3.2, коммит 2bb1b7e8f5845378edc614fe81f01dc44071667a
-- Ссылка на исходник: https://github.com/smsunarto/bb-plugins/tree/2bb1b7e8f5845378edc614fe81f01dc44071667a/plugins/monokai
+- Версия: v0.3.2, коммит 2bb1b7e8f5845378edc614fe81f01dc44071667a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Chris Sells (https://github.com/csells)
-- Исходный репозиторий: https://github.com/csells/bb-plugins
-- Каталог в репозитории: plugins/read-aloud
-- Версия: read-aloud/v0.1.4, коммит 074e0723fdefeeab4639efdd0c4cccca659683e8
-- Ссылка на исходник: https://github.com/csells/bb-plugins/tree/074e0723fdefeeab4639efdd0c4cccca659683e8/plugins/read-aloud
+- Версия: v0.1.4, коммит 074e0723fdefeeab4639efdd0c4cccca659683e8
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

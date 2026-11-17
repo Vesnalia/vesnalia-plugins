@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Muhammad Ahsan (https://github.com/ahsan7162)
-- Исходный репозиторий: https://github.com/ahsan7162/bb-plugin-claude-usage
-- Каталог в репозитории: (корень)
 - Версия: v0.1.2, коммит ec9be5ef5cd3e2bf4b026220b6713729be96843b
-- Ссылка на исходник: https://github.com/ahsan7162/bb-plugin-claude-usage/tree/ec9be5ef5cd3e2bf4b026220b6713729be96843b
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

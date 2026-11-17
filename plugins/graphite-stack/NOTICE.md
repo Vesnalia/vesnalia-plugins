@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Prakash Chokalingam (https://github.com/prakashchokalingam)
-- Исходный репозиторий: https://github.com/prakashchokalingam/bb-plugin-graphite-stack
-- Каталог в репозитории: (корень)
 - Версия: v0.1.2, коммит c98969ebb721589909fe4d7fe9a6c1ca371a8a5a
-- Ссылка на исходник: https://github.com/prakashchokalingam/bb-plugin-graphite-stack/tree/c98969ebb721589909fe4d7fe9a6c1ca371a8a5a
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (5 файлов, есть в исходном репозитории)
 

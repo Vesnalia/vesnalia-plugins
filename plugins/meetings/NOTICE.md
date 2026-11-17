@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: AiXenix (https://github.com/AiXenix)
-- Исходный репозиторий: https://github.com/AiXenix/bb-plugin-meetings
-- Каталог в репозитории: (корень)
 - Версия: v0.3.1, коммит 641c6b719c3491e7c617969a7c42426f8d70f4cd
-- Ссылка на исходник: https://github.com/AiXenix/bb-plugin-meetings/tree/641c6b719c3491e7c617969a7c42426f8d70f4cd
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (9 файлов, есть в исходном репозитории)
 

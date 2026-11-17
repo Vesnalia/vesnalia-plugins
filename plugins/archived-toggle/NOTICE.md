@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Nikolai Berezovskii (https://github.com/brzvsk)
-- Исходный репозиторий: https://github.com/brzvsk/bb-plugins
-- Каталог в репозитории: plugins/archived-toggle
-- Версия: archived-toggle/v0.1.0, коммит 42a7a8b2662fdccfc9e9a21873df8e2cf9a579e4
-- Ссылка на исходник: https://github.com/brzvsk/bb-plugins/tree/42a7a8b2662fdccfc9e9a21873df8e2cf9a579e4/plugins/archived-toggle
+- Версия: v0.1.0, коммит 42a7a8b2662fdccfc9e9a21873df8e2cf9a579e4
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

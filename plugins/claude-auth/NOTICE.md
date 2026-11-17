@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Roger Serra (https://github.com/Hazihell)
-- Исходный репозиторий: https://github.com/Hazihell/bb-plugin-claude-auth
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит d242a8b7ba46511c0edb072772c56162e46da2bf
-- Ссылка на исходник: https://github.com/Hazihell/bb-plugin-claude-auth/tree/d242a8b7ba46511c0edb072772c56162e46da2bf
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

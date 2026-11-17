@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: maryanovas (https://github.com/maryanovas)
-- Исходный репозиторий: https://github.com/maryanovas/bb-plugin-host-pulse
-- Каталог в репозитории: (корень)
 - Версия: v0.1.9, коммит 66eab00e161ad7c647526101973aa90763cacadc
-- Ссылка на исходник: https://github.com/maryanovas/bb-plugin-host-pulse/tree/66eab00e161ad7c647526101973aa90763cacadc
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

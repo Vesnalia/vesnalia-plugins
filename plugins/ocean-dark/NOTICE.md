@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Treo-Solutions (https://github.com/jtattreo)
-- Исходный репозиторий: https://github.com/Treo-Solutions/bb-plugin-ocean-dark
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 842a0a6616d20a49b24f16240123eacbcc19e5da
-- Ссылка на исходник: https://github.com/Treo-Solutions/bb-plugin-ocean-dark/tree/842a0a6616d20a49b24f16240123eacbcc19e5da
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

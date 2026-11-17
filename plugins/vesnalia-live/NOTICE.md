@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Jem (https://github.com/jem-computer)
-- Исходный репозиторий: https://github.com/jem-computer/bb-live
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 34d3cf19360a84cbb2c35d7a75d3df9ffc64d29b
-- Ссылка на исходник: https://github.com/jem-computer/bb-live/tree/34d3cf19360a84cbb2c35d7a75d3df9ffc64d29b
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

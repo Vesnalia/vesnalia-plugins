@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Chris Sells (https://github.com/csells)
-- Исходный репозиторий: https://github.com/csells/bb-plugins
-- Каталог в репозитории: plugins/fat-fingers
-- Версия: fat-fingers/v0.1.2, коммит 74ac084117773301940d69f0e3c8efed89557526
-- Ссылка на исходник: https://github.com/csells/bb-plugins/tree/74ac084117773301940d69f0e3c8efed89557526/plugins/fat-fingers
+- Версия: v0.1.2, коммит 74ac084117773301940d69f0e3c8efed89557526
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: amrtawfik160 (https://github.com/amrtawfik160)
-- Исходный репозиторий: https://github.com/amrtawfik160/bb-plugin-firstmate
-- Каталог в репозитории: (корень)
 - Версия: v0.4.0, коммит 7de6f20addb2080cc62903c07c90ba64359e19a0
-- Ссылка на исходник: https://github.com/amrtawfik160/bb-plugin-firstmate/tree/7de6f20addb2080cc62903c07c90ba64359e19a0
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

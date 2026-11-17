@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: prismatic7 (https://github.com/prismatic7)
-- Исходный репозиторий: https://github.com/prismatic7/bb-plugin-headroom
-- Каталог в репозитории: (корень)
 - Версия: v0.2.1, коммит 4caa7546bdab0aa900234c3909eb1e383b4c0d23
-- Ссылка на исходник: https://github.com/prismatic7/bb-plugin-headroom/tree/4caa7546bdab0aa900234c3909eb1e383b4c0d23
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Michael Yong (https://github.com/ymichael)
-- Исходный репозиторий: https://github.com/ymichael/bb-plugins
-- Каталог в репозитории: plugins/bb-office
-- Версия: bb-office/v1.0.1, коммит 6c5719ce22c33237f033653af244dcec494eae34
-- Ссылка на исходник: https://github.com/ymichael/bb-plugins/tree/6c5719ce22c33237f033653af244dcec494eae34/plugins/bb-office
+- Версия: v1.0.1, коммит 6c5719ce22c33237f033653af244dcec494eae34
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Dmitrii Kapustin (https://github.com/dmitriikapustin)
-- Исходный репозиторий: https://github.com/dmitriikapustin/bb-plugins-by-kapustin
-- Каталог в репозитории: plugins/my-tasks
-- Версия: my-tasks/v0.3.0, коммит d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c
-- Ссылка на исходник: https://github.com/dmitriikapustin/bb-plugins-by-kapustin/tree/d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c/plugins/my-tasks
+- Версия: v0.3.0, коммит d862257ba1fafc9b400c06ad9bf6e6b7b9c5f40c
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

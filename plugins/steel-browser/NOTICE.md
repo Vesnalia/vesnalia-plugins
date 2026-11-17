@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Mateo Cerquetella (https://github.com/MateoCerquetella)
-- Исходный репозиторий: https://github.com/MateoCerquetella/bb-plugins
-- Каталог в репозитории: plugins/steel-browser
-- Версия: steel-browser/v0.2.0, коммит b83f909dc95cd8307b719a84ac8dfffb1994723b
-- Ссылка на исходник: https://github.com/MateoCerquetella/bb-plugins/tree/b83f909dc95cd8307b719a84ac8dfffb1994723b/plugins/steel-browser
+- Версия: v0.2.0, коммит b83f909dc95cd8307b719a84ac8dfffb1994723b
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Redha Juanda (https://github.com/redhajuanda)
-- Исходный репозиторий: https://github.com/redhajuanda/bb-treehouse
-- Каталог в репозитории: (корень)
 - Версия: v0.3.1, коммит e77674281d72fd0ff9a51fe724fe13fdd57353ed
-- Ссылка на исходник: https://github.com/redhajuanda/bb-treehouse/tree/e77674281d72fd0ff9a51fe724fe13fdd57353ed
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: David Eiffert (https://github.com/davideiffert)
-- Исходный репозиторий: https://github.com/davideiffert/bb-plugin-herdr-theme
-- Каталог в репозитории: (корень)
 - Версия: v0.5.1, коммит 492eab80a8d2239fad25f8658cf06c3464fad5cc
-- Ссылка на исходник: https://github.com/davideiffert/bb-plugin-herdr-theme/tree/492eab80a8d2239fad25f8658cf06c3464fad5cc
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (7 файлов, есть в исходном репозитории)
 

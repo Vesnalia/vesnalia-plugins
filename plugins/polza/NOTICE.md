@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Polza.AI (https://github.com/dddoker)
-- Исходный репозиторий: https://github.com/polza-ai/bb-plugin-polza
-- Каталог в репозитории: (корень)
 - Версия: v0.1.5, коммит 8eb9f4413e45af949263064718c8d7242fbb7bb6
-- Ссылка на исходник: https://github.com/polza-ai/bb-plugin-polza/tree/8eb9f4413e45af949263064718c8d7242fbb7bb6
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

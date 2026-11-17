@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Patrick Lee (https://github.com/patleeman)
-- Исходный репозиторий: https://github.com/patleeman/bb-plugins
-- Каталог в репозитории: packages/bb-plugin-emoji-react
-- Версия: emoji-react/v0.2.1, коммит a56f9d5e064eefc7c7167a2dd9746513aa5ab7c7
-- Ссылка на исходник: https://github.com/patleeman/bb-plugins/tree/a56f9d5e064eefc7c7167a2dd9746513aa5ab7c7/packages/bb-plugin-emoji-react
+- Версия: v0.2.1, коммит a56f9d5e064eefc7c7167a2dd9746513aa5ab7c7
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

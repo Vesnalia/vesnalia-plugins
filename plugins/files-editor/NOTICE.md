@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: AbdElrahman Telb (https://github.com/abdoutelb)
-- Исходный репозиторий: https://github.com/abdoutelb/bb-plugin-files-editor
-- Каталог в репозитории: (корень)
 - Версия: v0.1.8, коммит 4f525264e9367117afa27ff3cd899914c83c1d74
-- Ссылка на исходник: https://github.com/abdoutelb/bb-plugin-files-editor/tree/4f525264e9367117afa27ff3cd899914c83c1d74
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

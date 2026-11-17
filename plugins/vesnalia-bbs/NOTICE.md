@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Erik MacKinnon (https://github.com/erikmackinnon)
-- Исходный репозиторий: https://github.com/erikmackinnon/bb-plugin-bbbbs
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит dd84fb9c5439fc0039b6a184fa35a2e18d9afe54
-- Ссылка на исходник: https://github.com/erikmackinnon/bb-plugin-bbbbs/tree/dd84fb9c5439fc0039b6a184fa35a2e18d9afe54
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (9 файлов, есть в исходном репозитории)
 

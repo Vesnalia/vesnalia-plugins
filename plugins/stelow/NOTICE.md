@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: calionauta (https://github.com/calionauta)
-- Исходный репозиторий: https://github.com/calionauta/bb-plugin-stelow
-- Каталог в репозитории: (корень)
 - Версия: v0.104.0, коммит 3dd14dc2ccc866f0ffec74c354353f072996f8f4
-- Ссылка на исходник: https://github.com/calionauta/bb-plugin-stelow/tree/3dd14dc2ccc866f0ffec74c354353f072996f8f4
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

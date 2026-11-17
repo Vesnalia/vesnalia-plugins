@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Tom McKenzie (https://github.com/grrowl)
-- Исходный репозиторий: https://github.com/grrowl/bb-tinted-threads
-- Каталог в репозитории: (корень)
 - Версия: v0.1.4, коммит 02ef6748b9c8cdfc30147fc12092956943649723
-- Ссылка на исходник: https://github.com/grrowl/bb-tinted-threads/tree/02ef6748b9c8cdfc30147fc12092956943649723
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Примечание о лицензии: файла лицензии нет на v0.1.4; текст взят с ветки по умолчанию (коммит ad96525d790ada8f0f70b30f26663a7c0bdfc65a)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Lobu (https://github.com/buremba)
-- Исходный репозиторий: https://github.com/lobu-ai/bb-plugin-lobu
-- Каталог в репозитории: (корень)
 - Версия: v0.8.0, коммит f7e9fef0474fcdcdc902889cc1f6635c7119382d
-- Ссылка на исходник: https://github.com/lobu-ai/bb-plugin-lobu/tree/f7e9fef0474fcdcdc902889cc1f6635c7119382d
 - Лицензия: Apache-2.0 (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

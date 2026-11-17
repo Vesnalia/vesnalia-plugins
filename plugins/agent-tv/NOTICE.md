@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: MacHatter1 (https://github.com/MacHatter1)
-- Исходный репозиторий: https://github.com/MacHatter1/bb-plugin-agent-tv
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 3add2e469138803ced5d27a57a86857c26943531
-- Ссылка на исходник: https://github.com/MacHatter1/bb-plugin-agent-tv/tree/3add2e469138803ced5d27a57a86857c26943531
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

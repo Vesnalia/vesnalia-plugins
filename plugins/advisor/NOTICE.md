@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Salem Sayed Abdel Gawad (https://github.com/salemsayed)
-- Исходный репозиторий: https://github.com/salemsayed/bb-plugin-advisor
-- Каталог в репозитории: (корень)
 - Версия: v0.1.15, коммит e48bc5095b4664d4463e848a4f5ee066dcf048ec
-- Ссылка на исходник: https://github.com/salemsayed/bb-plugin-advisor/tree/e48bc5095b4664d4463e848a4f5ee066dcf048ec
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

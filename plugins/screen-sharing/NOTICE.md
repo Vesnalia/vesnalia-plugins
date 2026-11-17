@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Gustavo Ambrozio (https://github.com/gpambrozio)
-- Исходный репозиторий: https://github.com/gpambrozio/bb-plugins
-- Каталог в репозитории: screen-sharing
-- Версия: screen-sharing/v0.5.0, коммит bab2ef0e9400fc6914ebc4f339681f63aa3f0576
-- Ссылка на исходник: https://github.com/gpambrozio/bb-plugins/tree/bab2ef0e9400fc6914ebc4f339681f63aa3f0576/screen-sharing
+- Версия: v0.5.0, коммит bab2ef0e9400fc6914ebc4f339681f63aa3f0576
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

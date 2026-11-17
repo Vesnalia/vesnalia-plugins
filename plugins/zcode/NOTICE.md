@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Dmitry Polishuk (https://github.com/dpolishuk)
-- Исходный репозиторий: https://github.com/dpolishuk/bb-zcode
-- Каталог в репозитории: (корень)
 - Версия: v0.14.1, коммит 8c5dc1569c90ba9c8d91132dd437efb2f36fe650
-- Ссылка на исходник: https://github.com/dpolishuk/bb-zcode/tree/8c5dc1569c90ba9c8d91132dd437efb2f36fe650
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kalindu De Costa (https://github.com/kalindudc)
-- Исходный репозиторий: https://github.com/kalindudc/bb-marketplace
-- Каталог в репозитории: plugins/shuttle
-- Версия: shuttle/v0.10.2, коммит 15d6ecbd9bf7792f92ebe3fb2107511aa7e8cee9
-- Ссылка на исходник: https://github.com/kalindudc/bb-marketplace/tree/15d6ecbd9bf7792f92ebe3fb2107511aa7e8cee9/plugins/shuttle
+- Версия: v0.10.2, коммит 15d6ecbd9bf7792f92ebe3fb2107511aa7e8cee9
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Dmitrii Maksimov (https://github.com/kartollikaa)
-- Исходный репозиторий: https://github.com/kartollikaa/bb-plugins
-- Каталог в репозитории: plugins/artifacts
-- Версия: artifacts/v0.1.1, коммит 0dc5005496c5c0c50132302c61ea06b24f7a6482
-- Ссылка на исходник: https://github.com/kartollikaa/bb-plugins/tree/0dc5005496c5c0c50132302c61ea06b24f7a6482/plugins/artifacts
+- Версия: v0.1.1, коммит 0dc5005496c5c0c50132302c61ea06b24f7a6482
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "MIT", в репозитории permission
 

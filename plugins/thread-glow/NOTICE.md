@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: aMoonshine (https://github.com/aMoonshine)
-- Исходный репозиторий: https://github.com/aMoonshine/bb-plugin-thread-glow
-- Каталог в репозитории: (корень)
 - Версия: v0.1.1, коммит 38037b5795e2a2ebe88df923fea67cdc91909f09
-- Ссылка на исходник: https://github.com/aMoonshine/bb-plugin-thread-glow/tree/38037b5795e2a2ebe88df923fea67cdc91909f09
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

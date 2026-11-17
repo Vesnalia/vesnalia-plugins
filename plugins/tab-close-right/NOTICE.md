@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Nikolai Berezovskii (https://github.com/brzvsk)
-- Исходный репозиторий: https://github.com/brzvsk/bb-plugins
-- Каталог в репозитории: plugins/tab-close-right
-- Версия: tab-close-right/v0.1.0, коммит 32b57847b62656314908255c22657f07e67a35a5
-- Ссылка на исходник: https://github.com/brzvsk/bb-plugins/tree/32b57847b62656314908255c22657f07e67a35a5/plugins/tab-close-right
+- Версия: v0.1.0, коммит 32b57847b62656314908255c22657f07e67a35a5
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

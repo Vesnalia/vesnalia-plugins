@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Vedran Burojević (https://github.com/vburojevic)
-- Исходный репозиторий: https://github.com/vburojevic/bb-plugin-pets
-- Каталог в репозитории: (корень)
 - Версия: v0.3.1, коммит 1b7f048d3450ab115a48f5805c41b1e2c26b0477
-- Ссылка на исходник: https://github.com/vburojevic/bb-plugin-pets/tree/1b7f048d3450ab115a48f5805c41b1e2c26b0477
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (21 файлов, есть в исходном репозитории)
 

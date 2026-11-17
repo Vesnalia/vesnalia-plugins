@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: prismatic7 (https://github.com/prismatic7)
-- Исходный репозиторий: https://github.com/prismatic7/bb-plugin-noisegate
-- Каталог в репозитории: (корень)
 - Версия: v0.2.1, коммит bd3de8e2c5a19454be4d8a253fbadee909207442
-- Ссылка на исходник: https://github.com/prismatic7/bb-plugin-noisegate/tree/bd3de8e2c5a19454be4d8a253fbadee909207442
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

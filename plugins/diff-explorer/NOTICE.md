@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Arash Outadi (https://github.com/arashout)
-- Исходный репозиторий: https://github.com/bitcomplete/bb-plugins
-- Каталог в репозитории: plugins/diff-explorer
-- Версия: diff-explorer/v0.1.3, коммит 7bbcefc19872d2533ff789ec18e4ad1a884e8359
-- Ссылка на исходник: https://github.com/bitcomplete/bb-plugins/tree/7bbcefc19872d2533ff789ec18e4ad1a884e8359/plugins/diff-explorer
+- Версия: v0.1.3, коммит 7bbcefc19872d2533ff789ec18e4ad1a884e8359
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

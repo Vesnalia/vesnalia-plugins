@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: wjin17 (https://github.com/wjin17)
-- Исходный репозиторий: https://github.com/wjin17/bb-plugin-provider-authentication
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит e0fb7fdcefcb60a846b18202f9b45bded3e33382
-- Ссылка на исходник: https://github.com/wjin17/bb-plugin-provider-authentication/tree/e0fb7fdcefcb60a846b18202f9b45bded3e33382
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

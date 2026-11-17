@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Job de Noo (https://github.com/devnoo)
-- Исходный репозиторий: https://github.com/devnoo/bb-side-board
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 1d7f4ab0d41159b311a43a62f83647281e8425bc
-- Ссылка на исходник: https://github.com/devnoo/bb-side-board/tree/1d7f4ab0d41159b311a43a62f83647281e8425bc
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

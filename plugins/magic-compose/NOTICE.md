@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Sawyer Hood (https://github.com/SawyerHood)
-- Исходный репозиторий: https://github.com/SawyerHood/sawyer-plugins
-- Каталог в репозитории: plugins/magic-compose
-- Версия: magic-compose/v0.1.0, коммит 99cf957220eb4998cf7d918326a1b0f380b77822
-- Ссылка на исходник: https://github.com/SawyerHood/sawyer-plugins/tree/99cf957220eb4998cf7d918326a1b0f380b77822/plugins/magic-compose
+- Версия: v0.1.0, коммит 99cf957220eb4998cf7d918326a1b0f380b77822
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

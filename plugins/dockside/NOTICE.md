@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Mateo Cerquetella (https://github.com/MateoCerquetella)
-- Исходный репозиторий: https://github.com/MateoCerquetella/bb-plugins
-- Каталог в репозитории: plugins/dockside
-- Версия: dockside/v0.1.8, коммит e8736f3858d0a544b70573ddbc92db0291faed53
-- Ссылка на исходник: https://github.com/MateoCerquetella/bb-plugins/tree/e8736f3858d0a544b70573ddbc92db0291faed53/plugins/dockside
+- Версия: v0.1.8, коммит e8736f3858d0a544b70573ddbc92db0291faed53
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (6 файлов, есть в исходном репозитории)
 

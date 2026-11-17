@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Diffuzmetall (https://github.com/Diffuzmetall)
-- Исходный репозиторий: https://github.com/Diffuzmetall/bb-plugin-pi-command-sync
-- Каталог в репозитории: (корень)
 - Версия: v0.2.0, коммит f46815c728bc15fb8949a8a03a3e70ccc70c571e
-- Ссылка на исходник: https://github.com/Diffuzmetall/bb-plugin-pi-command-sync/tree/f46815c728bc15fb8949a8a03a3e70ccc70c571e
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

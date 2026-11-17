@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Muhammad Ahsan (https://github.com/ahsan7162)
-- Исходный репозиторий: https://github.com/ahsan7162/bb-plugin-openui
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 963efcb91ad45aa91fb1e7a5cf697b46dbf9a1c0
-- Ссылка на исходник: https://github.com/ahsan7162/bb-plugin-openui/tree/963efcb91ad45aa91fb1e7a5cf697b46dbf9a1c0
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (4 файлов, есть в исходном репозитории)
 

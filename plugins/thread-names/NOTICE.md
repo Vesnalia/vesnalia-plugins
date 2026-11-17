@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: nikushiks (https://github.com/nikushiks)
-- Исходный репозиторий: https://github.com/nikushiks/bb-plugin-thread-names
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит 125f5eaa3b5a14dbe53026d9a9a8fb78c8191bc7
-- Ссылка на исходник: https://github.com/nikushiks/bb-plugin-thread-names/tree/125f5eaa3b5a14dbe53026d9a9a8fb78c8191bc7
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

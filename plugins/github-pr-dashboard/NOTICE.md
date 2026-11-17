@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Muhammad Ahsan (https://github.com/ahsan7162)
-- Исходный репозиторий: https://github.com/ahsan7162/bb-github-pr-dashboard
-- Каталог в репозитории: (корень)
 - Версия: v0.3.3, коммит e1e1881a6beddb7419bf117c9bd1743ada73a22e
-- Ссылка на исходник: https://github.com/ahsan7162/bb-github-pr-dashboard/tree/e1e1881a6beddb7419bf117c9bd1743ada73a22e
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

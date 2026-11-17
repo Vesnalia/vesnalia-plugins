@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Amr Tawfik (https://github.com/amrtawfik160)
-- Исходный репозиторий: https://github.com/amrtawfik160/bb-plugin-antigravity
-- Каталог в репозитории: (корень)
 - Версия: v0.2.1, коммит 686d8adb4a49bc944867fadc045727c264d41b01
-- Ссылка на исходник: https://github.com/amrtawfik160/bb-plugin-antigravity/tree/686d8adb4a49bc944867fadc045727c264d41b01
 - Лицензия: лицензия не указана в исходном репозитории
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

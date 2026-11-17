@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Hung Vinh (https://github.com/hungv47)
-- Исходный репозиторий: https://github.com/hungv47/bb-plugin-app-preview
-- Каталог в репозитории: app
 - Версия: v0.2.9, коммит daea8cba1b6ecc78b0fbdb69f80ec51d5bbad719
-- Ссылка на исходник: https://github.com/hungv47/bb-plugin-app-preview/tree/daea8cba1b6ecc78b0fbdb69f80ec51d5bbad719/app
 - Лицензия: лицензия не указана в исходном репозитории
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

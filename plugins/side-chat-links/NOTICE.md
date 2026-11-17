@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Rob Dodson (https://github.com/robdodson)
-- Исходный репозиторий: https://github.com/robdodson/bb-plugin-side-chat-links
-- Каталог в репозитории: (корень)
 - Версия: v0.1.0, коммит a8d551440b33ac9157030adfb2148a0195efa612
-- Ссылка на исходник: https://github.com/robdodson/bb-plugin-side-chat-links/tree/a8d551440b33ac9157030adfb2148a0195efa612
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (2 файлов, есть в исходном репозитории)
 

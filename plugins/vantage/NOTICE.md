@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kalindu De Costa (https://github.com/kalindudc)
-- Исходный репозиторий: https://github.com/kalindudc/bb-marketplace
-- Каталог в репозитории: plugins/vantage
-- Версия: vantage/v0.10.0, коммит e4d152bcf9a10dcb30252af9298244b0cae35dd1
-- Ссылка на исходник: https://github.com/kalindudc/bb-marketplace/tree/e4d152bcf9a10dcb30252af9298244b0cae35dd1/plugins/vantage
+- Версия: v0.10.0, коммит e4d152bcf9a10dcb30252af9298244b0cae35dd1
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

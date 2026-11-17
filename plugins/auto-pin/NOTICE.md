@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Chris Sells (https://github.com/csells)
-- Исходный репозиторий: https://github.com/csells/bb-plugins
-- Каталог в репозитории: plugins/auto-pin
-- Версия: auto-pin/v0.1.0, коммит f6a37aa1ba74a442d22428d968e7eeb0466998d5
-- Ссылка на исходник: https://github.com/csells/bb-plugins/tree/f6a37aa1ba74a442d22428d968e7eeb0466998d5/plugins/auto-pin
+- Версия: v0.1.0, коммит f6a37aa1ba74a442d22428d968e7eeb0466998d5
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

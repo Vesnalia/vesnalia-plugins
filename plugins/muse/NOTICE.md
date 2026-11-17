@@ -3,10 +3,7 @@
 Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
 
 - Оригинальный автор: Kirill Vechkasov (https://github.com/VKirill)
-- Исходный репозиторий: https://github.com/VKirill/muse-ai-connector
-- Каталог в репозитории: (корень)
 - Версия: v0.3.22, коммит 78bcbfafca02b223a21fccb99817f857df6f09b2
-- Ссылка на исходник: https://github.com/VKirill/muse-ai-connector/tree/78bcbfafca02b223a21fccb99817f857df6f09b2
 - Лицензия: лицензия не указана в исходном репозитории
 - Примечание о лицензии: в package.json указано "Apache-2.0", в репозитории permission
 

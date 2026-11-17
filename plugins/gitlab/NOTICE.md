@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Marius Nouchet (https://github.com/suiramdev)
-- Исходный репозиторий: https://github.com/suiramdev/bb-plugin-gitlab
-- Каталог в репозитории: (корень)
 - Версия: v0.1.2, коммит 0938f296bc5b6cece9be6ae0c64f26e17aed8f58
-- Ссылка на исходник: https://github.com/suiramdev/bb-plugin-gitlab/tree/0938f296bc5b6cece9be6ae0c64f26e17aed8f58
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core

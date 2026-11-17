@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Victor Aremu (https://github.com/ahkohd)
-- Исходный репозиторий: https://github.com/ahkohd/bb-plugin-shell-tasks
-- Каталог в репозитории: (корень)
 - Версия: v0.1.44, коммит 81e02359474ec53c6a4128430660f7eb3cc7e518
-- Ссылка на исходник: https://github.com/ahkohd/bb-plugin-shell-tasks/tree/81e02359474ec53c6a4128430660f7eb3cc7e518
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (1 файлов, есть в исходном репозитории)
 

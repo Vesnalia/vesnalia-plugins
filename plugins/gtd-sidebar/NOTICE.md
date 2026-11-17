@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Scott Sunarto (https://github.com/smsunarto)
-- Исходный репозиторий: https://github.com/smsunarto/bb-plugins
-- Каталог в репозитории: plugins/gtd-sidebar
-- Версия: gtd-sidebar/v0.4.2, коммит c1fe661c414f12ff16106642338f37c45b01285d
-- Ссылка на исходник: https://github.com/smsunarto/bb-plugins/tree/c1fe661c414f12ff16106642338f37c45b01285d/plugins/gtd-sidebar
+- Версия: v0.4.2, коммит c1fe661c414f12ff16106642338f37c45b01285d
 - Лицензия: MIT (текст в файле LICENSE рядом)
 - Не перенесены демо-медиа из документации (3 файлов, есть в исходном репозитории)
 

@@ -3,10 +3,7 @@
 Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Mateo Cerquetella (https://github.com/MateoCerquetella)
-- Исходный репозиторий: https://github.com/MateoCerquetella/bb-plugins
-- Каталог в репозитории: plugins/touchbar
-- Версия: touchbar/v0.1.2, коммит f9836254c0286296d36f2b2af4c03cd7160823b8
-- Ссылка на исходник: https://github.com/MateoCerquetella/bb-plugins/tree/f9836254c0286296d36f2b2af4c03cd7160823b8/plugins/touchbar
+- Версия: v0.1.2, коммит f9836254c0286296d36f2b2af4c03cd7160823b8
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
