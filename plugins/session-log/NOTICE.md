@@ -1,6 +1,6 @@
 # Session Log
 
-Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Kalindu De Costa (https://github.com/kalindudc)
 - Исходный репозиторий: https://github.com/kalindudc/bb-marketplace
@@ -10,8 +10,8 @@
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
-(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
-бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
-`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена в коде и бренд в видимых текстах
+заменены на VesnALIA. Изменения сделаны скриптом `scripts/adapt.mjs`;
+список ручных правок и состояние сборки - в STATUS.md.
 
 Авторские права на исходный код принадлежат оригинальному автору.

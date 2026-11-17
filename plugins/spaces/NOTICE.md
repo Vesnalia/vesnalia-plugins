@@ -1,6 +1,6 @@
 # Spaces
 
-Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+Плагин адаптирован для VesnALIA.
 
 - Оригинальный автор: Siarhei Tarasenka (https://github.com/tarasenko-by)
 - Исходный репозиторий: https://github.com/tarasenko-by/bb-plugin-spaces
@@ -10,8 +10,8 @@
 - Лицензия: MIT (текст в файле LICENSE рядом)
 
 Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
-(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
-бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
-`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена в коде и бренд в видимых текстах
+заменены на VesnALIA. Изменения сделаны скриптом `scripts/adapt.mjs`;
+список ручных правок и состояние сборки - в STATUS.md.
 
 Авторские права на исходный код принадлежат оригинальному автору.

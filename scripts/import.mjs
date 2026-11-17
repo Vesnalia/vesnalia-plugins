@@ -14,7 +14,8 @@ import { existsSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import semver from "semver";
-import { ourId } from "./renames.mjs";
+import { brandProse } from "./adapt.mjs";
+import { DISPLAY_NAMES, fixProse, ourId } from "./renames.mjs";
 
 const exec = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, "..");
@@ -179,11 +180,11 @@ function repoWebUrl(url) {
 
 function noticeText(entry) {
   const lines = [
-    `# ${entry.displayName.replace(/\u2014/g, "-")}`,
+    `# ${(DISPLAY_NAMES[entry.id] ?? fixProse(brandProse(entry.displayName))).replace(/\u2014/g, "-")}`,
     "",
     entry.license === "permission"
       ? "Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026)."
-      : "Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.",
+      : "Плагин адаптирован для VesnALIA.",
     "",
     `- Оригинальный автор: ${entry.author.name}${entry.author.github ? ` (https://github.com/${entry.author.github})` : ""}`,
     `- Исходный репозиторий: ${entry.originalRepo}`,
@@ -203,9 +204,9 @@ function noticeText(entry) {
   lines.push(
     "",
     "Изменения VesnALIA: манифест и зависимости переведены на движок alia-core",
-    "(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,",
-    "бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом",
-    "`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.",
+    "(раздел `alia`, `@vesnalia/plugin-sdk`), имена в коде и бренд в видимых текстах",
+    "заменены на VesnALIA. Изменения сделаны скриптом `scripts/adapt.mjs`;",
+    "список ручных правок и состояние сборки - в STATUS.md.",
     "",
     "Авторские права на исходный код принадлежат оригинальному автору.",
     "",
