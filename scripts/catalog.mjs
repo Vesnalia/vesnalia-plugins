@@ -262,15 +262,13 @@ const notices = [
   "",
   "Код в `plugins/` написан авторами, указанными ниже, и распространяется по лицензиям их исходных репозиториев. Текст лицензии каждого плагина - в `plugins/<id>/LICENSE`, происхождение и коммит - в `plugins/<id>/NOTICE.md`. Изменения VesnALIA (адаптация под alia-core) распространяются на тех же условиях.",
   "",
-  "Плагины выполнены для движка bb (https://github.com/get-bb/bb, MIT) и адаптированы для alia-core.",
-  "",
-  "| Плагин | Автор | Исходный репозиторий | Версия | Лицензия |",
-  "| --- | --- | --- | --- | --- |",
+  "| Плагин | Автор | Версия | Лицензия |",
+  "| --- | --- | --- | --- |",
 ];
 for (const id of ids) {
   const src = sources[id];
   notices.push(
-    `| ${id} | ${md(src.author.name ?? "-")}${src.author.github ? ` (github.com/${src.author.github})` : ""} | ${src.originalRepo}${src.subdir ? ` (${src.subdir})` : ""} | ${md(src.ref)} \`${src.commit.slice(0, 12)}\` | ${src.license}${src.licenseNote ? ` (${md(src.licenseNote)})` : ""} |`,
+    `| ${id} | ${md(src.author.name ?? "-")}${src.author.github ? ` (github.com/${src.author.github})` : ""} | ${md(String(src.ref).split("/").at(-1))} \`${src.commit.slice(0, 12)}\` | ${src.license}${src.licenseNote ? ` (${md(src.licenseNote)})` : ""} |`,
   );
 }
 notices.push("");
