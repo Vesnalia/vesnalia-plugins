@@ -10,6 +10,7 @@ import { DISPLAY_NAMES, fixProse } from "./renames.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const REPO_URL = "https://github.com/Vesnalia/vesnalia-plugins";
+const RAW_URL = "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main";
 const read = async (p, fallback) =>
   existsSync(join(ROOT, p)) ? JSON.parse(await readFile(join(ROOT, p), "utf8")) : fallback;
 
@@ -155,7 +156,8 @@ for (const id of ids) {
     slug: id,
     displayName: DISPLAY_NAMES[id] ?? fixProse(brandProse(src.displayName)),
     description: fixProse(brandProse(src.description)),
-    icon: iconName ?? src.icon?.url ?? null,
+    // Иконка-файл - из нашего репозитория (Hub VesnALIA пускает raw.githubusercontent.com/Vesnalia/...).
+    icon: iconName ?? (iconPath ? `${RAW_URL}/plugins/${id}/${iconPath}` : null),
     ...(iconPath ? { iconPath: `plugins/${id}/${iconPath}` } : {}),
     category: src.category,
     repoUrl: REPO_URL,

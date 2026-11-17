@@ -247,7 +247,7 @@
     "server": "ok",
     "host": null,
     "warnings": [],
-    "seconds": 4
+    "seconds": 1
   },
   "android-emulator": {
     "id": "android-emulator",

@@ -34,7 +34,7 @@
     "name": "Alium",
     "description": "Vimium-style keys: f to click by label, j/k and d/u to scroll, i for the composer.",
     "branding": {
-      "icon": "./icons/bbium.svg"
+      "icon": "./icons/alium.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx",
