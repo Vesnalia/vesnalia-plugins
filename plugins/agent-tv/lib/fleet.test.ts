@@ -1117,7 +1117,7 @@ describe("redacting secrets from an action line", () => {
       ["deploy --password correcthorsebattery", "correcthorsebattery", "deploy"],
       ["slack-post --url xoxb-1234-5678-abcdefgh", "xoxb-1234-5678-abcdefgh", "slack-post"],
       ["aws configure set key AKIAIOSFODNN7EXAMPLE", "AKIAIOSFODNN7EXAMPLE", "aws configure"],
-      ["export GITHUB_TOKEN=github_pat_11AAAA_bbbbcccc", "github_pat_11AAAA_bbbbcccc", "GITHUB_TOKEN="],
+      ["export GITHUB_TOKEN=github_pat_11AAAA_aliabbcccc", "github_pat_11AAAA_aliabbcccc", "GITHUB_TOKEN="],
     ];
     for (const [input, secret, kept] of cases) {
       const out = redactSecrets(input);

@@ -19,7 +19,7 @@ import { COMMAND, HOUR, THREAD, rejection, standing, untilHeld, world, type Worl
 fakeSsh();
 const disposed = disposedOnceTheFileEnds();
 
-const RESTORED = /^bbbox-bx[0-9a-z]+-[0-9a-f]{8}$/;
+const RESTORED = /^aliabox-bx[0-9a-z]+-[0-9a-f]{8}$/;
 const LONGEST_LIFE_HOURS = 4;
 
 interface NamespaceSnapshotWorld {
@@ -54,7 +54,7 @@ function namespaceSnapshotWorld(): NamespaceSnapshotWorld {
       now,
       readyTimeoutMs: 20_000,
       setupArchive: async () => Buffer.from("setup"),
-      linuxImageScript: (target, key) => `cat >/dev/null; echo nscr.io/ws/bbbox/${target}:${key}`,
+      linuxImageScript: (target, key) => `cat >/dev/null; echo nscr.io/ws/aliabox/${target}:${key}`,
       linuxPullScript: () => ":",
       dockerCli: dockerOn,
       dockerOptions: { readyTimeoutMs: 20_000, selkiesLauncher: "/bin/sh", now },
@@ -257,7 +257,7 @@ test("Namespace's doctor gives Docker's snapshot lines for a machine only once i
   assert.match(after[0]!.detail, /^Snapshots: .+ They end with the machine at \d\d:\d\d UTC, the plan's longest life, or at the box's release\.$/);
 });
 
-const OLD_CONTAINER = /^bbbox-bx[0-9a-z]+$/;
+const OLD_CONTAINER = /^aliabox-bx[0-9a-z]+$/;
 
 function extendsSoFar(world: NamespaceSnapshotWorld): number {
   return world.api.calls.filter((call) => call.method === "ExtendInstance").length;

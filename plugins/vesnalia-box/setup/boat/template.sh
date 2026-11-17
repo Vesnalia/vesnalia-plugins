@@ -65,7 +65,7 @@ case "$step" in
     . "$src/guest/apt.sh"
     command -v jq >/dev/null || { apt_update -q >/dev/null && apt_install -y -q jq >/dev/null; }
     say "fetching the tools, ALIA's host app and the desktop's artifacts"
-    BBBOX_ENV=/nonexistent BBBOX_ALIA_URL="${ALIA_URL:-}" bash "$src/fetch-artifacts.sh" "$src/artifacts" "$artifacts" x86_64 </dev/null
+    ALIABOX_ENV=/nonexistent ALIABOX_ALIA_URL="${ALIA_URL:-}" bash "$src/fetch-artifacts.sh" "$src/artifacts" "$artifacts" x86_64 </dev/null
     set_boat_sources_aside
     remove_boat_docker
     set_boat_tools_aside

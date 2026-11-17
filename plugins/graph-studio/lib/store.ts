@@ -105,7 +105,7 @@ export const MIGRATIONS = [
   // the run may be taken over. Null = nobody claims it.
   `ALTER TABLE runs ADD COLUMN driver_id TEXT`,
   `ALTER TABLE runs ADD COLUMN driver_heartbeat_at INTEGER`,
-  // Rerun generation (BBP-15). A rerun from a checkpoint replays a member
+  // Rerun generation (ALIAP-15). A rerun from a checkpoint replays a member
   // node with the same visit and attempt as before, so the ledger key — and
   // Crew's correlation id — matched the earlier delivery and the member was
   // never asked again. Only a deliberate rerun raises the generation; a

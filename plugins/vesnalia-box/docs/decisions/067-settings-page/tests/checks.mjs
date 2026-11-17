@@ -152,7 +152,7 @@ const tests = {
     await page.getByRole("button", { name: /^Proxmox LXC/ }).first().click();
     await page.waitForTimeout(300);
     await tb(page, "API URL").fill("https://192.0.2.10:8006/api2/json");
-    await tb(page, "API token ID").fill("bbbox@pve!plugin");
+    await tb(page, "API token ID").fill("aliabox@pve!plugin");
     await page.getByLabel("API token secret").first().fill("token-secret");
     await page.getByRole("button", { name: "Save and turn on" }).click();
     await page.waitForTimeout(2600);

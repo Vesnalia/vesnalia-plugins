@@ -50,9 +50,9 @@ export type ActivityInput = {
   needs?: readonly { reason: string; detail: string | null }[];
   context?: ContextUsage | null;
   throttled?: number;
-  /** BBP-31: this member's graph_runs rows, newest first. */
+  /** ALIAP-31: this member's graph_runs rows, newest first. */
   graphRuns?: readonly { runId: string; graphId: string; status: string }[];
-  /** BBP-32: a run of this member's that sits on a human node, waiting for an answer. */
+  /** ALIAP-32: a run of this member's that sits on a human node, waiting for an answer. */
   graphQuestion?: { runId: string; graphId: string; nodeId: string; question: string } | null;
 };
 
@@ -67,9 +67,9 @@ export type Derived = {
   openWork: number;
   /** Context usage as a fraction 0–1; null when VesnALIA did not report it. */
   context: number | null;
-  /** BBP-31: this member's graph_runs rows, newest first. */
+  /** ALIAP-31: this member's graph_runs rows, newest first. */
   graphRuns: readonly { runId: string; graphId: string; status: string }[];
-  /** BBP-32: a run of this member's that sits on a human node, waiting for an answer. */
+  /** ALIAP-32: a run of this member's that sits on a human node, waiting for an answer. */
   graphQuestion: { runId: string; graphId: string; nodeId: string; question: string } | null;
 };
 
@@ -185,14 +185,14 @@ export function createActivityTracker(deps: {
   /** E3 facts owned by other modules (work items, merges, follow-ups). */
   extras?: ActivityExtras;
   now?: () => number;
-  /** BBP-32: reads a waiting run's live pendingQuestion; null skips the graph-approval check entirely. */
+  /** ALIAP-32: reads a waiting run's live pendingQuestion; null skips the graph-approval check entirely. */
   graphsRpc?: GraphsRpc | null;
 }) {
   const { store, port } = deps;
   const cache = new Map<string, ActivityView>();
   const OPEN_STATUSES: ReadonlySet<string> = new Set(OPEN_GRAPH_RUN_STATUSES);
 
-  /** The first of this member's open runs that is waiting on a human node, with its live question (BBP-32). */
+  /** The first of this member's open runs that is waiting on a human node, with its live question (ALIAP-32). */
   async function graphQuestionFor(member: MemberRow, graphRuns: readonly { runId: string; graphId: string; status: string }[]) {
     if (!deps.graphsRpc) return null;
     for (const row of graphRuns) {

@@ -1,5 +1,5 @@
 import { loadPluginApp, renderSlot, createElement } from './dom.mjs';
-export async function mountFileSurface({ href = "/E:/Development/BBDesk/CHANGELOG.md", sdk = {}, accepts = true } = {}) {
+export async function mountFileSurface({ href = "/E:/Development/AliaDesk/CHANGELOG.md", sdk = {}, accepts = true } = {}) {
   const { definePluginApp } = await import("@vesnalia/plugin-sdk/app");
   const { ChatFileSurface } = await import("../../chat-file-surface.tsx");
   const fixture = await loadPluginApp(() => Promise.resolve({ default: definePluginApp(builder => {
@@ -7,6 +7,6 @@ export async function mountFileSurface({ href = "/E:/Development/BBDesk/CHANGELO
   }) }));
   return renderSlot(fixture.navPanels[0], { subPath: "" }, {
     settings: { language: "en" }, openFilePreview: () => accepts,
-    sdk: { threads: { get: async () => ({ environmentId: "env-a" }) }, environments: { get: async () => ({ hostId: "machine-a", path: "E:/Development/BBDesk" }) }, ...sdk },
+    sdk: { threads: { get: async () => ({ environmentId: "env-a" }) }, environments: { get: async () => ({ hostId: "machine-a", path: "E:/Development/AliaDesk" }) }, ...sdk },
   });
 }

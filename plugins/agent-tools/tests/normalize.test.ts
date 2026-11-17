@@ -181,7 +181,7 @@ test("skill states: canonical, linked, duplicate, diverged and new", async () =>
       id: "agents", path: canonicalPath, exists: true,
       entries: [
         { name: "alpha", kind: "dir", target: null, hash: "aaa", hasSkillMd: true },
-        { name: "beta", kind: "dir", target: null, hash: "bbb", hasSkillMd: true },
+        { name: "beta", kind: "dir", target: null, hash: "aliab", hasSkillMd: true },
         { name: "gamma", kind: "symlink", target: "/home/u/.vesnalia/skills/gamma", hash: "ggg", hasSkillMd: true },
       ],
     },
@@ -189,7 +189,7 @@ test("skill states: canonical, linked, duplicate, diverged and new", async () =>
       id: "claude", path: "/home/u/.claude/skills", exists: true,
       entries: [
         { name: "alpha", kind: "symlink", target: `${canonicalPath}/alpha`, hash: "aaa", hasSkillMd: true },
-        { name: "beta", kind: "dir", target: null, hash: "bbb", hasSkillMd: true },
+        { name: "beta", kind: "dir", target: null, hash: "aliab", hasSkillMd: true },
         { name: "alpha", kind: "dir", target: null, hash: "zzz", hasSkillMd: true },
         { name: "fresh", kind: "dir", target: null, hash: "fff", hasSkillMd: true },
         { name: "ext", kind: "symlink", target: "/home/u/.vesnalia/skills/ext", hash: "eee", hasSkillMd: true },

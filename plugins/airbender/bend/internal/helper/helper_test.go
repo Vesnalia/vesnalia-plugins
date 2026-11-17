@@ -6,7 +6,7 @@
 // gave up.
 //
 // Why: this process runs unattended on the path the owner's issues take
-// (bead-bb-c9l.16). It must neither stay for ever nor hammer a remote that
+// (bead-alia-c9l.16). It must neither stay for ever nor hammer a remote that
 // does not answer. Starting and stopping a real one is checked end to end
 // (bend/e2e).
 

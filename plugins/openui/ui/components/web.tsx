@@ -216,18 +216,18 @@ function MapView({ places: items, route, tour }: { places: unknown; route: boole
     frame = known.length === 0 && !pending && !streaming ? (
       <ErrorState title="None of these places were found" detail="Give each MapPlace its lat and lng, or a fuller name such as the city and country." />
     ) : (
-      <div className="bbui-web-frame">
+      <div className="aliaui-web-frame">
         <Skeleton height={VIEW.h} />
       </div>
     );
   } else {
     frame = (
-      <div className="bbui-web-frame">
+      <div className="aliaui-web-frame">
         {tiles.map((t) =>
           images[t.key] && images[t.key] !== "error" ? (
             <img
               key={t.key}
-              className="bbui-web-tile"
+              className="aliaui-web-tile"
               src={images[t.key]}
               alt=""
               draggable={false}
@@ -236,10 +236,10 @@ function MapView({ places: items, route, tour }: { places: unknown; route: boole
           ) : null,
         )}
         {route ? (
-          <svg className="bbui-web-route" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="none" aria-hidden="true">
+          <svg className="aliaui-web-route" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="none" aria-hidden="true">
             {groups.map((g, gi) => {
               const line = g.indexes.flatMap((i) => (points[i] ? [at(points[i]!)] : []));
-              return line.length > 1 ? <polyline key={gi} className={`bbui-web-line bbui-web-series-${gi % 4}`} points={line.map((p) => `${p.x},${p.y}`).join(" ")} /> : null;
+              return line.length > 1 ? <polyline key={gi} className={`aliaui-web-line aliaui-web-series-${gi % 4}`} points={line.map((p) => `${p.x},${p.y}`).join(" ")} /> : null;
             })}
           </svg>
         ) : null}
@@ -250,7 +250,7 @@ function MapView({ places: items, route, tour }: { places: unknown; route: boole
             <button
               key={i}
               type="button"
-              className="bbui-web-pin"
+              className="aliaui-web-pin"
               aria-pressed={pick === i}
               aria-label={`${i + 1}. ${place.name}`}
               style={{ left: percent(p.x, VIEW.w), top: percent(p.y, VIEW.h) }}
@@ -266,27 +266,27 @@ function MapView({ places: items, route, tour }: { places: unknown; route: boole
 
   const chosen = pick !== null ? places[pick] : null;
   return (
-    <figure className="bbui bbui-web-map">
-      <div className="bbui-web-map-body">
+    <figure className="aliaui aliaui-web-map">
+      <div className="aliaui-web-map-body">
         {frame}
-        <ol className="bbui-web-list" aria-label="Places">
+        <ol className="aliaui-web-list" aria-label="Places">
           {places.map((place, i) => {
             const header = route && place.day !== null && (i === 0 || places[i - 1]!.day !== place.day) ? place.day : null;
             const failed = located[i] !== null && !("lat" in located[i]!);
             return (
               <li key={i}>
                 {header ? (
-                  <span className="bbui-web-day">
-                    <span className={`bbui-web-swatch bbui-web-series-${(dayIndex.get(place.day) ?? 0) % 4}`} aria-hidden="true" />
+                  <span className="aliaui-web-day">
+                    <span className={`aliaui-web-swatch aliaui-web-series-${(dayIndex.get(place.day) ?? 0) % 4}`} aria-hidden="true" />
                     {header}
                   </span>
                 ) : null}
-                <button type="button" className="bbui-web-place" aria-pressed={pick === i} disabled={streaming} onClick={() => setSelected(pick === i ? null : i)}>
-                  <span className="bbui-web-num">{i + 1}</span>
-                  <span className="bbui-web-place-text">
-                    <span className="bbui-head">{place.name}</span>
-                    {place.note ? <span className="bbui-label">{place.note}</span> : null}
-                    {failed && !off ? <span className="bbui-label">Not found on the map</span> : null}
+                <button type="button" className="aliaui-web-place" aria-pressed={pick === i} disabled={streaming} onClick={() => setSelected(pick === i ? null : i)}>
+                  <span className="aliaui-web-num">{i + 1}</span>
+                  <span className="aliaui-web-place-text">
+                    <span className="aliaui-head">{place.name}</span>
+                    {place.note ? <span className="aliaui-label">{place.note}</span> : null}
+                    {failed && !off ? <span className="aliaui-label">Not found on the map</span> : null}
                   </span>
                 </button>
               </li>
@@ -295,12 +295,12 @@ function MapView({ places: items, route, tour }: { places: unknown; route: boole
         </ol>
       </div>
       {tour && places.length > 1 && !off ? (
-        <div className="bbui-web-tour">
+        <div className="aliaui-web-tour">
           <Button disabled={streaming || pick === 0} aria-label="Previous stop" onClick={() => setSelected(pick === null ? 0 : pick - 1)}>
             <ChevronLeft size={16} strokeWidth={1.75} aria-hidden="true" />
             Previous
           </Button>
-          <span className="bbui-label" aria-live="polite">
+          <span className="aliaui-label" aria-live="polite">
             {pick === null ? `${places.length} stops` : `Stop ${pick + 1} of ${places.length}`}
           </span>
           <Button disabled={streaming || pick === places.length - 1} aria-label="Next stop" onClick={() => setSelected(pick === null ? 0 : pick + 1)}>
@@ -311,7 +311,7 @@ function MapView({ places: items, route, tour }: { places: unknown; route: boole
       ) : null}
       {chosen?.wiki && !off ? <WikiPhoto key={chosen.wiki} title={chosen.wiki} name={chosen.name} rpc={rpc} /> : null}
       {!off && places.length > 0 ? (
-        <figcaption className="bbui-web-credit">
+        <figcaption className="aliaui-web-credit">
           Map data ©{" "}
           <UrlLink href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</UrlLink>
           {missing.length > 0 ? `. Not found: ${missing.map((p) => p.name).join(", ")}.` : null}
@@ -334,7 +334,7 @@ function WikiPhoto({ title, name, rpc }: { title: string; name: string; rpc: Rpc
     };
   }, [title, rpc]);
   if (state === null) return <Skeleton height={160} />;
-  if ("error" in state) return <p className="bbui-label">{state.error}</p>;
+  if ("error" in state) return <p className="aliaui-label">{state.error}</p>;
   return <PhotoFigure photo={state.photo} alt={name} aspect="wide" />;
 }
 
@@ -344,11 +344,11 @@ type Aspect = "wide" | "square" | "tall";
 
 function PhotoFigure({ photo, alt, aspect }: { photo: Photo; alt: string; aspect: Aspect }) {
   return (
-    <figure className="bbui bbui-web-photo" data-aspect={aspect}>
-      <div className="bbui-web-photo-frame">
+    <figure className="aliaui aliaui-web-photo" data-aspect={aspect}>
+      <div className="aliaui-web-photo-frame">
         <img src={photo.src} alt={alt} width={photo.width || undefined} height={photo.height || undefined} />
       </div>
-      <figcaption className="bbui-web-credit">
+      <figcaption className="aliaui-web-credit">
         {photo.title}. Photo: {photo.artist},{" "}
         {photo.licenceUrl ? <UrlLink href={photo.licenceUrl}>{photo.licence}</UrlLink> : photo.licence}, via{" "}
         <UrlLink href={photo.pageUrl}>Wikimedia Commons</UrlLink>
@@ -391,14 +391,14 @@ function ImageSearchView({ query, alt, aspect }: { query: string; alt: string; a
   else if (state && "off" in state && state.off) body = <EmptyState title="The photo is not shown" hint={`ImageSearch needs web lookups to find "${wanted}". ${OFF_HINT}`} />;
   else if (state === null)
     body = (
-      <div className="bbui-web-photo-frame" data-aspect={aspect} role="status" aria-label={`Finding a photo of ${wanted}`}>
+      <div className="aliaui-web-photo-frame" data-aspect={aspect} role="status" aria-label={`Finding a photo of ${wanted}`}>
         <Skeleton height={120} />
       </div>
     );
   else if ("error" in state) body = <ErrorState title="No photo could be shown" detail={`${state.error}. Try a shorter, more literal description.`} />;
   else return <PhotoFigure photo={state.photo} alt={alt || wanted} aspect={aspect} />;
   return (
-    <div className="bbui bbui-web-photo" data-aspect={aspect}>
+    <div className="aliaui aliaui-web-photo" data-aspect={aspect}>
       {body}
     </div>
   );
@@ -442,16 +442,16 @@ export function findNetworkUse(html: string): { line: number; what: string }[] {
   return found.sort((a, b) => a.at - b.at).map(({ line, what }) => ({ line, what }));
 }
 
-/** The page's height to the host, uncaught errors, CSP blocks and bbui.send(text). */
+/** The page's height to the host, uncaught errors, CSP blocks and aliaui.send(text). */
 const BRIDGE = `(function(){
-var post=function(m){m.bbui=1;parent.postMessage(m,"*");};
+var post=function(m){m.aliaui=1;parent.postMessage(m,"*");};
 var last=-1;
 function size(){var h=Math.ceil(document.documentElement.scrollHeight);if(h!==last){last=h;post({type:"height",height:h});}}
 new ResizeObserver(size).observe(document.documentElement);
 addEventListener("load",size);
 addEventListener("error",function(e){post({type:"error",message:String(e.message||"a script failed")});});
 addEventListener("securitypolicyviolation",function(e){post({type:"error",message:"blocked "+(e.blockedURI||e.effectiveDirective)+": the page has no network"});});
-window.bbui={send:function(text){post({type:"send",text:String(text)});}};
+window.aliaui={send:function(text){post({type:"send",text:String(text)});}};
 })();`;
 
 const THEME_VARS = ["--foreground", "--muted-foreground", "--border", "--primary", "--primary-foreground", "--card", "--muted", "--font-sans", "--font-mono"];
@@ -472,7 +472,7 @@ const MAX_SEND_CHARS = 2000;
 
 const AppDef = defineComponent({
   name: "App",
-  description: "A small self-contained HTML, CSS and JS page run in a sandboxed frame with no network. Inline everything; see the notes for theme variables and bbui.send(text).",
+  description: "A small self-contained HTML, CSS and JS page run in a sandboxed frame with no network. Inline everything; see the notes for theme variables and aliaui.send(text).",
   props: z.object({
     html: z.string(),
     title: z.string().nullish(),
@@ -483,17 +483,17 @@ const AppDef = defineComponent({
 function AppView({ html, title }: { html: string; title: string }) {
   const streaming = useStreaming();
   const problems = useMemo(() => (streaming ? [] : findNetworkUse(html)), [html, streaming]);
-  const caption = title ? <figcaption className="bbui-head">{title}</figcaption> : null;
+  const caption = title ? <figcaption className="aliaui-head">{title}</figcaption> : null;
   if (streaming || html.trim() === "") {
     return (
-      <figure className="bbui bbui-web-app">
+      <figure className="aliaui aliaui-web-app">
         {caption}
         {html.trim() === "" && !streaming ? (
           <EmptyState title="No page to run" hint="Give App the page's HTML, with its CSS and JS inline." />
         ) : (
           <>
-            <span className="bbui-label">The page runs when the reply finishes.</span>
-            <pre className="bbui-well bbui-mono bbui-web-source">{html}</pre>
+            <span className="aliaui-label">The page runs when the reply finishes.</span>
+            <pre className="aliaui-well aliaui-mono aliaui-web-source">{html}</pre>
           </>
         )}
       </figure>
@@ -501,15 +501,15 @@ function AppView({ html, title }: { html: string; title: string }) {
   }
   if (problems.length > 0) {
     return (
-      <figure className="bbui bbui-web-app">
+      <figure className="aliaui aliaui-web-app">
         {caption}
         <ErrorState
           title="This page was not run: it uses the network"
           detail={`Pages run offline. ${problems.slice(0, 6).map((p) => `Line ${p.line}: ${p.what}.`).join(" ")} Inline the code, styles and images (data: URLs) instead.`}
         />
-        <details className="bbui-web-details">
-          <summary className="bbui-label">Page source</summary>
-          <pre className="bbui-well bbui-mono bbui-web-source">{html}</pre>
+        <details className="aliaui-web-details">
+          <summary className="aliaui-label">Page source</summary>
+          <pre className="aliaui-well aliaui-mono aliaui-web-source">{html}</pre>
         </details>
       </figure>
     );
@@ -538,8 +538,8 @@ function AppFrame({ html, title, caption }: { html: string; title: string; capti
     const onMessage = (event: MessageEvent) => {
       // The frame's origin is opaque ("null"), so the sender is checked by window, not origin.
       if (!frame.current || event.source !== frame.current.contentWindow) return;
-      const data = event.data as { bbui?: number; type?: string; height?: unknown; message?: unknown; text?: unknown } | null;
-      if (data?.bbui !== 1) return;
+      const data = event.data as { aliaui?: number; type?: string; height?: unknown; message?: unknown; text?: unknown } | null;
+      if (data?.aliaui !== 1) return;
       if (data.type === "height" && typeof data.height === "number" && Number.isFinite(data.height)) {
         setHeight(Math.min(MAX_APP_HEIGHT, Math.max(24, Math.ceil(data.height))));
       } else if (data.type === "error" && typeof data.message === "string") {
@@ -561,16 +561,16 @@ function AppFrame({ html, title, caption }: { html: string; title: string; capti
   }, [ask]);
 
   return (
-    <figure className="bbui bbui-web-app" ref={holder}>
+    <figure className="aliaui aliaui-web-app" ref={holder}>
       {caption}
       {srcDoc === null ? (
         <Skeleton height={120} />
       ) : (
-        <iframe ref={frame} className="bbui-web-frame-app" title={title || "Page"} sandbox="allow-scripts" srcDoc={srcDoc} style={{ height }} />
+        <iframe ref={frame} className="aliaui-web-frame-app" title={title || "Page"} sandbox="allow-scripts" srcDoc={srcDoc} style={{ height }} />
       )}
       {confirm !== null ? (
-        <div className="bbui-web-confirm">
-          <span className="bbui-label">The page wants to send: {confirm}</span>
+        <div className="aliaui-web-confirm">
+          <span className="aliaui-label">The page wants to send: {confirm}</span>
           <Button
             variant="primary"
             onClick={() => {
@@ -584,7 +584,7 @@ function AppFrame({ html, title, caption }: { html: string; title: string; capti
         </div>
       ) : null}
       {note ? (
-        <p className="bbui-label bbui-web-note" role="status">
+        <p className="aliaui-label aliaui-web-note" role="status">
           {note}
         </p>
       ) : null}
@@ -603,7 +603,7 @@ export const SHADER_HEAD = [
   "uniform float iTimeDelta;",
   "uniform int iFrame;",
   "uniform vec4 iMouse;",
-  "out vec4 bbuiColor;",
+  "out vec4 aliauiColor;",
   "",
 ].join("\n");
 const HEAD_LINES = SHADER_HEAD.split("\n").length - 1;
@@ -611,7 +611,7 @@ const HEAD_LINES = SHADER_HEAD.split("\n").length - 1;
 /** The complete fragment program; a #version the agent wrote is blanked so line numbers stay put. */
 export function shaderSource(code: string): string {
   const body = code.replace(/^[ \t]*#version[^\n]*/gm, "");
-  return `${SHADER_HEAD}${body}\nvoid main() {\n  vec4 color = vec4(0.0, 0.0, 0.0, 1.0);\n  mainImage(color, gl_FragCoord.xy);\n  bbuiColor = color;\n}\n`;
+  return `${SHADER_HEAD}${body}\nvoid main() {\n  vec4 color = vec4(0.0, 0.0, 0.0, 1.0);\n  mainImage(color, gl_FragCoord.xy);\n  aliauiColor = color;\n}\n`;
 }
 
 /** The compile log as messages on the agent's own lines (null when a message is about the added code). */
@@ -789,17 +789,17 @@ function ShaderView({ code, title }: { code: string; title: string }) {
 
   const lines = code.split("\n");
   return (
-    <figure className="bbui bbui-web-shader">
-      {title ? <figcaption className="bbui-head">{title}</figcaption> : null}
+    <figure className="aliaui aliaui-web-shader">
+      {title ? <figcaption className="aliaui-head">{title}</figcaption> : null}
       {state.kind === "failed" ? (
-        <div className="bbui-error" role="alert">
-          <span className="bbui-head">{state.title}</span>
-          <ol className="bbui-web-errors">
+        <div className="aliaui-error" role="alert">
+          <span className="aliaui-head">{state.title}</span>
+          <ol className="aliaui-web-errors">
             {state.errors.slice(0, 8).map((e, i) => (
-              <li key={i} className="bbui-label">
+              <li key={i} className="aliaui-label">
                 {e.line !== null ? `Line ${e.line}: ` : null}
                 {e.message}
-                {e.line !== null && lines[e.line - 1]?.trim() ? <code className="bbui-mono bbui-web-code-line">{lines[e.line - 1]!.trim()}</code> : null}
+                {e.line !== null && lines[e.line - 1]?.trim() ? <code className="aliaui-mono aliaui-web-code-line">{lines[e.line - 1]!.trim()}</code> : null}
               </li>
             ))}
           </ol>
@@ -808,11 +808,11 @@ function ShaderView({ code, title }: { code: string; title: string }) {
         <>
           <canvas
             ref={canvas}
-            className={cx("bbui-web-canvas", streaming && "bbui-web-canvas-wait")}
+            className={cx("aliaui-web-canvas", streaming && "aliaui-web-canvas-wait")}
             role="img"
             aria-label={title ? `Animated shader: ${title}` : "Animated shader"}
           />
-          <div className="bbui-web-shader-bar">
+          <div className="aliaui-web-shader-bar">
             <Button
               disabled={state.kind !== "running"}
               onClick={() => {
@@ -823,7 +823,7 @@ function ShaderView({ code, title }: { code: string; title: string }) {
               {playing ? <Pause size={16} strokeWidth={1.75} aria-hidden="true" /> : <Play size={16} strokeWidth={1.75} aria-hidden="true" />}
               {playing ? "Pause" : "Play"}
             </Button>
-            {streaming ? <span className="bbui-label">The shader runs when the reply finishes.</span> : null}
+            {streaming ? <span className="aliaui-label">The shader runs when the reply finishes.</span> : null}
           </div>
         </>
       )}
@@ -848,7 +848,7 @@ export const webGroup: ExtraGroup = {
   notes: [
     "Map and ImageSearch fetch through the VesnALIA server (OpenStreetMap, Photon, Wikimedia Commons). The user can turn web lookups off; then they say so instead.",
     "Map: give lat and lng when you know them; names alone are looked up and can miss. Pass null to skip an optional argument, e.g. MapPlace(\"Alfama, Lisbon\", null, null, \"Walk\").",
-    "App: the page has no network (no CDN scripts, fonts, fetch or remote images), forms do not submit, alert and confirm do nothing, and storage does not persist. Style with var(--foreground), var(--muted-foreground), var(--border), var(--primary), var(--card) and var(--font-sans). In a click handler, bbui.send(text) sends text as the user's message. Use ' inside the HTML and \\n for line breaks.",
+    "App: the page has no network (no CDN scripts, fonts, fetch or remote images), forms do not submit, alert and confirm do nothing, and storage does not persist. Style with var(--foreground), var(--muted-foreground), var(--border), var(--primary), var(--card) and var(--font-sans). In a click handler, aliaui.send(text) sends text as the user's message. Use ' inside the HTML and \\n for line breaks.",
     "Shader: one pass, no textures. Size by iResolution; the user can pause it.",
   ],
   components: [MapDef, MapPlaceDef, ImageSearchDef, AppDef, ShaderDef],
@@ -859,7 +859,7 @@ export const webGroup: ExtraGroup = {
 intro = TextContent("Sample: what a sea stack looks like.")
 photo = ImageSearch("sea stack at Old Harry Rocks", "Chalk sea stacks off a green headland", "wide")`,
     App: String.raw`root = Stack([app])
-app = App("<style>\n  .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }\n  input { width: 80px; }\n  output { font-weight: 600; color: var(--primary); }\n  button { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--foreground); }\n</style>\n<div class='row'><label for='bill'>Bill</label><input id='bill' type='number' value='84'></div>\n<div class='row'><label for='people'>People</label><input id='people' type='number' value='3' min='1'></div>\n<div class='row'><label for='tip'>Tip %</label><input id='tip' type='number' value='15'></div>\n<p>Each pays <output id='each'></output></p>\n<button id='share' type='button'>Send this split to the chat</button>\n<script>\n  const read = (id) => Number(document.getElementById(id).value) || 0;\n  function update() {\n    const each = (read('bill') * (1 + read('tip') / 100)) / Math.max(1, read('people'));\n    document.getElementById('each').textContent = each.toFixed(2);\n    return each;\n  }\n  document.querySelectorAll('input').forEach((input) => input.addEventListener('input', update));\n  document.getElementById('share').addEventListener('click', () => bbui.send('Split: ' + update().toFixed(2) + ' each'));\n  update();\n</script>", "Sample: tip splitter")`,
+app = App("<style>\n  .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }\n  input { width: 80px; }\n  output { font-weight: 600; color: var(--primary); }\n  button { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--foreground); }\n</style>\n<div class='row'><label for='bill'>Bill</label><input id='bill' type='number' value='84'></div>\n<div class='row'><label for='people'>People</label><input id='people' type='number' value='3' min='1'></div>\n<div class='row'><label for='tip'>Tip %</label><input id='tip' type='number' value='15'></div>\n<p>Each pays <output id='each'></output></p>\n<button id='share' type='button'>Send this split to the chat</button>\n<script>\n  const read = (id) => Number(document.getElementById(id).value) || 0;\n  function update() {\n    const each = (read('bill') * (1 + read('tip') / 100)) / Math.max(1, read('people'));\n    document.getElementById('each').textContent = each.toFixed(2);\n    return each;\n  }\n  document.querySelectorAll('input').forEach((input) => input.addEventListener('input', update));\n  document.getElementById('share').addEventListener('click', () => aliaui.send('Split: ' + update().toFixed(2) + ' each'));\n  update();\n</script>", "Sample: tip splitter")`,
     Shader: String.raw`root = Stack([shader])
 shader = Shader("void mainImage(out vec4 fragColor, in vec2 fragCoord) {\n  vec2 uv = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;\n  float r = length(uv);\n  float wave = 0.5 + 0.5 * cos(18.0 * r - iTime * 2.0);\n  vec3 deep = vec3(0.06, 0.08, 0.14);\n  vec3 light = vec3(0.35, 0.6, 0.95);\n  fragColor = vec4(mix(deep, light, wave * smoothstep(0.7, 0.0, r)), 1.0);\n}", "Sample: ripples")`,
   },

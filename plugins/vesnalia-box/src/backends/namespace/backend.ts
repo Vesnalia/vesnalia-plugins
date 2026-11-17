@@ -67,12 +67,12 @@ import { NamespaceGrantReports, grantCheck } from "./grant-reports.ts";
 export const LABELS = {
   install: INSTALL_LABEL,
   backend: BACKEND_LABEL,
-  box: "bbbox-box",
-  thread: "bbbox-thread",
-  name: "bbbox-name",
-  kind: "bbbox-kind",
-  created: "bbbox-created",
-  role: "bbbox-role",
+  box: "aliabox-box",
+  thread: "aliabox-thread",
+  name: "aliabox-name",
+  kind: "aliabox-kind",
+  created: "aliabox-created",
+  role: "aliabox-role",
 } as const;
 
 export const KEEP_AHEAD_MS = 60 * 60_000;
@@ -1359,7 +1359,7 @@ export class NamespaceBackend implements Backend {
     }
     const builders = (await this.linuxImages.buildInstances(signal).catch(() => [])).map((instance) => {
       const age = instance.createdAt === null ? "" : `, ${Math.round((this.#now() - instance.createdAt) / 60_000)} min old`;
-      return `${instance.id} (${instance.labels["bbbox-target"] ?? "an image"}${age})`;
+      return `${instance.id} (${instance.labels["aliabox-target"] ?? "an image"}${age})`;
     });
     const building = builders.length ? ` Building now: ${builders.join(", ")}.` : " No build machine is running.";
     return { id: "namespace.images", name: "Linux images", status: "ok", detail: `In the workspace's registry: ${lines.join("; ")}.${building}`, fix: null };

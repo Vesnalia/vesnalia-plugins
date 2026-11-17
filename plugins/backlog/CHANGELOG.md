@@ -22,7 +22,7 @@ This file lists the changes in each version of Backlog.MD.
 - The interface uses one top bar with the project menu, the section tabs,
   **Folder settings**, and **Refresh**. The project list on the right side of
   the board is gone.
-- The layout follows the width of the plugin, so it works in BB split view.
+- The layout follows the width of the plugin, so it works in VesnALIA split view.
   In a narrow plugin, the file list is one row that scrolls sideways with the
   mouse wheel.
 - The editor for documents and decisions wraps long lines.
@@ -33,7 +33,7 @@ This file lists the changes in each version of Backlog.MD.
 
 ### Added
 
-- Mention a Backlog task in the BB composer with `@` and words from its title
+- Mention a Backlog task in the VesnALIA composer with `@` and words from its title
   or its description. Sending the message gives the agent the current task.
 - A larger preview of a task suggestion after a 1.5 second pause.
 
@@ -46,7 +46,7 @@ This file lists the changes in each version of Backlog.MD.
 
 ### Added
 
-- A live Kanban board for the Backlog.md tasks of each BB project.
+- A live Kanban board for the Backlog.md tasks of each VesnALIA project.
 - A task view with rendered Markdown, subtasks, and inline editing of
   properties and sections.
 - Drag and keyboard controls to change the status and the order of cards.

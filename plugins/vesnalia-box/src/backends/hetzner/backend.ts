@@ -247,7 +247,7 @@ export class HetznerBackend implements Backend {
     this.#hostImages = new HostImages({
       api: this.#api,
       builds: new HetznerHosts({ api: this.#api, storage: context.storage, installId: context.installId, now: this.#now, whenGone: (record, goneAtMs) => this.#billEnded(record, goneAtMs), role: IMAGE_BUILD_ROLE, readyAbandonedAfterMs: BUILD_ABANDONED_AFTER_MS }),
-      installLabels: { "bbbox-install": context.installId },
+      installLabels: { "aliabox-install": context.installId },
       storage: context.storage,
       now: this.#now,
       fingerprint: options.hostImageFingerprint,
@@ -568,7 +568,7 @@ export class HetznerBackend implements Backend {
 
   async doctor(signal?: AbortSignal): Promise<DoctorReport> {
     const checks: DoctorCheck[] = [];
-    const notes = [`This install's ID is ${this.#context.installId}. Its servers carry the label bbbox-install=${this.#context.installId}.`];
+    const notes = [`This install's ID is ${this.#context.installId}. Its servers carry the label aliabox-install=${this.#context.installId}.`];
     const push = (id: CheckId, name: string, status: DoctorCheck["status"], detail: string, fix: string | null = null) => checks.push({ id, name, status, detail, fix });
 
     let records: HostRecord[] = [];
@@ -965,7 +965,7 @@ export class HetznerBackend implements Backend {
     let image = cached?.image ?? null;
     if (!cached || this.#now() - cached.at > HOST_IMAGE_CACHE_MS) {
       const newest = await this.#hostImages.newest(signal, architecture).catch(() => null);
-      image = newest ? { id: newest.id, label: `build-${newest.labels["bbbox-build"] ?? newest.id}` } : null;
+      image = newest ? { id: newest.id, label: `build-${newest.labels["aliabox-build"] ?? newest.id}` } : null;
       this.#newestHostImage.set(architecture, { at: this.#now(), image });
     }
     return image ? { imageNameOrSnapshotId: image.id, imageLabel: image.label } : { imageNameOrSnapshotId: this.#baseImage(), imageLabel: this.#baseImage() };

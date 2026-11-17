@@ -331,7 +331,7 @@ function dockerfile(b: Builder, file: DraftFile): void {
   for (const { keyword, args } of stage) {
     if (keyword === "RUN") {
       const command = args.startsWith("[") ? execForm(args) : args;
-      lines.push(asUser ? `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'\n${command}\nBB_BOX_AS_USER` : command);
+      lines.push(asUser ? `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'\n${command}\nALIA_BOX_AS_USER` : command);
     } else if (keyword === "ENV" || keyword === "ARG") {
       for (const [key, value] of pairs(args)) {
         if (value === undefined) {

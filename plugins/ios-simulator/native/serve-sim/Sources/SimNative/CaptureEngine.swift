@@ -4,7 +4,7 @@ import CoreMedia
 import os
 import SimNativeSupport
 
-// Modified for bb-plugin-ios-simulator: one AVCC encoder per capture engine,
+// Modified for alia-plugin-ios-simulator: one AVCC encoder per capture engine,
 // with independently bounded, keyframe-safe subscriber delivery.
 
 // The capture + encode engine, reused verbatim from SimStreamHelper. Replicates

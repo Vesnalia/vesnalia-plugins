@@ -24,13 +24,13 @@ const tone = z.enum(Object.keys(TONES) as [Tone, ...Tone[]]).optional();
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const list = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const pct = (share: number) => `${fmt(share * 100, { decimals: share > 0 && share < 0.1 ? 1 : 0 })}%`;
-const fillOf = (t: Tone | undefined, fallback: Tone = "accent") => ({ "--bbui-numbers-fill": TONES[t ?? fallback] }) as React.CSSProperties;
+const fillOf = (t: Tone | undefined, fallback: Tone = "accent") => ({ "--aliaui-numbers-fill": TONES[t ?? fallback] }) as React.CSSProperties;
 
 /** Root of every chart: marks wait while streaming and draw once after (see numbers.css). */
 function Chart({ className, label, children }: { className: string; label?: string; children: ReactNode }) {
   return (
-    <figure className={cx("bbui bbui-numbers", className)}>
-      {label ? <figcaption className="bbui-head">{label}</figcaption> : null}
+    <figure className={cx("aliaui aliaui-numbers", className)}>
+      {label ? <figcaption className="aliaui-head">{label}</figcaption> : null}
       {children}
     </figure>
   );
@@ -71,13 +71,13 @@ const Progress = defineComponent({
     const figure = max === 100 ? pct(value / 100) : `${fmt(value)} of ${fmt(max)}`;
     const label = str(props.label);
     return (
-      <Chart className="bbui-numbers-progress">
-        <div className="bbui-numbers-progress-head">
-          <span className="bbui-numbers-name">{label}</span>
-          <span className="bbui-numbers-value">{figure}</span>
+      <Chart className="aliaui-numbers-progress">
+        <div className="aliaui-numbers-progress-head">
+          <span className="aliaui-numbers-name">{label}</span>
+          <span className="aliaui-numbers-value">{figure}</span>
         </div>
         <div
-          className="bbui-numbers-track"
+          className="aliaui-numbers-track"
           role="progressbar"
           aria-label={label || "Progress"}
           aria-valuemin={0}
@@ -86,7 +86,7 @@ const Progress = defineComponent({
           aria-valuetext={figure}
         >
           <Drawn>
-            <span className="bbui-numbers-bar bbui-numbers-gx" style={{ ...fillOf(props.tone), width: `${share * 100}%` }} />
+            <span className="aliaui-numbers-bar aliaui-numbers-gx" style={{ ...fillOf(props.tone), width: `${share * 100}%` }} />
           </Drawn>
         </div>
       </Chart>
@@ -115,26 +115,26 @@ const Gauge = defineComponent({
     const unit = str(props.unit);
     const label = str(props.label);
     return (
-      <Chart className="bbui-numbers-gauge">
-        <div className="bbui-numbers-gauge-dial" role="img" aria-label={`${label || "Level"}: ${fmt(value, { unit })} on a scale of ${fmt(min)} to ${fmt(max, { unit })}`}>
+      <Chart className="aliaui-numbers-gauge">
+        <div className="aliaui-numbers-gauge-dial" role="img" aria-label={`${label || "Level"}: ${fmt(value, { unit })} on a scale of ${fmt(min)} to ${fmt(max, { unit })}`}>
           <svg viewBox="0 0 160 88" width="160" height="88" aria-hidden="true">
-            <path className="bbui-numbers-gauge-track" d={arc(80, 80, 68, 0, 1)} />
+            <path className="aliaui-numbers-gauge-track" d={arc(80, 80, 68, 0, 1)} />
             {share > 0 ? (
               <Drawn>
-                <path className="bbui-numbers-gauge-arc bbui-numbers-fade" style={fillOf(props.tone)} d={arc(80, 80, 68, 0, share)} />
+                <path className="aliaui-numbers-gauge-arc aliaui-numbers-fade" style={fillOf(props.tone)} d={arc(80, 80, 68, 0, share)} />
               </Drawn>
             ) : null}
           </svg>
-          <span className="bbui-numbers-gauge-figure">
-            <span className="bbui-figure">{fmt(value)}</span>
-            {unit ? <span className="bbui-label"> {unit}</span> : null}
+          <span className="aliaui-numbers-gauge-figure">
+            <span className="aliaui-figure">{fmt(value)}</span>
+            {unit ? <span className="aliaui-label"> {unit}</span> : null}
           </span>
         </div>
-        <div className="bbui-numbers-gauge-ends bbui-numbers-tick" aria-hidden="true">
+        <div className="aliaui-numbers-gauge-ends aliaui-numbers-tick" aria-hidden="true">
           <span>{fmt(min)}</span>
           <span>{fmt(max)}</span>
         </div>
-        {label ? <span className="bbui-label bbui-numbers-gauge-label">{label}</span> : null}
+        {label ? <span className="aliaui-label aliaui-numbers-gauge-label">{label}</span> : null}
       </Chart>
     );
   },
@@ -147,7 +147,7 @@ const Sparkline = defineComponent({
   description: "Tiny inline trend of a list of numbers, no axes, last value marked and printed. Fits in a Table cell or beside a figure.",
   props: z.object({ values: z.array(z.number()), tone, label: z.string().optional() }),
   component: ({ props }) => {
-    const id = `bbui-spark-${useId().replace(/[^\w-]/g, "")}`;
+    const id = `aliaui-spark-${useId().replace(/[^\w-]/g, "")}`;
     const values = finite(props.values);
     const label = str(props.label);
     const W = 96;
@@ -161,24 +161,24 @@ const Sparkline = defineComponent({
     const summary =
       values.length > 1 ? `${label || "Trend"}: ${values.length} values from ${fmt(values[0]!)} to ${fmt(last!)}, low ${fmt(lo)}, high ${fmt(hi)}` : `${label || "Trend"}: not enough values yet`;
     return (
-      <span className="bbui bbui-numbers bbui-numbers-spark" style={fillOf(props.tone)}>
-        {label ? <span className="bbui-label">{label}</span> : null}
+      <span className="aliaui aliaui-numbers aliaui-numbers-spark" style={fillOf(props.tone)}>
+        {label ? <span className="aliaui-label">{label}</span> : null}
         <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={summary}>
           {values.length > 1 ? (
-            <Drawn><g className="bbui-numbers-fade">
+            <Drawn><g className="aliaui-numbers-fade">
               <defs>
                 <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0" className="bbui-numbers-spark-stop" />
-                  <stop offset="1" className="bbui-numbers-spark-stop" style={{ stopOpacity: 0 }} />
+                  <stop offset="0" className="aliaui-numbers-spark-stop" />
+                  <stop offset="1" className="aliaui-numbers-spark-stop" style={{ stopOpacity: 0 }} />
                 </linearGradient>
               </defs>
               <path d={`${line} L ${x(values.length - 1).toFixed(1)} ${H} L ${x(0).toFixed(1)} ${H} Z`} style={{ fill: `url(#${id})` }} />
-              <path className="bbui-numbers-line" d={line} />
-              <circle className="bbui-numbers-dot" cx={x(values.length - 1)} cy={y(last!)} r={2.75} />
+              <path className="aliaui-numbers-line" d={line} />
+              <circle className="aliaui-numbers-dot" cx={x(values.length - 1)} cy={y(last!)} r={2.75} />
             </g></Drawn>
           ) : null}
         </svg>
-        <span className="bbui-numbers-value">{isNum(last) ? fmt(last) : "-"}</span>
+        <span className="aliaui-numbers-value">{isNum(last) ? fmt(last) : "-"}</span>
       </span>
     );
   },
@@ -207,16 +207,16 @@ const SegmentedBar = defineComponent({
     const total = parts.reduce((s, p) => s + p.value, 0);
     let ramp = 0;
     const shown = parts.map((p) => ({ ...p, share: total > 0 ? p.value / total : 0, step: p.tone ? null : ramp++ }));
-    const swatch = (p: (typeof shown)[number]) => (p.tone ? { className: "bbui-numbers-tone", style: fillOf(p.tone) } : { className: `bbui-numbers-s${Math.min(p.step!, 5)}` });
+    const swatch = (p: (typeof shown)[number]) => (p.tone ? { className: "aliaui-numbers-tone", style: fillOf(p.tone) } : { className: `aliaui-numbers-s${Math.min(p.step!, 5)}` });
     return (
-      <Chart className="bbui-numbers-segments">
+      <Chart className="aliaui-numbers-segments">
         <div
-          className="bbui-numbers-segbar"
+          className="aliaui-numbers-segbar"
           role="img"
           aria-label={`Shares of ${fmt(total, { unit })}: ${shown.map((p) => `${p.label} ${fmt(p.value, { unit })} (${pct(p.share)})`).join(", ")}`}
         >
           <Drawn>
-            <span className="bbui-numbers-segfill bbui-numbers-gx">
+            <span className="aliaui-numbers-segfill aliaui-numbers-gx">
               {shown.map((p, i) => {
                 const s = swatch(p);
                 return <span key={i} className={s.className} style={{ ...s.style, flexGrow: p.value }} />;
@@ -224,15 +224,15 @@ const SegmentedBar = defineComponent({
             </span>
           </Drawn>
         </div>
-        <ul className="bbui-numbers-legend">
+        <ul className="aliaui-numbers-legend">
           {shown.map((p, i) => {
             const s = swatch(p);
             return (
               <li key={i}>
-                <span className={cx("bbui-numbers-swatch", s.className)} style={s.style} aria-hidden="true" />
-                <span className="bbui-numbers-name">{p.label}</span>
-                <span className="bbui-numbers-value">{fmt(p.value, { unit })}</span>
-                <span className="bbui-numbers-share">{pct(p.share)}</span>
+                <span className={cx("aliaui-numbers-swatch", s.className)} style={s.style} aria-hidden="true" />
+                <span className="aliaui-numbers-name">{p.label}</span>
+                <span className="aliaui-numbers-value">{fmt(p.value, { unit })}</span>
+                <span className="aliaui-numbers-share">{pct(p.share)}</span>
               </li>
             );
           })}
@@ -250,10 +250,10 @@ const dayOf = (date: string) => day.format(new Date(`${date}T00:00:00Z`));
 
 function Key({ low, high }: { low: string; high: string }) {
   return (
-    <div className="bbui-numbers-key bbui-numbers-tick" aria-hidden="true">
+    <div className="aliaui-numbers-key aliaui-numbers-tick" aria-hidden="true">
       <span>{low}</span>
       {[0, 1, 2, 3, 4].map((l) => (
-        <span key={l} className={cx("bbui-numbers-swatch", `bbui-numbers-l${l}`)} />
+        <span key={l} className={cx("aliaui-numbers-swatch", `aliaui-numbers-l${l}`)} />
       ))}
       <span>{high}</span>
     </div>
@@ -284,22 +284,22 @@ const CalendarHeatmap = defineComponent({
         ? `${label || "Activity"}: no days yet`
         : `${label || "Activity"} per day from ${dayOf(cells[0]!.date)} to ${dayOf(cells[cells.length - 1]!.date)}: ${active} active days of ${cells.length}, ${fmt(total)} in total${busiest ? `, busiest ${dayOf(busiest.date)} with ${fmt(busiest.value)}` : ""}`;
     return (
-      <Chart className="bbui-numbers-calendar" label={label}>
-        <div ref={ref} className="bbui-numbers-scroll">
+      <Chart className="aliaui-numbers-calendar" label={label}>
+        <div ref={ref} className="aliaui-numbers-scroll">
           <svg width={gutter + weeks * pitch} height={top + 7 * pitch} role="img" aria-label={summary}>
             {months.map((m) => (
-              <text key={m.time} className="bbui-numbers-tick" x={gutter + m.col * pitch} y={11}>
+              <text key={m.time} className="aliaui-numbers-tick" x={gutter + m.col * pitch} y={11}>
                 {monthName.format(m.time)}
               </text>
             ))}
             {[0, 2, 4].map((row) => (
-              <text key={row} className="bbui-numbers-tick" x={0} y={top + row * pitch + size - 1}>
+              <text key={row} className="aliaui-numbers-tick" x={0} y={top + row * pitch + size - 1}>
                 {["Mon", "Wed", "Fri"][row / 2]}
               </text>
             ))}
-            <Drawn><g className="bbui-numbers-fade">
+            <Drawn><g className="aliaui-numbers-fade">
               {cells.map((c) => (
-                <rect key={c.date} className={`bbui-numbers-l${level(c.value, max)}`} x={gutter + c.col * pitch} y={top + c.row * pitch} width={size} height={size} rx={2}>
+                <rect key={c.date} className={`aliaui-numbers-l${level(c.value, max)}`} x={gutter + c.col * pitch} y={top + c.row * pitch} width={size} height={size} rx={2}>
                   <title>{`${dayOf(c.date)}: ${fmt(c.value)}`}</title>
                 </rect>
               ))}
@@ -328,21 +328,21 @@ const Treemap = defineComponent({
     const largest = [...items].sort((a, b) => b.size - a.size).slice(0, 3);
     const summary = `Treemap of ${items.length} items totalling ${fmt(tree.size, { unit })}${largest.length ? `; largest ${largest.map((i) => `${i.path} ${fmt(i.size, { unit })}`).join(", ")}` : ""}`;
     return (
-      <Chart className="bbui-numbers-treemap">
-        <div ref={ref} className="bbui-numbers-treemap-area" style={{ height }} role="img" aria-label={summary}>
+      <Chart className="aliaui-numbers-treemap">
+        <div ref={ref} className="aliaui-numbers-treemap-area" style={{ height }} role="img" aria-label={summary}>
           <Drawn>
           {tiles.map((t) => {
             const fits = t.leaf ? t.w >= 64 && t.h >= 34 : t.header;
             return (
               <div
                 key={`${t.node.path}|${t.leaf}`}
-                className={cx("bbui-numbers-tile bbui-numbers-fade", t.leaf ? `bbui-numbers-t${t.branch % 4}` : "bbui-numbers-group")}
+                className={cx("aliaui-numbers-tile aliaui-numbers-fade", t.leaf ? `aliaui-numbers-t${t.branch % 4}` : "aliaui-numbers-group")}
                 style={{ left: t.x, top: t.y, width: t.w, height: t.h }}
                 title={`${t.node.path}: ${fmt(t.node.size, { unit })} (${pct(t.node.size / tree.size)})`}
               >
                 {fits ? (
-                  <span className="bbui-numbers-tile-text">
-                    <span className="bbui-numbers-name">{t.node.name}</span> <span className="bbui-numbers-tick">{fmt(t.node.size, { unit, compact: true })}</span>
+                  <span className="aliaui-numbers-tile-text">
+                    <span className="aliaui-numbers-name">{t.node.name}</span> <span className="aliaui-numbers-tick">{fmt(t.node.size, { unit, compact: true })}</span>
                   </span>
                 ) : null}
               </div>
@@ -382,21 +382,21 @@ const Histogram = defineComponent({
         ? `${label || "Histogram"}: no values yet`
         : `${label || "Histogram"}: ${values.length} values from ${fmt(Math.min(...values))} to ${fmt(Math.max(...values), { unit })} in ${counts.length} bins; most common ${fmt(edges[peak]!)} to ${fmt(edges[peak + 1]!, { unit })} with ${counts[peak]}`;
     return (
-      <Chart className="bbui-numbers-histogram" label={label}>
+      <Chart className="aliaui-numbers-histogram" label={label}>
         <div ref={ref}>
           <svg width={width} height={H} role="img" aria-label={summary}>
             {axis.values.map((v) => (
               <g key={v}>
-                <line className="bbui-numbers-grid" x1={left} x2={left + plotW} y1={y(v)} y2={y(v)} />
-                <text className="bbui-numbers-tick" x={left - 6} y={y(v) + 4} textAnchor="end">
+                <line className="aliaui-numbers-grid" x1={left} x2={left + plotW} y1={y(v)} y2={y(v)} />
+                <text className="aliaui-numbers-tick" x={left - 6} y={y(v) + 4} textAnchor="end">
                   {fmt(v, { compact: true })}
                 </text>
               </g>
             ))}
-            <Drawn><g className="bbui-numbers-gy">
+            <Drawn><g className="aliaui-numbers-gy">
               {counts.map((c, i) =>
                 c > 0 ? (
-                  <path key={i} className="bbui-numbers-mark" d={barUp(left + i * bw + 0.5, y(c), Math.max(1, bw - 1), y(0) - y(c))}>
+                  <path key={i} className="aliaui-numbers-mark" d={barUp(left + i * bw + 0.5, y(c), Math.max(1, bw - 1), y(0) - y(c))}>
                     <title>{`${fmt(edges[i]!)} to ${fmt(edges[i + 1]!, { unit })}: ${c}`}</title>
                   </path>
                 ) : null,
@@ -404,14 +404,14 @@ const Histogram = defineComponent({
             </g></Drawn>
             {edges.map((e, i) =>
               i % every === 0 ? (
-                <text key={i} className="bbui-numbers-tick" x={left + i * bw} y={H - 4} textAnchor={i === 0 ? "start" : i === edges.length - 1 ? "end" : "middle"}>
+                <text key={i} className="aliaui-numbers-tick" x={left + i * bw} y={H - 4} textAnchor={i === 0 ? "start" : i === edges.length - 1 ? "end" : "middle"}>
                   {fmt(e, { compact: true })}
                 </text>
               ) : null,
             )}
           </svg>
         </div>
-        {unit ? <span className="bbui-numbers-tick bbui-numbers-unit">Count per bin, values in {unit}</span> : null}
+        {unit ? <span className="aliaui-numbers-tick aliaui-numbers-unit">Count per bin, values in {unit}</span> : null}
       </Chart>
     );
   },
@@ -441,30 +441,30 @@ const BoxPlot = defineComponent({
     const x = (v: number) => pad + ((v - axis.lo) / (axis.hi - axis.lo)) * (width - pad * 2);
     const summary = `Box plot of ${groups.length} groups${unit ? ` in ${unit}` : ""}: ${groups.map((g) => `${g.label} median ${fmt(g.stats.median)}, middle half ${fmt(g.stats.q1)} to ${fmt(g.stats.q3)}${g.stats.outliers.length ? `, ${g.stats.outliers.length} outliers` : ""}`).join("; ")}`;
     return (
-      <Chart className="bbui-numbers-box">
+      <Chart className="aliaui-numbers-box">
         <div ref={ref} role="img" aria-label={summary}>
           {groups.map((g, i) => {
             const s = g.stats;
             return (
-              <div key={i} className="bbui-numbers-box-row">
-                <div className="bbui-numbers-progress-head">
-                  <span className="bbui-numbers-name">{g.label}</span>
-                  <span className="bbui-numbers-share">median {fmt(s.median, { unit })}</span>
+              <div key={i} className="aliaui-numbers-box-row">
+                <div className="aliaui-numbers-progress-head">
+                  <span className="aliaui-numbers-name">{g.label}</span>
+                  <span className="aliaui-numbers-share">median {fmt(s.median, { unit })}</span>
                 </div>
                 <svg width={width} height={24} aria-hidden="true">
                   {axis.values.map((v) => (
-                    <line key={v} className="bbui-numbers-grid" x1={x(v)} x2={x(v)} y1={0} y2={24} />
+                    <line key={v} className="aliaui-numbers-grid" x1={x(v)} x2={x(v)} y1={0} y2={24} />
                   ))}
-                  <Drawn><g className="bbui-numbers-fade">
+                  <Drawn><g className="aliaui-numbers-fade">
                     <title>{`${g.label}: min ${fmt(s.min)}, q1 ${fmt(s.q1)}, median ${fmt(s.median)}, q3 ${fmt(s.q3)}, max ${fmt(s.max, { unit })}`}</title>
-                    <line className="bbui-numbers-whisker" x1={x(s.low)} x2={x(s.q1)} y1={12} y2={12} />
-                    <line className="bbui-numbers-whisker" x1={x(s.q3)} x2={x(s.high)} y1={12} y2={12} />
-                    <line className="bbui-numbers-whisker" x1={x(s.low)} x2={x(s.low)} y1={7} y2={17} />
-                    <line className="bbui-numbers-whisker" x1={x(s.high)} x2={x(s.high)} y1={7} y2={17} />
-                    <rect className="bbui-numbers-box-body" x={x(s.q1)} y={4} width={Math.max(1, x(s.q3) - x(s.q1))} height={16} rx={2} />
-                    <line className="bbui-numbers-median" x1={x(s.median)} x2={x(s.median)} y1={4} y2={20} />
+                    <line className="aliaui-numbers-whisker" x1={x(s.low)} x2={x(s.q1)} y1={12} y2={12} />
+                    <line className="aliaui-numbers-whisker" x1={x(s.q3)} x2={x(s.high)} y1={12} y2={12} />
+                    <line className="aliaui-numbers-whisker" x1={x(s.low)} x2={x(s.low)} y1={7} y2={17} />
+                    <line className="aliaui-numbers-whisker" x1={x(s.high)} x2={x(s.high)} y1={7} y2={17} />
+                    <rect className="aliaui-numbers-box-body" x={x(s.q1)} y={4} width={Math.max(1, x(s.q3) - x(s.q1))} height={16} rx={2} />
+                    <line className="aliaui-numbers-median" x1={x(s.median)} x2={x(s.median)} y1={4} y2={20} />
                     {s.outliers.map((o, j) => (
-                      <circle key={j} className="bbui-numbers-outlier" cx={x(o)} cy={12} r={3} />
+                      <circle key={j} className="aliaui-numbers-outlier" cx={x(o)} cy={12} r={3} />
                     ))}
                   </g></Drawn>
                 </svg>
@@ -473,13 +473,13 @@ const BoxPlot = defineComponent({
           })}
           <svg width={width} height={16} aria-hidden="true">
             {axis.values.map((v, i) => (
-              <text key={v} className="bbui-numbers-tick" x={x(v)} y={12} textAnchor={i === 0 ? "start" : i === axis.values.length - 1 ? "end" : "middle"}>
+              <text key={v} className="aliaui-numbers-tick" x={x(v)} y={12} textAnchor={i === 0 ? "start" : i === axis.values.length - 1 ? "end" : "middle"}>
                 {fmt(v, { compact: true })}
               </text>
             ))}
           </svg>
         </div>
-        {unit ? <span className="bbui-numbers-tick bbui-numbers-unit">Values in {unit}</span> : null}
+        {unit ? <span className="aliaui-numbers-tick aliaui-numbers-unit">Values in {unit}</span> : null}
       </Chart>
     );
   },
@@ -511,22 +511,22 @@ const Heatmap = defineComponent({
       ? `Heatmap of ${rows.length} rows by ${columns.length} columns, values ${fmt(min)} to ${fmt(max, { unit })}; highest ${rows[peak.r]} at ${columns[peak.c]}`
       : "Heatmap: no values yet";
     return (
-      <Chart className="bbui-numbers-heatmap">
-        <div className="bbui-numbers-scroll">
-          <div className="bbui-numbers-matrix" style={{ gridTemplateColumns: `max-content repeat(${columns.length}, minmax(14px, 1fr))` }} role="img" aria-label={summary}>
+      <Chart className="aliaui-numbers-heatmap">
+        <div className="aliaui-numbers-scroll">
+          <div className="aliaui-numbers-matrix" style={{ gridTemplateColumns: `max-content repeat(${columns.length}, minmax(14px, 1fr))` }} role="img" aria-label={summary}>
             <span />
             {columns.map((c, i) => (
-              <span key={i} className="bbui-numbers-tick bbui-numbers-col">
+              <span key={i} className="aliaui-numbers-tick aliaui-numbers-col">
                 {c}
               </span>
             ))}
             {matrix.map((row, r) => (
               <Fragment key={r}>
-                <span className="bbui-numbers-tick bbui-numbers-rowname">{rows[r]}</span>
+                <span className="aliaui-numbers-tick aliaui-numbers-rowname">{rows[r]}</span>
                 {row.map((v, c) => (
                   <span
                     key={c}
-                    className={cx("bbui-numbers-cell", !isNum(v) ? "bbui-numbers-none" : ready ? `bbui-numbers-fade bbui-numbers-l${band(v, min, max)}` : "bbui-numbers-l0")}
+                    className={cx("aliaui-numbers-cell", !isNum(v) ? "aliaui-numbers-none" : ready ? `aliaui-numbers-fade aliaui-numbers-l${band(v, min, max)}` : "aliaui-numbers-l0")}
                     title={`${rows[r]}, ${columns[c]}: ${isNum(v) ? fmt(v, { unit }) : "no data"}`}
                   />
                 ))}
@@ -557,26 +557,26 @@ const Funnel = defineComponent({
     const step = (i: number) => (i > 0 && stages[i - 1]!.value > 0 ? stages[i]!.value / stages[i - 1]!.value : null);
     const summary = `Funnel of ${stages.length} stages: ${stages.map((s, i) => `${s.label} ${fmt(s.value, { unit })}${step(i) !== null ? ` (${pct(step(i)!)} of the step before)` : ""}`).join(", ")}`;
     return (
-      <Chart className="bbui-numbers-funnel">
+      <Chart className="aliaui-numbers-funnel">
         <ol role="img" aria-label={summary}>
           {stages.map((s, i) => (
             <li key={i}>
-              <div className="bbui-numbers-progress-head">
-                <span className="bbui-numbers-name">{s.label}</span>
+              <div className="aliaui-numbers-progress-head">
+                <span className="aliaui-numbers-name">{s.label}</span>
                 <span>
-                  <span className="bbui-numbers-value">{fmt(s.value, { unit })}</span>
-                  {step(i) !== null ? <span className="bbui-numbers-share"> {pct(step(i)!)} of previous</span> : null}
+                  <span className="aliaui-numbers-value">{fmt(s.value, { unit })}</span>
+                  {step(i) !== null ? <span className="aliaui-numbers-share"> {pct(step(i)!)} of previous</span> : null}
                 </span>
               </div>
-              <div className="bbui-numbers-lane">
+              <div className="aliaui-numbers-lane">
                 <Drawn>
-                  <span className="bbui-numbers-bar bbui-numbers-gx" style={{ ...fillOf("accent"), width: `${top > 0 ? (s.value / top) * 100 : 0}%` }} />
+                  <span className="aliaui-numbers-bar aliaui-numbers-gx" style={{ ...fillOf("accent"), width: `${top > 0 ? (s.value / top) * 100 : 0}%` }} />
                 </Drawn>
               </div>
             </li>
           ))}
         </ol>
-        {stages.length > 1 && first > 0 ? <span className="bbui-numbers-tick">Overall {pct(last / first)} of the first stage</span> : null}
+        {stages.length > 1 && first > 0 ? <span className="aliaui-numbers-tick">Overall {pct(last / first)} of the first stage</span> : null}
       </Chart>
     );
   },
@@ -601,10 +601,10 @@ const KeyValue = defineComponent({
       return String(v);
     };
     return (
-      <dl className="bbui bbui-numbers-facts">
+      <dl className="aliaui aliaui-numbers-facts">
         {pairs.map(([k, v], i) => (
-          <div key={i} className="bbui-numbers-fact">
-            <dt className="bbui-label">{String(k)}</dt>
+          <div key={i} className="aliaui-numbers-fact">
+            <dt className="aliaui-label">{String(k)}</dt>
             <dd>{show(v)}</dd>
           </div>
         ))}
@@ -623,10 +623,10 @@ const Grid = defineComponent({
     const children = list<unknown>(props.children);
     const columns = Math.round(clamp(isNum(props.columns) ? props.columns : 2, 1, 4));
     return (
-      <div className="bbui bbui-numbers-grid">
-        <div className="bbui-numbers-tiles" style={{ "--bbui-numbers-cols": columns } as React.CSSProperties}>
+      <div className="aliaui aliaui-numbers-grid">
+        <div className="aliaui-numbers-tiles" style={{ "--aliaui-numbers-cols": columns } as React.CSSProperties}>
           {children.map((child, i) => (
-            <div key={i} className="bbui-numbers-tilecell">
+            <div key={i} className="aliaui-numbers-tilecell">
               {renderNode(child)}
             </div>
           ))}

@@ -1,4 +1,4 @@
-// alia-plugin-bbium: keyboard behavior lives in the frontend app overlay (app.tsx, keys.ts).
+// alia-plugin-alium: keyboard behavior lives in the frontend app overlay (app.tsx, keys.ts).
 // The server only declares settings; the frontend reads them via useSettings.
 import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
@@ -13,7 +13,7 @@ export default async function plugin(alia: AliaPluginApi) {
     disabledKeys: {
       type: "string",
       label: "Disabled keys",
-      description: "Keys bbium leaves to VesnALIA and other plugins, e.g. jk when the sidebar switches threads with j/k. Any of f i j k d u g G.",
+      description: "Keys alium leaves to VesnALIA and other plugins, e.g. jk when the sidebar switches threads with j/k. Any of f i j k d u g G.",
       default: "",
     },
     hintCharacters: {
@@ -38,7 +38,7 @@ export default async function plugin(alia: AliaPluginApi) {
     customCss: {
       type: "string",
       label: "Custom CSS",
-      description: "Applied after the theme. Set --bbium-* variables on [data-bbium-root] or style .bbium-hint directly. See the bbium skill for the full list.",
+      description: "Applied after the theme. Set --alium-* variables on [data-alium-root] or style .alium-hint directly. See the alium skill for the full list.",
       experimental_multiline: true,
       default: "",
     },

@@ -44,10 +44,10 @@ export interface MsbConfig {
 }
 
 export const MSB_DEFAULTS = {
-  linuxImage: "bbbox/linux:1",
-  desktopImage: "bbbox/linux-desktop:1",
-  arm64Image: "bbbox/linux:1-arm64",
-  arm64DesktopImage: "bbbox/linux-desktop:1-arm64",
+  linuxImage: "aliabox/linux:1",
+  desktopImage: "aliabox/linux-desktop:1",
+  arm64Image: "aliabox/linux:1-arm64",
+  arm64DesktopImage: "aliabox/linux-desktop:1-arm64",
   dockerDiskGiB: 64,
   diskGiB: 32,
   // VesnALIA's server is often on a private or tailnet address, which msb's

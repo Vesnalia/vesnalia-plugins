@@ -32,11 +32,11 @@ export function toneForStateType(type: string | null | undefined): Tone {
     : "unknown";
 }
 
-/** The class that sets `--bbl` on an ancestor. Everything below it — the
+/** The class that sets `--alial` on an ancestor. Everything below it — the
  *  glyph, the identifier, a border tint, a chip — reads that one variable, so
  *  a state change recolours the whole row from a single class swap. */
 export function toneClass(tone: Tone): string {
-  return `bbl-${tone}`;
+  return `alial-${tone}`;
 }
 
 /** A canceled issue's title is struck through as well as marked, because
@@ -63,5 +63,5 @@ export function priorityMark(priority: number): PriorityMark {
 }
 
 export function priorityToneClass(mark: PriorityMark): string {
-  return mark === "urgent" ? "bbl-danger" : mark === "high" ? "bbl-triage" : "bbl-neutral";
+  return mark === "urgent" ? "alial-danger" : mark === "high" ? "alial-triage" : "alial-neutral";
 }

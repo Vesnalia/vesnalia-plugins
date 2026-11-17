@@ -1,6 +1,6 @@
 # RPC compatibility
 
-BBDesk keeps the six existing RPC methods. The contract lives in `contracts.ts`; `server.ts` continues to export `rpcContract` and the `DashboardConfig` type. `catalog-config.ts` continues to export the catalog schema and types. Plugin identity, routes and storage keys are unchanged.
+AliaDesk keeps the six existing RPC methods. The contract lives in `contracts.ts`; `server.ts` continues to export `rpcContract` and the `DashboardConfig` type. `catalog-config.ts` continues to export the catalog schema and types. Plugin identity, routes and storage keys are unchanged.
 
 ## Method inventory
 

@@ -80,7 +80,7 @@ function LinkedFile({ path, line, endLine, className, children }: RefProps) {
   const location =
     start === null ? null : endLine && endLine > start ? { kind: "range" as const, startLine: start, endLine: Math.floor(endLine) } : { kind: "line" as const, line: start, column: null };
   return (
-    <FileLink target={target} location={location} className={cx(className, "bbui-files-link")} title={`Open ${path} in VesnALIA`}>
+    <FileLink target={target} location={location} className={cx(className, "aliaui-files-link")} title={`Open ${path} in VesnALIA`}>
       {children}
     </FileLink>
   );
@@ -128,10 +128,10 @@ const plural = (n: number, one: string, many = `${one}s`) => `${fmt(n, { decimal
 function PathLabel({ path, line }: { path: string; line?: number | null }) {
   const { dir, base } = splitPath(path);
   return (
-    <span className="bbui-files-pathtext">
-      {dir ? <span className="bbui-files-dir">{dir}</span> : null}
-      <span className="bbui-files-base">{base}</span>
-      {line ? <span className="bbui-files-dir">:{line}</span> : null}
+    <span className="aliaui-files-pathtext">
+      {dir ? <span className="aliaui-files-dir">{dir}</span> : null}
+      <span className="aliaui-files-base">{base}</span>
+      {line ? <span className="aliaui-files-dir">:{line}</span> : null}
     </span>
   );
 }
@@ -147,8 +147,8 @@ const File = defineComponent({
     const path = text(props.path);
     const line = count(props.line);
     return (
-      <div className="bbui bbui-files-file">
-        <FileRef path={path} line={line} className="bbui-files-fileref">
+      <div className="aliaui aliaui-files-file">
+        <FileRef path={path} line={line} className="aliaui-files-fileref">
           <FileText {...ICON} />
           <PathLabel path={path} line={line} />
         </FileRef>
@@ -170,13 +170,13 @@ const Snippet = defineComponent({
     const to = count(props.to);
     const expected = from !== null && to !== null ? Math.min(12, Math.max(1, to - from + 1)) : 8;
     return (
-      <figure className="bbui bbui-files bbui-files-snippet">
-        <figcaption className="bbui-files-head">
-          <FileRef path={path} line={from} endLine={to} className="bbui-files-fileref">
+      <figure className="aliaui aliaui-files aliaui-files-snippet">
+        <figcaption className="aliaui-files-head">
+          <FileRef path={path} line={from} endLine={to} className="aliaui-files-fileref">
             <FileText {...ICON} />
             <PathLabel path={path} />
           </FileRef>
-          {from !== null ? <span className="bbui-label">{to !== null && to !== from ? `lines ${from} to ${to}` : `line ${from}`}</span> : null}
+          {from !== null ? <span className="aliaui-label">{to !== null && to !== from ? `lines ${from} to ${to}` : `line ${from}`}</span> : null}
         </figcaption>
         <Source
           value={path}
@@ -184,16 +184,16 @@ const Snippet = defineComponent({
           isEmpty={(slice) => slice.total === 1 && slice.lines[0] === ""}
           empty={{ title: "This file is empty", hint: "Write to it, or point the snippet at another file." }}
           errorTitle="This snippet could not be read"
-          skeleton={<div className="bbui-files-code"><Skeleton lines={expected} /></div>}
+          skeleton={<div className="aliaui-files-code"><Skeleton lines={expected} /></div>}
         >
           {(slice) => (
-            <div className="bbui-files-code" style={{ "--bbui-files-digits": `${String(slice.start + slice.lines.length - 1).length}ch` } as CSSProperties}>
-              <div className="bbui-files-gutter" aria-hidden="true">
+            <div className="aliaui-files-code" style={{ "--aliaui-files-digits": `${String(slice.start + slice.lines.length - 1).length}ch` } as CSSProperties}>
+              <div className="aliaui-files-gutter" aria-hidden="true">
                 {slice.lines.map((_, i) => (
                   <span key={i}>{slice.start + i}</span>
                 ))}
               </div>
-              <Markdown content={fence(slice.lines.join("\n"), languageOf(path))} className="bbui-files-markdown" />
+              <Markdown content={fence(slice.lines.join("\n"), languageOf(path))} className="aliaui-files-markdown" />
             </div>
           )}
         </Source>
@@ -209,7 +209,7 @@ function ImageView({ src, alt }: { src: string; alt: string }) {
   const size = imageSize(src);
   return (
     <img
-      className="bbui-files-img"
+      className="aliaui-files-img"
       src={src}
       alt={alt}
       width={size?.width}
@@ -227,20 +227,20 @@ const FileImage = defineComponent({
     const path = text(props.path);
     const alt = text(props.alt);
     return (
-      <figure className="bbui bbui-files bbui-files-image">
+      <figure className="aliaui aliaui-files aliaui-files-image">
         <Source
           value={path}
           media
           parse={(src) => src}
           empty={{ title: "This image is empty", hint: "Save the image again, then reload the reply." }}
           errorTitle="This image could not be shown"
-          skeleton={<div className="bbui-files-imgskeleton"><Skeleton height={240} /></div>}
+          skeleton={<div className="aliaui-files-imgskeleton"><Skeleton height={240} /></div>}
         >
           {(src) => <ImageView src={src} alt={alt || splitPath(path).base} />}
         </Source>
-        <figcaption className="bbui-files-head">
+        <figcaption className="aliaui-files-head">
           {alt ? <span>{alt}</span> : null}
-          <FileRef path={path} className="bbui-files-fileref bbui-label">
+          <FileRef path={path} className="aliaui-files-fileref aliaui-label">
             <PathLabel path={path} />
           </FileRef>
         </figcaption>
@@ -294,8 +294,8 @@ function LogView({ log }: { log: Log }) {
   const width = `${String(log.lines[log.lines.length - 1]?.n ?? 1).length}ch`;
 
   return (
-    <div className="bbui-files-logbody">
-      <div className="bbui-files-bar">
+    <div className="aliaui-files-logbody">
+      <div className="aliaui-files-bar">
         {log.errors.length > 0 ? (
           <Button onClick={() => jump(log.errors)} aria-controls={scroller}>
             {plural(log.errors.length, "error")}
@@ -306,26 +306,26 @@ function LogView({ log }: { log: Log }) {
             {plural(log.warnings.length, "warning")}
           </Button>
         ) : null}
-        {log.errors.length + log.warnings.length === 0 ? <span className="bbui-label">No errors or warnings</span> : null}
-        <span className="bbui-label bbui-files-count">{plural(log.lines.length, "line")}</span>
+        {log.errors.length + log.warnings.length === 0 ? <span className="aliaui-label">No errors or warnings</span> : null}
+        <span className="aliaui-label aliaui-files-count">{plural(log.lines.length, "line")}</span>
       </div>
-      <div className="bbui-files-log" id={scroller} tabIndex={0} aria-label="Log output" style={{ "--bbui-files-digits": width } as CSSProperties}>
+      <div className="aliaui-files-log" id={scroller} tabIndex={0} aria-label="Log output" style={{ "--aliaui-files-digits": width } as CSSProperties}>
         {hidden > 0 ? (
-          <div className="bbui-files-more">
-            <span className="bbui-label">
+          <div className="aliaui-files-more">
+            <span className="aliaui-label">
               {plural(hidden, "earlier line")} hidden
             </span>
             <Button onClick={() => setExpanded(true)}>Show all {fmt(log.lines.length, { decimals: 0 })} lines</Button>
           </div>
         ) : null}
-        <ol className="bbui-files-loglines">
+        <ol className="aliaui-files-loglines">
           {log.lines.slice(hidden).map((line, i) => {
             const index = hidden + i;
             return (
               <li key={index} id={`${id}-${index}`} data-level={line.level ?? undefined} data-current={index === current || undefined}>
-                <span className="bbui-files-ln">{line.n}</span>
-                <span className="bbui-files-lt">
-                  {line.level ? <span className="bbui-files-sr">{line.level === "error" ? "Error: " : "Warning: "}</span> : null}
+                <span className="aliaui-files-ln">{line.n}</span>
+                <span className="aliaui-files-lt">
+                  {line.level ? <span className="aliaui-files-sr">{line.level === "error" ? "Error: " : "Warning: "}</span> : null}
                   <Runs runs={line.runs} />
                 </span>
               </li>
@@ -346,12 +346,12 @@ const Logs = defineComponent({
     const command = text(props.command);
     const exit = count(props.exit);
     return (
-      <section className="bbui bbui-files bbui-files-logs" aria-label={command ? `Output of ${command}` : "Log output"}>
+      <section className="aliaui aliaui-files aliaui-files-logs" aria-label={command ? `Output of ${command}` : "Log output"}>
         {command || exit !== null ? (
-          <header className="bbui-files-head">
-            {command ? <code className="bbui-mono bbui-files-command">$ {command}</code> : null}
+          <header className="aliaui-files-head">
+            {command ? <code className="aliaui-mono aliaui-files-command">$ {command}</code> : null}
             {exit !== null ? (
-              <span className="bbui-files-exit" data-ok={exit === 0}>
+              <span className="aliaui-files-exit" data-ok={exit === 0}>
                 {exit === 0 ? <CircleCheck {...ICON} /> : <CircleX {...ICON} />}
                 {exitWords(exit)}
               </span>
@@ -365,9 +365,9 @@ const Logs = defineComponent({
           empty={{ title: "The log is empty", hint: "The command printed nothing; run it again with more output, or check the path." }}
           errorTitle="This log could not be read"
           skeleton={
-            <div className="bbui-files-logbody">
-              <div className="bbui-files-bar"><Skeleton lines={1} /></div>
-              <div className="bbui-files-log"><Skeleton lines={8} /></div>
+            <div className="aliaui-files-logbody">
+              <div className="aliaui-files-bar"><Skeleton lines={1} /></div>
+              <div className="aliaui-files-log"><Skeleton lines={8} /></div>
             </div>
           }
         >
@@ -387,12 +387,12 @@ function FrameItem({ frame }: { frame: Frame }) {
   const path = framePath(frame.file);
   const where = frame.file === null ? null : `${splitPath(frame.file).base}${frame.line !== null ? `:${frame.line}` : ""}${frame.col !== null ? `:${frame.col}` : ""}`;
   return (
-    <li className="bbui-files-frame" data-library={frame.library || undefined}>
-      <code className="bbui-files-fn">{frame.fn || "anonymous"}</code>
+    <li className="aliaui-files-frame" data-library={frame.library || undefined}>
+      <code className="aliaui-files-fn">{frame.fn || "anonymous"}</code>
       {where === null ? null : path === null ? (
-        <span className="bbui-files-where" title={frame.file ?? undefined}>{where}</span>
+        <span className="aliaui-files-where" title={frame.file ?? undefined}>{where}</span>
       ) : (
-        <FileRef path={path} line={frame.line} className="bbui-files-where">
+        <FileRef path={path} line={frame.line} className="aliaui-files-where">
           <span title={frame.file ?? undefined}>{where}</span>
         </FileRef>
       )}
@@ -410,35 +410,35 @@ function TraceView({ trace, title }: { trace: Trace; title: string }) {
     });
   return (
     <>
-      <header className="bbui-files-head">
-        {title ? <span className="bbui-head">{title}</span> : null}
-        <span className="bbui-label">{LANGUAGE_NAMES[trace.language]}</span>
+      <header className="aliaui-files-head">
+        {title ? <span className="aliaui-head">{title}</span> : null}
+        <span className="aliaui-label">{LANGUAGE_NAMES[trace.language]}</span>
       </header>
       {trace.sections.map((section, s) => (
-        <section key={s} className="bbui-files-section" data-first={s === 0 || undefined}>
-          {section.relation ? <span className="bbui-label">{RELATION_WORDS[section.relation]}</span> : null}
-          <p className="bbui-files-error">
-            {s === 0 ? <CircleX {...ICON} className="bbui-files-erricon" /> : null}
+        <section key={s} className="aliaui-files-section" data-first={s === 0 || undefined}>
+          {section.relation ? <span className="aliaui-label">{RELATION_WORDS[section.relation]}</span> : null}
+          <p className="aliaui-files-error">
+            {s === 0 ? <CircleX {...ICON} className="aliaui-files-erricon" /> : null}
             <span>
-              {section.type ? <code className="bbui-files-type">{section.type}</code> : null}
+              {section.type ? <code className="aliaui-files-type">{section.type}</code> : null}
               {section.type && section.message ? " " : null}
               {section.message}
             </span>
           </p>
           {section.frames.length > 0 ? (
-            <ol className="bbui-files-frames" aria-label={`${plural(section.frames.length, "frame")}, innermost first`}>
+            <ol className="aliaui-files-frames" aria-label={`${plural(section.frames.length, "frame")}, innermost first`}>
               {frameRows(section.frames).map((row) => {
                 if (row.kind === "frame") return <FrameItem key={row.index} frame={section.frames[row.index]!} />;
                 const key = `${s}-${row.start}`;
                 const shown = open.has(key);
                 return (
-                  <li key={key} className="bbui-files-fold">
+                  <li key={key} className="aliaui-files-fold">
                     <Button aria-expanded={shown} onClick={() => toggle(key)}>
-                      <ChevronRight {...ICON} className="bbui-files-chevron" />
+                      <ChevronRight {...ICON} className="aliaui-files-chevron" />
                       {shown ? "Hide" : "Show"} {plural(row.count, "library frame")}
                     </Button>
                     {shown ? (
-                      <ol className="bbui-files-frames">
+                      <ol className="aliaui-files-frames">
                         {section.frames.slice(row.start, row.start + row.count).map((frame, i) => (
                           <FrameItem key={i} frame={frame} />
                         ))}
@@ -462,7 +462,7 @@ const StackTrace = defineComponent({
   component: ({ props }) => {
     const title = text(props.title);
     return (
-      <section className="bbui bbui-files bbui-files-trace" aria-label={title || "Stack trace"}>
+      <section className="aliaui aliaui-files aliaui-files-trace" aria-label={title || "Stack trace"}>
         <Source
           value={text(props.trace)}
           parse={parseTrace}
@@ -524,16 +524,16 @@ function Turn({ word, previous }: { word: Word | undefined; previous: Word | und
   if (!word?.speaker || word.speaker === previous?.speaker) return null;
   const at = clock(word.start);
   return (
-    <span className="bbui-files-speaker">
+    <span className="aliaui-files-speaker">
       {word.speaker}
-      {at ? <span className="bbui-files-at"> {at}</span> : null}
+      {at ? <span className="aliaui-files-at"> {at}</span> : null}
     </span>
   );
 }
 
 function ReferenceText({ words }: { words: Word[] }) {
   return (
-    <p className="bbui-files-words">
+    <p className="aliaui-files-words">
       {words.map((word, i) => (
         <span key={i}>
           <Turn word={word} previous={words[i - 1]} />
@@ -554,18 +554,18 @@ function TrackDiff({ name, reference, words }: { name: string; reference: Word[]
   const { ops, score, ref, hyp } = result;
   let lastHyp: Word | undefined;
   return (
-    <section className="bbui-files-track" aria-label={name}>
-      <header className="bbui-files-trackhead">
-        <span className="bbui-head">{name}</span>
-        <span className="bbui-files-wer">
-          <span className="bbui-figure">{fmt(score.wer * 100, { decimals: 1 })}%</span>
-          <span className="bbui-label">word error rate</span>
+    <section className="aliaui-files-track" aria-label={name}>
+      <header className="aliaui-files-trackhead">
+        <span className="aliaui-head">{name}</span>
+        <span className="aliaui-files-wer">
+          <span className="aliaui-figure">{fmt(score.wer * 100, { decimals: 1 })}%</span>
+          <span className="aliaui-label">word error rate</span>
         </span>
       </header>
-      <span className="bbui-label">
+      <span className="aliaui-label">
         {plural(score.sub, "substitution")}, {plural(score.del, "deletion")}, {plural(score.ins, "insertion")} against {plural(score.words, "reference word")}
       </span>
-      <p className="bbui-files-words">
+      <p className="aliaui-files-words">
         {ops.map((op, i) => {
           const h = op.h === undefined ? undefined : hyp[op.h];
           const r = op.r === undefined ? undefined : ref[op.r];
@@ -577,7 +577,7 @@ function TrackDiff({ name, reference, words }: { name: string; reference: Word[]
           return (
             <span key={i}>
               {turn}
-              <mark className="bbui-files-sub" title={`Reference says "${r!.text}"`}>
+              <mark className="aliaui-files-sub" title={`Reference says "${r!.text}"`}>
                 <del>{r!.text}</del> <ins>{h!.text}</ins>
               </mark>{" "}
             </span>
@@ -596,16 +596,16 @@ const Transcript = defineComponent({
     const streaming = useStreaming();
     const tracks = (Array.isArray(props.tracks) ? props.tracks : []).map((t) => ((t as { props?: TrackProps })?.props ?? {}) as TrackProps);
     const [reference, ...others] = tracks;
-    if (!reference) return <div className="bbui bbui-files"><Skeleton lines={4} /></div>;
+    if (!reference) return <div className="aliaui aliaui-files"><Skeleton lines={4} /></div>;
     return (
-      <div className="bbui bbui-files bbui-files-transcript">
+      <div className="aliaui aliaui-files aliaui-files-transcript">
         <TrackWords track={reference}>
           {(refWords) => (
             <>
-              <section className="bbui-files-track" aria-label={`${text(reference.name) || "Reference"}, the reference`}>
-                <header className="bbui-files-trackhead">
-                  <span className="bbui-head">{text(reference.name) || "Reference"}</span>
-                  <span className="bbui-label">Reference, {plural(refWords.length, "word")}</span>
+              <section className="aliaui-files-track" aria-label={`${text(reference.name) || "Reference"}, the reference`}>
+                <header className="aliaui-files-trackhead">
+                  <span className="aliaui-head">{text(reference.name) || "Reference"}</span>
+                  <span className="aliaui-label">Reference, {plural(refWords.length, "word")}</span>
                 </header>
                 <ReferenceText words={refWords} />
               </section>
@@ -615,8 +615,8 @@ const Transcript = defineComponent({
                 </TrackWords>
               ))}
               {others.length > 0 ? (
-                <p className="bbui-label bbui-files-legend">
-                  <del>struck</del> missing from the track, <ins>underlined</ins> added by it, <mark className="bbui-files-sub">marked</mark> substituted (reference word struck first).
+                <p className="aliaui-label aliaui-files-legend">
+                  <del>struck</del> missing from the track, <ins>underlined</ins> added by it, <mark className="aliaui-files-sub">marked</mark> substituted (reference word struck first).
                 </p>
               ) : null}
             </>

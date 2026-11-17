@@ -39,7 +39,7 @@ import json, sys
 path = sys.argv[1]
 config = json.load(open(path))
 docker = next(backend for backend in config["backends"] if backend["type"] == "docker")
-docker["fields"]["desktop-image"] = "bbbox/linux-desktop:1"
+docker["fields"]["desktop-image"] = "aliabox/linux-desktop:1"
 docker["fields"]["linux-image"] = ""
 microsandbox = {"id": "microsandbox", "type": "microsandbox", "enabled": True, "fields": {"desktop-image": ""}}
 config["backends"] = [microsandbox] + [backend for backend in config["backends"] if backend["type"] != "microsandbox"]

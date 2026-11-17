@@ -8,7 +8,7 @@ mode=${1:-}
 host_driver=$root/sys/module/nvidia/version
 desktop_env=$root/etc/alia-box/desktop.env
 lock=$root/run/alia-box-nvidia-update.lock
-nvidia_base=${BBBOX_NVIDIA_BASE:-https://download.nvidia.com/XFree86/Linux-x86_64}
+nvidia_base=${ALIABOX_NVIDIA_BASE:-https://download.nvidia.com/XFree86/Linux-x86_64}
 
 hold_lock() {
   exec 9>>"$lock"

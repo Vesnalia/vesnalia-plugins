@@ -23,7 +23,7 @@ function world(more: Partial<DockerImagesDeps> & { staleImages?: string[]; exit?
   const held = new Promise<void>((resolve) => (release = resolve));
   const images = new DockerImages({
     script: "/plugin/setup/docker/build.sh",
-    images: () => ["bbbox/linux:1", "bbbox/linux-desktop:1"],
+    images: () => ["aliabox/linux:1", "aliabox/linux-desktop:1"],
     host: async (hostId) => `unix:///tmp/relay/${hostId}.sock`,
     stale: async (_hostId, image, app) => {
       apps.push(app);
@@ -33,7 +33,7 @@ function world(more: Partial<DockerImagesDeps> & { staleImages?: string[]; exit?
     logError: () => {},
     run: async (_script, args, env, onLine) => {
       runs.push({ args, host: env.DOCKER_HOST });
-      for (const line of more.lines ?? ["#5 [linux 2/9] RUN apt-get install", "\u001b[1mbuilt bbbox/linux:1\u001b[0m"]) onLine(line);
+      for (const line of more.lines ?? ["#5 [linux 2/9] RUN apt-get install", "\u001b[1mbuilt aliabox/linux:1\u001b[0m"]) onLine(line);
       await held;
       return more.exit === undefined ? 0 : more.exit;
     },
@@ -60,12 +60,12 @@ test("a machine with every image it needs builds nothing, and one that lacks one
   assert.deepEqual([none.state, none.targets, none.detail], ["built", [], null]);
   assert.deepEqual(fine.runs, []);
 
-  const lacking = world({ staleImages: ["bbbox/linux:1"] });
+  const lacking = world({ staleImages: ["aliabox/linux:1"] });
   const first = lacking.images.ensure("host_a");
   const second = lacking.images.ensure("host_a");
   await new Promise((r) => setImmediate(r));
   assert.equal(lacking.images.state("host_a")?.state, "building");
-  assert.equal(lacking.images.state("host_a")?.detail, "built bbbox/linux:1", "the last line, without its colours");
+  assert.equal(lacking.images.state("host_a")?.detail, "built aliabox/linux:1", "the last line, without its colours");
   assert.deepEqual(lacking.images.state("host_a")?.step, { at: 2, of: 9 }, "the last step Docker started, kept past its output");
   lacking.release();
   const done = await first;
@@ -75,7 +75,7 @@ test("a machine with every image it needs builds nothing, and one that lacks one
   assert.ok(lacking.changes.length >= 3, "each step reaches the settings page");
 
   // The Wayland desktop's image is build.sh's desktop-wayland target (048).
-  const wayland = world({ images: () => ["bbbox/linux:1", "bbbox/linux-desktop-wayland:1"], staleImages: ["bbbox/linux-desktop-wayland:1"] });
+  const wayland = world({ images: () => ["aliabox/linux:1", "aliabox/linux-desktop-wayland:1"], staleImages: ["aliabox/linux-desktop-wayland:1"] });
   wayland.release();
   assert.deepEqual((await wayland.images.ensure("host_a")).targets, ["desktop-wayland"]);
   assert.deepEqual(wayland.runs.map((each) => each.args), [["desktop-wayland"]]);
@@ -88,7 +88,7 @@ test("with VesnALIA's URL, the images have VesnALIA's app, and one with another 
   const current = world({
     appUrl: () => url,
     appDigest: async (from) => (asked.push(from), digest),
-    stale: async (_hostId, image, app) => image === "bbbox/linux:1" && app === digest,
+    stale: async (_hostId, image, app) => image === "aliabox/linux:1" && app === digest,
   });
   current.release();
   const built = await current.images.ensure("host_a");
@@ -98,7 +98,7 @@ test("with VesnALIA's URL, the images have VesnALIA's app, and one with another 
 
   const errors: string[] = [];
   for (const appDigest of [async () => null, async () => Promise.reject(new Error("fetch failed"))]) {
-    const silent = world({ appUrl: () => url, appDigest, staleImages: ["bbbox/linux:1"], logError: (operation) => errors.push(operation) });
+    const silent = world({ appUrl: () => url, appDigest, staleImages: ["aliabox/linux:1"], logError: (operation) => errors.push(operation) });
     silent.release();
     await silent.images.ensure("host_a");
     assert.deepEqual(silent.apps, [null, null], "a server that gives no digest: VesnALIA's app does not count");
@@ -107,7 +107,7 @@ test("with VesnALIA's URL, the images have VesnALIA's app, and one with another 
   assert.deepEqual(errors, ["VesnALIA's app digest"]);
 
   const unasked: string[] = [];
-  const none = world({ appDigest: async (from) => (unasked.push(from), digest), staleImages: ["bbbox/linux:1"] });
+  const none = world({ appDigest: async (from) => (unasked.push(from), digest), staleImages: ["aliabox/linux:1"] });
   none.release();
   await none.images.ensure("host_a");
   assert.deepEqual([unasked, none.apps, none.runs.map((each) => each.args)], [[], [null, null], [["linux"]]], "VesnALIA with no URL");
@@ -116,8 +116,8 @@ test("with VesnALIA's URL, the images have VesnALIA's app, and one with another 
 test("an image is outdated with no record or an older contract, or with another build of VesnALIA's app when VesnALIA gives one (#95, 049)", () => {
   const app = "b".repeat(64);
   const labels = (record: Record<string, unknown> | null) => ({
-    "bbbox.image-version": "1",
-    ...(record ? { "bbbox.image-record": JSON.stringify({ contract: 1, kind: "linux", build: "build.x", built: "2026-10-03T00:00:00Z", ...record }) } : {}),
+    "aliabox.image-version": "1",
+    ...(record ? { "aliabox.image-record": JSON.stringify({ contract: 1, kind: "linux", build: "build.x", built: "2026-10-03T00:00:00Z", ...record }) } : {}),
   });
   assert.equal(outdated(labels({ aliaApp: app }), app), false);
   assert.equal(outdated(labels({ aliaApp: "c".repeat(64) }), app), true);
@@ -148,14 +148,14 @@ test("VesnALIA's app digest comes from the header of a HEAD request, as build.sh
 });
 
 test("a build that fails says why from its last lines, an install with no build.sh says so, and an image VesnALIA Box does not build is named", async () => {
-  const failing = world({ staleImages: ["bbbox/linux:1", "bbbox/linux-desktop:1"], exit: 1, lines: ["#7 ERROR: failed to fetch snapshot.ubuntu.com", "ERROR: failed to solve"] });
+  const failing = world({ staleImages: ["aliabox/linux:1", "aliabox/linux-desktop:1"], exit: 1, lines: ["#7 ERROR: failed to fetch snapshot.ubuntu.com", "ERROR: failed to solve"] });
   failing.release();
   const failed = await failing.images.ensure("host_a");
   assert.equal(failed.state, "failed");
   assert.deepEqual(failed.targets, ["linux", "desktop"]);
   assert.equal(failed.detail, "build.sh exited with 1: #7 ERROR: failed to fetch snapshot.ubuntu.com ERROR: failed to solve");
 
-  const scriptless = world({ staleImages: ["bbbox/linux:1"], script: null });
+  const scriptless = world({ staleImages: ["aliabox/linux:1"], script: null });
   scriptless.release();
   assert.equal((await scriptless.images.ensure("host_a")).detail, "This install of VesnALIA Box has no setup/docker/build.sh to build the images with.");
 
@@ -168,7 +168,7 @@ test("a build that fails says why from its last lines, an install with no build.
 
 test("a build that runs out of disk says how much a build needs", async () => {
   const full = world({
-    staleImages: ["bbbox/linux:1", "bbbox/linux-desktop:1"],
+    staleImages: ["aliabox/linux:1", "aliabox/linux-desktop:1"],
     exit: 1,
     lines: ["#12 exporting layers", "ERROR: failed to solve: write /var/lib/docker/tmp/layer: no space left on device"],
   });
@@ -266,14 +266,14 @@ printf 'content-length: 1191955\\r\\n\\r\\n'
   const result = spawnSync("bash", [extra.script ?? BUILD_SCRIPT, ...args], { encoding: "utf8", env });
   const calls = readFileSync(log, "utf8").split("\n").filter(Boolean);
   // Each target's build, then a second one, from the cache, that labels it with its record (049).
-  const builds = calls.filter((call) => call.startsWith("build ") && !call.includes("bbbox.image-record="));
+  const builds = calls.filter((call) => call.startsWith("build ") && !call.includes("aliabox.image-record="));
   return {
     status: result.status,
     stderr: result.stderr,
     checks: calls.filter((call) => call.startsWith("create ") && call.includes("alia-box-df")),
     builds,
-    labelled: calls.filter((call) => call.includes("bbbox.image-record=")),
-    reads: calls.filter((call) => call.startsWith("create ") && call.includes("bbbox/")),
+    labelled: calls.filter((call) => call.includes("aliabox.image-record=")),
+    reads: calls.filter((call) => call.startsWith("create ") && call.includes("aliabox/")),
     attached: calls.filter((call) => /^(run|exec|attach|logs) /.test(call)),
     built: builds.map((call) => / --target ([\w-]+) /.exec(call)?.[1]),
     sourcesDigests: builds.map((call) => / --build-arg IMAGE_SOURCES_SHA256=(\S*) /.exec(call)?.[1]),
@@ -312,14 +312,14 @@ test("build.sh labels each image with its own record, and stops at an image with
   assert.equal(built.status, 0, built.stderr);
   assert.deepEqual(built.built, ["linux", "desktop"]);
   assert.deepEqual(built.reads, [
-    "create --platform linux/amd64 bbbox/linux:1",
-    "create --platform linux/amd64 bbbox/linux-desktop:1",
+    "create --platform linux/amd64 aliabox/linux:1",
+    "create --platform linux/amd64 aliabox/linux-desktop:1",
   ]);
   assert.deepEqual(built.attached, [], "an attached stream is empty, so the record is copied out");
   assert.equal(built.labelled.length, 2);
   for (const [i, target] of ["linux", "desktop"].entries()) {
     // The same build, so all from the cache, with the label.
-    assert.equal(built.labelled[i], `${built.builds[i]!.replace(/ \S+$/, "")} --quiet --label bbbox.image-record=${record} ${built.builds[i]!.split(" ").at(-1)}`, target);
+    assert.equal(built.labelled[i], `${built.builds[i]!.replace(/ \S+$/, "")} --quiet --label aliabox.image-record=${record} ${built.builds[i]!.split(" ").at(-1)}`, target);
   }
 
   const none = buildWith(BUILD_FREE_GB, ["linux", "desktop"], undefined, "none", "");
@@ -357,9 +357,9 @@ test("build.sh gives each build the digest of the files its image is built from,
 
 test("build.sh reports Docker's own error when it cannot create a container to read an image, or start one to read the disk", () => {
   const record = '{"contract":1,"kind":"linux","build":"build.x"}';
-  const image = buildWith(BUILD_FREE_GB, ["linux"], undefined, "none", record, { imageError: "Error response from daemon: No such image: bbbox/linux:1" });
+  const image = buildWith(BUILD_FREE_GB, ["linux"], undefined, "none", record, { imageError: "Error response from daemon: No such image: aliabox/linux:1" });
   assert.equal(image.status, 1);
-  assert.equal(image.stderr, "Error response from daemon: No such image: bbbox/linux:1\n");
+  assert.equal(image.stderr, "Error response from daemon: No such image: aliabox/linux:1\n");
   assert.deepEqual(image.built, ["linux"]);
   assert.deepEqual(image.labelled, []);
 
@@ -393,7 +393,7 @@ test("build.sh --arch arm64 builds the arm64 linux and desktop images for linux/
   assert.equal(arm.status, 0, arm.stderr);
   assert.deepEqual(arm.built, ["linux", "desktop"], "both, by default");
   assert.ok(arm.builds.every((call) => call.includes("--platform linux/arm64")));
-  assert.deepEqual(arm.builds.map((call) => / -t (\S+) /.exec(call)?.[1]), ["bbbox/linux:1-arm64", "bbbox/linux-desktop:1-arm64"]);
+  assert.deepEqual(arm.builds.map((call) => / -t (\S+) /.exec(call)?.[1]), ["aliabox/linux:1-arm64", "aliabox/linux-desktop:1-arm64"]);
   assert.match(arm.checks[0]!, /--platform linux\/arm64 --network none --entrypoint sh /);
   assert.deepEqual(arm.attached, []);
   const wayland = buildWith(BUILD_FREE_GB, ["--arch", "arm64", "desktop-wayland"]);
@@ -405,7 +405,7 @@ test("a build of one image alone keeps how long it took on that machine, in stor
   const stored = new Map<string, unknown>();
   const storage = { get: async <T,>(key: string) => stored.get(key) as T | undefined, set: async (key: string, value: unknown) => void stored.set(key, value) };
   let clock = 1_000;
-  const one = world({ staleImages: ["bbbox/linux-desktop:1"], storage, now: () => clock });
+  const one = world({ staleImages: ["aliabox/linux-desktop:1"], storage, now: () => clock });
   const built = one.images.ensure("host_a");
   clock += 480_000;
   one.release();
@@ -416,19 +416,19 @@ test("a build of one image alone keeps how long it took on that machine, in stor
   assert.deepEqual(await again.images.took("host_a"), { desktop: 480_000 });
   assert.deepEqual(await again.images.took("host_b"), {});
   // Two images at once say nothing of either's time.
-  const both = world({ staleImages: ["bbbox/linux:1", "bbbox/linux-desktop:1"], storage: { get: async () => undefined, set: async () => {} } });
+  const both = world({ staleImages: ["aliabox/linux:1", "aliabox/linux-desktop:1"], storage: { get: async () => undefined, set: async () => {} } });
   both.release();
   await both.images.ensure("host_c");
   assert.deepEqual(await both.images.took("host_c"), {});
 });
 
 test("a box that needs an image while it is building is told the image is still building", async () => {
-  const { images, release } = world({ staleImages: ["bbbox/linux:1"] });
+  const { images, release } = world({ staleImages: ["aliabox/linux:1"] });
   const building = images.ensure("host_a");
   await new Promise((done) => setTimeout(done, 5));
-  assert.equal(dockerImageBuilding("host_a", "bbbox/linux:1"), true);
-  assert.equal(dockerImageBuilding("host_a", "bbbox/linux-desktop:1"), false);
+  assert.equal(dockerImageBuilding("host_a", "aliabox/linux:1"), true);
+  assert.equal(dockerImageBuilding("host_a", "aliabox/linux-desktop:1"), false);
   release();
   await building;
-  assert.equal(dockerImageBuilding("host_a", "bbbox/linux:1"), false);
+  assert.equal(dockerImageBuilding("host_a", "aliabox/linux:1"), false);
 });

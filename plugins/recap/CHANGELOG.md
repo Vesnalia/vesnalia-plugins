@@ -63,4 +63,4 @@ All notable changes to Recap are documented here. The format follows
 
 ### Added
 
-- Release Recap as a BB plugin for generating and displaying thread summaries.
+- Release Recap as a VesnALIA plugin for generating and displaying thread summaries.

@@ -22,7 +22,7 @@ export type Config = {
   scrollStep: number;
   theme: Theme;
   customCss: string;
-  /** Normal-mode keys bbium leaves alone, e.g. "jk" so another plugin can use them. */
+  /** Normal-mode keys alium leaves alone, e.g. "jk" so another plugin can use them. */
   disabledKeys: string;
 };
 
@@ -66,7 +66,7 @@ type KeyInput = Pick<KeyboardEvent, "key" | "altKey" | "metaKey" | "ctrlKey" | "
  * Normal-mode routing without DOM access. `lastG` is the timestamp of a
  * pending first `g` (0 = none); any other key except a bare modifier cancels
  * it. `typing` = focus is in a text field or a typeahead popup. `handled` =
- * the key belongs to bbium and must not reach VesnALIA or the page. A key in
+ * the key belongs to alium and must not reach VesnALIA or the page. A key in
  * `disabled` is not ours: it passes through untouched.
  */
 export function routeKey(
@@ -92,7 +92,7 @@ export function routeKey(
 const TYPEAHEAD = "[role=menu],[role=listbox]";
 // Contract with other plugins: a container with this attribute handles its own
 // keys (Kuri sidebar: j/k, G, gg, u). Plain keys typed inside it pass through.
-const PASSTHROUGH = "[data-bbium-passthrough]";
+const PASSTHROUGH = "[data-alium-passthrough]";
 
 /** Focus is somewhere that consumes letters; looks through shadow roots. */
 function isTyping(e: KeyboardEvent): boolean {
@@ -160,7 +160,7 @@ export function createKeys(): Keys {
   const hints = createHints(() => config.chars);
   const listeners = new AbortController();
   const style = document.createElement("style");
-  style.dataset.bbium = "";
+  style.dataset.alium = "";
   document.head.appendChild(style);
   let lastG = 0;
   let lastPointer: Element | null = null;

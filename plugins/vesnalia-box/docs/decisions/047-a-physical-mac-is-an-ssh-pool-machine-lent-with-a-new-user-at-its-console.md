@@ -56,7 +56,7 @@ What shapes the design:
   macOS 15 and later also confirm an app's screen capture with each user,
   again every 30 days, and keep the answer in the user's home.
 - **The SSH host pool** already lends Linux machines whole. Each box gets a
-  new user, `bbx-<generation>`, and the reset removes it and everything it
+  new user, `aliax-<generation>`, and the reset removes it and everything it
   left. The pool has a reset generation, owner markers that survive lost
   storage, out of service and return to service, jump hosts, restarts in
   the middle of a reset, and a doctor check per machine.
@@ -98,7 +98,7 @@ Where it fits:
 **A Mac is a machine of the SSH host pool.**
 
 - Its line in the machines setting names macOS kinds:
-  `mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop`.
+  `mac-mini aliabox-admin@192.0.2.30 macos,macos-desktop`.
 - Its setup is `setup/ssh-pool/setup-mac.sh`, and its helper is
   `machine-mac.sh`, installed as `/usr/local/libexec/alia-box/machine`. The
   helper has the Linux helper's commands, input, output and exit codes,
@@ -120,7 +120,7 @@ Where it fits:
 
 - One box per Mac, of either kind. A `macos` box is the same box without
   the display and computer use.
-- The reset makes the next box's user ahead: `bbx-<generation>`, a
+- The reset makes the next box's user ahead: `aliax-<generation>`, a
   standard user hidden from the login window, in the `_developer` group,
   with a random password only root on the Mac can read. The helper gives
   the password to `sysadminctl` on stdin and writes `/etc/kcpassword`
@@ -348,7 +348,7 @@ Boxes are not a security boundary between each other or from the Mac.
 **Reach and enrolment.**
 
 - alia-box reaches each Mac over SSH as the pool's admin user,
-  `bbbox-admin`, directly or through a jump host, with its host keys in
+  `aliabox-admin`, directly or through a jump host, with its host keys in
   settings. It reaches boxes as their user.
 - Reaching a Mac through VesnALIA, as Docker on a VesnALIA machine
   ([042](042-a-docker-host-can-be-a-alia-machine.md)), would need no inbound
@@ -367,7 +367,7 @@ Mac mini with 16 GB fits the small and medium macOS presets. Several
 
 **Setup.** `setup-mac.sh`, run with sudo on the Mac:
 
-- makes `bbbox-admin`, which takes only alia-box's key and may run only the
+- makes `aliabox-admin`, which takes only alia-box's key and may run only the
   helper as root, as on Linux;
 - installs the helper, the home template, Cua Driver, Homebrew with Git,
   GitHub CLI and Node.js, and a launch daemon that clears VesnALIA's daemon lock

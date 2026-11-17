@@ -57,7 +57,7 @@ export function FilmStrip({ identity, onBack }: { identity: string; onBack: () =
       </div>
 
       {entries === null ? (
-        <div className="bbxs-skeleton m-4 h-40" aria-hidden />
+        <div className="aliaxs-skeleton m-4 h-40" aria-hidden />
       ) : entries.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-6">
           <p className="text-sm text-muted-foreground">
@@ -65,7 +65,7 @@ export function FilmStrip({ identity, onBack }: { identity: string; onBack: () =
           </p>
         </div>
       ) : (
-        <ul className="bbxs-scroll flex min-h-0 flex-1 gap-3 p-4">
+        <ul className="aliaxs-scroll flex min-h-0 flex-1 gap-3 p-4">
           {entries.map((entry) => (
             <li key={entry.frame.id} className="w-40 shrink-0 space-y-1">
               <img

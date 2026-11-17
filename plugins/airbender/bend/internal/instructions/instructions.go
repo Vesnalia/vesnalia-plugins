@@ -6,12 +6,12 @@
 // and taking beads' own generated instructions out of both.
 //
 // Why: `bend setup instructions` writes them, from a terminal or for the
-// Airbender tab, so both write the same thing (bead-bb-c9l.9). Before, the
+// Airbender tab, so both write the same thing (bead-alia-c9l.9). Before, the
 // text and these rules were in the plugin.
 //
 // Design notes:
 //   - Airbender's rules are the only instructions about issues a repository
-//     gives its agents (bead-bb-c9l.8, the decision in bead-bb-c9l.7). Beads
+//     gives its agents (bead-alia-c9l.8, the decision in bead-alia-c9l.7). Beads
 //     writes instructions of its own, for its own way of working: "close the
 //     issue when you are done", and a "session close protocol" printed at the
 //     start of every session. That is the opposite of the workflow here, so
@@ -71,18 +71,18 @@ const (
 // replacing it would throw their text away; such a block is left alone and
 // the owner is told.
 var shippedBefore = []string{
-	// Version 1: before bead-bb-c9l.8, with the sentence about taking
+	// Version 1: before bead-alia-c9l.8, with the sentence about taking
 	// precedence over beads' own instructions.
 	"bcf270710cd722894f17bde63d8aa46944be782add371ede632d38a44bb47783",
 	// Version 2, in its two wordings: the one that named beads' own
 	// commands, and the one made from it for other trackers
-	// (bead-bb-c9l.6). Both are replaced by the one wording that names
-	// bend for every tracker (bead-bb-c9l.10).
+	// (bead-alia-c9l.6). Both are replaced by the one wording that names
+	// bend for every tracker (bead-alia-c9l.10).
 	"f3d93fe8206c7d41aa1897ae447556394acc3cb55dae0db3477f62f6994285bc",
 	"6b9afa03138a5c40b192fa122019b7f09f224501aa838d86bc9230f9f844c828",
 	// Version 3: the one wording that names bend, which said to read
 	// FACTS.md at the start. Version 4 names it as a link, the place to
-	// store facts and memories, not loaded for the agent (bead-bb-c9l.12).
+	// store facts and memories, not loaded for the agent (bead-alia-c9l.12).
 	"412b7449d6f699b31fdb1a9ec348ac72f5f51cbf6393de21969ca2cf4999faee",
 }
 
@@ -113,7 +113,7 @@ func VersionIn(agentsFile string) int {
 
 // RulesBlock gives the rules block of a text, markers included; "" when it
 // has none. For telling whether Airbender's rules themselves changed, apart
-// from the rest of the file (bead-bb-25p).
+// from the rest of the file (bead-alia-25p).
 func RulesBlock(text string) string {
 	block, _ := rulesBlock(text)
 	return block
@@ -145,7 +145,7 @@ func fingerprint(text string) string {
 // alone; "behind", a block the owner changed that names an earlier version
 // than this one, or none: theirs too, but the rules have changed since, and
 // the owner is asked whether to take the current ones or keep theirs
-// (bead-bb-c9l.10: "instructions of a vendor will be updating over time. So
+// (bead-alia-c9l.10: "instructions of a vendor will be updating over time. So
 // we need the ability to reduce the drift"); "none", no block.
 func RulesIn(agentsFile string) string {
 	block, ok := rulesBlock(agentsFile)
@@ -320,7 +320,7 @@ func BeadsLeftovers(text string) []string {
 const (
 	// agentsImport and factsImport are the lines that make Claude Code load
 	// AGENTS.md and the facts file from a CLAUDE.md. Setup wrote them until
-	// bead-bb-c9l.12; it now only takes them out (see WithoutImports).
+	// bead-alia-c9l.12; it now only takes them out (see WithoutImports).
 	agentsImport = "@" + AgentsFile
 	factsImport  = "@" + FactsFile
 )
@@ -382,7 +382,7 @@ func HasImports(text string) bool {
 // the facts file.
 //
 // Why: setup used to add them to a CLAUDE.md so that Claude Code loaded
-// the rules and the facts. The owner (bead-bb-c9l.12): "@FACTS.md should
+// the rules and the facts. The owner (bead-alia-c9l.12): "@FACTS.md should
 // not exist in any of the repositories", and the rules are in AGENTS.md
 // itself or reached by a link. Through a CLAUDE.md that is a link to
 // AGENTS.md the lines were written into AGENTS.md, a file importing

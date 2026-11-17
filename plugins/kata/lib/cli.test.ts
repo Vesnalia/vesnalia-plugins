@@ -43,7 +43,7 @@ function setup(bound: Binding["kataProject"] = null) {
   const client = {
     listIssues: record("listIssues", () => [
       issue("aaa1", { priority: 3 }),
-      issue("bbb2", { priority: 1, labels: ["bug"], owner: "z" }),
+      issue("aliab2", { priority: 1, labels: ["bug"], owner: "z" }),
     ]),
     getIssue: record("getIssue", (_p: number, ref: string) => show(ref)),
     createIssue: record("createIssue", () => ({ issue: issue("new1"), changed: true })),
@@ -93,7 +93,7 @@ test("list: flags map onto the daemon query; output sorted by priority", async (
     method: "listIssues",
     args: [12, { status: "all", priority: 1, owner: "z", labels: ["bug", "hw", "ui"], limit: 2001 }],
   });
-  assert.equal(r.stdout, "P1 bbb2  issue bbb2  [bug] @z\nP3 aaa1  issue aaa1\n");
+  assert.equal(r.stdout, "P1 aliab2  issue aliab2  [bug] @z\nP3 aaa1  issue aaa1\n");
 });
 
 test("list: unbound thread → error names --project; bound thread needs no flag", async () => {
@@ -105,7 +105,7 @@ test("list: unbound thread → error names --project; bound thread needs no flag
   assert.match(envelope.error.hint, /--project grippify/);
   const bound = setup(scratch);
   const ok = await bound.run(["list", "--limit", "1"]);
-  assert.equal(ok.stdout, "P1 bbb2  issue bbb2  [bug] @z\n… 1 more (raise --limit, max 500)\n");
+  assert.equal(ok.stdout, "P1 aliab2  issue aliab2  [bug] @z\n… 1 more (raise --limit, max 500)\n");
   // --owner and --unowned are exclusive at parse time
   assert.equal((await bound.run(["list", "--owner", "a", "--unowned"])).exitCode, 1);
 });
@@ -182,8 +182,8 @@ test("close: reason flags, validation before the daemon, dry run", async () => {
   });
   assert.match(dry.stdout ?? "", /dry run: alia-plugin-kata-scratch#aaa1 would close as done/);
   // duplicate carries its target as evidence
-  await run(["close", "aaa1", "--duplicate-of", "bbb2", "-m", "same as the other one, really"]);
-  assert.deepEqual((calls.at(-2)!.args[3] as { evidence: unknown }).evidence, [{ type: "duplicate-of", issue_ref: "bbb2" }]);
+  await run(["close", "aaa1", "--duplicate-of", "aliab2", "-m", "same as the other one, really"]);
+  assert.deepEqual((calls.at(-2)!.args[3] as { evidence: unknown }).evidence, [{ type: "duplicate-of", issue_ref: "aliab2" }]);
 });
 
 test("refs: qualified and ULID refs pick their own project", async () => {

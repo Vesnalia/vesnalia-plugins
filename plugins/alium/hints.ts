@@ -383,7 +383,7 @@ export function createHints(getChars: () => string): HintMode {
     box.setAttribute("aria-hidden", "true");
     hints = targets.map(({ el, rect }, i) => {
       const node = document.createElement("span");
-      node.className = "bbium-hint";
+      node.className = "alium-hint";
       const typedNode = node.appendChild(document.createElement("span"));
       typedNode.className = "typed";
       const rest = node.appendChild(document.createElement("span"));
@@ -412,7 +412,7 @@ export function createHints(getChars: () => string): HintMode {
       const spot = labelSpot(rect, h.iconOnly);
       live.push({ h, spot });
       if (!show) continue;
-      h.node.className = spot.mode === "corner" ? "bbium-hint" : `bbium-hint ${spot.mode}`;
+      h.node.className = spot.mode === "corner" ? "alium-hint" : `alium-hint ${spot.mode}`;
       h.node.style.left = `${spot.x}px`;
       h.node.style.top = `${spot.y}px`;
       h.typed.textContent = typed;

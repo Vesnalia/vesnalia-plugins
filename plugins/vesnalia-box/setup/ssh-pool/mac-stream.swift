@@ -1,21 +1,21 @@
-// bb-box-stream: a Mac box's desktop as H.264 video, for the panel's video
+// alia-box-stream: a Mac box's desktop as H.264 video, for the panel's video
 // client (060). It speaks the subset of Selkies' WebSocket protocol that
-// bb-box's relay and the panel use, so a Mac's desktop shows as a Linux
+// alia-box's relay and the panel use, so a Mac's desktop shows as a Linux
 // one's does:
 //
-//   bb-box-stream serve [socket]     captures and serves, in the desktop session
-//   bb-box-stream connect [socket]   joins stdin and stdout to the server,
+//   alia-box-stream serve [socket]     captures and serves, in the desktop session
+//   alia-box-stream connect [socket]   joins stdin and stdout to the server,
 //                                    starting it first if it is not running
-//   bb-box-stream qemu <port> <socket> [<qmp socket>]
+//   alia-box-stream qemu <port> <socket> [<qmp socket>]
 //                                    serves a Windows VM's desktop from QEMU's
 //                                    VNC server on the Mac's loopback (#865),
 //                                    or, given the VM's QMP socket, from QEMU's
 //                                    D-Bus display, the pointer through it too (#885)
-//   bb-box-stream attach <socket>    joins stdin and stdout to a running
+//   alia-box-stream attach <socket>    joins stdin and stdout to a running
 //                                    server, starting none
 //
-// The socket is ~/.bb-box/stream.sock by default, in a folder only the box
-// user can open, so only the box user's own commands reach it. bb-box's
+// The socket is ~/.alia-box/stream.sock by default, in a folder only the box
+// user can open, so only the box user's own commands reach it. alia-box's
 // relay opens each connection with `connect` over the box user's SSH, in the
 // desktop session, which carries an HTTP upgrade and then WebSocket frames.
 //
@@ -64,15 +64,15 @@ let IN_VM: Bool = {
 }()
 /** How long the server stays up with no client. */
 let IDLE_EXIT_SECONDS = 60.0
-/** BB_STREAM_TRACE=1 logs each pointer event's wait before it is posted. */
-let TRACE = ProcessInfo.processInfo.environment["BB_STREAM_TRACE"] == "1"
+/** ALIA_STREAM_TRACE=1 logs each pointer event's wait before it is posted. */
+let TRACE = ProcessInfo.processInfo.environment["ALIA_STREAM_TRACE"] == "1"
 
 func log(_ text: String) {
-  FileHandle.standardError.write("bb-box-stream: \(text)\n".data(using: .utf8)!)
+  FileHandle.standardError.write("alia-box-stream: \(text)\n".data(using: .utf8)!)
 }
 
 func defaultSocket() -> String {
-  return NSHomeDirectory() + "/.bb-box/stream.sock"
+  return NSHomeDirectory() + "/.alia-box/stream.sock"
 }
 
 // MARK: Unix sockets
@@ -137,7 +137,7 @@ func runConnect(_ path: String, start: Bool = true) -> Never {
     let folder = (path as NSString).deletingLastPathComponent
     try? FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
     // In a session of its own, so it outlives the connection that started it.
-    let executable = CommandLine.arguments[0].contains("/") ? CommandLine.arguments[0] : "/usr/local/bin/bb-box-stream"
+    let executable = CommandLine.arguments[0].contains("/") ? CommandLine.arguments[0] : "/usr/local/bin/alia-box-stream"
     let logPath = folder + "/stream.log"
     var actions: posix_spawn_file_actions_t?
     posix_spawn_file_actions_init(&actions)
@@ -189,7 +189,7 @@ final class Client: @unchecked Sendable {
   init(fd: Int32, id: Int) {
     self.fd = fd
     self.id = id
-    self.writes = DispatchQueue(label: "bb-box-stream.client.\(id)")
+    self.writes = DispatchQueue(label: "alia-box-stream.client.\(id)")
   }
 
   var behind: Bool {
@@ -328,7 +328,7 @@ let CLIPBOARD_CHUNK = 192 << 10
 
 // MARK: Input
 
-/** macOS virtual key codes of keys that type no character, by X keysym; as bb-box's mac-input.ts maps them. */
+/** macOS virtual key codes of keys that type no character, by X keysym; as alia-box's mac-input.ts maps them. */
 let SPECIAL: [Int: CGKeyCode] = [
   0xff08: 51, 0xff09: 48, 0xff0d: 36, 0xff1b: 53, 0xffff: 117, 0xff50: 115, 0xff51: 123, 0xff52: 126, 0xff53: 124,
   0xff54: 125, 0xff55: 116, 0xff56: 121, 0xff57: 119, 0xff8d: 76, 0xffe1: 56, 0xffe2: 60, 0xffe3: 59, 0xffe4: 62,
@@ -355,7 +355,7 @@ let MODIFIERS: [CGKeyCode: CGEventFlags] = [
 ]
 
 /**
- * The character a key types as itself, not as a key on a US keyboard, or nil to send it as the key; as bb-box's
+ * The character a key types as itself, not as a key on a US keyboard, or nil to send it as the key; as alia-box's
  * mac-input.ts decides: one the keyboard has no key for, such as é, or whose key needs another Shift than the one held,
  * as from a French keyboard. Never while Command or Control is held, so a shortcut stays keys, nor for Space.
  */
@@ -609,7 +609,7 @@ func cursorPNG(_ image: NSImage) -> Data? {
 // MARK: Server
 
 final class Server: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sendable {
-  private let queue = DispatchQueue(label: "bb-box-stream.server")
+  private let queue = DispatchQueue(label: "alia-box-stream.server")
   private var clients: [Int: Client] = [:]
   private var nextClient = 0
   private var stream: SCStream?
@@ -634,7 +634,7 @@ final class Server: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Senda
   private var clipboardParts: [String: Data] = [:]
   /** Each image coming in parts: its type, as cbs named it. */
   private var binaryTypes: [String: String] = [:]
-  /** Whether the video draws the cursor in, as bb-box's BB_CURSOR last said: not while a person holds control. */
+  /** Whether the video draws the cursor in, as alia-box's ALIA_CURSOR last said: not while a person holds control. */
   private var showsCursor = true
   /** The running capture's configuration, to change showsCursor without a restart. */
   private var configuration: SCStreamConfiguration?
@@ -700,7 +700,7 @@ final class Server: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Senda
         for client in self.clients.values { client.text(message) }
       }
     }
-    // A new display mode, such as bb-box-display's 2x: the capture starts again at its size.
+    // A new display mode, such as alia-box-display's 2x: the capture starts again at its size.
     Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [self] _ in
       guard let mode = CGDisplayCopyDisplayMode(CGMainDisplayID()) else { return }
       queue.async {
@@ -788,8 +788,8 @@ final class Server: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Senda
     case "m2":
       inputCame()
       DispatchQueue.main.async { self.input.wheel(next: number(3), count: number(4)) }
-    case "BB_CURSOR":
-      // bb-box: the cursor out of the video while a person holds control, whose browser shows its shape.
+    case "ALIA_CURSOR":
+      // alia-box: the cursor out of the video while a person holds control, whose browser shows its shape.
       let on = number(1) != 0
       queue.async { [self] in
         guard on != showsCursor else { return }
@@ -900,7 +900,7 @@ final class Server: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Senda
       let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
       let mainId = CGMainDisplayID()
       guard let display = content.displays.first(where: { $0.displayID == mainId }) ?? content.displays.first else {
-        throw NSError(domain: "bb-box-stream", code: 1, userInfo: [NSLocalizedDescriptionKey: "no display"])
+        throw NSError(domain: "alia-box-stream", code: 1, userInfo: [NSLocalizedDescriptionKey: "no display"])
       }
       let mode = CGDisplayCopyDisplayMode(display.displayID)
       let width = mode?.pixelWidth ?? display.width
@@ -1044,7 +1044,7 @@ final class Server: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Senda
 /**
  * A peer-to-peer D-Bus connection over a socket, as QEMU's D-Bus display speaks it (#885): EXTERNAL authentication as
  * the client, Unix file descriptors, and little-endian messages of the few shapes the display uses. No GLib, so nothing
- * ties bb-box-stream to Nix's or Homebrew's paths on the Mac.
+ * ties alia-box-stream to Nix's or Homebrew's paths on the Mac.
  */
 final class DbusPeer: @unchecked Sendable {
   struct Message {
@@ -1336,7 +1336,7 @@ final class DbusDisplay: QemuDesktop, @unchecked Sendable {
   static let XRGB8888: UInt32 = 0x2002_0888
 
   init?(qmp: String) {
-    // QMP takes one client at a time: bb-box's own scripts may hold it for a moment.
+    // QMP takes one client at a time: alia-box's own scripts may hold it for a moment.
     var control: Int32 = -1
     for _ in 0..<50 {
       if let fd = connectUnix(qmp) {
@@ -1353,8 +1353,8 @@ final class DbusDisplay: QemuDesktop, @unchecked Sendable {
     var pair: [Int32] = [0, 0], listening: [Int32] = [0, 0]
     guard socketpair(AF_UNIX, SOCK_STREAM, 0, &pair) == 0, socketpair(AF_UNIX, SOCK_STREAM, 0, &listening) == 0 else { return nil }
     guard DbusDisplay.qmp(control, nil, "{\"execute\":\"qmp_capabilities\"}"),
-      DbusDisplay.qmp(control, pair[1], "{\"execute\":\"getfd\",\"arguments\":{\"fdname\":\"bb-box-stream\"}}"),
-      DbusDisplay.qmp(control, nil, "{\"execute\":\"add_client\",\"arguments\":{\"protocol\":\"@dbus-display\",\"fdname\":\"bb-box-stream\"}}")
+      DbusDisplay.qmp(control, pair[1], "{\"execute\":\"getfd\",\"arguments\":{\"fdname\":\"alia-box-stream\"}}"),
+      DbusDisplay.qmp(control, nil, "{\"execute\":\"add_client\",\"arguments\":{\"protocol\":\"@dbus-display\",\"fdname\":\"alia-box-stream\"}}")
     else {
       log("QEMU did not take a D-Bus display client: is it running with -display dbus,p2p=yes?")
       return nil
@@ -1582,7 +1582,7 @@ final class DbusDisplay: QemuDesktop, @unchecked Sendable {
 /**
  * An RFB client of a Windows VM's QEMU VNC server on the Mac's loopback, which asks for no password (#865). It takes
  * raw pixels in BGRX, as VideoToolbox takes them, and the desktop's new size. It asks for no cursor: QEMU draws none
- * into the picture, and the guest's bb-box-stream.exe sends the pointer's shape.
+ * into the picture, and the guest's alia-box-stream.exe sends the pointer's shape.
  */
 final class RfbClient: QemuDesktop, @unchecked Sendable {
   let fd: Int32
@@ -1609,7 +1609,7 @@ final class RfbClient: QemuDesktop, @unchecked Sendable {
     guard connected == 0, readExactly(fd, 12) != nil, writeAll(fd, Data("RFB 003.008\n".utf8)),
       let count = readExactly(fd, 1), let types = readExactly(fd, Int(count[0])), types.contains(1), writeAll(fd, Data([1])),
       let result = readExactly(fd, 4), result == Data([0, 0, 0, 0]),
-      // Shared: bb-box's VNC viewers stay connected beside it.
+      // Shared: alia-box's VNC viewers stay connected beside it.
       writeAll(fd, Data([1])), let serverInit = readExactly(fd, 24)
     else {
       Darwin.close(fd)
@@ -1709,11 +1709,11 @@ final class RfbClient: QemuDesktop, @unchecked Sendable {
  * A Windows VM's desktop as video, from QEMU's VNC server (#865): Desktop Duplication in the guest gives a few frames a
  * second on the Mac's VirtIO GPU, where QEMU reads the framebuffer from the host at its own refresh. It takes the
  * pointer too, for QEMU's tablet, as the VNC display gives it: QEMU refreshes its picture at once again only when a
- * client sends it input. Keys, the clipboard and the pointer's shape go through the guest's bb-box-stream.exe. It ends
+ * client sends it input. Keys, the clipboard and the pointer's shape go through the guest's alia-box-stream.exe. It ends
  * when QEMU's server does, as when the VM stops, and when no client has come for IDLE_EXIT_SECONDS.
  */
 final class QemuServer: @unchecked Sendable {
-  private let queue = DispatchQueue(label: "bb-box-stream.qemu")
+  private let queue = DispatchQueue(label: "alia-box-stream.qemu")
   private let port: Int
   private var rfb: RfbClient?
   private var clients: [Int: Client] = [:]
@@ -1988,7 +1988,7 @@ final class QemuServer: @unchecked Sendable {
       case "STOP_VIDEO":
         queue.async { client.wantsVideo = false }
       default:
-        // Keys, the clipboard and the rest go to the guest's bb-box-stream.exe, not here.
+        // Keys, the clipboard and the rest go to the guest's alia-box-stream.exe, not here.
         break
       }
     }
@@ -2018,7 +2018,7 @@ case "attach":
   runConnect(path, start: false)
 case "qemu":
   guard arguments.count == 4 || arguments.count == 5, let port = Int(arguments[2]), port > 0, port < 65536 else {
-    FileHandle.standardError.write("usage: bb-box-stream qemu <port> <socket> [<qmp socket>]\n".data(using: .utf8)!)
+    FileHandle.standardError.write("usage: alia-box-stream qemu <port> <socket> [<qmp socket>]\n".data(using: .utf8)!)
     exit(2)
   }
   let socketPath = arguments[3]
@@ -2033,6 +2033,6 @@ case "serve":
   server.start(path: path)
   RunLoop.main.run()
 default:
-  FileHandle.standardError.write("usage: bb-box-stream serve|connect|attach [socket], or qemu <port> <socket>\n".data(using: .utf8)!)
+  FileHandle.standardError.write("usage: alia-box-stream serve|connect|attach [socket], or qemu <port> <socket>\n".data(using: .utf8)!)
   exit(2)
 }

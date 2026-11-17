@@ -3,10 +3,10 @@ import base64, pathlib, re, sys, urllib.parse
 HERE = pathlib.Path(__file__).parent
 A = HERE / "assets"
 OUT = HERE.parent / "themes" / "e-corp.css"
-# bb refuses a plugin theme whose CSS exceeds CUSTOM_THEME_CSS_MAX_LENGTH, and
+# alia refuses a plugin theme whose CSS exceeds CUSTOM_THEME_CSS_MAX_LENGTH, and
 # it measures css.length -- characters, not bytes -- against 256e3. Checking
 # 262144 bytes is wrong on both counts and passes files the host will reject
-# with a bare "Invalid theme id" at `bb theme set`.
+# with a bare "Invalid theme id" at `alia theme set`.
 CAP = 256000
 
 def b64(p): return base64.b64encode((A/p).read_bytes()).decode()

@@ -70,7 +70,7 @@ test("the settings parse with their defaults, the token is a secret field, and a
   const config = parsed.config;
   assert.deepEqual(
     [config.location, config.serverType, config.hostImage, config.mostHosts, config.idleMinutes, config.monthlyLimitEurosBeforeVat, config.sshFrom, config.docker.images.linux, config.docker.images["linux-desktop"]],
-    ["nbg1", "cpx42", "ubuntu-26.04", 2, 30, 20, [], "bbbox/linux:1", null],
+    ["nbg1", "cpx42", "ubuntu-26.04", 2, 30, 20, [], "aliabox/linux:1", null],
   );
   const none = parseHetznerPart({ id: "hetzner", hosts: [], fields: { token: "a".repeat(64), "monthly-limit-eur": 0, "host-image": "123456", "ssh-from": "203.0.113.7/32, 2001:db8::/64" } });
   assert.ok(none.ok);
@@ -165,7 +165,7 @@ test("VesnALIA Box makes its SSH key and firewall once, labelled for the install
   const reach = new HostReach({ api, storage, installId: "test", tailnet: () => tailnet, sshFrom: ["198.51.100.4/32"] });
   const key = await reach.hetznerSshKeyId();
   assert.equal(await reach.hetznerSshKeyId(), key);
-  assert.deepEqual([...fake.sshKeys.values()].map((each) => [each.name, each.labels]), [["alia-box-test", { "bbbox-install": "test" }]]);
+  assert.deepEqual([...fake.sshKeys.values()].map((each) => [each.name, each.labels]), [["alia-box-test", { "aliabox-install": "test" }]]);
   assert.match([...fake.sshKeys.values()][0]!.publicKey, /^ssh-ed25519 \S+ alia-box$/);
   assert.match((await storage.get<{ privateKey: string }>("ssh-key"))!.privateKey, /OPENSSH PRIVATE KEY/);
   const firewall = await reach.firewallId();

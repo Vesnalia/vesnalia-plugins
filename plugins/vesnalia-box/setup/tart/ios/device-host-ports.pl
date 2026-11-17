@@ -4,7 +4,7 @@ use IO::Select;
 use IO::Socket::IP;
 use Socket qw(SOMAXCONN);
 
-my $words = "This port is shared by every box on this iOS host. Use your box's ports, from BB_PORT_BASE.\n";
+my $words = "This port is shared by every box on this iOS host. Use your box's ports, from ALIA_PORT_BASE.\n";
 my $answer = join "\r\n",
   "HTTP/1.1 421 Misdirected Request",
   "Content-Type: text/plain; charset=utf-8",

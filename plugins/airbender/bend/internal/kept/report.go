@@ -9,7 +9,7 @@
 // any, that the owner has to be told of.
 //
 // Why: syncing is bend's, for every tracker, and whoever shows it (a
-// terminal, the Airbender tab) only shows (bead-bb-c9l.16). The log is in
+// terminal, the Airbender tab) only shows (bead-alia-c9l.16). The log is in
 // the repository's shared git folder so that all of them read the same
 // one. The owner asked that failures be shown prominently, "because ... it
 // can mess up the data": what counts as trouble is decided here once, so a

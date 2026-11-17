@@ -1,4 +1,4 @@
-// Fullscreen crew editor (BBP-80), laid out like Graph Studio's editor: the
+// Fullscreen crew editor (ALIAP-80), laid out like Graph Studio's editor: the
 // topology canvas on the left (click a member to edit it, drag from the dot
 // under a member to another member to draw a link), the selected member's
 // accordions on the right, and Save writing the crew file.

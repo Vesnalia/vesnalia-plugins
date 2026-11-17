@@ -6,14 +6,14 @@ const MASK = "M8.3779 4.74233C8.14438 4.60607 7.85562 4.60607 7.6221 4.74233L5.3
 const CHECK = "M10.7803 5.28033C11.0732 4.98744 11.0732 4.51256 10.7803 4.21967C10.4874 3.92678 10.0126 3.92678 9.7197 4.21967L5.75 8.18934L4.28033 6.71967C3.98744 6.42678 3.51256 6.42678 3.21967 6.71967C2.92678 7.01256 2.92678 7.48744 3.21967 7.78033L5.21967 9.7803C5.51256 10.0732 5.98744 10.0732 6.28033 9.7803L10.7803 5.28033Z";
 
 export function ProjectGlyph({ glyph, className }: { glyph: ProjectGlyphSpec; className?: string }) {
-  const maskId = `bbl-project-${useId().replace(/:/g, "")}`;
+  const maskId = `alial-project-${useId().replace(/:/g, "")}`;
   const color = glyph.color ?? "currentColor";
   return (
     <svg
       width="16"
       height="16"
       viewBox="-1 -1 16 16"
-      className={`bbl-neutral bbl-glyph shrink-0 ${className ?? ""}`}
+      className={`alial-neutral alial-glyph shrink-0 ${className ?? ""}`}
       aria-hidden="true"
       focusable="false"
     >

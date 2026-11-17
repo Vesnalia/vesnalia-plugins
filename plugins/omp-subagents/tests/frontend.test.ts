@@ -181,15 +181,15 @@ describe("roster store: realtime filtering", () => {
     h.store.request("t2");
     h.store.request("t3");
     await h.answer(roster("aaa"));
-    await h.answer(roster("bbb"));
+    await h.answer(roster("aliab"));
     await h.answer(roster(null));
     h.calls.length = 0;
-    h.store.handleChanged({ sessionUuid: "bbb" });
+    h.store.handleChanged({ sessionUuid: "aliab" });
     assert.deepEqual(h.calls, ["t2"]);
-    await h.answer(roster("bbb"));
+    await h.answer(roster("aliab"));
     h.store.handleChanged({ sessionUuid: "alia" });
-    h.store.handleChanged({ sessionUuid: "BBB" });
-    h.store.handleChanged({ sessionUuid: "2026-01-01T00-00-00-000Z_bbb" });
+    h.store.handleChanged({ sessionUuid: "ALIAB" });
+    h.store.handleChanged({ sessionUuid: "2026-01-01T00-00-00-000Z_aliab" });
     assert.deepEqual(h.calls, ["t2"], "prefix / case / timestamped forms do not match");
   });
 

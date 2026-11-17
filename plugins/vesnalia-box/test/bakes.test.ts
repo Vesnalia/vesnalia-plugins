@@ -40,7 +40,7 @@ const ok = (stdout = ""): RunResult => ({ exitCode: 0, stdout, stderr: "", timed
 
 /** A backend whose image operations keep builds in memory, and whose boxes answer as `answer` says. */
 function backend(id = "proxmox-lxc", options: { startsFrom?: boolean; fail?: (script: string) => RunResult | null; stuck?: Set<string> } = {}) {
-  const builds: ImageBuild[] = [standard("9000", "linux", "build.20261001-020000-aaaa"), standard("9001", "linux-desktop", "build.20261001-020000-bbbb")];
+  const builds: ImageBuild[] = [standard("9000", "linux", "build.20261001-020000-aaaa"), standard("9001", "linux-desktop", "build.20261001-020000-aliabb")];
   const ran: { box: string; script: string }[] = [];
   const removed: string[] = [];
   let next = 7000;

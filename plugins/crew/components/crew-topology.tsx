@@ -115,7 +115,7 @@ export function MemberNode({ data }: NodeProps<Node<MemberNodeData>>) {
           {member.key}
         </span>
         {/* Status first, then shift, then model, as before — the line the tests and the eye read.
-            BBP-79: the model reads as a chip (mockup 1), not bare text in the sentence. */}
+            ALIAP-79: the model reads as a chip (mockup 1), not bare text in the sentence. */}
         <div data-member-meta className="relative line-clamp-2 break-words text-[10px] leading-[14px] text-muted-foreground">
           {activityLabel(view, member.thread)}
           {member.shift !== null ? ` · Shift ${member.shift}` : ""} ·{" "}
@@ -299,7 +299,7 @@ export function useHostColorMode(): [React.RefObject<HTMLDivElement | null>, Col
     if (lightness !== null) setMode(lightness < 0.5 ? "dark" : "light");
   }, []);
   useLayoutEffect(measure);
-  // BBP-81: VesnALIA switches the theme by class on <html> without re-rendering the
+  // ALIAP-81: VesnALIA switches the theme by class on <html> without re-rendering the
   // plugin; measured only on render, the canvas kept the theme it opened in.
   useEffect(() => {
     if (typeof MutationObserver !== "function") return;
@@ -372,7 +372,7 @@ export function TopologyCanvas({
     const flow = flows.find((entry) => entry.id === activeFlow);
     return flow ? [flow.from, flow.to] : [];
   }, [flows, activeFlow]);
-  // BBP-48: every possible link (crew.yaml's assigns_to, works_with, escalates_to,
+  // ALIAP-48: every possible link (crew.yaml's assigns_to, works_with, escalates_to,
   // can_read) stays drawn quietly on any panel width; only the active message
   // flows are narrowed down on a phone, where the structure is too dense.
   const drawnFlows = useMemo(() => shownFlows(flows, recent, activeFlow), [flows, recent, activeFlow]);

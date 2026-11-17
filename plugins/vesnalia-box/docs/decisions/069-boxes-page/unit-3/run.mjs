@@ -16,7 +16,7 @@ const startedAt = plan.startedAt ?? Date.now();
 if (!plan.startedAt) writeFileSync(join(RUN, "plan.json"), JSON.stringify({ ...plan, startedAt }, null, 2));
 
 const note = (event, data = {}) => appendFileSync(join(RUN, "events.jsonl"), `${JSON.stringify({ at: Date.now(), minute: Math.round((Date.now() - startedAt) / MINUTE), event, ...data })}\n`);
-const bbc = async (...args) => (await run(join(HOME, "bbc"), args, { encoding: "utf8", timeout: 300_000, maxBuffer: 16 * 1024 * 1024 })).stdout;
+const aliac = async (...args) => (await run(join(HOME, "aliac"), args, { encoding: "utf8", timeout: 300_000, maxBuffer: 16 * 1024 * 1024 })).stdout;
 
 function stat(pid) {
   try {
@@ -45,7 +45,7 @@ function historyFile() {
       else if (entry.name === "box-history.db") found.push(path);
     }
   };
-  walk(join(HOME, "bbdata"), 0);
+  walk(join(HOME, "aliadata"), 0);
   return found[0] ?? null;
 }
 
@@ -139,19 +139,19 @@ execs.stdout.on("data", (chunk) => appendFileSync(join(RUN, "docker-execs.log"),
 const role = (name) => boxes.find((box) => box.role === name);
 
 const steps = [
-  { at: 60, name: "history off, for the A/B of cost", run: () => bbc("box", "option", "set", "monitor.boxHistory=false") },
-  { at: 120, name: "history on again", run: () => bbc("box", "option", "set", "monitor.boxHistory=true") },
-  { at: 150, name: "stop a box for an hour", run: () => bbc("box", "stop", role("stopped").name, "--thread", plan.thread, "--force") },
-  { at: 210, name: "start it again", run: () => bbc("box", "start", role("stopped").name, "--thread", plan.thread) },
+  { at: 60, name: "history off, for the A/B of cost", run: () => aliac("box", "option", "set", "monitor.boxHistory=false") },
+  { at: 120, name: "history on again", run: () => aliac("box", "option", "set", "monitor.boxHistory=true") },
+  { at: 150, name: "stop a box for an hour", run: () => aliac("box", "stop", role("stopped").name, "--thread", plan.thread, "--force") },
+  { at: 210, name: "start it again", run: () => aliac("box", "start", role("stopped").name, "--thread", plan.thread) },
   { at: 240, name: "load a box for 10 minutes", run: () => run("docker", ["exec", "-d", role("loaded").container, "sh", "-c", "timeout 600 yes > /dev/null & timeout 600 yes > /dev/null & wait"]) },
   { at: 270, name: "cut a box's host off for an hour", run: () => run("sudo", ["iptables", "-I", "OUTPUT", "-d", role("cut").address, "-j", "DROP"]) },
   { at: 330, name: "join it again", run: () => run("sudo", ["iptables", "-D", "OUTPUT", "-d", role("cut").address, "-j", "DROP"]) },
   { at: 360, name: "five pages open on Live for an hour", run: () => spawn("node", [join(HOME, "live", "pages.mjs"), "3600"], { stdio: "ignore", detached: true }).unref() },
-  { at: 480, name: "the Monitor off for 10 minutes", run: () => bbc("box", "option", "set", "monitor.enabled=false") },
-  { at: 490, name: "the Monitor on again", run: () => bbc("box", "option", "set", "monitor.enabled=true") },
-  { at: 500, name: "history off for 3 minutes", run: () => bbc("box", "option", "set", "monitor.boxHistory=false") },
-  { at: 503, name: "history on after 3 minutes", run: () => bbc("box", "option", "set", "monitor.boxHistory=true") },
-  { at: 720, name: "alia-box restarted half way", run: () => bbc("plugin", "reload", "alia-box") },
+  { at: 480, name: "the Monitor off for 10 minutes", run: () => aliac("box", "option", "set", "monitor.enabled=false") },
+  { at: 490, name: "the Monitor on again", run: () => aliac("box", "option", "set", "monitor.enabled=true") },
+  { at: 500, name: "history off for 3 minutes", run: () => aliac("box", "option", "set", "monitor.boxHistory=false") },
+  { at: 503, name: "history on after 3 minutes", run: () => aliac("box", "option", "set", "monitor.boxHistory=true") },
+  { at: 720, name: "alia-box restarted half way", run: () => aliac("plugin", "reload", "alia-box") },
   { at: 1440, name: "24 hours", run: async () => undefined },
 ];
 

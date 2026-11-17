@@ -3,16 +3,16 @@
 (cell E7).
 
 What it does, in three steps:
-  start    makes one private scratch Syns repository and one bb project for the run (never the design tree or the
+  start    makes one private scratch Syns repository and one alia project for the run (never the design tree or the
            code repo), pushes each scenario's seed, and starts one fresh session per scenario, one at a time: each in
            a fresh checkout of that repository (`syns pull`) in a new temporary folder, the brief verbatim and nothing
-           else (`bb thread spawn --prompt-file`). It waits for all of them (`bb thread wait`) and packs each session
+           else (`alia thread spawn --prompt-file`). It waits for all of them (`alia thread wait`) and packs each session
            into `<out>/<scenario>/`: `rubric.md` (the scenario file), `seed/`, `chat.md`, `actions.md`, `page/` (the
            page as saved), `renders/` (wide and narrow, light and dark, over loopback) and `meta.json`.
   log      after the calling agent has run the scenario grader (scenarios/GRADER.md) once per packet (it writes
            `grade.md`), appends the counts with the plugin version and the contract hash to the scenario log (--log),
            newest first.
-  cleanup  deletes the scratch repository (only one `verify/scratch.py` made), the bb project with its threads, and
+  cleanup  deletes the scratch repository (only one `verify/scratch.py` made), the alia project with its threads, and
            the sessions' checkouts.
 The repository is made and deleted by `verify/scratch.py`; a `start` that fails before every session is running
 deletes it (and the project, and any session it started) itself, so a failed start leaves nothing to clean up.
@@ -26,7 +26,7 @@ the one run found an instruction that contradicted itself. A run in the product'
 the product's files, so the project is neutral.
 When it does not: a round that touches no contract file and no agent-facing text.
 
-How to run (python3, standard library; calls `syns` and `bb`), from a clone of synsdev/syns-bb-plugin:
+How to run (python3, standard library; calls `syns` and `alia`), from a clone of synsdev/syns-alia-plugin:
   python3 verify/run-scenarios start <run-id> --code <code checkout> --spec <spec folder> [--only 01,02] [--out DIR]
                                 [--timeout DUR]
   (the calling agent: for each packet, one fresh subagent briefed with scenarios/GRADER.md and the packet's path, nothing else)
@@ -101,13 +101,13 @@ def contract_hash(code, spec):
 
 
 def versions(code):
-    rc, out, _ = sh(["bb", "plugin", "list"])
+    rc, out, _ = sh(["alia", "plugin", "list"])
     inst = dict(re.findall(r"^(syns|thread-pages)@(\S+)", out, re.M))
     cli = sh(["syns", "--version"])[1].strip()
-    bbv = sh(["bb", "--version"])[1].strip()
+    aliav = sh(["alia", "--version"])[1].strip()
     git = sh(["git", "-C", code, "rev-parse", "--short", "HEAD"])[1].strip()
     return {"plugin": json.load(open(os.path.join(code, "package.json")))["version"], "code_head": git,
-            "installed": inst.get("syns"), "thread_pages": inst.get("thread-pages"), "cli": cli, "bb": bbv}
+            "installed": inst.get("syns"), "thread_pages": inst.get("thread-pages"), "cli": cli, "alia": aliav}
 
 
 def scenarios(only):
@@ -151,16 +151,16 @@ def spawn(repo, project, brief, title, checkout):
     """One fresh session: a checkout of `repo` at a path never used before (syns keeps working-copy state per path,
     so a reused one can inherit a stale state), then the brief file verbatim as its prompt. Returns the thread id."""
     must(["syns", "pull", repo, checkout])
-    out = must(["bb", "thread", "spawn", "--json", "--project", project, "--provider", "claude-code",
+    out = must(["alia", "thread", "spawn", "--json", "--project", project, "--provider", "claude-code",
                 "--permission-mode", "full", "--title", title, "--prompt-file", brief, "--environment", checkout])
     try:
         return json.loads(out)["id"]
     except (ValueError, KeyError, TypeError):
-        raise SystemExit(f"run-scenarios: bb thread spawn named no thread: {out.strip()[:200]}")
+        raise SystemExit(f"run-scenarios: alia thread spawn named no thread: {out.strip()[:200]}")
 
 
 def thread_state(thr):
-    rc, out, _ = sh(["bb", "thread", "show", thr, "--json"])
+    rc, out, _ = sh(["alia", "thread", "show", thr, "--json"])
     try:
         st = json.loads(out or "{}") if rc == 0 else {}
     except ValueError:
@@ -169,13 +169,13 @@ def thread_state(thr):
 
 
 def wait_all(threads, timeout):
-    """Each session until it is idle (`bb thread wait`), within one deadline. A session in error is a failure; one
+    """Each session until it is idle (`alia thread wait`), within one deadline. A session in error is a failure; one
     that did not end in time, or ended its turn with background agents still running, a stall. Returns (exit code,
     words)."""
     end = time.time() + duration(timeout)
     for thr in threads:
         left = max(1, int(end - time.time()))
-        rc, out, err = sh(["bb", "thread", "wait", thr, "--status", "idle", "--timeout", f"{left}s"])
+        rc, out, err = sh(["alia", "thread", "wait", thr, "--status", "idle", "--timeout", f"{left}s"])
         st = thread_state(thr)
         if st.get("status") == "error":
             return EXIT_FAIL, f"{thr} ended in an error"
@@ -195,25 +195,25 @@ def duration(text):
 
 
 def discard(repo, folder, project, threads, checkouts=None):
-    """Undoes what a start made: its sessions and their checkouts, the bb project, the repository (by owner/name, so
+    """Undoes what a start made: its sessions and their checkouts, the alia project, the repository (by owner/name, so
     a purged temp folder does not stop it). Returns one line; "NOT deleted" in it when something is left. One already
     gone is done."""
     for t in threads:
-        sh(["bb", "thread", "stop", t])
+        sh(["alia", "thread", "stop", t])
     if checkouts and os.path.basename(checkouts).startswith("run-scenarios-checkouts-"):
         shutil.rmtree(checkouts, ignore_errors=True)
     parts = []
     if project:
-        rc, out, err = sh(["bb", "project", "delete", project, "--yes"])
+        rc, out, err = sh(["alia", "project", "delete", project, "--yes"])
         ok = rc == 0 or gone(err + out)
-        parts.append(f"bb project {project} {'deleted' if ok else 'NOT deleted: ' + (err or out).strip()[:160]}")
+        parts.append(f"alia project {project} {'deleted' if ok else 'NOT deleted: ' + (err or out).strip()[:160]}")
     rc, words = scratch.delete(repo, folder)
     parts.append(f"{repo} {'deleted' if rc == 0 else 'NOT deleted: ' + words[:200]}")
     return "; ".join(parts)
 
 
 def transcript(thread):
-    rc, out, _ = sh(["bb", "thread", "log", thread, "--json", "--all"])
+    rc, out, _ = sh(["alia", "thread", "log", thread, "--json", "--all"])
     ids = {(e.get("data") or {}).get("providerThreadId") for e in (json.loads(out) if rc == 0 else [])} - {None}
     for i in ids:
         hits = glob.glob(os.path.expanduser(f"~/.claude/projects/*/{i}.jsonl"))
@@ -264,12 +264,12 @@ def documents(folder):
 
 
 def render(thread, folder):
-    """Each document of the page over loopback in bb's own headless browser: wide and narrow, light and dark."""
-    base = os.environ.get("BB_SERVER_URL", "http://127.0.0.1:38886")
-    machine = json.loads(must(["bb", "machine", "list", "--json"]))
+    """Each document of the page over loopback in alia's own headless browser: wide and narrow, light and dark."""
+    base = os.environ.get("ALIA_SERVER_URL", "http://127.0.0.1:38886")
+    machine = json.loads(must(["alia", "machine", "list", "--json"]))
     host = next((m.get("id") for m in (machine if isinstance(machine, list) else machine.get("machines", []))
-                 if m.get("status") == "connected"), None)     # the loopback URL is this bb's: its own machine
-    sess = json.loads(must(["bb", "browser-automation", "open", "--backend", "local", "--headless", "--machine", host,
+                 if m.get("status") == "connected"), None)     # the loopback URL is this alia's: its own machine
+    sess = json.loads(must(["alia", "browser-automation", "open", "--backend", "local", "--headless", "--machine", host,
                             "--json"]))["id"]
     os.makedirs(os.path.join(folder, "renders"), exist_ok=True)
     made = []
@@ -284,14 +284,14 @@ def render(thread, folder):
                       f"await p.emulateMediaFeatures([{{name:'prefers-color-scheme',value:'{scheme}'}}]);"
                       f"await p.goto({json.dumps(url)}); await new Promise(r=>setTimeout(r,8000));"
                       f"await p.shot({{type:'jpeg',maxEdge:{max(w, h)},quality:70}}); undefined")
-                rc, out, err = sh(["bb", "browser-automation", "run", sess, "--timeout", "60s", "--json", "--script", js])
+                rc, out, err = sh(["alia", "browser-automation", "run", sess, "--timeout", "60s", "--json", "--script", js])
                 imgs = (json.loads(out).get("images") or []) if rc == 0 and out.strip().startswith("{") else []
                 if imgs:
                     dst = os.path.join(folder, "renders", (tag + "-" if tag else "") + f"{w}-{scheme}.jpg")
                     shutil.copy(imgs[0]["path"], dst)
                     made.append(os.path.basename(dst))
     finally:
-        sh(["bb", "browser-automation", "close", sess])
+        sh(["alia", "browser-automation", "close", sess])
     return made
 
 
@@ -321,7 +321,7 @@ def cmd_start(a):
     repo, folder = make_scratch([s["seed"] for s in scs])
     pid, threads, started, checkouts = None, {}, False, None
     try:
-        proj = json.loads(must(["bb", "project", "create", "--name", repo.split("/", 1)[1], "--root", folder, "--json"]))
+        proj = json.loads(must(["alia", "project", "create", "--name", repo.split("/", 1)[1], "--root", folder, "--json"]))
         pid = proj.get("id") or (proj.get("project") or {}).get("id")
         # The project is neutral, the machine is not: user-level skills reach every fresh session and can take a
         # brief away from the contract (the first baseline's 02). The record names them so a grade can be read
@@ -331,7 +331,7 @@ def cmd_start(a):
         run = {"run": a.run, "started": now(), "user_skills": skills, "repo": repo, "folder": folder, "project": pid,
                "contract_hash": chash, **ver, "scenarios": {}}
         json.dump(run, open(os.path.join(out, "run.json"), "w"), indent=1)
-        print(f"scratch: {repo} at {folder}, bb project {pid}; contract {chash}; plugin {ver['plugin']} "
+        print(f"scratch: {repo} at {folder}, alia project {pid}; contract {chash}; plugin {ver['plugin']} "
               f"(installed {ver['installed']})")
         checkouts = tempfile.mkdtemp(prefix="run-scenarios-checkouts-")    # outside any checkout, new to this run
         run["checkouts"] = checkouts
@@ -358,7 +358,7 @@ def cmd_start(a):
                 json.dump(run, open(os.path.join(out, "run.json"), "w"), indent=1)
     rc, words = wait_all(list(threads.values()), a.timeout)
     print(("" if rc == EXIT_OK else "run-scenarios: ") + words)
-    storage = os.path.dirname(os.environ.get("BB_THREAD_STORAGE", os.path.expanduser("~/.bb/thread-storage/x")))
+    storage = os.path.dirname(os.environ.get("ALIA_THREAD_STORAGE", os.path.expanduser("~/.vesnalia/thread-storage/x")))
     for s in scs:
         thr = threads[s["id"]]
         pk = os.path.join(out, s["id"])
@@ -411,8 +411,8 @@ def cmd_log(a):
     head = (f"## {run['started'][:10]} — scenarios on {run['plugin']} (contract `{run['contract_hash']}`): "
             f"{sum('| pass |' in r for r in rows)} of {len(rows)} pass\n\n"
             f"`verify/run-scenarios` run `{run['run']}`: code `{run['code_head']}`, installed syns {run['installed']}, "
-            f"Thread Pages {run['thread_pages']}, {run['cli']}, bb {run['bb']}. Neutral scratch repository "
-            f"`{run['repo']}` and its bb project, one fresh session per scenario, graded by the scenario grader "
+            f"Thread Pages {run['thread_pages']}, {run['cli']}, alia {run['alia']}. Neutral scratch repository "
+            f"`{run['repo']}` and its alia project, one fresh session per scenario, graded by the scenario grader "
             f"(`scenarios/GRADER.md`) from the packet only.\n\n"
             "| Scenario | Session | Must | Should | Red flags | Verdict |\n| --- | --- | --- | --- | --- | --- |\n"
             + "\n".join(rows) + "\n" + (f"\n{a.note.strip()}\n" if a.note else ""))

@@ -1,6 +1,6 @@
 node_modules/
 dist/
-bb-plugin-template/
+alia-plugin-template/
 .env
 .env.*
 *.log

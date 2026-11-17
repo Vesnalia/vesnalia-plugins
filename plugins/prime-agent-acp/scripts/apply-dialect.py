@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Apply the prime-agent ACP dialect to the vendored provider bridge.
 
-The plugin vendors @get-bb/plugin-sdk's provider-bridge-acp (vendored/
-provider-bridge-acp.js, copied from node_modules) because bb does not expose
+The plugin vendors @vesnalia/plugin-sdk's provider-bridge-acp (vendored/
+provider-bridge-acp.js, copied from node_modules) because alia does not expose
 a dialect registry yet: a provider plugin can only pick one of the shipped
 dialects (generic/cursor/grok). We inject dialect/prime-agent-dialect.js into
-the vendored copy so every `bb plugin build`/reload rebuild includes it
+the vendored copy so every `alia plugin build`/reload rebuild includes it
 natively -- no post-build patching.
 
 The script also applies lifecycle patches to the vendored bridge
@@ -18,8 +18,8 @@ Usage:
     python3 scripts/apply-dialect.py --check  # verify vendor/ matches a fresh apply
 
 Re-vendor after an SDK bump:
-    npm install @get-bb/plugin-sdk@<version>
-    cp node_modules/@get-bb/plugin-sdk/dist/provider-bridge-acp.js vendor/
+    npm install @vesnalia/plugin-sdk@<version>
+    cp node_modules/@vesnalia/plugin-sdk/dist/provider-bridge-acp.js vendor/
     python3 scripts/apply-dialect.py
 
 The script fails loudly when its anchors no longer match the SDK layout --
@@ -68,7 +68,7 @@ var DIALECT_IDS_BY_COMMAND = {
   opencode: OPENCODE_ACP_DIALECT.id,
   "prime-agent": PRIME_AGENT_ACP_DIALECT.id,
   "prime-agent-acp-launch": PRIME_AGENT_ACP_DIALECT.id,
-  "bb-prime-launch.mjs": PRIME_AGENT_ACP_DIALECT.id
+  "alia-prime-launch.mjs": PRIME_AGENT_ACP_DIALECT.id
 };"""
 
 DEFAULT_BLOCK = """      default:
@@ -164,12 +164,12 @@ SESSION_NEW_ANCHOR = """      sessionId = newSession.sessionId;
 SESSION_NEW_HOOK = """      sessionId = newSession.sessionId;
       const primeAgentSessionNewMeta = newSession._meta;
       if (primeAgentIsRecord(primeAgentSessionNewMeta)) {
-        dialect.sessionNew?.(primeAgentSessionNewMeta, { threadId: bbThreadId });
+        dialect.sessionNew?.(primeAgentSessionNewMeta, { threadId: aliaThreadId });
       }
       await selectAcpNativeModel({"""
 
 # --- PRIME_AGENT_KEEP_ALIVE -------------------------------------------------
-# Interrupt-stops (the bb Stop button sends thread/stop with intent
+# Interrupt-stops (the alia Stop button sends thread/stop with intent
 # "interrupt") keep the agent process and its in-agent session history alive;
 # the next thread/start with kind:"resume" and the same providerThreadId
 # reuses the live session instead of spawning a replacement without history.
@@ -261,7 +261,7 @@ async function interruptSession(session) {
 
 setInterval(() => {
   const now = Date.now();
-  for (const keptSession of [...sessionsByBbThreadId.values()]) {
+  for (const keptSession of [...sessionsByAliaThreadId.values()]) {
     if (keptSession.primeAgentIdleKeptAt === void 0) {
       continue;
     }
@@ -280,8 +280,8 @@ setInterval(() => {
 
 START_AGENT_HEAD_ANCHOR = """async function startAgentSession(request) {
   const params = request.params;
-  const bbThreadId = params.threadId;
-  const existing = sessionsByBbThreadId.get(bbThreadId);
+  const aliaThreadId = params.threadId;
+  const existing = sessionsByAliaThreadId.get(aliaThreadId);
   if (existing) {
     await stopSession(existing);
   }"""
@@ -303,7 +303,7 @@ START_AGENT_HEAD_REPLACED = KEEP_ALIVE_HELPERS + START_AGENT_HEAD_ANCHOR.replace
   ) {
     existing.primeAgentIdleKeptAt = void 0;
     sendNotification(BRIDGE_NOTIFICATION_METHODS.threadIdentity, {
-      threadId: bbThreadId,
+      threadId: aliaThreadId,
       providerThreadId: existing.providerThreadId,
       sessionRestorable: existing.supportsLoadSession
     });
@@ -315,7 +315,7 @@ START_AGENT_HEAD_REPLACED = KEEP_ALIVE_HELPERS + START_AGENT_HEAD_ANCHOR.replace
 )
 
 THREAD_STOP_CASE_ANCHOR = """    case "thread/stop": {
-      const session = sessionsByBbThreadId.get(request.params.threadId);
+      const session = sessionsByAliaThreadId.get(request.params.threadId);
       if (session) {
         if (request.params.intent === "release") {
           await releaseSession(session);
@@ -328,7 +328,7 @@ THREAD_STOP_CASE_ANCHOR = """    case "thread/stop": {
     }"""
 
 THREAD_STOP_CASE_REPLACED = """    case "thread/stop": {
-      const session = sessionsByBbThreadId.get(request.params.threadId);
+      const session = sessionsByAliaThreadId.get(request.params.threadId);
       if (session) {
         if (request.params.intent === "release") {
           await releaseSession(session);
@@ -349,8 +349,8 @@ IMAGE_SUPPORT_REPLACED = IMAGE_SUPPORT_ANCHOR + r"""
     const primeAgentAgentVersion = primeAgentIsRecord(primeAgentAgentInfo) && typeof primeAgentAgentInfo.version === "string" ? primeAgentAgentInfo.version : void 0;
     if (primeAgentVersionUnsupported(primeAgentAgentVersion)) {
       emitStartNotification(ACP_WARNING_METHOD, {
-        threadId: bbThreadId,
-        summary: `Prime Agent ${primeAgentAgentVersion} is older than the minimum supported ${PRIME_AGENT_MIN_SUPPORTED_VERSION}; update with \`bb prime-agent install --yes\`.`
+        threadId: aliaThreadId,
+        summary: `Prime Agent ${primeAgentAgentVersion} is older than the minimum supported ${PRIME_AGENT_MIN_SUPPORTED_VERSION}; update with \`alia prime-agent install --yes\`.`
       });
     }"""
 
@@ -358,7 +358,7 @@ HEADER_RULE = "=" * 76
 
 
 def sdk_package_json() -> dict:
-    pkg = ROOT / "node_modules" / "@get-bb" / "plugin-sdk" / "package.json"
+    pkg = ROOT / "node_modules" / "@get-alia" / "plugin-sdk" / "package.json"
     if not pkg.exists():
         raise SystemExit(f"SDK package.json not found at {pkg}; run npm install first")
     return json.loads(pkg.read_text(encoding="utf-8"))
@@ -368,7 +368,7 @@ def generated_header(sdk_version: str) -> str:
     lines = [
         "// " + HEADER_RULE,
         "// VENDORED FILE -- DO NOT EDIT BY HAND.",
-        f"// Source: @get-bb/plugin-sdk@{sdk_version} dist/provider-bridge-acp.js",
+        f"// Source: @vesnalia/plugin-sdk@{sdk_version} dist/provider-bridge-acp.js",
         "//         + prime-agent ACP dialect injected by scripts/apply-dialect.py",
         f"// Generated: {datetime.date.today().isoformat()}",
         "// Re-generate after an SDK bump: see the header in scripts/apply-dialect.py",
@@ -441,7 +441,7 @@ def main() -> None:
     if "--check" in sys.argv:
         # Verify the vendored file matches what this script would generate from
         # the SDK copy in node_modules right now (header excluded).
-        fresh = ROOT / "node_modules" / "@get-bb" / "plugin-sdk" / "dist" / "provider-bridge-acp.js"
+        fresh = ROOT / "node_modules" / "@get-alia" / "plugin-sdk" / "dist" / "provider-bridge-acp.js"
         if not fresh.exists():
             raise SystemExit(f"SDK bridge not found at {fresh}; run npm install first")
         expected = build_patched_source(dialect_source, fresh.read_text(encoding="utf-8"))
@@ -449,13 +449,13 @@ def main() -> None:
         header_end = actual.find("// " + HEADER_RULE, actual.find("// VENDORED FILE"))
         actual_body = actual[actual.find("\n", header_end) + 1 :].lstrip("\n") if header_end > 0 else actual
         if actual_body == expected:
-            print(f"vendor/ is up to date with @get-bb/plugin-sdk@{sdk_version}")
+            print(f"vendor/ is up to date with @vesnalia/plugin-sdk@{sdk_version}")
             return
         if V3_MARKER not in actual:
             raise SystemExit("vendor/ is missing the dialect (V3 marker absent) -- run apply")
         raise SystemExit(
-            f"vendor/ drifts from @get-bb/plugin-sdk@{sdk_version}: re-vendor with "
-            "`cp node_modules/@get-bb/plugin-sdk/dist/provider-bridge-acp.js vendor/ "
+            f"vendor/ drifts from @vesnalia/plugin-sdk@{sdk_version}: re-vendor with "
+            "`cp node_modules/@vesnalia/plugin-sdk/dist/provider-bridge-acp.js vendor/ "
             "&& python3 scripts/apply-dialect.py`"
         )
 

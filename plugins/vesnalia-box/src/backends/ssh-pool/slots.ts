@@ -399,7 +399,7 @@ export class PoolSlots implements SlotLender {
     const timeoutMs = this.#access.readyTimeoutMs() ?? SLOT_READY_MS;
     const command = await this.#access.command(machine, user);
     const ready = await waitUntilAnswers({ probe: (inner?: AbortSignal) => command.answers(inner) }, { timeoutMs, intervalMs: 250, signal, sleep: this.#access.sleep });
-    if (!ready) throw new Error(`The pool's Mac ${machine.name} lent slot user ${user}, but SSH as ${user} did not answer within ${Math.round(timeoutMs / 1000)} s. Check that Remote Login lets ${user} log in with a key: where sshd has AllowUsers or AllowGroups, it must allow bbd-*, as it does bbx-*.`);
+    if (!ready) throw new Error(`The pool's Mac ${machine.name} lent slot user ${user}, but SSH as ${user} did not answer within ${Math.round(timeoutMs / 1000)} s. Check that Remote Login lets ${user} log in with a key: where sshd has AllowUsers or AllowGroups, it must allow aliad-*, as it does aliax-*.`);
   }
 
   async #slotFor(machine: SshPoolMachine, box: BoxIdentity, signal: AbortSignal): Promise<Guest> {

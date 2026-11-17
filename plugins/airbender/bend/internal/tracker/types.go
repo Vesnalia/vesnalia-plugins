@@ -74,7 +74,7 @@ type Link struct {
 
 // DeferredStatus is the status of an issue set aside for later: Someday in
 // the tab. Beads' own word; on GitHub issues it is the label "someday" on an
-// open issue (bead-bb-26g).
+// open issue (bead-alia-26g).
 const DeferredStatus = "deferred"
 
 // Issue is an issue in the shape that is the same for every tracker.
@@ -337,7 +337,7 @@ type Tracker interface {
 	Reopen(id string) error
 	// Defer puts an open or in-progress issue in Someday (DeferredStatus):
 	// set aside for later, not ready and not closed. One already deferred
-	// is left as it is; refused for a closed one (bead-bb-26g).
+	// is left as it is; refused for a closed one (bead-alia-26g).
 	Defer(id string) error
 	// Undefer brings a deferred issue back to open; any other is left as
 	// it is.

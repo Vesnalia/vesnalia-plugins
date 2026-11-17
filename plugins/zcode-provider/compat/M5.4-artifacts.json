@@ -18,22 +18,22 @@
   },
   "aliaArtifacts": [
     {
-      "file": "Contents/Resources/app.asar/node_modules/bb-app/package.json",
+      "file": "Contents/Resources/app.asar/node_modules/alia-app/package.json",
       "size": 2775,
       "sha256": "0e5c47dd6dc47a59a4ccf8cb4fe6411df04ab99f536eacd5f4b0990d81ff0bf6"
     },
     {
-      "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+      "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
       "size": 8617318,
       "sha256": "c98d4ebaf5f9605df8ea4cf18d5097cb59b8e0f197c3156e33c29bc257b0f4bf"
     },
     {
-      "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+      "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
       "size": 636312,
       "sha256": "3d0fa45bed7b022cc211642aba366742e98c9520b1f9dbd6de52795b8bbef617"
     },
     {
-      "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-claude-code/dist/host.js",
+      "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/builtin-plugins/provider-claude-code/dist/host.js",
       "size": 2195386,
       "sha256": "aa036b02aedbb91591830711036e0881b752f9b9042fe84691b35143b2a67674"
     }

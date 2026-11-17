@@ -2,7 +2,7 @@
 // the driver agent in VesnALIA, delivered to tabs over VesnALIA realtime.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { baseURL, alia, callTool, CAT, CAT_CANVAS, closeMaxwell, DANCING, driverProjects, openBB, openMaxwell, openTab, ROTATING, spawnDriver } from './harness.mjs';
+import { baseURL, alia, callTool, CAT, CAT_CANVAS, closeMaxwell, DANCING, driverProjects, openALIA, openMaxwell, openTab, ROTATING, spawnDriver } from './harness.mjs';
 import { contentBounds, difference, freeze, sample } from './images.mjs';
 import { assertContinuous, assertSilent, audio, clickCat, MUSIC, position, waitForStarts } from './audio.mjs';
 import { assertDancing, assertRpm, DANCE_PERIOD, frames, largestStep, serveThreads, settledAfter, SETTLED, usage } from './motion.mjs';
@@ -55,7 +55,7 @@ const show = (threadId, ...options) => alia('thread', 'open', threadId, ...optio
 
 test('free and capture reach every connected tab; new and reloaded tabs start in panel mode', async (t) => {
   const { a, b } = await threads(t);
-  const { browser, context, page: first } = await openBB();
+  const { browser, context, page: first } = await openALIA();
   try {
     // The first tab views a thread of project A with its panel open, the
     // second a thread of project B with no panel.
@@ -107,7 +107,7 @@ test('free and capture reach every connected tab; new and reloaded tabs start in
 
 test('commands missed while disconnected are not replayed, and later ones apply', async (t) => {
   const { a } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     let offline = false;
     const sockets = new Set();
@@ -142,7 +142,7 @@ test('commands missed while disconnected are not replayed, and later ones apply'
 
 test('one free cat per tab follows navigation and split view, independent of panels', async (t) => {
   const { a, b } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await callTool(a, 'maxwell_free');
     await waitForFree(page);
@@ -188,7 +188,7 @@ test('one free cat per tab follows navigation and split view, independent of pan
 
 test('the free cat flies diagonally at a constant pace, bounces off the page edges and follows resizing', async (t) => {
   const { a } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await callTool(a, 'maxwell_free');
     await waitForFree(page);
@@ -271,7 +271,7 @@ async function focusRightPane(page) {
 
 test('the free cat follows the selected chat\'s context, and dances outside chats', async (t) => {
   const { a, b } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     served.context(a, usage(1));
@@ -328,7 +328,7 @@ test('the free cat follows the selected chat\'s context, and dances outside chat
 
 test('changing between dance and rotation takes about half a second, keeps the flight and survives rapid navigation', async (t) => {
   const { a, b } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     served.context(a, usage(1));
@@ -408,7 +408,7 @@ test('changing between dance and rotation takes about half a second, keeps the f
 
 test('clicking the free cat plays the music; free and capture never start, stop or restart it', async (t) => {
   const { a } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const music = [];
     await page.route(MUSIC, async (route) => {
@@ -455,7 +455,7 @@ test('clicking the free cat plays the music; free and capture never start, stop 
 
 test('the free cat is drawn above a VesnALIA dialog, and only its square takes the pointer', async (t) => {
   const { a } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await callTool(a, 'maxwell_free');
     await waitForFree(page);
@@ -493,7 +493,7 @@ test('the free cat is drawn above a VesnALIA dialog, and only its square takes t
 
 test('repeated freeing and capturing, hiding and disabling the plugin leave no scenes or loops behind', async (t) => {
   const { a } = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   const plugin = (path) => page.request.post(`${baseURL}/api/v1/plugins${path}`);
   try {
     await openMaxwell(page);

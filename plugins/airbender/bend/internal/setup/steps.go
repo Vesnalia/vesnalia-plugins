@@ -161,7 +161,7 @@ func ran(status int, what string) error {
 // In a folder that looks like someone else's project (State.Foreign), or
 // whose issues the owner already keeps elsewhere, only GitHub issues in
 // another repository go ahead as they are; anything else needs a yes, or
-// --anyway (bead-bb-dof).
+// --anyway (bead-alia-dof).
 //
 // Side effects: writes .bend.json at the repository's top folder; for
 // issues kept elsewhere, also sets bend.foreign in the clone's git config
@@ -181,7 +181,7 @@ func Tracker(dir string, terminal Terminal, answers Answers, options Options) (*
 		return &Outcome{Step: StepTracker, Message: "Already done: this repository uses " + trackerWords(current) + "."}, nil
 	}
 	// Choosing or switching the tracker writes .bend.json: only from the
-	// main folder on the main branch (bead-bb-25p).
+	// main folder on the main branch (bead-alia-25p).
 	if state.NotHere != "" {
 		return nil, tracker.Refused("%s", state.NotHere)
 	}
@@ -384,7 +384,7 @@ func Issues(dir string, terminal Terminal, answers Answers, options Options) (*O
 // switchJournalOn has beads keep the journal bend's sync reads, now, while
 // the repository is being set up: the setting is in .beads/config.yaml, a
 // tracked file, which setup's commit then takes, so no later sync changes a
-// tracked file (bead-bb-cnv). bend's sync still switches it on where it is
+// tracked file (bead-alia-cnv). bend's sync still switches it on where it is
 // off; failing here is not setup's failure.
 //
 // Side effects: runs `bd config set events-journal true` when it is off.
@@ -463,7 +463,7 @@ func Instructions(dir string, terminal Terminal, answers Answers, options Option
 		}
 	}
 	// A CLAUDE.md that is a file of its own, with no rules in it yet: the
-	// owner says what it is to be (bead-bb-c9l.12: "we can give user a
+	// owner says what it is to be (bead-alia-c9l.12: "we can give user a
 	// choice. Modify CLAUDE.md as well or make it a link").
 	claude := ""
 	if found.ClaudeFile == claudeIsFile && found.ClaudeRules == "none" {
@@ -617,7 +617,7 @@ func Instructions(dir string, terminal Terminal, answers Answers, options Option
 			}
 		}
 		// What beads' removal leaves, or an older beads' hook it does not
-		// know, when the whole file is beads' (bead-bb-cnv).
+		// know, when the whole file is beads' (bead-alia-cnv).
 		if err := removeLeftovers(state.home, beadsLeftovers(state.home)[one.id]); err != nil {
 			return nil, tracker.Refused("What beads' setup for %s left could not be deleted: %s", one.label, err)
 		}

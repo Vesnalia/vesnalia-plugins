@@ -10,7 +10,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const note = (record) => appendFileSync(out, `${JSON.stringify({ t: new Date().toISOString(), ...record })}\n`);
 const alia = (args) => {
   try {
-    return execFileSync(join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    return execFileSync(join(home, "aliac"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   } catch (error) {
     return `exit ${error.status}: ${error.stderr ?? ""}${error.stdout ?? ""}`;
   }
@@ -21,7 +21,7 @@ async function rpc(method, input = null) {
 }
 const reach = async () => (await rpc("allBoxes")).find((entry) => entry.box.name === name)?.box.reach;
 const dockerLines = () => readFileSync(join(home, "docker-calls.log"), "utf8").split("\n").filter(Boolean);
-const serverLog = () => readFileSync(join(home, "bbdata", "logs", "server.1.log"), "utf8").split("\n").filter((line) => line.includes("Reach check") && line.includes(`box ${name} `));
+const serverLog = () => readFileSync(join(home, "aliadata", "logs", "server.1.log"), "utf8").split("\n").filter((line) => line.includes("Reach check") && line.includes(`box ${name} `));
 
 writeFileSync(out, "");
 const dockerStart = dockerLines().length;

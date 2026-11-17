@@ -1,150 +1,150 @@
 /* Hallmark · shape: app screen · scope: component group (Workspace files) · genre: modern-minimal · theme: ALIA (kit tokens) · states: 8 · v1.0.0 */
 /* Workspace files: Snippet, File, FileImage, Logs, StackTrace, Transcript. Kit tokens only (see DESIGN.md). */
-/* Hallmark · waive 26b · controls are kit buttons and file links, never disabled · kit.css styles .bbui-btn:disabled; links here have no disabled state */
+/* Hallmark · waive 26b · controls are kit buttons and file links, never disabled · kit.css styles .aliaui-btn:disabled; links here have no disabled state */
 
-.bbui-files {
+.aliaui-files {
   display: grid;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   margin: 0;
   min-width: 0;
 }
-.bbui-files > * { min-width: 0; }
+.aliaui-files > * { min-width: 0; }
 
-.bbui-files-head {
+.aliaui-files-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--bbui-s1) var(--bbui-s3);
+  gap: var(--aliaui-s1) var(--aliaui-s3);
   min-width: 0;
 }
 
 /* Paths and file links */
-.bbui-files-file { display: flex; min-width: 0; }
-.bbui-files-fileref {
+.aliaui-files-file { display: flex; min-width: 0; }
+.aliaui-files-fileref {
   display: inline-flex;
   align-items: baseline;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   min-width: 0;
-  color: var(--bbui-ink);
+  color: var(--aliaui-ink);
 }
-.bbui-files-fileref > svg { flex: none; align-self: center; color: var(--bbui-muted); }
-.bbui-files-pathtext {
-  font-family: var(--bbui-mono);
+.aliaui-files-fileref > svg { flex: none; align-self: center; color: var(--aliaui-muted); }
+.aliaui-files-pathtext {
+  font-family: var(--aliaui-mono);
   font-size: 12px;
   overflow-wrap: anywhere;
   min-width: 0;
 }
-.bbui-files-dir { color: var(--bbui-muted); }
-.bbui-files-base { color: inherit; }
-.bbui-files-link {
+.aliaui-files-dir { color: var(--aliaui-muted); }
+.aliaui-files-base { color: inherit; }
+.aliaui-files-link {
   text-decoration: none;
-  border-radius: var(--bbui-r-control);
+  border-radius: var(--aliaui-r-control);
   outline: 2px solid transparent;
   outline-offset: 2px;
-  transition: color var(--bbui-micro) var(--bbui-ease-out), transform var(--bbui-micro) var(--bbui-ease-out);
+  transition: color var(--aliaui-micro) var(--aliaui-ease-out), transform var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-files-link:focus-visible { outline-color: var(--bbui-ring); transition: none; }
-.bbui-files-link:active { transform: translateY(1px); }
+.aliaui-files-link:focus-visible { outline-color: var(--aliaui-ring); transition: none; }
+.aliaui-files-link:active { transform: translateY(1px); }
 @media (hover: hover) {
-  .bbui-files-link:hover { color: var(--bbui-accent); }
-  .bbui-files-link:hover .bbui-files-dir { color: var(--bbui-accent); }
+  .aliaui-files-link:hover { color: var(--aliaui-accent); }
+  .aliaui-files-link:hover .aliaui-files-dir { color: var(--aliaui-accent); }
 }
 
 /* Snippet: a gutter beside ALIA's own highlighted code block, both on one 18px line grid. */
-.bbui-files-code {
+.aliaui-files-code {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
   overflow: hidden;
 }
-.bbui-files-code > .bbui-skeleton { grid-column: 1 / -1; padding: var(--bbui-s3); }
-.bbui-files-gutter {
+.aliaui-files-code > .aliaui-skeleton { grid-column: 1 / -1; padding: var(--aliaui-s3); }
+.aliaui-files-gutter {
   display: grid;
   align-content: start;
-  min-width: calc(var(--bbui-files-digits, 2ch) + var(--bbui-s4));
-  padding: var(--bbui-s2) var(--bbui-s2) var(--bbui-s2) var(--bbui-s3);
-  font-family: var(--bbui-mono);
+  min-width: calc(var(--aliaui-files-digits, 2ch) + var(--aliaui-s4));
+  padding: var(--aliaui-s2) var(--aliaui-s2) var(--aliaui-s2) var(--aliaui-s3);
+  font-family: var(--aliaui-mono);
   font-size: 12px;
   line-height: 18px;
-  color: var(--bbui-muted);
+  color: var(--aliaui-muted);
   text-align: right;
   user-select: none;
 }
-.bbui-files-markdown { min-width: 0; overflow-x: auto; }
-.bbui-files-markdown :where(pre) {
+.aliaui-files-markdown { min-width: 0; overflow-x: auto; }
+.aliaui-files-markdown :where(pre) {
   margin: 0;
-  padding: var(--bbui-s2) var(--bbui-s3);
+  padding: var(--aliaui-s2) var(--aliaui-s3);
   border: 0;
   border-radius: 0;
   background: transparent;
   white-space: pre;
 }
-.bbui-files-markdown :where(pre, pre code, pre span) {
-  font-family: var(--bbui-mono);
+.aliaui-files-markdown :where(pre, pre code, pre span) {
+  font-family: var(--aliaui-mono);
   font-size: 12px;
   line-height: 18px;
 }
 
 /* FileImage */
-.bbui-files-img {
+.aliaui-files-img {
   display: block;
   max-width: 100%;
   height: auto;
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
 }
-.bbui-files-imgskeleton { max-width: 100%; }
+.aliaui-files-imgskeleton { max-width: 100%; }
 
 /* Logs */
-.bbui-files-command { color: var(--bbui-ink); overflow-wrap: anywhere; }
-.bbui-files-exit { display: inline-flex; align-items: center; gap: var(--bbui-s1); font: var(--bbui-small); color: var(--bbui-ink); }
-.bbui-files-exit[data-ok="true"] > svg { color: var(--bbui-success-text); }
-.bbui-files-exit[data-ok="false"] > svg { color: var(--bbui-danger-text); }
-.bbui-files-logbody { display: grid; gap: var(--bbui-s2); min-width: 0; }
-.bbui-files-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bbui-s2); }
-.bbui-files-count { margin-left: auto; }
-.bbui-files-log {
+.aliaui-files-command { color: var(--aliaui-ink); overflow-wrap: anywhere; }
+.aliaui-files-exit { display: inline-flex; align-items: center; gap: var(--aliaui-s1); font: var(--aliaui-small); color: var(--aliaui-ink); }
+.aliaui-files-exit[data-ok="true"] > svg { color: var(--aliaui-success-text); }
+.aliaui-files-exit[data-ok="false"] > svg { color: var(--aliaui-danger-text); }
+.aliaui-files-logbody { display: grid; gap: var(--aliaui-s2); min-width: 0; }
+.aliaui-files-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--aliaui-s2); }
+.aliaui-files-count { margin-left: auto; }
+.aliaui-files-log {
   max-height: 360px;
   overflow: auto;
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
-  padding: var(--bbui-s2) 0;
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
+  padding: var(--aliaui-s2) 0;
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
-.bbui-files-log:focus-visible { outline-color: var(--bbui-ring); }
-.bbui-files-log > .bbui-skeleton { padding: 0 var(--bbui-s3); }
-.bbui-files-more {
+.aliaui-files-log:focus-visible { outline-color: var(--aliaui-ring); }
+.aliaui-files-log > .aliaui-skeleton { padding: 0 var(--aliaui-s3); }
+.aliaui-files-more {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--bbui-s2);
-  padding: 0 var(--bbui-s3) var(--bbui-s2);
+  gap: var(--aliaui-s2);
+  padding: 0 var(--aliaui-s3) var(--aliaui-s2);
 }
-.bbui-files-loglines { list-style: none; margin: 0; padding: 0; }
-.bbui-files-loglines > li {
+.aliaui-files-loglines { list-style: none; margin: 0; padding: 0; }
+.aliaui-files-loglines > li {
   display: grid;
-  grid-template-columns: var(--bbui-files-digits, 3ch) minmax(0, 1fr);
-  gap: var(--bbui-s3);
-  padding: 0 var(--bbui-s3);
-  font-family: var(--bbui-mono);
+  grid-template-columns: var(--aliaui-files-digits, 3ch) minmax(0, 1fr);
+  gap: var(--aliaui-s3);
+  padding: 0 var(--aliaui-s3);
+  font-family: var(--aliaui-mono);
   font-size: 12px;
   line-height: 18px;
 }
-.bbui-files-ln { color: var(--bbui-muted); text-align: right; user-select: none; }
-.bbui-files-lt { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
-.bbui-files-loglines > li[data-level="error"] { box-shadow: inset 2px 0 0 var(--bbui-danger); background: color-mix(in oklch, var(--bbui-danger) 8%, transparent); }
-.bbui-files-loglines > li[data-level="warn"] { box-shadow: inset 2px 0 0 var(--bbui-warning); background: color-mix(in oklch, var(--bbui-warning) 8%, transparent); }
-.bbui-files-loglines > li[data-current] { background: var(--bbui-accent-soft); }
-.bbui-files-lt [data-tone="bad"] { color: var(--bbui-danger-text); }
-.bbui-files-lt [data-tone="warn"] { color: var(--bbui-warning-text); }
-.bbui-files-lt [data-tone="good"] { color: var(--bbui-success-text); }
-.bbui-files-lt [data-tone="accent"] { color: var(--bbui-accent); }
-.bbui-files-lt [data-tone="muted"] { color: var(--bbui-muted); }
-.bbui-files-lt [data-bold] { font-weight: 560; }
+.aliaui-files-ln { color: var(--aliaui-muted); text-align: right; user-select: none; }
+.aliaui-files-lt { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+.aliaui-files-loglines > li[data-level="error"] { box-shadow: inset 2px 0 0 var(--aliaui-danger); background: color-mix(in oklch, var(--aliaui-danger) 8%, transparent); }
+.aliaui-files-loglines > li[data-level="warn"] { box-shadow: inset 2px 0 0 var(--aliaui-warning); background: color-mix(in oklch, var(--aliaui-warning) 8%, transparent); }
+.aliaui-files-loglines > li[data-current] { background: var(--aliaui-accent-soft); }
+.aliaui-files-lt [data-tone="bad"] { color: var(--aliaui-danger-text); }
+.aliaui-files-lt [data-tone="warn"] { color: var(--aliaui-warning-text); }
+.aliaui-files-lt [data-tone="good"] { color: var(--aliaui-success-text); }
+.aliaui-files-lt [data-tone="accent"] { color: var(--aliaui-accent); }
+.aliaui-files-lt [data-tone="muted"] { color: var(--aliaui-muted); }
+.aliaui-files-lt [data-bold] { font-weight: 560; }
 /* The level in words for screen readers; sighted readers get the rule beside the line. */
-.bbui-files-sr {
+.aliaui-files-sr {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -154,73 +154,73 @@
 }
 
 /* StackTrace */
-.bbui-files-section { display: grid; gap: var(--bbui-s2); min-width: 0; }
-.bbui-files-section + .bbui-files-section { padding-top: var(--bbui-s3); border-top: 1px solid var(--bbui-rule); }
-.bbui-files-error {
+.aliaui-files-section { display: grid; gap: var(--aliaui-s2); min-width: 0; }
+.aliaui-files-section + .aliaui-files-section { padding-top: var(--aliaui-s3); border-top: 1px solid var(--aliaui-rule); }
+.aliaui-files-error {
   display: flex;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   min-width: 0;
 }
-.bbui-files-section[data-first] .bbui-files-error { font: var(--bbui-head); }
-.bbui-files-erricon { flex: none; height: 1lh; color: var(--bbui-danger-text); } /* 1lh: centred on the first line */
-.bbui-files-type { font-family: var(--bbui-mono); font-size: 12px; color: var(--bbui-ink); }
-.bbui-files-frames { list-style: none; margin: 0; padding: 0; min-width: 0; }
-.bbui-files-frames .bbui-files-frames { margin-top: var(--bbui-s1); }
-.bbui-files-frame, .bbui-files-fold {
+.aliaui-files-section[data-first] .aliaui-files-error { font: var(--aliaui-head); }
+.aliaui-files-erricon { flex: none; height: 1lh; color: var(--aliaui-danger-text); } /* 1lh: centred on the first line */
+.aliaui-files-type { font-family: var(--aliaui-mono); font-size: 12px; color: var(--aliaui-ink); }
+.aliaui-files-frames { list-style: none; margin: 0; padding: 0; min-width: 0; }
+.aliaui-files-frames .aliaui-files-frames { margin-top: var(--aliaui-s1); }
+.aliaui-files-frame, .aliaui-files-fold {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 var(--bbui-s3);
-  padding: var(--bbui-s1) 0;
+  gap: 0 var(--aliaui-s3);
+  padding: var(--aliaui-s1) 0;
   min-width: 0;
 }
-.bbui-files-fold { display: block; }
-.bbui-files-frames > li + li { border-top: 1px solid var(--bbui-rule); }
-.bbui-files-fn { font-family: var(--bbui-mono); font-size: 12px; color: var(--bbui-ink); overflow-wrap: anywhere; min-width: 0; }
-.bbui-files-where { font-family: var(--bbui-mono); font-size: 12px; color: var(--bbui-muted); overflow-wrap: anywhere; }
-.bbui-files-frame[data-library] .bbui-files-fn { color: var(--bbui-muted); }
-.bbui-files-chevron { transition: transform var(--bbui-short) var(--bbui-ease-out); }
-.bbui-btn[aria-expanded="true"] .bbui-files-chevron { transform: rotate(90deg); }
+.aliaui-files-fold { display: block; }
+.aliaui-files-frames > li + li { border-top: 1px solid var(--aliaui-rule); }
+.aliaui-files-fn { font-family: var(--aliaui-mono); font-size: 12px; color: var(--aliaui-ink); overflow-wrap: anywhere; min-width: 0; }
+.aliaui-files-where { font-family: var(--aliaui-mono); font-size: 12px; color: var(--aliaui-muted); overflow-wrap: anywhere; }
+.aliaui-files-frame[data-library] .aliaui-files-fn { color: var(--aliaui-muted); }
+.aliaui-files-chevron { transition: transform var(--aliaui-short) var(--aliaui-ease-out); }
+.aliaui-btn[aria-expanded="true"] .aliaui-files-chevron { transform: rotate(90deg); }
 
 /* Transcript */
-.bbui-files-transcript { gap: var(--bbui-s4); }
-.bbui-files-track { display: grid; gap: var(--bbui-s1); min-width: 0; }
-.bbui-files-track + .bbui-files-track { padding-top: var(--bbui-s3); border-top: 1px solid var(--bbui-rule); }
-.bbui-files-trackhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--bbui-s1) var(--bbui-s3); }
-.bbui-files-wer { display: inline-flex; align-items: baseline; gap: var(--bbui-s2); }
-.bbui-files-words { margin: var(--bbui-s1) 0 0; line-height: 1.8; overflow-wrap: anywhere; }
-.bbui-files-speaker {
+.aliaui-files-transcript { gap: var(--aliaui-s4); }
+.aliaui-files-track { display: grid; gap: var(--aliaui-s1); min-width: 0; }
+.aliaui-files-track + .aliaui-files-track { padding-top: var(--aliaui-s3); border-top: 1px solid var(--aliaui-rule); }
+.aliaui-files-trackhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--aliaui-s1) var(--aliaui-s3); }
+.aliaui-files-wer { display: inline-flex; align-items: baseline; gap: var(--aliaui-s2); }
+.aliaui-files-words { margin: var(--aliaui-s1) 0 0; line-height: 1.8; overflow-wrap: anywhere; }
+.aliaui-files-speaker {
   display: inline-block;
-  margin-right: var(--bbui-s2);
-  font: var(--bbui-small);
+  margin-right: var(--aliaui-s2);
+  font: var(--aliaui-small);
   font-weight: 560;
-  color: var(--bbui-muted);
+  color: var(--aliaui-muted);
 }
-.bbui-files-speaker:not(:first-child), .bbui-files-words > span:not(:first-child) > .bbui-files-speaker { margin-left: var(--bbui-s1); }
-.bbui-files-at { font-weight: 400; }
-.bbui-files-transcript del, .bbui-files-legend del {
-  color: var(--bbui-muted);
+.aliaui-files-speaker:not(:first-child), .aliaui-files-words > span:not(:first-child) > .aliaui-files-speaker { margin-left: var(--aliaui-s1); }
+.aliaui-files-at { font-weight: 400; }
+.aliaui-files-transcript del, .aliaui-files-legend del {
+  color: var(--aliaui-muted);
   text-decoration: line-through;
-  text-decoration-color: var(--bbui-danger);
+  text-decoration-color: var(--aliaui-danger);
 }
-.bbui-files-transcript ins, .bbui-files-legend ins {
-  color: var(--bbui-ink);
+.aliaui-files-transcript ins, .aliaui-files-legend ins {
+  color: var(--aliaui-ink);
   text-decoration: underline;
-  text-decoration-color: var(--bbui-danger);
+  text-decoration-color: var(--aliaui-danger);
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }
-.bbui-files-sub {
-  color: var(--bbui-ink);
-  background: color-mix(in oklch, var(--bbui-danger) 14%, transparent);
-  border-radius: var(--bbui-r-control);
-  padding: 0 var(--bbui-s1);
+.aliaui-files-sub {
+  color: var(--aliaui-ink);
+  background: color-mix(in oklch, var(--aliaui-danger) 14%, transparent);
+  border-radius: var(--aliaui-r-control);
+  padding: 0 var(--aliaui-s1);
 }
-.bbui-files-sub ins { text-decoration: none; }
+.aliaui-files-sub ins { text-decoration: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bbui-files-link, .bbui-files-chevron { transition: none; }
+  .aliaui-files-link, .aliaui-files-chevron { transition: none; }
 }

@@ -10,7 +10,7 @@ function Probe({ bg }: { bg: string }) {
   );
 }
 
-describe("useHostColorMode (BBP-81)", () => {
+describe("useHostColorMode (ALIAP-81)", () => {
   it("follows a live theme switch on <html>, not only the theme at mount", async () => {
     const view = render(<Probe bg="rgb(255, 255, 255)" />);
     const probe = view.container.firstElementChild as HTMLElement;

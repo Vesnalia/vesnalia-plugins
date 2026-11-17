@@ -2,15 +2,15 @@
   <!-- A square cut from the top-right corner to the bottom-left one: day above
        the cut, night below it. The half that is on is filled and holds its
        symbol punched through; the other half is an empty outline with its
-       symbol drawn small. This file is the night face — the still version bb
+       symbol drawn small. This file is the night face — the still version alia
        shows in the catalog — and app.tsx flips the fill to the day half while
        the light appearance is on.
 
-       BB draws plugin artwork as a CSS mask, which keys off alpha coverage
+       ALIA draws plugin artwork as a CSS mask, which keys off alpha coverage
        only: the symbol on the filled half is cut out through an SVG mask
        rather than painted lighter, and nothing sits behind the shapes — a
        filled background would mask into one solid square. The drawing uses the
-       whole canvas, since bb fits the entire viewBox into the icon box. -->
+       whole canvas, since alia fits the entire viewBox into the icon box. -->
   <clipPath id="tt-square"><rect width="24" height="24" rx="5"/></clipPath>
   <clipPath id="tt-day"><polygon points="0,0 23,0 0,23"/></clipPath>
   <clipPath id="tt-night"><polygon points="24,1 24,24 1,24"/></clipPath>

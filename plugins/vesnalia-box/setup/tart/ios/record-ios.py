@@ -27,7 +27,7 @@ def ios_record(base, build_lines, build_id, built, pins, size_gib):
     tools = dict(base.get("tools", {}))
     tools["idb_companion"] = runtime["companion"]
     if encoders and encoders["software"]:
-        tools["bb-box-h264"] = encoders["software"]
+        tools["alia-box-h264"] = encoders["software"]
     return {
         "contract": base["contract"],
         "image": "standard",
@@ -39,7 +39,7 @@ def ios_record(base, build_lines, build_id, built, pins, size_gib):
         "os": base.get("os"),
         "aptSnapshot": None,
         "pins": pins,
-        "bbApp": base.get("bbApp"),
+        "aliaApp": base.get("aliaApp"),
         "tools": tools,
         "nvidia": None,
         "layer": None,

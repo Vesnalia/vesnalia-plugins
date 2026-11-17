@@ -1,4 +1,4 @@
-// BBP-83: the human saw dark fragments in the light theme — surfaces with a
+// ALIAP-83: the human saw dark fragments in the light theme — surfaces with a
 // hard-coded dark hex. Every colour in the plugin's UI comes from the VesnALIA theme.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -8,7 +8,7 @@ const root = join(__dirname, "..");
 const sources = ["app.tsx", ...readdirSync(join(root, "components")).filter((name) => name.endsWith(".tsx")).map((name) => `components/${name}`)];
 const HEX_CLASS = /\b(?:[a-z-]+:)*(?:bg|text|border|ring|fill|stroke|outline)-\[#[0-9a-fA-F]{3,8}\]/g;
 
-describe("theme tokens only (BBP-83)", () => {
+describe("theme tokens only (ALIAP-83)", () => {
   it("no UI source uses a hard-coded hex colour class", () => {
     const offenders = sources.flatMap((file) => (readFileSync(join(root, file), "utf8").match(HEX_CLASS) ?? []).map((hit) => `${file}: ${hit}`));
     expect(offenders).toEqual([]);
@@ -19,7 +19,7 @@ describe("theme tokens only (BBP-83)", () => {
   });
 });
 
-describe("activity dots follow the theme (BBP-83, BBP-95)", () => {
+describe("activity dots follow the theme (ALIAP-83, ALIAP-95)", () => {
   // --warning / --warning-text are host theme tokens (alia-theme-authoring skill, "Status" row:
   // --success --warning --warning-text --destructive --destructive-text), the amber counterpart
   // to --destructive / --destructive-text that the codebase already relies on.
@@ -29,7 +29,7 @@ describe("activity dots follow the theme (BBP-83, BBP-95)", () => {
     expect(activityTone("idle", ["error"])).toBe("var(--destructive)");
     // negative: idle without a reason is not destructive
     expect(activityTone("idle", [])).not.toBe("var(--destructive)");
-    // BBP-95: a decision reason (no error) is amber, not destructive
+    // ALIAP-95: a decision reason (no error) is amber, not destructive
     expect(activityTone("idle", ["merge-request"])).toBe("var(--warning)");
   });
 });

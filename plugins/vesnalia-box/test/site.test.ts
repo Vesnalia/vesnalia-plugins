@@ -340,7 +340,7 @@ test("the home page's setup prompt installs VesnALIA Box as the quick start does
 
   const cli = pages.find((page) => page.id === "reference/cli")!.markdown;
   const commands = [...cli.matchAll(/^## (alia box .+)$/gm)].map((match) => match[1]!);
-  const named = [...prompt.matchAll(/\bbb box [a-z][a-z-]*(?: [a-z][a-z-]*)?/g)].map((match) => match[0]);
+  const named = [...prompt.matchAll(/\aliab box [a-z][a-z-]*(?: [a-z][a-z-]*)?/g)].map((match) => match[0]);
   assert.ok(named.length >= 5);
   assert.deepEqual(named.filter((words) => !commands.some((usage) => words === usage || words.startsWith(`${usage} `))), [], "commands the CLI does not have");
   assert.ok(commands.includes("alia box setup docker"));

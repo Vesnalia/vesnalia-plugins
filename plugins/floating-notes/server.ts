@@ -926,7 +926,7 @@ export default async function plugin(alia: AliaPluginApi) {
   };
 
   /**
-   * Remove an attachment and strip its bbnote:// refs from the owning note's
+   * Remove an attachment and strip its alianote:// refs from the owning note's
    * body (derived fields recomputed). Null when the attachment didn't exist
    * (or its note is already gone).
    */

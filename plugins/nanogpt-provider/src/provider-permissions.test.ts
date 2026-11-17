@@ -129,9 +129,9 @@ describe("permission admission", () => {
       await start();
       await turn();
       await waitFor(() => calls().length === 1);
-      const response = await request("turn/steer", { ...turnParams(policy), expectedTurnId: "running", clientRequestId: "creq_bbbbbbbbbb" });
+      const response = await request("turn/steer", { ...turnParams(policy), expectedTurnId: "running", clientRequestId: "creq_aliabbbbbbbb" });
       expect(response.error?.code).toBe(-32602);
-      expect(deltas().some(d => d.kind === "input.accepted" && d.clientRequestId === "creq_bbbbbbbbbb")).toBe(false);
+      expect(deltas().some(d => d.kind === "input.accepted" && d.clientRequestId === "creq_aliabbbbbbbb")).toBe(false);
       answer(0);
       await waitFor(() => boundaries().length === 1);
       expect(boundaries()[0].status).toBe("completed");
@@ -395,7 +395,7 @@ describe("manual tool confirmation", () => {
     await start();
     await turn();
     await waitFor(() => calls().length === 1);
-    await request("turn/steer", { ...turnParams(), expectedTurnId: "running", clientRequestId: "creq_bbbbbbbbbb", options: { ...options(), providerOptions: { confirmToolCalls: true } } });
+    await request("turn/steer", { ...turnParams(), expectedTurnId: "running", clientRequestId: "creq_aliabbbbbbbb", options: { ...options(), providerOptions: { confirmToolCalls: true } } });
     answer(0);
     await waitFor(() => approvals().length === 1);
     await request("turn/steer", { ...turnParams(), expectedTurnId: "running", clientRequestId: "creq_cccccccccc", options: { ...options(), providerOptions: { confirmToolCalls: false } } });

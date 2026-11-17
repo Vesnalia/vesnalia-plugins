@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Extrae de bb.db (solo lectura) los eventos de turno de los hilos de Claude Code.
+"""Extrae de alia.db (solo lectura) los eventos de turno de los hilos de Claude Code.
 
-Corre en el servidor de bb. Salida: JSONL en stdout, una línea por hilo, sin títulos
+Corre en el servidor de alia. Salida: JSONL en stdout, una línea por hilo, sin títulos
 ni textos: ids, horas, cuenta de cada arranque de proceso, tokens por turno.
 Uso: extraer.py <desde_ms> [hasta_ms]
 """
@@ -11,7 +11,7 @@ import re
 import sqlite3
 import sys
 
-DB = os.path.expanduser("~/.bb-machines/macbook-pro-de-aitor.tail81fad6.ts.net/bb.db")
+DB = os.path.expanduser("~/.alia-machines/macbook-pro-de-aitor.tail81fad6.ts.net/alia.db")
 desde = int(sys.argv[1])
 hasta = int(sys.argv[2]) if len(sys.argv) > 2 else 10**15
 c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=10, isolation_level=None)

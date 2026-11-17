@@ -16,7 +16,7 @@
       "sha256": "5951946653ad9539f2963f1fc3e720f3de2650e010a604f35743bf49b5f317a4"
     },
     {
-      "path": "server/bb-workflow-bridge.ts",
+      "path": "server/alia-workflow-bridge.ts",
       "sha256": "cc7377eba8525d1bfc503a084d878c7eafc806f6e148ad542af00dd5f6327389"
     },
     {
@@ -28,7 +28,7 @@
       "sha256": "0f754925e6245ea329a153151854396fe39ba3fb8be92fa04340118a5873f30d"
     },
     {
-      "path": "lib/bb-workflow-capabilities.mjs",
+      "path": "lib/alia-workflow-capabilities.mjs",
       "sha256": "1f677e8733489ad414e0376ed435e725385b8ca9b539bd2a5353c326cb085d10"
     }
   ],

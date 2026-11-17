@@ -24,7 +24,7 @@ export function mobileViewportFixture(t) {
 }
 
 export function splitTransfer(projectId, threadId) {
-  const data = new Map([["application/x-bbdesk-thread", JSON.stringify({ projectId, threadId })]]);
+  const data = new Map([["application/x-aliadesk-thread", JSON.stringify({ projectId, threadId })]]);
   return { types: [...data.keys()], getData: type => data.get(type) ?? "", setData: (type, value) => data.set(type, value) };
 }
 

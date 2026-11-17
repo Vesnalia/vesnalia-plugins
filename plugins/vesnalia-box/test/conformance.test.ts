@@ -251,7 +251,7 @@ await conformance({
         desktopScript: "cat >/dev/null",
         cuaScript: ":",
         setupArchive: async () => Buffer.from("setup"),
-        linuxImageScript: (target, key) => `cat >/dev/null; echo nscr.io/ws/bbbox/${target}:${key}`,
+        linuxImageScript: (target, key) => `cat >/dev/null; echo nscr.io/ws/aliabox/${target}:${key}`,
         linuxPullScript: () => ":",
         dockerCli: namespaceDocker,
         dockerOptions: { readyTimeoutMs: 20_000, selkiesLauncher: "/bin/sh" },

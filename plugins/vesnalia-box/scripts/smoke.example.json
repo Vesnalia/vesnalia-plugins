@@ -11,7 +11,7 @@
         "token-id": { "file": "proxmox-token.env", "key": "PROXMOX_TOKEN_ID" },
         "token-secret": { "file": "proxmox-token.env", "key": "PROXMOX_TOKEN_SECRET" },
         "ssh-private-key": { "file": "ssh/id_ed25519" },
-        "pool": "bbbox",
+        "pool": "aliabox",
         "linux-templates": "9100",
         "bridge": "vmbr200",
         "subnet": "10.200.0.0/24",

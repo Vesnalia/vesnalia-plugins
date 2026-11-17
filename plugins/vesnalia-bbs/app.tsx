@@ -243,7 +243,7 @@ export function BbsTerminal() {
     // glass's own padding.
     const available = () => {
       const slot = slotRef.current;
-      const glass = slot?.querySelector<HTMLElement>(".bbbbs-screen");
+      const glass = slot?.querySelector<HTMLElement>(".aliabbs-screen");
       if (!slot || !glass) return null;
       const style = getComputedStyle(glass);
       const px = (value: string) => Number.parseFloat(value) || 0;
@@ -645,11 +645,11 @@ export function BbsTerminal() {
   // What's on screen, relative to the native 8×16 VGA cell.
   const zoomLabel = `${Math.round((fontSize / 16) * 100)}%`;
   const zoomControls = <>
-    <button type="button" className="bbbbs-switch" onClick={() => zoomCommand("out")} title={`Smaller text (${shortcuts.out}, or ${shortcuts.wheel})`} aria-label="Smaller terminal text">A−</button>
-    <span className="bbbbs-zoom-readout" aria-live="polite" title={zoomSetting === "fit" ? "Terminal zoom: fitted to the pane (only the terminal, not VesnALIA)" : "Terminal zoom (only the terminal, not VesnALIA)"}>{zoomLabel}</span>
-    <button type="button" className="bbbbs-switch" onClick={() => zoomCommand("in")} title={`Bigger text (${shortcuts.in}, or ${shortcuts.wheel})`} aria-label="Bigger terminal text">A+</button>
-    <button type="button" className="bbbbs-switch" aria-pressed={zoomSetting === "fit"} onClick={() => zoomCommand("fit")} title={`Fit the pane (${shortcuts.fit})`}>Fit</button>
-    <button type="button" className="bbbbs-switch" aria-pressed={fullscreen} onClick={toggleFullscreen} title={fullscreen ? "Leave BBS mode (Esc)" : "BBS mode: fullscreen terminal (Esc to leave)"}>BBS mode</button>
+    <button type="button" className="aliabbs-switch" onClick={() => zoomCommand("out")} title={`Smaller text (${shortcuts.out}, or ${shortcuts.wheel})`} aria-label="Smaller terminal text">A−</button>
+    <span className="aliabbs-zoom-readout" aria-live="polite" title={zoomSetting === "fit" ? "Terminal zoom: fitted to the pane (only the terminal, not VesnALIA)" : "Terminal zoom (only the terminal, not VesnALIA)"}>{zoomLabel}</span>
+    <button type="button" className="aliabbs-switch" onClick={() => zoomCommand("in")} title={`Bigger text (${shortcuts.in}, or ${shortcuts.wheel})`} aria-label="Bigger terminal text">A+</button>
+    <button type="button" className="aliabbs-switch" aria-pressed={zoomSetting === "fit"} onClick={() => zoomCommand("fit")} title={`Fit the pane (${shortcuts.fit})`}>Fit</button>
+    <button type="button" className="aliabbs-switch" aria-pressed={fullscreen} onClick={toggleFullscreen} title={fullscreen ? "Leave BBS mode (Esc)" : "BBS mode: fullscreen terminal (Esc to leave)"}>BBS mode</button>
   </>;
 
   const control = (t: "disconnect" | "recovery-saved") => {
@@ -680,7 +680,7 @@ export function BbsTerminal() {
         else if (hangup === "banned" || hangup === "agents_disabled") setHangup(null);
         else reconnectRef.current();
       }, onDismiss: () => setHangup(null) } : null}>
-      <div className="bbs-terminal-viewport bbbbs-scroll" ref={container} aria-label="BBS terminal, 80 columns and 25 rows" onClick={() => terminalRef.current?.focus()}>
+      <div className="bbs-terminal-viewport aliabbs-scroll" ref={container} aria-label="BBS terminal, 80 columns and 25 rows" onClick={() => terminalRef.current?.focus()}>
         <div className="bbs-terminal-stagebox" ref={stageBox}>
           <div className="bbs-terminal-stage" ref={stage} />
         </div>
@@ -712,7 +712,7 @@ export function BbsTerminal() {
 export default definePluginApp((app) => {
   // The terminal is the page: it opens straight into the main area, where it
   // has the most room. Account recovery lives in its toolbar and settings.
-  app.slots.navPanel({ id: "bbs", title: "aliaBBS", icon: "Terminal", path: "bbbbs", component: BbsTerminal });
+  app.slots.navPanel({ id: "bbs", title: "aliaBBS", icon: "Terminal", path: "aliabbs", component: BbsTerminal });
   app.slots.settingsSection({ id: "recovery", title: "Account recovery", component: AccountRecovery });
   app.slots.settingsSection({ id: "about", title: "About aliaBBS", component: BbsAbout });
 });

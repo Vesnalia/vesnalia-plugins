@@ -162,7 +162,7 @@ test("the install script refuses an archive whose SHA-256 is not the one VesnALI
   writeFileSync(join(tools, "curl"), `#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = -o ] && { echo "not msb" >"$2"; exit 0; }; shift; done\nexit 1\n`);
   chmodSync(join(tools, "curl"), 0o755);
   const result = await new Promise<{ code: number | null; stderr: string }>((resolve) => {
-    const child = spawn("sh", ["-c", msbScript("install")], { env: { ...process.env, PATH: `${tools}:${process.env.PATH}`, BBBOX_MSB_DIR: dir } });
+    const child = spawn("sh", ["-c", msbScript("install")], { env: { ...process.env, PATH: `${tools}:${process.env.PATH}`, ALIABOX_MSB_DIR: dir } });
     let stderr = "";
     child.stderr.on("data", (chunk: Buffer) => (stderr += chunk));
     child.once("close", (code) => resolve({ code, stderr }));

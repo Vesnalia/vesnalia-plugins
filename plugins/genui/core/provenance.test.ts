@@ -119,7 +119,7 @@ describe("readProvenance: checks", () => {
       { name: "Deploy", status: "done", facts: { digest: "sha256:bbbbbbbbbbbbbbbbbbbb" } },
     ]);
     expect(chain.verdict.title).toBe("Deployed revision doesn't match Build");
-    expect(chain.verdict.lines[0].text).toBe("digest changed: built aaaaaaaaaaaa · deployed bbbbbbbbbbbb");
+    expect(chain.verdict.lines[0].text).toBe("digest changed: built aaaaaaaaaaaa · deployed aliabbbbbbbbbb");
   });
 
   it("flags a pending stage that targets the wrong device before it runs", () => {

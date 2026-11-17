@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 cd "$HOME"
-B=./bbc
+B=./aliac
 now() { date +%s.%N; }
 since() { awk -v a="$1" -v b="$(now)" 'BEGIN { printf "%.1f s", b - a }'; }
 step() { local label=$1; shift; local t; t=$(now); "$@"; local rc=$?; echo "TIME $label: $(since "$t") (exit $rc)"; return $rc; }

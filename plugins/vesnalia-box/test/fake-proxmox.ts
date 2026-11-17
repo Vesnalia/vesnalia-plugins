@@ -97,8 +97,8 @@ export class FakeProxmox {
   readonly storage = new Map<string, { total: number; avail: number }>([["local-lvm", { total: 900 * 2 ** 30, avail: 600 * 2 ** 30 }]]);
   /** Each storage's type, lvmthin unless it says. */
   readonly storageTypes = new Map<string, string>();
-  readonly pools = new Set<string>(["bbbox"]);
-  readonly privileges = new Map<string, Set<string>>([["/pool/bbbox", new Set(TOKEN_ROLE)]]);
+  readonly pools = new Set<string>(["aliabox"]);
+  readonly privileges = new Map<string, Set<string>>([["/pool/aliabox", new Set(TOKEN_ROLE)]]);
   readonly bridges = new Set<string>(["vmbr0", "vmbr1"]);
   killNextSnapshot = false;
   templateLag = 0;

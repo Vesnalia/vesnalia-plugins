@@ -2,8 +2,8 @@
 
 This makes a Windows PC a Docker host for alia-box's
 [Docker backend](../docker/README.md). Docker Engine runs in one WSL 2
-distribution, `bbdocker`, and listens on its unix socket only. When VesnALIA runs
-on this PC, the backend's host is `wsl://bbdocker`. alia-box reaches the
+distribution, `aliadocker`, and listens on its unix socket only. When VesnALIA runs
+on this PC, the backend's host is `wsl://aliadocker`. alia-box reaches the
 daemon with `wsl.exe` and `docker system dial-stdio`, inside the
 distribution, so the bytes never cross WSL's localhost forwarder. The
 distribution also runs SSH on port 2222, for a VesnALIA server on another machine.
@@ -20,7 +20,7 @@ for, and boxes run again within about 80 s after Windows restarts.
 How it works:
 
 - WSL runs all of a Windows user's distributions in one lightweight VM.
-  `setup.ps1` imports Ubuntu 24.04's WSL image as `bbdocker`, with systemd,
+  `setup.ps1` imports Ubuntu 24.04's WSL image as `aliadocker`, with systemd,
   Docker Engine from Docker's repository, and OpenSSH on port 2222. Windows'
   own OpenSSH Server, if it runs, keeps port 22.
 - `.wslconfig` in the user's profile turns on mirrored networking, so the
@@ -33,7 +33,7 @@ How it works:
   WSL's localhost forwarder, which a program on Windows uses to reach a TCP
   port inside the distribution, drops an attached stream once the client
   closes its write side. `docker run` that prints output, and `docker exec`,
-  then exit 0 and print nothing. `wsl://bbdocker` does not use that
+  then exit 0 and print nothing. `wsl://aliadocker` does not use that
   forwarder: `wsl.exe` runs `docker system dial-stdio` in the distribution,
   and the daemon's reply comes back on the process's stdout.
 - A rule in the Hyper-V firewall, which filters WSL's traffic, lets port 2222
@@ -84,10 +84,10 @@ prints the host to use and the PC's addresses. Its options:
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `-Key` | none | The public key the `docker` CLI logs in with |
-| `-Name` | `bbdocker` | The distribution's name |
+| `-Name` | `aliadocker` | The distribution's name |
 | `-User` | `box` | The Linux user the `docker` CLI logs in as |
 | `-Port` | 2222 | The distribution's SSH port |
-| `-Path` | `C:\WSL\bbdocker` | Where the distribution's disk goes |
+| `-Path` | `C:\WSL\aliadocker` | Where the distribution's disk goes |
 | `-Memory` | WSL's own | Memory for the whole WSL VM, such as `12GB` |
 
 ### 2. Build the images
@@ -96,7 +96,7 @@ On this PC, run the build inside the distribution, on dockerd's unix socket.
 `cd` to a checkout of alia-box. `/mnt/c/...` is a path on the PC's `C:` drive:
 
 ```powershell
-wsl.exe -d bbdocker -u box -e bash -lc "cd /mnt/c/src/alia-box && setup/docker/build.sh"
+wsl.exe -d aliadocker -u box -e bash -lc "cd /mnt/c/src/alia-box && setup/docker/build.sh"
 ```
 
 From a VesnALIA server on another machine, log in once to accept the PC's host key,
@@ -111,14 +111,14 @@ DOCKER_HOST=ssh://box@<pc>:2222 setup/docker/build.sh
 
 Set up the Docker backend as its [guide](../docker/README.md) says.
 
-When VesnALIA runs on this PC, set `host` to `wsl://bbdocker`. That is the
-distribution's name. `wsl://box@bbdocker` is the same with the Linux user
-named. alia-box runs `wsl.exe -d bbdocker -u box -e docker`, and dial-stdio
+When VesnALIA runs on this PC, set `host` to `wsl://aliadocker`. That is the
+distribution's name. `wsl://box@aliadocker` is the same with the Linux user
+named. alia-box runs `wsl.exe -d aliadocker -u box -e docker`, and dial-stdio
 for the relay, against the unix socket. Do not set `tcp://127.0.0.1:2375`.
 
 When VesnALIA's server is another machine and this PC is a VesnALIA machine, leave
 `host` as `alia:<this machine's ID>`. Set `machine-docker-host` to
-`wsl://bbdocker`. alia-box sends that when the machine's relay opens, and the
+`wsl://aliadocker`. alia-box sends that when the machine's relay opens, and the
 Windows daemon dials `wsl.exe` and `docker system dial-stdio`. It does not
 read the machine's `DOCKER_HOST` or docker context, which stay as they are.
 Do not point those at `wsl://`: `docker.exe` does not understand it.
@@ -133,7 +133,7 @@ refuses a desktop box.
 ## Check it worked
 
 ```sh
-wsl.exe -d bbdocker -u box -e docker info
+wsl.exe -d aliadocker -u box -e docker info
 alia box doctor
 ```
 
@@ -162,10 +162,10 @@ are not tested: use `linux-desktop-cpu`.
    ```powershell
    Unregister-ScheduledTask -TaskName "alia-box WSL Docker host" -Confirm:$false
    Get-NetFirewallHyperVRule | Where-Object DisplayName -like "alia-box: SSH to *" | Remove-NetFirewallHyperVRule
-   wsl --unregister bbdocker
+   wsl --unregister aliadocker
    ```
 
-3. Delete `C:\WSL\bbdocker`, and the `[wsl2]` settings `setup.ps1` added to
+3. Delete `C:\WSL\aliadocker`, and the `[wsl2]` settings `setup.ps1` added to
    `.wslconfig` in your profile: `networkingMode`, `vmIdleTimeout` and
    `guiApplications`.
 
@@ -173,9 +173,9 @@ are not tested: use `linux-desktop-cpu`.
 
 - **`docker run` or `docker exec` from Windows prints nothing and exits 0**:
   that is WSL's localhost forwarder. When VesnALIA runs on this PC, the host is
-  `wsl://bbdocker`, not `tcp://127.0.0.1:2375`. When VesnALIA's server is another
+  `wsl://aliadocker`, not `tcp://127.0.0.1:2375`. When VesnALIA's server is another
   machine, `host` stays `alia:<this machine's ID>` and `machine-docker-host`
-  is `wsl://bbdocker`. dockerd stays on its unix socket. alia-box's doctor
+  is `wsl://aliadocker`. dockerd stays on its unix socket. alia-box's doctor
   fails a Windows machine whose Docker is at `tcp://127.0.0.1` when an
   attached command's output does not come back, and a box command whose
   stream ends without an exit status fails instead of reporting exit 0.

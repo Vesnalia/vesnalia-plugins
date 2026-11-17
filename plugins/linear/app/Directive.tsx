@@ -42,7 +42,7 @@ function DirectiveCard({ identifier, source }: { identifier: string; source: str
     <button
       type="button"
       className={`${toneClass(detail.tone)} inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-card px-1.5 py-0.5 align-middle text-[13px] hover:bg-accent`}
-      style={detail.stateColor === null ? undefined : ({ "--bbl": detail.stateColor } as CSSProperties)}
+      style={detail.stateColor === null ? undefined : ({ "--alial": detail.stateColor } as CSSProperties)}
       onClick={() => {
         panel.openTab({
           tab: ISSUE_TAB,
@@ -53,7 +53,7 @@ function DirectiveCard({ identifier, source }: { identifier: string; source: str
       title={`${detail.identifier} — ${detail.title}`}
     >
       <StateGlyph tone={detail.tone} glyph={detail.glyph} />
-      <span className="bbl-text font-medium">{detail.identifier}</span>
+      <span className="alial-text font-medium">{detail.identifier}</span>
       <span className={`truncate text-muted-foreground${detail.struckThrough ? " line-through" : ""}`}>
         {detail.title}
       </span>

@@ -79,9 +79,9 @@ const releasing: ReleaseHooks = { resetting: async () => {}, timing: () => {} };
 const signal = () => AbortSignal.timeout(30_000);
 
 test("parses Macs, one per line, and refuses what it cannot use", () => {
-  assert.deepEqual(parseHosts("mac1 admin@192.0.2.20\n# a comment\nmac2 bbbox-admin@mac2.example:2222").hosts, [
+  assert.deepEqual(parseHosts("mac1 admin@192.0.2.20\n# a comment\nmac2 aliabox-admin@mac2.example:2222").hosts, [
     { name: "mac1", user: "admin", address: "192.0.2.20", port: 22 },
-    { name: "mac2", user: "bbbox-admin", address: "mac2.example", port: 2222 },
+    { name: "mac2", user: "aliabox-admin", address: "mac2.example", port: 2222 },
   ]);
   assert.match(parseHosts("mac1 192.0.2.20").problems[0]!, /user@address/);
   assert.match(parseHosts("mac1 a@b\nmac1 a@c").problems[0]!, /twice/);
@@ -116,7 +116,7 @@ test("offers macos and macos-desktop from the image, each only when it has one",
 });
 
 test("the Mac's state fails when Tart's home or the QEMU folder links to a volume that is not mounted, so its boxes are kept (#632)", () => {
-  const home = mkdtempSync(join(tmpdir(), "bbbox-volume-"));
+  const home = mkdtempSync(join(tmpdir(), "aliabox-volume-"));
   after(() => rmSync(home, { recursive: true, force: true }));
   mkdirSync(join(home, ".alia-box", "tart", "owners"), { recursive: true });
   const run = () => spawnSync("/bin/sh", ["-c", stateScript(true)], { encoding: "utf8", env: { HOME: home, PATH: "/usr/bin:/bin" } });
@@ -196,7 +196,7 @@ test("a macOS desktop is Tart's VNC through the run's holder, which starts with 
     const opened = await display!.open(signal());
     assert.deepEqual(opened.auth, { type: "none" }, "the holder's socket is the host user's alone");
     const argv = opened.route.type === "command" ? opened.route.argv : [];
-    assert.deepEqual(argv.slice(-3), [`bbbox-admin@${MAC}`, "--", `exec /usr/bin/python3 -c '${VNC_BRIDGE_PY}' "$HOME"/.alia-box/tart/run/'${guest.ref}.vnc'`]);
+    assert.deepEqual(argv.slice(-3), [`aliabox-admin@${MAC}`, "--", `exec /usr/bin/python3 -c '${VNC_BRIDGE_PY}' "$HOME"/.alia-box/tart/run/'${guest.ref}.vnc'`]);
   }
   // A viewer on the holder's socket, as the bridge gives it to the relay.
   const viewer = new Viewer(join(mac, ".alia-box", "tart", "run", `${guest.ref}.vnc`));
@@ -301,7 +301,7 @@ test("acquire claims the VM before it writes anything, then clones, starts and r
 
   const { command, displays, access } = await backend.transports(guest, box.kind);
   assert.equal((await command!.run("echo hello")).stdout, "hello\n");
-  assert.deepEqual(access?.ssh?.jump, { host: MAC, port: 22, user: "bbbox-admin", hostKeys: [`${MAC} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests`] });
+  assert.deepEqual(access?.ssh?.jump, { host: MAC, port: 22, user: "aliabox-admin", hostKeys: [`${MAC} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests`] });
   assert.equal(access?.ssh?.user, "admin");
   assert.equal(displays[0]!.minSize, undefined, "a viewer cannot resize a macOS desktop");
   // This Mac has no python3 for the VNC holder, so the desktop says how to give it one.
@@ -309,7 +309,7 @@ test("acquire claims the VM before it writes anything, then clones, starts and r
 
   // The VM's commands went to the VM, the rest to the Mac, and the VM is named after the box.
   const targets = new Set(ssh.log().map((entry) => entry.target));
-  assert.ok(targets.has(`bbbox-admin@${MAC}`) && targets.has(`admin@${guest.address}`));
+  assert.ok(targets.has(`aliabox-admin@${MAC}`) && targets.has(`admin@${guest.address}`));
   assert.ok(
     ssh.log().some((entry) => entry.target === `admin@${guest.address}` && entry.command.includes("scutil --set") && entry.command.includes(box.name)),
     "the VM is named after the box",
@@ -1211,7 +1211,7 @@ test("a refresh's base is pulled when the registry has moved its tag, room allow
 });
 
 test("prepare-image.sh's boot waits while macOS's two VM slots are taken, saying so, and boots once one is free; with no slot in time it stops (#650)", async () => {
-  const home = mkdtempSync(join(tmpdir(), "bbbox-slot-"));
+  const home = mkdtempSync(join(tmpdir(), "aliabox-slot-"));
   after(() => rmSync(home, { recursive: true, force: true }));
   fakeMacTools(home);
   addImage(home, "alia-box-macos-build");
@@ -1512,7 +1512,7 @@ test("ios, withheld until a Mac lists the iOS image's devices, is offered once w
 
 test("the iOS image setting is a Tart VM name of its own, and needs a macOS image to be built on (063, 3.2)", () => {
   const parse = (values: Record<string, unknown>) =>
-    parseTartSettings({ "tart-enabled": true, "tart-hosts": `mac1 bbbox-admin@${FAKE_MAC}`, "tart-host-keys": `${FAKE_MAC} ssh-ed25519 AAAA`, ...values });
+    parseTartSettings({ "tart-enabled": true, "tart-hosts": `mac1 aliabox-admin@${FAKE_MAC}`, "tart-host-keys": `${FAKE_MAC} ssh-ed25519 AAAA`, ...values });
   const off = parse({});
   assert.ok(off.enabled && off.ok && off.config.iosImage === null, "off by default");
   const on = parse({ "tart-ios-image": "alia-box-ios" });

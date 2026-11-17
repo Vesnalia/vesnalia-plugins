@@ -164,8 +164,8 @@ DOCKER_HOST=ssh://user@host setup/docker/build.sh     # on a Docker host over SS
 ```
 
 - Building all three takes about 15 minutes, mostly downloads. The images are
-  `bbbox/linux:1`, `bbbox/linux-desktop:1` and
-  `bbbox/linux-desktop-wayland:1`.
+  `aliabox/linux:1`, `aliabox/linux-desktop:1` and
+  `aliabox/linux-desktop-wayland:1`.
 - `--alia-url https://bb.example.com` puts VesnALIA's app in the images, so a box
   joins VesnALIA without downloading it.
 - The build starts from Ubuntu's image, pinned by digest, installs Ubuntu's
@@ -179,8 +179,8 @@ DOCKER_HOST=ssh://user@host setup/docker/build.sh     # on a Docker host over SS
   downloads only what changed.
 - Once the images are built, `docker builder prune` frees the build cache,
   the downloads too.
-- `--arch arm64`, on an arm64 Docker host, builds `bbbox/linux:1-arm64` and
-  `bbbox/linux-desktop:1-arm64` for microsandbox on a Mac (053), from the
+- `--arch arm64`, on an arm64 Docker host, builds `aliabox/linux:1-arm64` and
+  `aliabox/linux-desktop:1-arm64` for microsandbox on a Mac (053), from the
   same scripts with their arm64 pins, as for Tart's Linux images. Ubuntu has
   no snapshots of its arm64 archive, so those packages come from the live
   archive. There is no Wayland desktop for arm64 yet.
@@ -194,15 +194,15 @@ fields, press Check, then Save and turn on.
 | --- | --- | --- |
 | `host` | empty | `unix:///path/to/docker.sock`, `ssh://user@host`, `tcp://host:port`, `wsl://distro` for Docker in WSL, or `alia:<machine ID>` for a VesnALIA machine. Empty uses the `docker` CLI's own default: `DOCKER_HOST`, its current context, or the local socket. `wsl://` reaches the daemon through `wsl.exe` and `docker system dial-stdio`. Do not use `tcp://127.0.0.1` on Windows: WSL's localhost forwarder drops attached output |
 | `machine-docker-host` | empty | For `alia:<machine ID>`: where Docker is on that machine (`wsl://distro`, a unix socket or `tcp://host:port`). Sent when the relay opens, instead of the machine's `DOCKER_HOST`. On a Windows machine set `wsl://<distro>` |
-| `linux-image` | `bbbox/linux:1` | The image of linux boxes. Empty turns them off |
-| `desktop-image` | `bbbox/linux-desktop:1` | The image of linux-desktop-cpu and linux-desktop boxes. Empty turns them off |
-| `wayland-desktop-image` | `bbbox/linux-desktop-wayland:1` | The image of linux-desktop-wayland-cpu boxes. Empty turns them off |
+| `linux-image` | `aliabox/linux:1` | The image of linux boxes. Empty turns them off |
+| `desktop-image` | `aliabox/linux-desktop:1` | The image of linux-desktop-cpu and linux-desktop boxes. Empty turns them off |
+| `wayland-desktop-image` | `aliabox/linux-desktop-wayland:1` | The image of linux-desktop-wayland-cpu boxes. Empty turns them off |
 | `privileged` | on | Each box is a privileged container with a Docker daemon of its own. Off, boxes have no Docker |
 | `gpus` | off | GPU boxes: offers linux boxes with a GPU and linux-desktop boxes, on the cards the NVIDIA Container Toolkit lists. Unset, the replaced `gpu-desktops` is read |
 | `boxes-per-card` | 4 | Boxes per card: the most boxes on one card, servers and desktops, running or stopped, of every install. At least 1. Unset, the replaced `desktops-per-gpu` is read |
 | `whole-cards` | unset | Whether a box may have a card to itself. Unset, the install-wide option `general.wholeCards` says, which is off unless set |
 | `gpu-memory-mib` | 1024 | The memory a card must have free, when last read, for a new server to be placed on it. A desktop needs 384 MiB |
-| `network` | `bbbox` | The network alia-box makes for its boxes, on which they reach the internet but not each other |
+| `network` | `aliabox` | The network alia-box makes for its boxes, on which they reach the internet but not each other |
 | `boxes` | 10 | The most alia-box containers on the host, running or stopped, of every alia-box install that uses it |
 | `reserve-memory-mib` | 4096 | A new box is refused when the host would have less memory than this left, after the limits of the running boxes |
 
@@ -355,10 +355,10 @@ npm run conformance -- --backend docker --settings docker.json
    and its images.
 
    ```sh
-   docker ps -a --filter label=bbbox.box              # any boxes left
-   docker network rm bbbox
-   docker image ls 'bbbox/*'
-   docker image ls 'bbbox-image/*'                     # projects' images
+   docker ps -a --filter label=aliabox.box              # any boxes left
+   docker network rm aliabox
+   docker image ls 'aliabox/*'
+   docker image ls 'aliabox-image/*'                     # projects' images
    docker image rm <image>
    docker builder prune
    ```
@@ -371,7 +371,7 @@ npm run conformance -- --backend docker --settings docker.json
   `docker` group, then restart VesnALIA. For a VesnALIA machine's Docker, that is the
   user VesnALIA's app runs as: restart its services so it has the group,
   `sudo systemctl restart user@$(id -u <user>).service`.
-- **A box does not come up**: `docker logs bbbox-<box ID>` shows its main
+- **A box does not come up**: `docker logs aliabox-<box ID>` shows its main
   process's output. alia-box's error gives the last lines too.
 - **A box does not join VesnALIA**: see Enrolment, under What you need.
 - **Each `docker` call is slow over SSH**: share one connection (step 1).
@@ -390,7 +390,7 @@ take pauses the box; see
 
 A snapshot you keep stays on the engine after its box is released, as its
 image, its copy of the Docker data and a keep tag,
-`bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, until VesnALIA Box deletes it
+`aliabox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, until VesnALIA Box deletes it
 after its date. It takes what no other image or container on the engine uses,
 and up to its whole size once the box's image is refreshed. A running fork of
 it uses its layers, so then only its Docker data is its own. The Keep dialog and the Kept

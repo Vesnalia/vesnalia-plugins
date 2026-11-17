@@ -8,7 +8,7 @@ const LINUX_PS = [
   "    1     0  0.0  1000 /sbin/init",
   "  200     1 12.5  1000 /usr/bin/node /home/me/.local/bin/claude --verbose",
   "  300   200 80.0  1000 node /repo/node_modules/.bin/tsc PWD=/not/env",
-  "  400     1  9.0  1000 node /home/me/.vesnalia/worktrees/thr_bbbbbbbbbb-2/app/server.js",
+  "  400     1  9.0  1000 node /home/me/.vesnalia/worktrees/thr_aliabbbbbbbb-2/app/server.js",
   "  500     1 30.0  1000 grep thr_cccccccccc",
 ].join("\n");
 
@@ -58,7 +58,7 @@ test("off macOS, ps runs without -E and the thread comes from /proc environ", as
   const byPid = Object.fromEntries(rows.map((row) => [row.pid, row]));
   assert.equal(byPid[200].threadId, "thr_aaaaaaaaaa");
   assert.equal(byPid[200].name, "node");
-  assert.equal(byPid[400].threadId, "thr_bbbbbbbbbb");
+  assert.equal(byPid[400].threadId, "thr_aliabbbbbbbb");
   assert.equal(byPid[500].threadId, null);
   // CPU time comes from /proc/<pid>/stat; an unreadable stat leaves it unknown, and the row keeps ps pcpu.
   assert.equal(byPid[200].cpuMs, 3_000);
@@ -69,7 +69,7 @@ test("off macOS, ps runs without -E and the thread comes from /proc environ", as
   const threads = groupByThread(rows, attributeThreads(rows));
   assert.deepEqual(
     threads.map((entry) => [entry.threadId, entry.cpuPercent]),
-    [["thr_aaaaaaaaaa", 92.5], ["thr_bbbbbbbbbb", 9]],
+    [["thr_aaaaaaaaaa", 92.5], ["thr_aliabbbbbbbb", 9]],
   );
 });
 
@@ -101,7 +101,7 @@ test("a Linux sample ranks threads found through /proc", async () => {
   const { stored: sample } = await takeReading(1, { store: true });
   assert.equal(sample.memory?.percent, 60);
   assert.deepEqual(sample.threads.map((entry) => entry.memBytes), [2 * 1000 * 1024, 1000 * 1024]);
-  assert.deepEqual(sample.threads.map((entry) => entry.threadId), ["thr_aaaaaaaaaa", "thr_bbbbbbbbbb"]);
+  assert.deepEqual(sample.threads.map((entry) => entry.threadId), ["thr_aaaaaaaaaa", "thr_aliabbbbbbbb"]);
   assert.deepEqual(sample.procs.map((entry) => entry.pid), [500]);
 });
 
@@ -127,7 +127,7 @@ test("a Linux source without /proc stat still samples, on ps pcpu alone", async 
   });
   await takeReading(1, { store: false });
   const { live } = await takeReading(2, { store: false });
-  assert.deepEqual(live.threads.map((entry) => [entry.threadId, entry.cpu]), [["thr_aaaaaaaaaa", 92.5], ["thr_bbbbbbbbbb", 9]]);
+  assert.deepEqual(live.threads.map((entry) => [entry.threadId, entry.cpu]), [["thr_aaaaaaaaaa", 92.5], ["thr_aliabbbbbbbb", 9]]);
 });
 
 test("a process whose /proc stat was unreadable at the baseline is not counted from zero later", async () => {
@@ -150,5 +150,5 @@ test("a process whose /proc stat was unreadable at the baseline is not counted f
   statReadable = true;
   // pid 200 now shows 3 s of CPU time, all of it from before; ps's 12.5 (plus its child's 80) stands.
   const { live } = await takeReading(3, { store: false });
-  assert.deepEqual(live.threads.map((entry) => [entry.threadId, entry.cpu]), [["thr_aaaaaaaaaa", 92.5], ["thr_bbbbbbbbbb", 9]]);
+  assert.deepEqual(live.threads.map((entry) => [entry.threadId, entry.cpu]), [["thr_aaaaaaaaaa", 92.5], ["thr_aliabbbbbbbb", 9]]);
 });

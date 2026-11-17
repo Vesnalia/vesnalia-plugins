@@ -239,8 +239,8 @@ function posixKeep(): string {
     "alia_files_bits() { stat -c '%a' \"$1\" 2>/dev/null || stat -f '%OLp' \"$1\" 2>/dev/null || echo 644; }\n" +
     "alia_files_link() {\n" +
     "  alia_files_ok=0\n" +
-    "  if ln -T \"$1\" \"$1.bbprobe\" 2>/dev/null; then\n" +
-    "    rm -f \"$1.bbprobe\"\n" +
+    "  if ln -T \"$1\" \"$1.aliaprobe\" 2>/dev/null; then\n" +
+    "    rm -f \"$1.aliaprobe\"\n" +
     "    if ln -T \"$1\" \"$2\" 2>/dev/null; then alia_files_ok=1; fi\n" +
     "  else\n" +
     "    if ln \"$1\" \"$2\" 2>/dev/null; then alia_files_ok=1; fi\n" +

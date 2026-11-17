@@ -4,9 +4,9 @@
 // become changes, and whole runs against a made-up bd: what was sent, the
 // journal position, a remote that holds nothing.
 //
-// Why: these decide what the sync log says a sync did (bead-bb-6a9), and
+// Why: these decide what the sync log says a sync did (bead-alia-6a9), and
 // whether a repository is synced at all. They were the plugin's tests
-// (sync/beads.test.ts) and moved here with the code (bead-bb-c9l.16). The
+// (sync/beads.test.ts) and moved here with the code (bead-alia-c9l.16). The
 // journal lines follow beads 1.3.1's documented record.
 
 package beads

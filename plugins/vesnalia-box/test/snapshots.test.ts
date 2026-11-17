@@ -225,8 +225,8 @@ test("a locked guest and a plan that cannot take are refused with their words, b
   assert.equal(locked.code, "locked");
   assert.equal(locked.message, `Fake host left box ${box.name} locked (rollback), so it takes no snapshot. Run \`pct unlock 214\` on pve-1.`);
   state.provider.locked = null;
-  state.provider.takeWhy = "The Proxmox token lacks VM.Snapshot on /pool/bbbox.";
-  assert.equal((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, `VesnALIA Box cannot take a snapshot of box ${box.name} now: The Proxmox token lacks VM.Snapshot on /pool/bbbox.`);
+  state.provider.takeWhy = "The Proxmox token lacks VM.Snapshot on /pool/aliabox.";
+  assert.equal((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, `VesnALIA Box cannot take a snapshot of box ${box.name} now: The Proxmox token lacks VM.Snapshot on /pool/aliabox.`);
   assert.equal(state.store.records().length, 0);
 });
 

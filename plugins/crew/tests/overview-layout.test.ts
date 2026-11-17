@@ -5,7 +5,7 @@ import { CREW_H, CREW_W, layoutOverview, TASK_H, TASK_W } from "../lib/overview-
 function source(): OverviewSource {
   return {
     crews: [
-      { name: "alpha", status: "running", summary: "", task: "BBP-1", branch: null, needsYou: 0, members: [], labelTasks: [] },
+      { name: "alpha", status: "running", summary: "", task: "ALIAP-1", branch: null, needsYou: 0, members: [], labelTasks: [] },
       { name: "beta", status: "idle", summary: "", task: null, branch: null, needsYou: 0, members: [], labelTasks: [] },
     ],
     leadLinks: [],
@@ -19,7 +19,7 @@ describe("layoutOverview", () => {
     const all = new Set(graph.nodes.map((node) => node.id));
     const layout = layoutOverview(graph, all);
     expect(layout.frames).toHaveLength(1);
-    const task = layout.placed.find((placed) => placed.id === taskNodeId("p1", "BBP-1"))!;
+    const task = layout.placed.find((placed) => placed.id === taskNodeId("p1", "ALIAP-1"))!;
     const alpha = layout.placed.find((placed) => placed.id === crewNodeId("p1", "alpha"))!;
     const beta = layout.placed.find((placed) => placed.id === crewNodeId("p1", "beta"))!;
     expect(task.width).toBe(TASK_W);

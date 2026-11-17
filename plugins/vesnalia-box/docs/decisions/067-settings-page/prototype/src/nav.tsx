@@ -62,7 +62,7 @@ export function knownView(view: View): boolean {
   return true;
 }
 
-export const OPEN_VIEW = "bbbox-open-settings-view";
+export const OPEN_VIEW = "aliabox-open-settings-view";
 
 export function openSettingsView(hash: string): void {
   history.pushState({ ...(history.state ?? {}) }, "", `${location.pathname}${location.search}${hash}`);
@@ -70,7 +70,7 @@ export function openSettingsView(hash: string): void {
 }
 
 function entryOf(state: unknown): Entry | null {
-  return typeof state === "object" && state !== null && "bbbox" in state ? ((state as { bbbox: Entry }).bbbox ?? null) : null;
+  return typeof state === "object" && state !== null && "aliabox" in state ? ((state as { aliabox: Entry }).aliabox ?? null) : null;
 }
 
 function urlFor(view: View): string {
@@ -103,7 +103,7 @@ export function NavProvider({ children, scroller }: { children: ReactNode; scrol
   const remember = useCallback(
     (row?: string) => {
       const entry = entryOf(history.state) ?? { depth: 0, from: null };
-      history.replaceState({ ...(history.state ?? {}), bbbox: { ...entry, scroll: scroller()?.scrollTop ?? 0, row: row ?? entry.row } }, "", location.href);
+      history.replaceState({ ...(history.state ?? {}), aliabox: { ...entry, scroll: scroller()?.scrollTop ?? 0, row: row ?? entry.row } }, "", location.href);
     },
     [scroller],
   );
@@ -115,7 +115,7 @@ export function NavProvider({ children, scroller }: { children: ReactNode; scrol
       if (pending.current) {
         const target = pending.current;
         pending.current = null;
-        history.replaceState({ ...(history.state ?? {}), bbbox: { depth: (entry?.depth ?? 0) + 0, from: entry?.from ?? null } }, "", urlFor(target));
+        history.replaceState({ ...(history.state ?? {}), aliabox: { depth: (entry?.depth ?? 0) + 0, from: entry?.from ?? null } }, "", urlFor(target));
         setCameFrom(entry?.from ? parseHash(entry.from) : null);
         setAnimate("none");
         setFound(null);
@@ -154,7 +154,7 @@ export function NavProvider({ children, scroller }: { children: ReactNode; scrol
       }
       remember(options.row);
       const depth = (entryOf(history.state)?.depth ?? 0) + 1;
-      history.pushState({ ...(history.state ?? {}), bbbox: { depth, from: hashOf(view) || "#" } }, "", urlFor(next));
+      history.pushState({ ...(history.state ?? {}), aliabox: { depth, from: hashOf(view) || "#" } }, "", urlFor(next));
       setAnimate(motionAllowed() ? "forward" : "none");
       setFound(options.found ? { path: options.found, nonce: Date.now() } : null);
       setReturnRow(null);
@@ -190,7 +190,7 @@ export function NavProvider({ children, scroller }: { children: ReactNode; scrol
         history.back();
         return;
       }
-      history.replaceState({ ...(history.state ?? {}), bbbox: { depth: entry?.depth ?? 0, from: entry?.from ?? null } }, "", urlFor(target));
+      history.replaceState({ ...(history.state ?? {}), aliabox: { depth: entry?.depth ?? 0, from: entry?.from ?? null } }, "", urlFor(target));
       setAnimate("none");
       setView(target);
     },

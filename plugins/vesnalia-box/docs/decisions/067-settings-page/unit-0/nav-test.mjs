@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 const base = "http://127.0.0.1:38990";
-const out = "/home/box/bbtest/shots";
+const out = "/home/box/aliatest/shots";
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const log = [];
@@ -34,10 +34,10 @@ await step("11 replaceState -> #backend/new", async () => { await page.locator('
 await step("12 VesnALIA sidebar: General", async () => { await page.getByRole("link", { name: "General", exact: true }).first().click(); });
 await step("13 back after VesnALIA sidebar", async () => { await page.goBack(); await page.locator("[data-probe]").waitFor({ timeout: 10000 }).catch(() => {}); });
 await step("14 UrlLink to self with hash", async () => { await page.locator('[data-act="urllink-self"]').click(); });
-await step("15 UrlLink to alia-box with hash", async () => { await page.locator('[data-act="urllink-bbbox"]').click(); await page.waitForTimeout(1500); await page.screenshot({ path: `${out}/15-bbbox.png`, fullPage: true }); });
+await step("15 UrlLink to alia-box with hash", async () => { await page.locator('[data-act="urllink-aliabox"]').click(); await page.waitForTimeout(1500); await page.screenshot({ path: `${out}/15-aliabox.png`, fullPage: true }); });
 await step("16 back to probe", async () => { await page.goBack(); await page.locator("[data-probe]").waitFor({ timeout: 10000 }).catch(() => {}); });
 await step("17 openUrl with hash", async () => { await page.locator('[data-act="openurl"]').click(); log.push({ openUrlReturned: await page.evaluate(() => window.__openUrl) }); });
-await step("18 alia-box settings page fresh", async () => { await page.goto(base + "/settings/plugins/alia-box", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000); await page.screenshot({ path: `${out}/18-bbbox-settings.png` }); });
+await step("18 alia-box settings page fresh", async () => { await page.goto(base + "/settings/plugins/alia-box", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000); await page.screenshot({ path: `${out}/18-aliabox-settings.png` }); });
 await step("19 hash on alia-box after load", async () => { await page.goto(base + "/settings/plugins/alia-box#backend/docker", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000); });
 const header = await page.evaluate(() => { const main = document.querySelector("main"); return main ? main.innerText.slice(0, 600) : document.body.innerText.slice(0, 600); });
 console.log(JSON.stringify({ log, errors, header }, null, 1));

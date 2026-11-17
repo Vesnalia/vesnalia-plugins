@@ -4,7 +4,7 @@
 Uso: parsear-registro.py <proyectos.json> <salida.jsonl.gz> <agotadas.jsonl.gz> <plazas.jsonl.gz> <registro>...
 `plazas`: {ts, cuenta, ocupadas, tope} cada vez que el registro las cuenta.
 `agotadas`: cada vez que el plugin dijo que una cuenta no puede con un modelo hasta una hora,
-{ts, cuenta, modelo, hasta} (hora del servidor de bb: CET en noviembre, medido con `date` en el NUC).
+{ts, cuenta, modelo, hasta} (hora del servidor de alia: CET en noviembre, medido con `date` en el NUC).
 Cada fila: {ts, tipo, hilo, proyecto, de, a, motivo, modelo}. `tipo` es la forma de la línea;
 `motivo` es el reparto del informe. Una línea que parece un cambio y no se reconoce hace fallar
 el script: mejor parar que contar de menos.

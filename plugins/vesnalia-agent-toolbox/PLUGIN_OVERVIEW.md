@@ -4,7 +4,7 @@ Provider-independent VesnALIA surfaces as agent tools for any coding agent in Ve
 
 ## What it does
 
-Registers agent tools (`bbtools_*`) via the VesnALIA SDK so any provider — opencode,
+Registers agent tools (`aliatools_*`) via the VesnALIA SDK so any provider — opencode,
 Prime Agent (ACP), Google Antigravity, or any OpenRouter model — can act inside
 VesnALIA: coordinate, message, spawn, wait for, retry, stop, outline, and archive
 threads; see and answer threads' pending interactions; read and write the

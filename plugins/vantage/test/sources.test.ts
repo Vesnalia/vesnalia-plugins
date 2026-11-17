@@ -379,8 +379,8 @@ describe("loadImages", () => {
   });
 
   it("asks the host at a workspace's repository root for both sides as base64, with each scope's target", async () => {
-    const { deps: d, host } = deps({ host: { outcome: "available", old: "AAA=", new: "BBB=", truncated: false } });
-    expect(await loadImages(d, input("committed"))).toEqual({ old: "AAA=", new: "BBB=", truncated: false });
+    const { deps: d, host } = deps({ host: { outcome: "available", old: "AAA=", new: "ALIAB=", truncated: false } });
+    expect(await loadImages(d, input("committed"))).toEqual({ old: "AAA=", new: "ALIAB=", truncated: false });
     await loadImages(d, input("branch"));
     await loadImages(d, input("uncommitted", { previousPath: "shots/before.png", untracked: true }));
     await loadImages(d, input("committed", { sha: "c".repeat(40) }));

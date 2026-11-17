@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Deterministic stand-in for the VariaQ CLI used by bb-plugin-variaq tests.
+Deterministic stand-in for the VariaQ CLI used by alia-plugin-variaq tests.
 
 Emulates VariaQ 0.6.0 schema-v1 envelopes so tests can verify the plugin's
 JSON contract without touching a real VariaQ install or solver.

@@ -210,43 +210,43 @@ describe("extractHashtags", () => {
 describe("referencedAttachmentIds", () => {
   it("finds ids in image refs and bare urls", () => {
     const body =
-      "![shot](bbnote://attachment/abc123def0)\nsee bbnote://attachment/ffff000011";
+      "![shot](alianote://attachment/abc123def0)\nsee alianote://attachment/ffff000011";
     expect(referencedAttachmentIds(body)).toEqual(["abc123def0", "ffff000011"]);
   });
   it("dedupes repeated refs, keeping first-use order", () => {
     const body =
-      "bbnote://attachment/bbb ![x](bbnote://attachment/aaa) bbnote://attachment/bbb";
-    expect(referencedAttachmentIds(body)).toEqual(["bbb", "aaa"]);
+      "alianote://attachment/aliab ![x](alianote://attachment/aaa) alianote://attachment/aliab";
+    expect(referencedAttachmentIds(body)).toEqual(["aliab", "aaa"]);
   });
   it("returns empty for bodies without refs", () => {
     expect(referencedAttachmentIds("")).toEqual([]);
     expect(referencedAttachmentIds("plain text, no attachments")).toEqual([]);
-    expect(referencedAttachmentIds("bbnote://note/abc is not an attachment")).toEqual([]);
+    expect(referencedAttachmentIds("alianote://note/abc is not an attachment")).toEqual([]);
   });
 });
 
 describe("stripAttachmentRefs", () => {
   it("drops the whole line when the image ref was alone on it", () => {
-    const body = "before\n![shot](bbnote://attachment/aaa)\nafter";
+    const body = "before\n![shot](alianote://attachment/aaa)\nafter";
     expect(stripAttachmentRefs(body, "aaa")).toBe("before\nafter");
   });
   it("drops a ref-only line even when it is padded with whitespace", () => {
-    const body = "before\n  ![shot](bbnote://attachment/aaa)  \nafter";
+    const body = "before\n  ![shot](alianote://attachment/aaa)  \nafter";
     expect(stripAttachmentRefs(body, "aaa")).toBe("before\nafter");
   });
   it("keeps the line when text surrounds the ref", () => {
-    expect(stripAttachmentRefs("see ![s](bbnote://attachment/aaa) here", "aaa")).toBe(
+    expect(stripAttachmentRefs("see ![s](alianote://attachment/aaa) here", "aaa")).toBe(
       "see  here",
     );
   });
   it("strips bare urls", () => {
-    expect(stripAttachmentRefs("img at bbnote://attachment/aaa today", "aaa")).toBe(
+    expect(stripAttachmentRefs("img at alianote://attachment/aaa today", "aaa")).toBe(
       "img at  today",
     );
   });
   it("leaves other ids alone, including ids the target prefixes", () => {
     const body =
-      "![a](bbnote://attachment/aaa1)\nbbnote://attachment/aaa1 and ![b](bbnote://attachment/bbb)";
+      "![a](alianote://attachment/aaa1)\nbbnote://attachment/aaa1 and ![b](alianote://attachment/aliab)";
     expect(stripAttachmentRefs(body, "aaa")).toBe(body);
   });
   it("returns the body unchanged when the id is absent", () => {
@@ -255,7 +255,7 @@ describe("stripAttachmentRefs", () => {
   });
   it("strips every occurrence across the body", () => {
     const body =
-      "![one](bbnote://attachment/aaa)\ntext ![two](bbnote://attachment/aaa) tail";
+      "![one](alianote://attachment/aaa)\ntext ![two](alianote://attachment/aaa) tail";
     expect(stripAttachmentRefs(body, "aaa")).toBe("text  tail");
   });
 });

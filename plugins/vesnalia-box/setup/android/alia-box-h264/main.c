@@ -13,17 +13,17 @@
 
 #include "encoder.h"
 
-#ifndef BB_H264_OPENH264_LIBRARY
+#ifndef ALIA_H264_OPENH264_LIBRARY
 #ifdef __APPLE__
-#define BB_H264_OPENH264_LIBRARY "libopenh264.8.dylib"
+#define ALIA_H264_OPENH264_LIBRARY "libopenh264.8.dylib"
 #else
-#define BB_H264_OPENH264_LIBRARY "libopenh264.so.8"
+#define ALIA_H264_OPENH264_LIBRARY "libopenh264.so.8"
 #endif
 #endif
 
 enum { LARGEST_SIDE = 4096, HEADER_SIZE = 17, KEY_FLAG = 1, LONGEST_PATH = 4096 };
 
-Settings settings = {8000, 60, 1, BB_H264_OPENH264_LIBRARY};
+Settings settings = {8000, 60, 1, ALIA_H264_OPENH264_LIBRARY};
 
 static uint8_t *unit;
 static size_t unit_size, unit_capacity;
@@ -32,7 +32,7 @@ static int unit_key;
 void refuse(const char *format, ...) {
   va_list words;
   va_start(words, format);
-  fputs("bb-box-h264: ", stderr);
+  fputs("alia-box-h264: ", stderr);
   vfprintf(stderr, format, words);
   fputc('\n', stderr);
   va_end(words);
@@ -61,7 +61,7 @@ void append_to_unit(const uint8_t *bytes, size_t size) {
 }
 
 static const Encoder *const ENCODERS[] = {
-#ifdef BB_H264_WITH_X264
+#ifdef ALIA_H264_WITH_X264
   &X264_ENCODER,
 #endif
   &OPENH264_ENCODER,
@@ -232,8 +232,8 @@ static const uint8_t *shared_frame(size_t size) {
 }
 
 static void usage(void) {
-  fputs("usage: bb-box-h264 [--encoder x264|openh264] [--openh264 library] [--bitrate kbit/s] [--fps n] [--threads n] [--version]\n"
-        "       bb-box-h264 --simulator udid [--developer dir] [--scale thousandths] [encoder options]\n",
+  fputs("usage: alia-box-h264 [--encoder x264|openh264] [--openh264 library] [--bitrate kbit/s] [--fps n] [--threads n] [--version]\n"
+        "       alia-box-h264 --simulator udid [--developer dir] [--scale thousandths] [encoder options]\n",
         stderr);
   exit(2);
 }
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
     puts(words);
     return 0;
   }
-  fprintf(stderr, "bb-box-h264: %s, %d kbit/s, %d thread%s\n", words, settings.bitrate_kbps, settings.threads,
+  fprintf(stderr, "alia-box-h264: %s, %d kbit/s, %d thread%s\n", words, settings.bitrate_kbps, settings.threads,
           settings.threads == 1 ? "" : "s");
   if (simulator) {
 #ifdef __APPLE__

@@ -46,7 +46,7 @@
 - Drop the Experimental status: the plugin is listed as "Cache Watch" and
   releases are published as regular GitHub releases.
 - Fix zero read/write counts for finished turns in the panel, header, templates
-  and `status`: BB keeps only a turn's last usage report, so the latest turn now
+  and `status`: VesnALIA keeps only a turn's last usage report, so the latest turn now
   comes from saved statistics that collected every report while the turn ran.
 - Read Claude Code Telemetry's per-request cache-write lifetimes (5 minutes /
   1 hour / unknown). Show the turn split in the panel and per-request details,
@@ -59,7 +59,7 @@
 - Add session totals for 5-minute, 1-hour, and unreported-lifetime writes, and
   template variables `write5mTokens`, `write1hTokens`, and `cacheLifetime`.
 - Upgrade saved statistics once (revision 4) by re-reading retained events, so
-  lifetimes are recovered where BB still has the history. Reports BB has already
+  lifetimes are recovered where VesnALIA still has the history. Reports VesnALIA has already
   dropped stay in the saved statistics.
 - Show which share of turns the session lifetime split covers; format
   non-minute `cacheLifetime` values in seconds.

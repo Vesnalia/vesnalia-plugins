@@ -15,7 +15,7 @@
 
 ### Upgrade notes
 
-Requires BB >=0.49 and Plugin SDK >=0.6.132. Beads mode was tested with bd 1.3.1.
+Requires VesnALIA >=0.49 and Plugin SDK >=0.6.132. Beads mode was tested with bd 1.3.1.
 The default resource limits are 8 task work units (start admissions + review
 returns) and 100 team start admissions; adjust them with grounds in Resources.
 `task done` now requires acceptance grounds; a lead references the reviewed

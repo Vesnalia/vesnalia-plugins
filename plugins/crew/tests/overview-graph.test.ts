@@ -12,11 +12,11 @@ import {
 function source(overrides: Partial<OverviewSource> = {}): OverviewSource {
   return {
     crews: [
-      { name: "alpha", status: "running", summary: "", task: "BBP-1", branch: "alia/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [] },
+      { name: "alpha", status: "running", summary: "", task: "ALIAP-1", branch: "alia/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [] },
       { name: "beta", status: "idle", summary: "", task: null, branch: "alia/beta", needsYou: 1, members: [{ key: "beta-lead", lead: true, activity: "idle" }], labelTasks: [] },
     ],
     leadLinks: [{ from: "alpha", to: "beta", count: 3 }],
-    dependencies: [{ crew: "beta", task: "BBP-2", until: "done", state: "open", source: null }],
+    dependencies: [{ crew: "beta", task: "ALIAP-2", until: "done", state: "open", source: null }],
     ...overrides,
   };
 }
@@ -25,25 +25,25 @@ describe("buildOverviewGraph", () => {
   it("maps crews and their own ticket into nodes, with a task→crew edge", () => {
     const graph = buildOverviewGraph([{ id: "p1", name: "Project One" }], new Map([["p1", source()]]));
     const alpha = crewNodeId("p1", "alpha");
-    const task = taskNodeId("p1", "BBP-1");
+    const task = taskNodeId("p1", "ALIAP-1");
     expect(graph.nodes.find((node) => node.id === alpha)).toMatchObject({ kind: "crew", name: "alpha", status: "running" });
-    expect(graph.nodes.find((node) => node.id === task)).toMatchObject({ kind: "task", key: "BBP-1", done: false });
+    expect(graph.nodes.find((node) => node.id === task)).toMatchObject({ kind: "task", key: "ALIAP-1", done: false });
     expect(graph.edges).toContainEqual(expect.objectContaining({ kind: "task-crew", from: task, to: alpha, active: true }));
   });
 
   it("marks a task→crew edge inactive when the crew isn't working", () => {
     const graph = buildOverviewGraph([{ id: "p1", name: "P" }], new Map([["p1", source()]]));
     const beta = crewNodeId("p1", "beta");
-    const dep = taskNodeId("p1", "BBP-2");
+    const dep = taskNodeId("p1", "ALIAP-2");
     expect(graph.edges).toContainEqual(expect.objectContaining({ from: dep, to: beta, active: true })); // state: "open"
   });
 
   it("marks a dependency done when its state is settled, and reuses the task node", () => {
     const graph = buildOverviewGraph(
       [{ id: "p1", name: "P" }],
-      new Map([["p1", source({ dependencies: [{ crew: "beta", task: "BBP-2", until: "done", state: "merged", source: null }] })]]),
+      new Map([["p1", source({ dependencies: [{ crew: "beta", task: "ALIAP-2", until: "done", state: "merged", source: null }] })]]),
     );
-    const dep = graph.nodes.find((node) => node.id === taskNodeId("p1", "BBP-2"));
+    const dep = graph.nodes.find((node) => node.id === taskNodeId("p1", "ALIAP-2"));
     expect(dep).toMatchObject({ done: true });
   });
 
@@ -71,7 +71,7 @@ describe("buildOverviewGraph", () => {
     ]);
   });
 
-  it("counts crews with an error apart from those that only wait on a decision (BBP-95)", () => {
+  it("counts crews with an error apart from those that only wait on a decision (ALIAP-95)", () => {
     const crews = [
       { name: "mr", status: "running", summary: "", task: null, branch: null, needsYou: 1, members: [{ key: "lead", lead: true, activity: "idle", needsYou: ["merge-request"] }], labelTasks: [] },
       { name: "broken", status: "running", summary: "", task: null, branch: null, needsYou: 1, members: [{ key: "lead", lead: true, activity: "idle", needsYou: ["merge-conflict"] }], labelTasks: [] },
@@ -86,8 +86,8 @@ describe("buildOverviewGraph", () => {
     expect(graph.nodes.map((node) => node.id)).toEqual([
       crewNodeId("p1", "alpha"),
       crewNodeId("p1", "beta"),
-      taskNodeId("p1", "BBP-1"),
-      taskNodeId("p1", "BBP-2"),
+      taskNodeId("p1", "ALIAP-1"),
+      taskNodeId("p1", "ALIAP-2"),
     ]);
   });
 });
@@ -96,20 +96,20 @@ describe("buildOverviewGraph: label-assigned tasks (crew-<crew> label, no crew.t
   it("draws an active task→crew edge for a label task whose ticket is in_progress", () => {
     const graph = buildOverviewGraph(
       [{ id: "p1", name: "P" }],
-      new Map([["p1", source({ crews: [{ name: "gamma", status: "idle", summary: "", task: null, branch: null, needsYou: 0, members: [], labelTasks: [{ key: "BBP-84", title: "Label edge", status: "in_progress" }] }] })]]),
+      new Map([["p1", source({ crews: [{ name: "gamma", status: "idle", summary: "", task: null, branch: null, needsYou: 0, members: [], labelTasks: [{ key: "ALIAP-84", title: "Label edge", status: "in_progress" }] }] })]]),
     );
     const gamma = crewNodeId("p1", "gamma");
-    const task = taskNodeId("p1", "BBP-84");
-    expect(graph.nodes.find((node) => node.id === task)).toMatchObject({ kind: "task", key: "BBP-84", title: "Label edge", done: false });
+    const task = taskNodeId("p1", "ALIAP-84");
+    expect(graph.nodes.find((node) => node.id === task)).toMatchObject({ kind: "task", key: "ALIAP-84", title: "Label edge", done: false });
     expect(graph.edges).toContainEqual(expect.objectContaining({ kind: "task-crew", from: task, to: gamma, active: true }));
   });
 
   it("marks the task done once the ticket is done or canceled, inactive edge", () => {
     const graph = buildOverviewGraph(
       [{ id: "p1", name: "P" }],
-      new Map([["p1", source({ crews: [{ name: "gamma", status: "idle", summary: "", task: null, branch: null, needsYou: 0, members: [], labelTasks: [{ key: "BBP-84", title: "Label edge", status: "done" }] }] })]]),
+      new Map([["p1", source({ crews: [{ name: "gamma", status: "idle", summary: "", task: null, branch: null, needsYou: 0, members: [], labelTasks: [{ key: "ALIAP-84", title: "Label edge", status: "done" }] }] })]]),
     );
-    const task = graph.nodes.find((node) => node.id === taskNodeId("p1", "BBP-84"));
+    const task = graph.nodes.find((node) => node.id === taskNodeId("p1", "ALIAP-84"));
     expect(task).toMatchObject({ done: true });
     expect(graph.edges).toContainEqual(expect.objectContaining({ active: false }));
   });
@@ -121,13 +121,13 @@ describe("buildOverviewGraph: label-assigned tasks (crew-<crew> label, no crew.t
         [
           "p1",
           source({
-            crews: [{ name: "alpha", status: "running", summary: "", task: "BBP-1", branch: "alia/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [{ key: "BBP-1", title: "Alpha ticket", status: "in_progress" }] }],
+            crews: [{ name: "alpha", status: "running", summary: "", task: "ALIAP-1", branch: "alia/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [{ key: "ALIAP-1", title: "Alpha ticket", status: "in_progress" }] }],
           }),
         ],
       ]),
     );
     const alpha = crewNodeId("p1", "alpha");
-    const task = taskNodeId("p1", "BBP-1");
+    const task = taskNodeId("p1", "ALIAP-1");
     expect(graph.edges.filter((edge) => edge.kind === "task-crew" && edge.from === task && edge.to === alpha)).toHaveLength(1);
   });
 
@@ -165,11 +165,11 @@ describe("filterOverviewGraph", () => {
   it("hides done tasks when the Done toggle is off, but keeps open ones", () => {
     const withDone = buildOverviewGraph(
       [{ id: "p1", name: "P1" }],
-      new Map([["p1", source({ dependencies: [{ crew: "beta", task: "BBP-2", until: "done", state: "merged", source: null }] })]]),
+      new Map([["p1", source({ dependencies: [{ crew: "beta", task: "ALIAP-2", until: "done", state: "merged", source: null }] })]]),
     );
     const filtered = filterOverviewGraph(withDone, { projectIds: null, showCrews: true, showTasks: true, showDone: false, search: "" });
-    expect(filtered.visible.has(taskNodeId("p1", "BBP-2"))).toBe(false);
-    expect(filtered.visible.has(taskNodeId("p1", "BBP-1"))).toBe(true);
+    expect(filtered.visible.has(taskNodeId("p1", "ALIAP-2"))).toBe(false);
+    expect(filtered.visible.has(taskNodeId("p1", "ALIAP-1"))).toBe(true);
   });
 
   it("matches and focuses search hits across crew name, branch, member key and task key", () => {
@@ -180,8 +180,8 @@ describe("filterOverviewGraph", () => {
   });
 
   it("is case-insensitive and matches a task key", () => {
-    const filtered = filterOverviewGraph(graph, { projectIds: null, showCrews: true, showTasks: true, showDone: true, search: "bbp-1" });
-    expect(filtered.matched.has(taskNodeId("p1", "BBP-1"))).toBe(true);
+    const filtered = filterOverviewGraph(graph, { projectIds: null, showCrews: true, showTasks: true, showDone: true, search: "aliap-1" });
+    expect(filtered.matched.has(taskNodeId("p1", "ALIAP-1"))).toBe(true);
   });
 });
 

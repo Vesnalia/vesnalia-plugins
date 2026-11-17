@@ -146,7 +146,7 @@ function runScript(dir: string, name: string, args: readonly string[], signal: A
     if (!scriptArgsOk(name, args)) return resolve({ exitCode: 2, stdout: "", stderr: `alia-box's host entry runs no script ${name} with those arguments.` });
     const stdout = new Capture(OUTPUT_BYTES);
     const stderr = new Capture(OUTPUT_BYTES);
-    const child = killsOnlyOnceStarted(spawn("sh", ["-c", msbScript(name), "alia-box-msb", ...args], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, BBBOX_MSB_DIR: dir } }));
+    const child = killsOnlyOnceStarted(spawn("sh", ["-c", msbScript(name), "alia-box-msb", ...args], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ALIABOX_MSB_DIR: dir } }));
     const timer = setTimeout(() => child.kill("SIGKILL"), SCRIPT_MS[name] ?? 60_000);
     const kill = () => child.kill("SIGKILL");
     signal.addEventListener("abort", kill, { once: true });

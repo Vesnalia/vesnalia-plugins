@@ -112,12 +112,12 @@ async function accessOffer(deps: SetupDockerDeps, access: MachineAccessProblem |
   if (!access) return "";
   const listening = await deps.listening?.().catch(() => null);
   if (!listening) return `\n${accessWords(access)}`;
-  if (!listening.url) return `\n${accessWords(access)}\nBB listens on every address, port ${listening.port}. It has no other address to give boxes.`;
+  if (!listening.url) return `\n${accessWords(access)}\nALIA listens on every address, port ${listening.port}. It has no other address to give boxes.`;
   if (setAccess && deps.setDirectAccess) {
     await deps.setDirectAccess(listening.url);
     return `\nSet Machine access to direct at ${listening.url}. That changes VesnALIA's settings.`;
   }
-  return `\n${accessWords(access)}\nBB listens on every address, port ${listening.port}. Run again with --set-machine-access to set Machine access to direct at ${listening.url}. That changes VesnALIA's settings.`;
+  return `\n${accessWords(access)}\nALIA listens on every address, port ${listening.port}. Run again with --set-machine-access to set Machine access to direct at ${listening.url}. That changes VesnALIA's settings.`;
 }
 
 export async function setupDocker(deps: SetupDockerDeps, options: { machine?: string; wait: boolean; signal?: AbortSignal; setAccess?: boolean }): Promise<SetupDockerResult> {

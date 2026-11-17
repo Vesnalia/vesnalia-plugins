@@ -10,7 +10,7 @@
  *
  * Everything is callback-driven via a facet (`livePreview(config)`) — no
  * fetch/RPC in this module. All classes are defined in `editor.css` and
- * prefixed `bbnotes-`.
+ * prefixed `alianotes-`.
  */
 import { syntaxTree } from "@codemirror/language";
 import { Facet, type Extension, type Range, type Text } from "@codemirror/state";
@@ -29,7 +29,7 @@ import { findTaskBoxInLine } from "./tasks";
 export interface LivePreviewConfig {
   /** Called when the user ⌘/Ctrl-clicks a link. */
   onOpenLink?: (href: string) => void;
-  /** Resolves a `bbnote://attachment/<id>` reference to a data: URI (or null). */
+  /** Resolves a `alianote://attachment/<id>` reference to a data: URI (or null). */
   resolveAttachment?: (id: string) => Promise<string | null>;
 }
 
@@ -37,8 +37,8 @@ const livePreviewConfig = Facet.define<LivePreviewConfig, LivePreviewConfig>({
   combine: (values) => values[0] ?? {},
 });
 
-/** `bbnote://attachment/<id>` — group 1 is the attachment id. */
-const ATTACHMENT_URL_RE = /^bbnote:\/\/attachment\/(.+)$/;
+/** `alianote://attachment/<id>` — group 1 is the attachment id. */
+const ATTACHMENT_URL_RE = /^alianote:\/\/attachment\/(.+)$/;
 
 interface ImageCache {
   /** attachment id → resolved data: URI, or null when resolution failed. */
@@ -60,7 +60,7 @@ class CheckboxWidget extends WidgetType {
   override toDOM(): HTMLElement {
     const box = document.createElement("input");
     box.type = "checkbox";
-    box.className = "bbnotes-task-checkbox";
+    box.className = "alianotes-task-checkbox";
     box.checked = this.checked;
     box.setAttribute(
       "aria-label",
@@ -82,7 +82,7 @@ class BulletWidget extends WidgetType {
 
   override toDOM(): HTMLElement {
     const dot = document.createElement("span");
-    dot.className = "bbnotes-bullet";
+    dot.className = "alianotes-bullet";
     dot.textContent = "•";
     return dot;
   }
@@ -95,7 +95,7 @@ class HrWidget extends WidgetType {
 
   override toDOM(): HTMLElement {
     const rule = document.createElement("span");
-    rule.className = "bbnotes-hr";
+    rule.className = "alianotes-hr";
     return rule;
   }
 }
@@ -116,7 +116,7 @@ class ImageWidget extends WidgetType {
 
   override toDOM(): HTMLElement {
     const wrap = document.createElement("span");
-    wrap.className = "bbnotes-image";
+    wrap.className = "alianotes-image";
     const img = document.createElement("img");
     img.alt = this.alt;
     img.draggable = false;
@@ -132,16 +132,16 @@ class ImageWidget extends WidgetType {
     const id = match[1];
     const cached = this.cache.resolved.get(id);
     if (cached !== undefined) {
-      if (cached === null) wrap.classList.add("bbnotes-image-broken");
+      if (cached === null) wrap.classList.add("alianotes-image-broken");
       else img.src = cached;
       return wrap;
     }
     if (!this.resolveAttachment) {
-      wrap.classList.add("bbnotes-image-broken");
+      wrap.classList.add("alianotes-image-broken");
       return wrap;
     }
 
-    wrap.classList.add("bbnotes-image-pending");
+    wrap.classList.add("alianotes-image-pending");
     let pending = this.cache.pending.get(id);
     if (!pending) {
       pending = this.resolveAttachment(id).catch(() => null);
@@ -150,8 +150,8 @@ class ImageWidget extends WidgetType {
     void pending.then((uri) => {
       this.cache.resolved.set(id, uri);
       this.cache.pending.delete(id);
-      wrap.classList.remove("bbnotes-image-pending");
-      if (uri === null) wrap.classList.add("bbnotes-image-broken");
+      wrap.classList.remove("alianotes-image-pending");
+      if (uri === null) wrap.classList.add("alianotes-image-broken");
       else img.src = uri;
     });
     return wrap;
@@ -175,12 +175,12 @@ function isWikiWrappedLink(doc: Text, node: SyntaxNode): boolean {
 }
 
 const HEADING_LINE_CLASS: Record<string, string> = {
-  ATXHeading1: "bbnotes-h1",
-  ATXHeading2: "bbnotes-h2",
-  ATXHeading3: "bbnotes-h3",
-  ATXHeading4: "bbnotes-h4",
-  ATXHeading5: "bbnotes-h5",
-  ATXHeading6: "bbnotes-h6",
+  ATXHeading1: "alianotes-h1",
+  ATXHeading2: "alianotes-h2",
+  ATXHeading3: "alianotes-h3",
+  ATXHeading4: "alianotes-h4",
+  ATXHeading5: "alianotes-h5",
+  ATXHeading6: "alianotes-h6",
 };
 
 function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
@@ -266,16 +266,16 @@ function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
       }
 
       case "Emphasis":
-        mark(node.from, node.to, "bbnotes-em");
+        mark(node.from, node.to, "alianotes-em");
         return;
       case "StrongEmphasis":
-        mark(node.from, node.to, "bbnotes-strong");
+        mark(node.from, node.to, "alianotes-strong");
         return;
       case "Strikethrough":
-        mark(node.from, node.to, "bbnotes-strike");
+        mark(node.from, node.to, "alianotes-strike");
         return;
       case "InlineCode":
-        mark(node.from, node.to, "bbnotes-inline-code");
+        mark(node.from, node.to, "alianotes-inline-code");
         return;
       case "EmphasisMark":
       case "StrikethroughMark":
@@ -287,9 +287,9 @@ function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
       case "FencedCode":
       case "CodeBlock":
         addLineClassRange(node.from, node.to, visibleFrom, visibleTo, (n, first, last) => {
-          const classes = ["bbnotes-codeblock"];
-          if (n === first) classes.push("bbnotes-codeblock-first");
-          if (n === last) classes.push("bbnotes-codeblock-last");
+          const classes = ["alianotes-codeblock"];
+          if (n === first) classes.push("alianotes-codeblock-first");
+          if (n === last) classes.push("alianotes-codeblock-last");
           return classes;
         });
         return;
@@ -298,14 +298,14 @@ function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
         // Legible, not gridded: mono line class keeps pipes aligned; the
         // `|---|` delimiter row is dimmed. True grid rendering is out of scope.
         addLineClassRange(node.from, node.to, visibleFrom, visibleTo, (n) => {
-          const classes = ["bbnotes-table-row"];
-          if (isTableDelimiterLine(doc.line(n).text)) classes.push("bbnotes-table-delimiter");
+          const classes = ["alianotes-table-row"];
+          if (isTableDelimiterLine(doc.line(n).text)) classes.push("alianotes-table-delimiter");
           return classes;
         });
         return;
 
       case "Blockquote":
-        addLineClassRange(node.from, node.to, visibleFrom, visibleTo, () => ["bbnotes-quote"]);
+        addLineClassRange(node.from, node.to, visibleFrom, visibleTo, () => ["alianotes-quote"]);
         return;
       case "QuoteMark":
         if (!lineIsActive(node.from)) hideWithSpace(node.from, node.to);
@@ -321,10 +321,10 @@ function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
       }
 
       case "Task": {
-        addLineClass(node.from, "bbnotes-task");
+        addLineClass(node.from, "alianotes-task");
         const marker = node.node.getChild("TaskMarker");
         if (marker && /x/i.test(doc.sliceString(marker.from + 1, marker.to - 1))) {
-          addLineClass(node.from, "bbnotes-task-done");
+          addLineClass(node.from, "alianotes-task-done");
         }
         return;
       }
@@ -347,7 +347,7 @@ function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
         // Wiki-link shape: skip node AND children (no link mark, no
         // LinkMark hiding) — wiki-links.ts renders the pill.
         if (name === "Link" && isWikiWrappedLink(doc, node.node)) return false;
-        mark(node.from, node.to, "bbnotes-link");
+        mark(node.from, node.to, "alianotes-link");
         return;
       case "LinkMark":
         if (!lineIsActive(node.from)) hide(node.from, node.to);
@@ -361,7 +361,7 @@ function buildDecorations(view: EditorView, images: ImageCache): DecorationSet {
           if (!lineIsActive(node.from)) hide(node.from, node.to);
         } else if (parent !== "Autolink") {
           // Bare GFM autolink (URL directly in a paragraph).
-          mark(node.from, node.to, "bbnotes-link");
+          mark(node.from, node.to, "alianotes-link");
         }
         return;
       }
@@ -460,7 +460,7 @@ function openLinkAt(view: EditorView, event: MouseEvent): boolean {
 
 function handleMousedown(event: MouseEvent, view: EditorView): boolean {
   const target = event.target;
-  if (target instanceof HTMLElement && target.classList.contains("bbnotes-task-checkbox")) {
+  if (target instanceof HTMLElement && target.classList.contains("alianotes-task-checkbox")) {
     return toggleCheckbox(view, target, event);
   }
   if (event.metaKey || event.ctrlKey) return openLinkAt(view, event);

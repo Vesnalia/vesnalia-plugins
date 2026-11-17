@@ -263,7 +263,7 @@ describe("crew file validation", () => {
     });
   });
 
-  describe("graphs (BBP-30)", () => {
+  describe("graphs (ALIAP-30)", () => {
     it("inherit crew → group → member, deduplicated", () => {
       const spec = base();
       spec.graphs = ["onboarding"];

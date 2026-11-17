@@ -3667,7 +3667,7 @@ describe("Account Pool plugin", () => {
       }),
       importedCredentials({
         accessToken: "oauth-b",
-        accountUuid: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        accountUuid: "aliabbbbbb-aliabb-4bbb-8bbb-aliabbbbbbbbbb",
       }),
     ];
     let importIndex = 0;
@@ -3749,7 +3749,7 @@ describe("Account Pool plugin", () => {
     });
     cleanups.push(upstream.close);
     const accountUuid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-    const oldUuid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const oldUuid = "aliabbbbbb-aliabb-4bbb-8bbb-aliabbbbbbbbbb";
     const fixture = await createFixture({
       upstreamUrl: upstream.url,
       source: "import",
@@ -3805,7 +3805,7 @@ describe("Account Pool plugin", () => {
         model: "claude-fable-5",
         metadata: {
           user_id: JSON.stringify({
-            account_uuid: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            account_uuid: "aliabbbbbb-aliabb-4bbb-8bbb-aliabbbbbbbbbb",
           }),
         },
       }),

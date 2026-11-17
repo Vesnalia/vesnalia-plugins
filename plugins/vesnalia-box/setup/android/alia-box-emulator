@@ -1,17 +1,17 @@
 #!/bin/bash
 set -Eeuo pipefail
-trap 'echo "bb-box-emulator: line $LINENO failed: $BASH_COMMAND" >&2' ERR
+trap 'echo "alia-box-emulator: line $LINENO failed: $BASH_COMMAND" >&2' ERR
 
 usage() {
   cat >&2 <<'USAGE'
-usage: bb-box-emulator start <avd> [--cold] [--no-save] [--timeout <s>]
-       bb-box-emulator stop
-       bb-box-emulator status
-       bb-box-emulator grpc <method> [--token <token> | --no-token]
+usage: alia-box-emulator start <avd> [--cold] [--no-save] [--timeout <s>]
+       alia-box-emulator stop
+       alia-box-emulator status
+       alia-box-emulator grpc <method> [--token <token> | --no-token]
 
 start   starts the AVD with no window, its gRPC on 8554 behind a token made new
         for this start, and waits until Android has booted. It refuses to start
-        while bb-box-device-firewall check fails. It loads the AVD's snapshot
+        while alia-box-device-firewall check fails. It loads the AVD's snapshot
         unless --cold; --no-save leaves the snapshot as it is when it stops.
         It prints one line: the AVD, the seconds to boot, and whether the
         snapshot loaded.
@@ -30,9 +30,9 @@ export ANDROID_HOME=$sdk ANDROID_SDK_ROOT=$sdk
 export PATH=$sdk/platform-tools:$sdk/emulator:$PATH
 serial=emulator-5554
 save_grace=180
-state=$HOME/.bb-box/device/emulator
+state=$HOME/.alia-box/device/emulator
 mkdir -p "$state"
-chmod 0700 "$HOME/.bb-box/device" "$state"
+chmod 0700 "$HOME/.alia-box/device" "$state"
 
 start_time_of_live_process() {
   local fields
@@ -56,10 +56,10 @@ how_it_ended() {
 report_early_end() {
   local avd=$1 status=$2 log=$3
   if [ -s "$log" ]; then
-    echo "bb-box-emulator: the emulator ended before $avd booted, $(how_it_ended "$status"); its last lines:" >&2
+    echo "alia-box-emulator: the emulator ended before $avd booted, $(how_it_ended "$status"); its last lines:" >&2
     tail -n 20 "$log" >&2
   else
-    echo "bb-box-emulator: the emulator ended before $avd booted, $(how_it_ended "$status"), and wrote nothing to $log; the kernel's log may say why: sudo dmesg | tail" >&2
+    echo "alia-box-emulator: the emulator ended before $avd booted, $(how_it_ended "$status"), and wrote nothing to $log; the kernel's log may say why: sudo dmesg | tail" >&2
   fi
 }
 
@@ -90,11 +90,11 @@ start() {
     shift
   done
   if pid=$(running_pid); then
-    echo "bb-box-emulator: $(cat "$state/avd") is running already (pid $pid); stop it first" >&2
+    echo "alia-box-emulator: $(cat "$state/avd") is running already (pid $pid); stop it first" >&2
     exit 1
   fi
-  if ! bb-box-device-firewall check; then
-    echo "bb-box-emulator: the device's firewall is not in place, so the emulator does not start" >&2
+  if ! alia-box-device-firewall check; then
+    echo "alia-box-emulator: the device's firewall is not in place, so the emulator does not start" >&2
     exit 1
   fi
   local flags=(-avd "$avd" -port 5554 -grpc 8554 -grpc-use-token -gpu swiftshader_indirect -no-window -no-audio -no-boot-anim)
@@ -117,7 +117,7 @@ start() {
     exit 1
   fi
   if [ "$waited" = "$BOOT_TIMED_OUT" ]; then
-    echo "bb-box-emulator: $avd did not boot within $timeout s" >&2
+    echo "alia-box-emulator: $avd did not boot within $timeout s" >&2
     exit 1
   fi
   local ms=$((($(date +%s%N) - started) / 1000000)) snapshot=cold
@@ -129,14 +129,14 @@ start() {
 
 stop() {
   local pid
-  pid=$(running_pid) || { echo "bb-box-emulator: no emulator is running" >&2; return 0; }
+  pid=$(running_pid) || { echo "alia-box-emulator: no emulator is running" >&2; return 0; }
   adb -s "$serial" emu kill >/dev/null 2>&1 </dev/null || kill "$pid"
   for _ in $(seq 1 $(((save_grace + 30) * 10))); do
     kill -0 "$pid" 2>/dev/null || break
     sleep 0.1
   done
   if kill -0 "$pid" 2>/dev/null; then
-    echo "bb-box-emulator: the emulator did not end within $((save_grace + 30)) s; stopping it" >&2
+    echo "alia-box-emulator: the emulator did not end within $((save_grace + 30)) s; stopping it" >&2
     kill -9 "$pid" 2>/dev/null || true
   fi
   rm -f "$state/pid" "$state/avd" "$state/started"
@@ -165,7 +165,7 @@ grpc() {
     --token) header=(-H "authorization: Bearer $2") ;;
     "")
       local file
-      file=$(discovery_file) || { echo "bb-box-emulator: no running emulator's discovery file" >&2; exit 1; }
+      file=$(discovery_file) || { echo "alia-box-emulator: no running emulator's discovery file" >&2; exit 1; }
       header=(-H "authorization: Bearer $(sed -n 's/^grpc.token=//p' "$file")")
       ;;
     *) usage ;;

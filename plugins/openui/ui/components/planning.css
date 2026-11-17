@@ -1,124 +1,124 @@
 /* Hallmark · shape: app screen · scope: component group (time and planning) · genre: modern-minimal · theme: ALIA (kit.css tokens) · states: 8 via kit · v1.0.0 */
 /* Time and planning (planning.tsx). Tokens only, from kit.css. */
-/* Hallmark · waive 26b · buttons are the kit Button (.bbui-btn) · press and disabled states come from kit.css; planning adds no control of its own */
+/* Hallmark · waive 26b · buttons are the kit Button (.aliaui-btn) · press and disabled states come from kit.css; planning adds no control of its own */
 
 /* Sideways-scrolling regions take keyboard focus so they can be scrolled with arrows. */
-.bbui-planning-board, .bbui-planning-scroll { outline: 2px solid transparent; outline-offset: 2px; border-radius: var(--bbui-r-control); }
-.bbui-planning-board:focus-visible, .bbui-planning-scroll:focus-visible { outline-color: var(--bbui-ring); }
+.aliaui-planning-board, .aliaui-planning-scroll { outline: 2px solid transparent; outline-offset: 2px; border-radius: var(--aliaui-r-control); }
+.aliaui-planning-board:focus-visible, .aliaui-planning-scroll:focus-visible { outline-color: var(--aliaui-ring); }
 
-.bbui-planning-timeline, .bbui-planning-chips, .bbui-planning-agenda, .bbui-planning-cards, .bbui-planning-rows,
-.bbui-planning-steps, .bbui-planning-files, .bbui-planning-tasks { list-style: none; margin: 0; padding: 0; }
-.bbui-planning-timeline p, .bbui-planning-step p, .bbui-planning-status p, .bbui-planning-estimate p, .bbui-planning-plan p,
-.bbui-planning-procon dd, .bbui-planning-figures dd { margin: 0; }
-.bbui-planning-plan, .bbui-planning-status, .bbui-planning-decision, .bbui-planning-estimate, .bbui-planning-acceptance,
-.bbui-planning-calendar { display: grid; gap: var(--bbui-s3); }
+.aliaui-planning-timeline, .aliaui-planning-chips, .aliaui-planning-agenda, .aliaui-planning-cards, .aliaui-planning-rows,
+.aliaui-planning-steps, .aliaui-planning-files, .aliaui-planning-tasks { list-style: none; margin: 0; padding: 0; }
+.aliaui-planning-timeline p, .aliaui-planning-step p, .aliaui-planning-status p, .aliaui-planning-estimate p, .aliaui-planning-plan p,
+.aliaui-planning-procon dd, .aliaui-planning-figures dd { margin: 0; }
+.aliaui-planning-plan, .aliaui-planning-status, .aliaui-planning-decision, .aliaui-planning-estimate, .aliaui-planning-acceptance,
+.aliaui-planning-calendar { display: grid; gap: var(--aliaui-s3); }
 
 /* A state: icon in the state's colour, the word in ink. */
-.bbui-planning-state { display: inline-flex; align-items: center; gap: var(--bbui-s1); font: var(--bbui-small); color: var(--bbui-ink); }
-.bbui-planning-state > svg { flex: none; color: var(--bbui-planning-tone); }
-.bbui-planning-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bbui-s1) var(--bbui-s3); }
-.bbui-planning-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bbui-s2); padding-top: var(--bbui-s1); }
+.aliaui-planning-state { display: inline-flex; align-items: center; gap: var(--aliaui-s1); font: var(--aliaui-small); color: var(--aliaui-ink); }
+.aliaui-planning-state > svg { flex: none; color: var(--aliaui-planning-tone); }
+.aliaui-planning-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--aliaui-s1) var(--aliaui-s3); }
+.aliaui-planning-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--aliaui-s2); padding-top: var(--aliaui-s1); }
 
 /* Timeline: a hairline rail, a hollow mark per event, an icon when the event carries a state. */
-.bbui-planning-event {
+.aliaui-planning-event {
   position: relative;
   display: grid;
   gap: 2px;
-  padding: 0 0 var(--bbui-s4) var(--bbui-s6);
+  padding: 0 0 var(--aliaui-s4) var(--aliaui-s6);
   min-width: 0;
 }
-.bbui-planning-event::before {
+.aliaui-planning-event::before {
   content: "";
   position: absolute;
   left: 7px;
   top: 14px;
   bottom: -2px;
-  border-left: 1px solid var(--bbui-rule);
+  border-left: 1px solid var(--aliaui-rule);
 }
-.bbui-planning-event:last-child { padding-bottom: 0; }
-.bbui-planning-event:last-child::before { display: none; }
-.bbui-planning-mark {
+.aliaui-planning-event:last-child { padding-bottom: 0; }
+.aliaui-planning-event:last-child::before { display: none; }
+.aliaui-planning-mark {
   position: absolute;
   left: 3px;
   top: 4px;
   width: 9px;
   height: 9px;
-  border: 1px solid var(--bbui-muted);
+  border: 1px solid var(--aliaui-muted);
   border-radius: 50%;
-  background: var(--bbui-surface);
+  background: var(--aliaui-surface);
 }
-.bbui-planning-mark-accent { border-color: var(--bbui-accent); background: var(--bbui-accent); }
-.bbui-planning-mark-icon { left: 0; top: 1px; width: 15px; height: 15px; border: 0; display: grid; place-items: center; color: var(--bbui-planning-tone); }
-.bbui-planning-detail { overflow-wrap: anywhere; }
+.aliaui-planning-mark-accent { border-color: var(--aliaui-accent); background: var(--aliaui-accent); }
+.aliaui-planning-mark-icon { left: 0; top: 1px; width: 15px; height: 15px; border: 0; display: grid; place-items: center; color: var(--aliaui-planning-tone); }
+.aliaui-planning-detail { overflow-wrap: anywhere; }
 
 /* Calendar: month grid, or the agenda when the block is narrow. */
-.bbui-planning-calendar { container-type: inline-size; }
-.bbui-planning-bar-head { display: flex; align-items: center; justify-content: space-between; gap: var(--bbui-s2); }
-.bbui-planning-bar-head h3 { margin: 0; }
-.bbui-planning-nav { display: inline-flex; gap: var(--bbui-s1); }
-.bbui-planning-nav .bbui-btn { padding: 0 var(--bbui-s2); }
-.bbui-planning-month { width: 100%; table-layout: fixed; border-collapse: collapse; }
-.bbui-planning-month th { padding: 0 var(--bbui-s1) var(--bbui-s1); text-align: left; font-weight: 400; }
-.bbui-planning-month td {
+.aliaui-planning-calendar { container-type: inline-size; }
+.aliaui-planning-bar-head { display: flex; align-items: center; justify-content: space-between; gap: var(--aliaui-s2); }
+.aliaui-planning-bar-head h3 { margin: 0; }
+.aliaui-planning-nav { display: inline-flex; gap: var(--aliaui-s1); }
+.aliaui-planning-nav .aliaui-btn { padding: 0 var(--aliaui-s2); }
+.aliaui-planning-month { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.aliaui-planning-month th { padding: 0 var(--aliaui-s1) var(--aliaui-s1); text-align: left; font-weight: 400; }
+.aliaui-planning-month td {
   height: 72px;
-  padding: var(--bbui-s1);
+  padding: var(--aliaui-s1);
   vertical-align: top;
-  border-top: 1px solid var(--bbui-rule);
+  border-top: 1px solid var(--aliaui-rule);
   min-width: 0;
 }
-.bbui-planning-off { background: transparent; }
-.bbui-planning-daynum {
+.aliaui-planning-off { background: transparent; }
+.aliaui-planning-daynum {
   display: inline-grid;
   place-items: center;
   min-width: 20px;
   height: 20px;
-  padding: 0 var(--bbui-s1);
-  border-radius: var(--bbui-r-control);
-  font: var(--bbui-small);
-  color: var(--bbui-muted);
+  padding: 0 var(--aliaui-s1);
+  border-radius: var(--aliaui-r-control);
+  font: var(--aliaui-small);
+  color: var(--aliaui-muted);
 }
-.bbui-planning-now .bbui-planning-daynum { background: var(--bbui-accent-soft); color: var(--bbui-ink); font-weight: 560; }
-.bbui-planning-chips { display: grid; gap: 2px; margin-top: 2px; min-width: 0; }
-.bbui-planning-chip {
-  padding: 1px var(--bbui-s1);
-  border-radius: var(--bbui-r-control);
-  background: var(--bbui-well);
-  box-shadow: inset 2px 0 0 var(--bbui-planning-tone);
-  font: var(--bbui-tiny);
-  color: var(--bbui-ink);
+.aliaui-planning-now .aliaui-planning-daynum { background: var(--aliaui-accent-soft); color: var(--aliaui-ink); font-weight: 560; }
+.aliaui-planning-chips { display: grid; gap: 2px; margin-top: 2px; min-width: 0; }
+.aliaui-planning-chip {
+  padding: 1px var(--aliaui-s1);
+  border-radius: var(--aliaui-r-control);
+  background: var(--aliaui-well);
+  box-shadow: inset 2px 0 0 var(--aliaui-planning-tone);
+  font: var(--aliaui-tiny);
+  color: var(--aliaui-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.bbui-planning-chip[data-tone="neutral"] { box-shadow: none; }
-.bbui-planning-agenda { display: none; gap: var(--bbui-s3); }
-.bbui-planning-agenda > li { display: grid; gap: var(--bbui-s1); }
-.bbui-planning-agenda .bbui-planning-chip { white-space: normal; overflow-wrap: anywhere; font: var(--bbui-small); padding: 2px var(--bbui-s2); }
+.aliaui-planning-chip[data-tone="neutral"] { box-shadow: none; }
+.aliaui-planning-agenda { display: none; gap: var(--aliaui-s3); }
+.aliaui-planning-agenda > li { display: grid; gap: var(--aliaui-s1); }
+.aliaui-planning-agenda .aliaui-planning-chip { white-space: normal; overflow-wrap: anywhere; font: var(--aliaui-small); padding: 2px var(--aliaui-s2); }
 @container (max-width: 480px) {
-  .bbui-planning-month { display: none; }
-  .bbui-planning-agenda { display: grid; }
+  .aliaui-planning-month { display: none; }
+  .aliaui-planning-agenda { display: grid; }
 }
 
 /* Roadmap: a label column and a date track; the today line spans every row. */
-.bbui-planning-gantt { --bbui-planning-label: 36%; position: relative; margin: 0; display: grid; }
-.bbui-planning-axis, .bbui-planning-row { display: grid; grid-template-columns: var(--bbui-planning-label) 1fr; min-width: 0; }
-.bbui-planning-axis { height: 20px; border-bottom: 1px solid var(--bbui-rule); }
-.bbui-planning-track { position: relative; min-width: 0; }
-.bbui-planning-tick {
+.aliaui-planning-gantt { --aliaui-planning-label: 36%; position: relative; margin: 0; display: grid; }
+.aliaui-planning-axis, .aliaui-planning-row { display: grid; grid-template-columns: var(--aliaui-planning-label) 1fr; min-width: 0; }
+.aliaui-planning-axis { height: 20px; border-bottom: 1px solid var(--aliaui-rule); }
+.aliaui-planning-track { position: relative; min-width: 0; }
+.aliaui-planning-tick {
   position: absolute;
   left: calc(var(--at) * 100%);
   bottom: 2px;
-  padding-left: var(--bbui-s1);
-  border-left: 1px solid var(--bbui-rule);
-  font: var(--bbui-tiny);
-  color: var(--bbui-muted);
+  padding-left: var(--aliaui-s1);
+  border-left: 1px solid var(--aliaui-rule);
+  font: var(--aliaui-tiny);
+  color: var(--aliaui-muted);
   white-space: nowrap;
 }
-.bbui-planning-lane { padding: var(--bbui-s3) 0 var(--bbui-s1); }
-.bbui-planning-row { padding: var(--bbui-s1) 0; border-bottom: 1px solid var(--bbui-rule); align-items: center; }
-.bbui-planning-what { display: grid; padding-right: var(--bbui-s3); min-width: 0; overflow-wrap: anywhere; }
-.bbui-planning-row .bbui-planning-track { height: 20px; }
-.bbui-planning-span {
+.aliaui-planning-lane { padding: var(--aliaui-s3) 0 var(--aliaui-s1); }
+.aliaui-planning-row { padding: var(--aliaui-s1) 0; border-bottom: 1px solid var(--aliaui-rule); align-items: center; }
+.aliaui-planning-what { display: grid; padding-right: var(--aliaui-s3); min-width: 0; overflow-wrap: anywhere; }
+.aliaui-planning-row .aliaui-planning-track { height: 20px; }
+.aliaui-planning-span {
   position: absolute;
   top: 3px;
   left: calc(var(--at) * 100%);
@@ -126,223 +126,223 @@
   min-width: 4px;
   height: 14px;
   border-radius: 2px;
-  background: var(--bbui-accent);
+  background: var(--aliaui-accent);
 }
-.bbui-planning-span[data-status="done"] { background: color-mix(in oklch, var(--bbui-accent) 56%, var(--bbui-surface)); }
-.bbui-planning-span[data-status="planned"] { background: transparent; box-shadow: inset 0 0 0 1px var(--bbui-accent); }
-.bbui-planning-span[data-status="at-risk"] { background: var(--bbui-warning); }
-.bbui-planning-span[data-status="blocked"] { background: var(--bbui-danger); }
-.bbui-planning-diamond {
+.aliaui-planning-span[data-status="done"] { background: color-mix(in oklch, var(--aliaui-accent) 56%, var(--aliaui-surface)); }
+.aliaui-planning-span[data-status="planned"] { background: transparent; box-shadow: inset 0 0 0 1px var(--aliaui-accent); }
+.aliaui-planning-span[data-status="at-risk"] { background: var(--aliaui-warning); }
+.aliaui-planning-span[data-status="blocked"] { background: var(--aliaui-danger); }
+.aliaui-planning-diamond {
   position: absolute;
   top: 5px;
   left: calc(var(--at) * 100% - 5px);
   width: 10px;
   height: 10px;
-  background: var(--bbui-ink);
+  background: var(--aliaui-ink);
   transform: rotate(45deg);
 }
-.bbui-planning-today {
+.aliaui-planning-today {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: calc(var(--bbui-planning-label) + (100% - var(--bbui-planning-label)) * var(--at));
-  border-left: 1px solid var(--bbui-accent);
+  left: calc(var(--aliaui-planning-label) + (100% - var(--aliaui-planning-label)) * var(--at));
+  border-left: 1px solid var(--aliaui-accent);
   pointer-events: none;
 }
-.bbui-planning-today > span { position: absolute; top: 2px; left: var(--bbui-s1); font: var(--bbui-tiny); color: var(--bbui-ink); background: var(--bbui-surface); padding: 0 2px; }
+.aliaui-planning-today > span { position: absolute; top: 2px; left: var(--aliaui-s1); font: var(--aliaui-tiny); color: var(--aliaui-ink); background: var(--aliaui-surface); padding: 0 2px; }
 
 /* Board: columns side by side, scrolling sideways when the chat is narrow. */
-.bbui-planning-board {
+.aliaui-planning-board {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(200px, 1fr);
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  padding-bottom: var(--bbui-s1);
+  padding-bottom: var(--aliaui-s1);
 }
-.bbui-planning-column { display: grid; align-content: start; gap: var(--bbui-s2); min-width: 0; }
-.bbui-planning-colhead {
+.aliaui-planning-column { display: grid; align-content: start; gap: var(--aliaui-s2); min-width: 0; }
+.aliaui-planning-colhead {
   display: flex;
   justify-content: space-between;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   margin: 0;
-  padding-bottom: var(--bbui-s1);
-  border-bottom: 1px solid var(--bbui-rule);
+  padding-bottom: var(--aliaui-s1);
+  border-bottom: 1px solid var(--aliaui-rule);
 }
-.bbui-planning-none { margin: 0; }
-.bbui-planning-cards { display: grid; gap: var(--bbui-s2); }
-.bbui-planning-card { display: grid; gap: var(--bbui-s1); padding: var(--bbui-s2) var(--bbui-s3); overflow-wrap: anywhere; }
-.bbui-planning-tag {
-  padding: 0 var(--bbui-s1);
-  border: 1px solid var(--bbui-rule);
-  border-radius: var(--bbui-r-control);
-  font: var(--bbui-tiny);
-  color: var(--bbui-muted);
+.aliaui-planning-none { margin: 0; }
+.aliaui-planning-cards { display: grid; gap: var(--aliaui-s2); }
+.aliaui-planning-card { display: grid; gap: var(--aliaui-s1); padding: var(--aliaui-s2) var(--aliaui-s3); overflow-wrap: anywhere; }
+.aliaui-planning-tag {
+  padding: 0 var(--aliaui-s1);
+  border: 1px solid var(--aliaui-rule);
+  border-radius: var(--aliaui-r-control);
+  font: var(--aliaui-tiny);
+  color: var(--aliaui-muted);
 }
 
 /* Status rows and the shared meter. */
-.bbui-planning-rows > li + li { border-top: 1px solid var(--bbui-rule); }
-.bbui-planning-stream {
+.aliaui-planning-rows > li + li { border-top: 1px solid var(--aliaui-rule); }
+.aliaui-planning-stream {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--bbui-s1) var(--bbui-s3);
+  gap: var(--aliaui-s1) var(--aliaui-s3);
   align-items: center;
-  padding: var(--bbui-s3) 0;
+  padding: var(--aliaui-s3) 0;
 }
-.bbui-planning-progress, .bbui-planning-who, .bbui-planning-note { grid-column: 1 / -1; }
-.bbui-planning-progress { display: grid; grid-template-columns: minmax(0, 1fr) 4ch; gap: var(--bbui-s2); align-items: center; }
-.bbui-planning-progress .bbui-label { text-align: right; }
-.bbui-planning-note { overflow-wrap: anywhere; }
-.bbui-planning-meter { display: block; height: 4px; border-radius: 2px; background: var(--bbui-well); overflow: hidden; }
-.bbui-planning-meter > span {
+.aliaui-planning-progress, .aliaui-planning-who, .aliaui-planning-note { grid-column: 1 / -1; }
+.aliaui-planning-progress { display: grid; grid-template-columns: minmax(0, 1fr) 4ch; gap: var(--aliaui-s2); align-items: center; }
+.aliaui-planning-progress .aliaui-label { text-align: right; }
+.aliaui-planning-note { overflow-wrap: anywhere; }
+.aliaui-planning-meter { display: block; height: 4px; border-radius: 2px; background: var(--aliaui-well); overflow: hidden; }
+.aliaui-planning-meter > span {
   display: block;
   height: 100%;
-  background: var(--bbui-accent);
+  background: var(--aliaui-accent);
   transform: scaleX(var(--at));
   transform-origin: left;
-  transition: transform var(--bbui-short) var(--bbui-ease-out);
+  transition: transform var(--aliaui-short) var(--aliaui-ease-out);
 }
 
 /* Plan steps. */
-.bbui-planning-steps { display: grid; }
-.bbui-planning-step {
+.aliaui-planning-steps { display: grid; }
+.aliaui-planning-step {
   position: relative;
   display: grid;
-  gap: var(--bbui-s1);
-  padding: var(--bbui-s3) 0 var(--bbui-s3) var(--bbui-s6);
+  gap: var(--aliaui-s1);
+  padding: var(--aliaui-s3) 0 var(--aliaui-s3) var(--aliaui-s6);
   min-width: 0;
 }
-.bbui-planning-step + .bbui-planning-step { border-top: 1px solid var(--bbui-rule); }
-.bbui-planning-num { position: absolute; left: 0; top: var(--bbui-s3); }
-.bbui-planning-files { display: flex; flex-wrap: wrap; gap: var(--bbui-s1) var(--bbui-s3); color: var(--bbui-muted); }
-.bbui-planning-files li { overflow-wrap: anywhere; min-width: 0; }
+.aliaui-planning-step + .aliaui-planning-step { border-top: 1px solid var(--aliaui-rule); }
+.aliaui-planning-num { position: absolute; left: 0; top: var(--aliaui-s3); }
+.aliaui-planning-files { display: flex; flex-wrap: wrap; gap: var(--aliaui-s1) var(--aliaui-s3); color: var(--aliaui-muted); }
+.aliaui-planning-files li { overflow-wrap: anywhere; min-width: 0; }
 
 /* Decision: weight steppers over a ranked matrix. */
-.bbui-planning-weights {
+.aliaui-planning-weights {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--bbui-s2) var(--bbui-s4);
+  gap: var(--aliaui-s2) var(--aliaui-s4);
   margin: 0;
   padding: 0;
   border: 0;
   min-width: 0;
 }
-.bbui-planning-weights legend { padding: 0; margin-bottom: var(--bbui-s2); }
-.bbui-planning-weight { display: inline-flex; align-items: center; gap: var(--bbui-s1); }
-.bbui-planning-weight > span:first-child { margin-right: var(--bbui-s1); }
-.bbui-planning-weight .bbui-btn { padding: 0 var(--bbui-s2); }
-.bbui-planning-weight output { min-width: 2ch; text-align: center; font: var(--bbui-head); }
-.bbui-planning-scroll { overflow-x: auto; min-width: 0; }
-.bbui-planning-table { width: 100%; border-collapse: collapse; }
-.bbui-planning-table th, .bbui-planning-table td {
-  padding: var(--bbui-s2) var(--bbui-s2) var(--bbui-s2) 0;
-  border-bottom: 1px solid var(--bbui-rule);
+.aliaui-planning-weights legend { padding: 0; margin-bottom: var(--aliaui-s2); }
+.aliaui-planning-weight { display: inline-flex; align-items: center; gap: var(--aliaui-s1); }
+.aliaui-planning-weight > span:first-child { margin-right: var(--aliaui-s1); }
+.aliaui-planning-weight .aliaui-btn { padding: 0 var(--aliaui-s2); }
+.aliaui-planning-weight output { min-width: 2ch; text-align: center; font: var(--aliaui-head); }
+.aliaui-planning-scroll { overflow-x: auto; min-width: 0; }
+.aliaui-planning-table { width: 100%; border-collapse: collapse; }
+.aliaui-planning-table th, .aliaui-planning-table td {
+  padding: var(--aliaui-s2) var(--aliaui-s2) var(--aliaui-s2) 0;
+  border-bottom: 1px solid var(--aliaui-rule);
   text-align: left;
   vertical-align: top;
 }
-.bbui-planning-table thead th { font-weight: 400; vertical-align: bottom; }
-.bbui-planning-table tbody th { font: var(--bbui-text); min-width: 10ch; }
-.bbui-planning-numcol { text-align: right; white-space: nowrap; }
-.bbui-planning-table .bbui-planning-numcol { text-align: right; }
-.bbui-planning-table thead .bbui-planning-numcol span { color: var(--bbui-ink); }
-.bbui-planning-lead > * { background: var(--bbui-accent-soft); }
-.bbui-planning-lead > th { font-weight: 560; }
-.bbui-planning-score { display: inline-grid; grid-template-columns: 48px auto; gap: var(--bbui-s2); align-items: center; justify-content: end; }
-.bbui-planning-procon { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--bbui-s3) var(--bbui-s4); margin: 0; }
-.bbui-planning-procon > div { display: grid; gap: var(--bbui-s1); align-content: start; }
-.bbui-planning-procon .bbui-planning-state { align-items: flex-start; }
-.bbui-planning-procon .bbui-planning-state > svg { margin-top: 2px; }
+.aliaui-planning-table thead th { font-weight: 400; vertical-align: bottom; }
+.aliaui-planning-table tbody th { font: var(--aliaui-text); min-width: 10ch; }
+.aliaui-planning-numcol { text-align: right; white-space: nowrap; }
+.aliaui-planning-table .aliaui-planning-numcol { text-align: right; }
+.aliaui-planning-table thead .aliaui-planning-numcol span { color: var(--aliaui-ink); }
+.aliaui-planning-lead > * { background: var(--aliaui-accent-soft); }
+.aliaui-planning-lead > th { font-weight: 560; }
+.aliaui-planning-score { display: inline-grid; grid-template-columns: 48px auto; gap: var(--aliaui-s2); align-items: center; justify-content: end; }
+.aliaui-planning-procon { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--aliaui-s3) var(--aliaui-s4); margin: 0; }
+.aliaui-planning-procon > div { display: grid; gap: var(--aliaui-s1); align-content: start; }
+.aliaui-planning-procon .aliaui-planning-state { align-items: flex-start; }
+.aliaui-planning-procon .aliaui-planning-state > svg { margin-top: 2px; }
 
 /* Estimate: three figures, then one range per task. */
-.bbui-planning-figures { display: flex; flex-wrap: wrap; gap: var(--bbui-s3) var(--bbui-s6); margin: 0; }
-.bbui-planning-figures > div { display: grid; gap: 2px; align-content: start; }
-.bbui-planning-tasks { display: grid; }
-.bbui-planning-task {
+.aliaui-planning-figures { display: flex; flex-wrap: wrap; gap: var(--aliaui-s3) var(--aliaui-s6); margin: 0; }
+.aliaui-planning-figures > div { display: grid; gap: 2px; align-content: start; }
+.aliaui-planning-tasks { display: grid; }
+.aliaui-planning-task {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--bbui-s1) var(--bbui-s3);
-  padding: var(--bbui-s2) 0;
-  border-top: 1px solid var(--bbui-rule);
+  gap: var(--aliaui-s1) var(--aliaui-s3);
+  padding: var(--aliaui-s2) 0;
+  border-top: 1px solid var(--aliaui-rule);
 }
-.bbui-planning-task > span:first-child { overflow-wrap: anywhere; }
-.bbui-planning-range { grid-column: 1 / -1; display: block; overflow: visible; }
-.bbui-planning-range-band { fill: color-mix(in oklch, var(--bbui-accent) 38%, var(--bbui-surface)); }
-.bbui-planning-range-mark { fill: var(--bbui-accent); }
+.aliaui-planning-task > span:first-child { overflow-wrap: anywhere; }
+.aliaui-planning-range { grid-column: 1 / -1; display: block; overflow: visible; }
+.aliaui-planning-range-band { fill: color-mix(in oklch, var(--aliaui-accent) 38%, var(--aliaui-surface)); }
+.aliaui-planning-range-mark { fill: var(--aliaui-accent); }
 
 /* Acceptance. */
-.bbui-planning-verdict { display: grid; gap: var(--bbui-s1); }
-.bbui-planning-crit { display: grid; gap: 2px; }
-.bbui-planning-cellnote { overflow-wrap: anywhere; }
-.bbui-planning-evidence { color: var(--bbui-muted); overflow-wrap: anywhere; }
-.bbui-planning-acceptance td { white-space: nowrap; }
+.aliaui-planning-verdict { display: grid; gap: var(--aliaui-s1); }
+.aliaui-planning-crit { display: grid; gap: 2px; }
+.aliaui-planning-cellnote { overflow-wrap: anywhere; }
+.aliaui-planning-evidence { color: var(--aliaui-muted); overflow-wrap: anywhere; }
+.aliaui-planning-acceptance td { white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bbui-planning-meter > span { transition: none; }
+  .aliaui-planning-meter > span { transition: none; }
 }
 
 /* Choice: a carousel, one option per slide so each gets the full width; the next slide peeks in.
    Native scroll-snap moves it (swipe, trackpad, arrow keys on the focused track); buttons and dots jump. */
-.bbui-planning-choice { display: grid; gap: var(--bbui-s3); }
-.bbui-planning-choice-top { display: flex; align-items: center; justify-content: space-between; gap: var(--bbui-s3); }
-.bbui-planning-choice-top > p { margin: 0; }
-.bbui-planning-choice-nav { display: flex; align-items: center; gap: var(--bbui-s1); flex: none; }
-.bbui-planning-choice-nav > .bbui-label { margin-right: var(--bbui-s1); font-variant-numeric: tabular-nums; }
-.bbui-btn.bbui-planning-choice-arrow { width: 32px; padding: 0; justify-content: center; }
-.bbui-planning-choices {
+.aliaui-planning-choice { display: grid; gap: var(--aliaui-s3); }
+.aliaui-planning-choice-top { display: flex; align-items: center; justify-content: space-between; gap: var(--aliaui-s3); }
+.aliaui-planning-choice-top > p { margin: 0; }
+.aliaui-planning-choice-nav { display: flex; align-items: center; gap: var(--aliaui-s1); flex: none; }
+.aliaui-planning-choice-nav > .aliaui-label { margin-right: var(--aliaui-s1); font-variant-numeric: tabular-nums; }
+.aliaui-btn.aliaui-planning-choice-arrow { width: 32px; padding: 0; justify-content: center; }
+.aliaui-planning-choices {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   outline: 2px solid transparent;
   outline-offset: 2px;
-  border-radius: var(--bbui-r-well);
+  border-radius: var(--aliaui-r-well);
 }
-.bbui-planning-choices::-webkit-scrollbar { display: none; }
-.bbui-planning-choices:focus-visible { outline-color: var(--bbui-ring); }
-.bbui-planning-choice-card {
+.aliaui-planning-choices::-webkit-scrollbar { display: none; }
+.aliaui-planning-choices:focus-visible { outline-color: var(--aliaui-ring); }
+.aliaui-planning-choice-card {
   flex: 0 0 100%;
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--bbui-rule);
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-surface);
-  transition: border-color var(--bbui-micro) var(--bbui-ease-out);
+  border: 1px solid var(--aliaui-rule);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-surface);
+  transition: border-color var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-planning-choices[data-many] > .bbui-planning-choice-card { flex-basis: 88%; }
-.bbui-planning-choice-card[data-recommended] { border-color: color-mix(in oklch, var(--bbui-accent) 45%, var(--bbui-rule)); }
-.bbui-planning-choice-card[data-picked] { border-color: var(--bbui-success); box-shadow: inset 0 0 0 1px var(--bbui-success); }
+.aliaui-planning-choices[data-many] > .aliaui-planning-choice-card { flex-basis: 88%; }
+.aliaui-planning-choice-card[data-recommended] { border-color: color-mix(in oklch, var(--aliaui-accent) 45%, var(--aliaui-rule)); }
+.aliaui-planning-choice-card[data-picked] { border-color: var(--aliaui-success); box-shadow: inset 0 0 0 1px var(--aliaui-success); }
 /* The whole picture at its own aspect ratio, never cropped; the 16:9 box only holds the loading and error states. */
-img.bbui-planning-choice-img { display: block; width: 100%; height: auto; background: var(--bbui-well); border-bottom: 1px solid var(--bbui-rule); }
-div.bbui-planning-choice-img { display: grid; place-items: center; aspect-ratio: 16 / 9; background: var(--bbui-well); border-bottom: 1px solid var(--bbui-rule); }
-.bbui-planning-choice-body { flex: 1; display: grid; gap: var(--bbui-s2); padding: var(--bbui-s4) var(--bbui-s4) 0; align-content: start; }
-.bbui-planning-choice-body h3 { margin: 0; font: 600 16px/1.3 var(--bbui-font); color: var(--bbui-ink); text-wrap: balance; }
-.bbui-planning-choice-tag { font: var(--bbui-tiny); color: var(--bbui-muted); padding: 1px var(--bbui-s2); border: 1px solid var(--bbui-rule); border-radius: 999px; white-space: nowrap; }
-.bbui-planning-choice-tag[data-tone="accent"] { color: var(--bbui-accent); border-color: color-mix(in oklch, var(--bbui-accent) 40%, transparent); background: var(--bbui-accent-soft); }
-.bbui-planning-choice-points { list-style: disc; margin: 0; padding-left: 1.1em; display: grid; gap: var(--bbui-s1); font: var(--bbui-text); color: var(--bbui-muted); }
-.bbui-planning-choice-foot { padding: var(--bbui-s4); }
-.bbui-planning-choice-foot > .bbui-btn { width: 100%; justify-content: center; }
-.bbui-planning-choice-dots { display: flex; justify-content: center; gap: var(--bbui-s2); }
-.bbui-planning-choice-dots > button {
+img.aliaui-planning-choice-img { display: block; width: 100%; height: auto; background: var(--aliaui-well); border-bottom: 1px solid var(--aliaui-rule); }
+div.aliaui-planning-choice-img { display: grid; place-items: center; aspect-ratio: 16 / 9; background: var(--aliaui-well); border-bottom: 1px solid var(--aliaui-rule); }
+.aliaui-planning-choice-body { flex: 1; display: grid; gap: var(--aliaui-s2); padding: var(--aliaui-s4) var(--aliaui-s4) 0; align-content: start; }
+.aliaui-planning-choice-body h3 { margin: 0; font: 600 16px/1.3 var(--aliaui-font); color: var(--aliaui-ink); text-wrap: balance; }
+.aliaui-planning-choice-tag { font: var(--aliaui-tiny); color: var(--aliaui-muted); padding: 1px var(--aliaui-s2); border: 1px solid var(--aliaui-rule); border-radius: 999px; white-space: nowrap; }
+.aliaui-planning-choice-tag[data-tone="accent"] { color: var(--aliaui-accent); border-color: color-mix(in oklch, var(--aliaui-accent) 40%, transparent); background: var(--aliaui-accent-soft); }
+.aliaui-planning-choice-points { list-style: disc; margin: 0; padding-left: 1.1em; display: grid; gap: var(--aliaui-s1); font: var(--aliaui-text); color: var(--aliaui-muted); }
+.aliaui-planning-choice-foot { padding: var(--aliaui-s4); }
+.aliaui-planning-choice-foot > .aliaui-btn { width: 100%; justify-content: center; }
+.aliaui-planning-choice-dots { display: flex; justify-content: center; gap: var(--aliaui-s2); }
+.aliaui-planning-choice-dots > button {
   appearance: none;
   width: 8px;
   height: 8px;
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: var(--bbui-rule);
+  background: var(--aliaui-rule);
   cursor: pointer;
-  transition: width var(--bbui-short) var(--bbui-ease-out), background-color var(--bbui-micro);
+  transition: width var(--aliaui-short) var(--aliaui-ease-out), background-color var(--aliaui-micro);
 }
-.bbui-planning-choice-dots > button[aria-current] { width: 20px; background: var(--bbui-accent); }
-.bbui-planning-choice-dots > button:focus-visible { outline: 2px solid var(--bbui-ring); outline-offset: 2px; }
-.bbui-planning-choice-other { flex: 1; min-width: 180px; }
-@media (prefers-reduced-motion: reduce) { .bbui-planning-choice-card, .bbui-planning-choice-dots > button { transition: none; } }
+.aliaui-planning-choice-dots > button[aria-current] { width: 20px; background: var(--aliaui-accent); }
+.aliaui-planning-choice-dots > button:focus-visible { outline: 2px solid var(--aliaui-ring); outline-offset: 2px; }
+.aliaui-planning-choice-other { flex: 1; min-width: 180px; }
+@media (prefers-reduced-motion: reduce) { .aliaui-planning-choice-card, .aliaui-planning-choice-dots > button { transition: none; } }

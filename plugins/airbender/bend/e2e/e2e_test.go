@@ -8,7 +8,7 @@
 // tests catch a change in bd's behaviour as well as a mistake in ours. And
 // because they start a program and read its output, they say nothing about
 // what language it is written in: the same suite was run against the
-// TypeScript bend before the Go one replaced it (bead-bb-c9l.4), and is what
+// TypeScript bend before the Go one replaced it (bead-alia-c9l.4), and is what
 // "the same commands, output and exit statuses" meant.
 //
 // Design notes:
@@ -360,7 +360,7 @@ func TestCommentsDecisionsStartingHandingOverAndClosing(t *testing.T) {
 }
 
 func TestSomedaySetsAnIssueAsideAndBringsItBack(t *testing.T) {
-	// bead-bb-26g: beads' own deferred status, out of ready and the
+	// bead-alia-26g: beads' own deferred status, out of ready and the
 	// default list, back to open with undefer.
 	repo := newRepository(t)
 	idea := repo.ok("create", "An idea for later")

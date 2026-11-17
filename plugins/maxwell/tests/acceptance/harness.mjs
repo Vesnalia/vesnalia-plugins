@@ -9,7 +9,7 @@ export const CAT = /^Maxwell the cat (rotating from right to left|dancing)$/;
 export const ROTATING = 'Maxwell the cat rotating from right to left';
 export const DANCING = 'Maxwell the cat dancing';
 export const CAT_CANVAS = 'canvas[aria-label^="Maxwell the cat"]';
-export async function openBB(options = {}) {
+export async function openALIA(options = {}) {
   const browser = await chromium.launch({
     executablePath: process.env.MAXWELL_CHROME,
     headless: true,
@@ -53,13 +53,13 @@ export async function closeMaxwell(page) {
 // Free and capture go through a real agent turn. A scripted ACP agent,
 // driver/agent.mjs, is registered on the test VesnALIA as a custom agent, and each
 // turn calls the tool named in its prompt through VesnALIA's own tool path.
-const execBB = promisify(execFile);
+const execALIA = promisify(execFile);
 const aliaEnv = () => {
   const env = { ...process.env, ALIA_SERVER_URL: baseURL };
   for (const name of ['ALIA_THREAD_ID', 'ALIA_PROJECT_ID', 'ALIA_ENVIRONMENT_ID', 'ALIA_HOST_DAEMON_PORT']) delete env[name];
   return env;
 };
-export const alia = async (...args) => (await execBB(process.env.ALIA_CLI ?? 'alia', args, { env: aliaEnv() })).stdout.trim();
+export const alia = async (...args) => (await execALIA(process.env.ALIA_CLI ?? 'alia', args, { env: aliaEnv() })).stdout.trim();
 export const driverProvider = process.env.MAXWELL_DRIVER_PROVIDER ?? 'acp-maxwell-driver';
 export function driverProjects() {
   const projects = process.env.MAXWELL_DRIVER_PROJECTS?.split(',').filter(Boolean) ?? [];

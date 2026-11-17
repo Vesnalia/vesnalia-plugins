@@ -11,11 +11,11 @@ Keep ongoing conversations, project activity and application shortcuts within re
 - Return to the last selected conversation in each project during the same browser-tab session.
 - Open application shortcuts in the workspace or alongside it using VesnALIA's native split action.
 - Collapse and resize the application panel, with its layout remembered in your browser.
-- Use English by default or select Russian in BBDesk's native plugin settings.
+- Use English by default or select Russian in AliaDesk's native plugin settings.
 
 ## How it works
 
-Choose projects and application shortcuts in BBDesk. Project and shortcut preferences are shared across clients of the same VesnALIA server. The interface language is also shared; it changes BBDesk labels while user content and native VesnALIA controls retain their own language.
+Choose projects and application shortcuts in AliaDesk. Project and shortcut preferences are shared across clients of the same VesnALIA server. The interface language is also shared; it changes AliaDesk labels while user content and native VesnALIA controls retain their own language.
 
 Use Catalog’s Projects and Applications tabs to connect or disconnect entries with a checkbox. Connected rows are green; changes apply immediately. Search names within the current tab. Reorder projects and applications directly in their panels. Drag a conversation into the workspace or use Open alongside to add a chat column. Split layouts and widths stay local to your browser. Closing a column leaves its thread available.
 
@@ -23,11 +23,11 @@ Drag conversations onto Shared pool or pin them from tabs or history. Pool membe
 
 The pool holds up to 50 conversations, including unavailable entries. Submitting while it is full preserves the draft without creating a thread. If it fills during creation, an Open action keeps the result accessible in the current workspace until reload. Late results preserve newer navigation and explicit unpinning; disabling the pool cancels its composer and prevents a late result from reopening it.
 
-Activity tracking continues while BBDesk is closed. Completed results stay until hidden; fresh activity brings a hidden conversation back. Hiding a tab never archives or deletes its thread. Delegated agents appear through activity indicators without retaining completed subagent rows.
+Activity tracking continues while AliaDesk is closed. Completed results stay until hidden; fresh activity brings a hidden conversation back. Hiding a tab never archives or deletes its thread. Delegated agents appear through activity indicators without retaining completed subagent rows.
 
 Activity snapshots show the last confirmed state while refresh runs in the background. Before the first complete pass, the synchronization timestamp is empty. Saving project or application preferences confirms the saved settings independently of activity refresh; a later synchronization error does not undo them.
 
-Select BBDesk under Settings → Appearance → Navigation if another navigation provider is pinned. The provider preserves VesnALIA's original rail and supplies the launcher's registered screens and native actions.
+Select AliaDesk under Settings → Appearance → Navigation if another navigation provider is pinned. The provider preserves VesnALIA's original rail and supplies the launcher's registered screens and native actions.
 
 ## Requirements
 

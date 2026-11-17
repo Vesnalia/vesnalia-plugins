@@ -10,14 +10,14 @@ never names a commit Claude Code cannot fetch. Already pinned to that commit: it
 `git push --dry-run` whether the push would be taken, so a marketplace that moved or a missing right is seen before
 the release pushes anything.
 
-Why: the entry named no `ref` or `sha`, so Claude Code installed the tip of syns-bb-plugin main, and every push to
+Why: the entry named no `ref` or `sha`, so Claude Code installed the tip of syns-alia-plugin main, and every push to
 main reached Claude Code at once, a release or not (eb3cc58, b61203d). Pinned, only a release moves it.
 
 When it pays: at every release of the plugin, right after main and the tag are pushed, with its `--dry-run` as that
 step's check.
 When it does not: anything that is not a release; a hand pin bypasses the release's gate.
 
-How to run (python3, standard library; calls `git`), in the release's checkout of synsdev/syns-bb-plugin:
+How to run (python3, standard library; calls `git`), in the release's checkout of synsdev/syns-alia-plugin:
   python3 verify/marketplace-pin --version 0.11.1 [--sha <commit, default HEAD of --code>] [--code .]
           [--marketplace <git url, default https://github.com/synsdev/syns-claude-plugins.git>] [--plugin syns-pages]
           [--dry-run]
@@ -63,7 +63,7 @@ def tagged_commit(url, tag):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--version", required=True, help="the version released")
-    ap.add_argument("--code", default=".", help="the release's checkout of synsdev/syns-bb-plugin (default .)")
+    ap.add_argument("--code", default=".", help="the release's checkout of synsdev/syns-alia-plugin (default .)")
     ap.add_argument("--sha", help="the release commit (default: HEAD of --code, the tagged commit)")
     ap.add_argument("--marketplace", default=MARKETPLACE, help="the marketplace's git url (a local bare one in tests)")
     ap.add_argument("--plugin", default="syns-pages")

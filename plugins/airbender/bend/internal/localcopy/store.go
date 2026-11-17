@@ -5,7 +5,7 @@
 // share it: one for changing a file, one for "a sync is running".
 //
 // Why: a hosted tracker is too slow to ask for every read, so bend works
-// from a copy on this machine (bead-bb-c9l.5). This package is the part of
+// from a copy on this machine (bead-alia-c9l.5). This package is the part of
 // that which knows nothing about any tracker, so that another hosted
 // tracker's copy can be built on it.
 //

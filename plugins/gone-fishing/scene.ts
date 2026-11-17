@@ -203,8 +203,8 @@ const DOG = ["....K..", "...GGGN", "K..GGG.", "KGGGG..", ".GGGG.."];
 const BARK = [".WWW.", "WWXWW", "WWXWW", "WWWWW", "WWXWW", ".WWW.", "..W.."];
 
 // Facing left; B back, L belly, E eye, T tail.
-const SMALL_FISH = [".BBBB.T", "EBBBBTT", ".LLLL.T"];
-const LARGE_FISH = ["..BBBBBB..T", ".EBBBBBBBTT", "BLLLLLLLBTT", "..LLLLLL..T"];
+const SMALL_FISH = [".ALIABB.T", "EBBBBTT", ".LLLL.T"];
+const LARGE_FISH = ["..ALIABBBB..T", ".EBBBBBBBTT", "BLLLLLLLBTT", "..LLLLLL..T"];
 
 const ANGLER_X = BOAT_X + 10;
 const ANGLER_TOP = HORIZON - 10;

@@ -38,12 +38,12 @@ const data = await homeData(base, Astro.site);
 const shown = data.features.filter((feature) => feature.piece);
 const listed = data.features.filter((feature) => !feature.piece);
 const page = {
-  title: "BB Box",
+  title: "ALIA Box",
   description: tagline,
   head: homePageHead,
 };
 const docs = pageUrl(base, "start");
-const acquire = "bb box acquire linux-desktop-cpu";
+const acquire = "alia box acquire linux-desktop-cpu";
 const markDelay = (row: number, column: number) => row * 70 + column * 35;
 import { Image } from "astro:assets";
 import appIcon from "../assets/app-icon.png";
@@ -59,7 +59,7 @@ import appIcon from "../assets/app-icon.png";
       <div class="bar-inner">
       <a class="brand" href={base}>
         <Image class="mark" src={appIcon} alt="" width={24} height={24} densities={[1, 2, 3]} format="png" loading="eager" />
-        BB Box
+        ALIA Box
       </a>
       <nav aria-label="Site">
         <a href={docs}>Docs</a>
@@ -101,7 +101,7 @@ import appIcon from "../assets/app-icon.png";
           <a class="heading-mark" data-cipher-hover href="#platforms"><CipherText text="# platforms" /></a>
           <h2 id="platforms"><CipherText text="A computer of its own for every thread" glyphs="letters" /></h2>
         </div>
-        <p class="section-lead">Boxes have the thread's Git access, its variables and BB itself. You and the agent share them: the agent works in the box, and you can open its desktop or terminal at any time.</p>
+        <p class="section-lead">Boxes have the thread's Git access, its variables and ALIA itself. You and the agent share them: the agent works in the box, and you can open its desktop or terminal at any time.</p>
         <div class="platforms-grid">
           <ul class="tree">
             <li class="tree-root">boxes/</li>
@@ -163,7 +163,7 @@ import appIcon from "../assets/app-icon.png";
             <a class="heading-mark" data-cipher-hover href="#backends"><CipherText text="# backends" /></a>
             <h2 id="backends"><CipherText text="Any provider, one interface" glyphs="letters" /></h2>
           </div>
-          <p class="section-lead">Docker on the machine that runs BB to start with. Add Proxmox, microsandbox, Macs with Tart, machines over SSH, or rent from Hetzner Cloud, Namespace and boat.dev.</p>
+          <p class="section-lead">Docker on the machine that runs ALIA to start with. Add Proxmox, microsandbox, Macs with Tart, machines over SSH, or rent from Hetzner Cloud, Namespace and boat.dev.</p>
         </div>
         <div class="table-scroll" role="region" aria-labelledby="backends" tabindex="0">
           <table class="listing">
@@ -204,7 +204,7 @@ import appIcon from "../assets/app-icon.png";
           <a class="heading-mark" data-cipher-hover href="#install"><CipherText text="# install" /></a>
           <h2 id="install"><CipherText text="Set it up with an agent" glyphs="letters" /></h2>
         </div>
-        <p class="section-lead">Paste this into a BB thread. Its agent installs BB Box, sets up a backend and proves it with a box.</p>
+        <p class="section-lead">Paste this into a ALIA thread. Its agent installs ALIA Box, sets up a backend and proves it with a box.</p>
         <div class="install">
           <BoxFrame title="setup prompt" class="prompt-frame">
             <CopyButton slot="action" source="setup-prompt" class="frame-button" label="Copy" />

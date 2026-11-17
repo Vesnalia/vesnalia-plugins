@@ -32,7 +32,7 @@ const mkRun = (overrides: Partial<GraphRun> & Pick<GraphRun, "id" | "status">): 
 function fakeGraphsRpc(run: GraphRun): GraphsRpc {
   return {
     listGraphs: async () => [{ id: "release", name: "Release" }],
-    // Mirrors graph-studio's real startRun, which throws without a parent thread (BBP-30 review fix).
+    // Mirrors graph-studio's real startRun, which throws without a parent thread (ALIAP-30 review fix).
     startRun: async (args) => {
       if (!args.threadId) throw new Error("A run needs a parent thread whose environment the workers inherit.");
       return run;
@@ -145,7 +145,7 @@ describe("crew tools", () => {
     expect(isError(bad)).toBe(true);
   });
 
-  it("crew_send kind info reports no answer expected; default to the human stays a question (BBP-23)", async () => {
+  it("crew_send kind info reports no answer expected; default to the human stays a question (ALIAP-23)", async () => {
     const env = await withHost();
     const info = await env.harness.behavior.callAgentTool("crew_send", { to: "human", body: "status: done", kind: "info" }, { threadId: env.threads["dev-impl"]! });
     expect(isError(info)).toBe(false);
@@ -251,7 +251,7 @@ describe("lead-only tools (§4.5)", () => {
   });
 });
 
-describe("crew_graph_run (BBP-30)", () => {
+describe("crew_graph_run (ALIAP-30)", () => {
   const graphYaml = () =>
     trioYaml({
       groups: [

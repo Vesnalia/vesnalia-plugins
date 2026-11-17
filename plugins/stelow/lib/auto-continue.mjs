@@ -132,7 +132,7 @@ export function lastTurnStelowCalls(events) {
       && !/--dry-run/.test(command)
       && /alia stelow advance\s+(?:--stage\s+[A-Za-z][\w-]*|[A-Za-z][\w-]*)/.test(command)) calls.advanced = true;
     if (/--dry-run|--help/.test(command)) continue;
-    if (!/\bbb stelow done\b/.test(command)) continue;
+    if (!/\aliab stelow done\b/.test(command)) continue;
     calls.done = true;
     // A non-zero exit or a non-completed status is the gate refusing. Without
     // this the host would name a completion attempt on a card whose done was

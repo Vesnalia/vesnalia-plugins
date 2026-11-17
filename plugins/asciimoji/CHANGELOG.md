@@ -52,7 +52,7 @@ Saved data and visual geometry:
 
 Host integration and publishing:
 
-- Manifest engines require `bb >=0.45 <1` and Plugin SDK
+- Manifest engines require `alia >=0.45 <1` and Plugin SDK
   `>=0.6.15 <1`. Experimental slots are feature-detected; missing slots
   do not block CLI or plugin settings.
 - Sidebar decoration prefers host shortcut attributes and falls back to an
@@ -60,7 +60,7 @@ Host integration and publishing:
   controls, not nested buttons; unknown layouts are skipped. The interactive
   sidebar picker still requires the experimental overlay slot.
 - CI validates metadata parity, typechecks, and runs tests.
-  `npm run check:publish` additionally requires three authentic BB captures;
+  `npm run check:publish` additionally requires three authentic VesnALIA captures;
   a live host build and screenshots are manual blockers before release.
 
 See [publishing requirements](docs/PUBLISHING.md).

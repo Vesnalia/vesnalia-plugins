@@ -101,14 +101,14 @@ are apart from yours. As an administrator on the Mac:
 
 ```sh
 # A standard user for alia-box. It never needs to log in at the Mac.
-sudo sysadminctl -addUser bbbox-admin -fullName "alia-box" -password -
+sudo sysadminctl -addUser aliabox-admin -fullName "alia-box" -password -
 # Remote Login for that user: add it in System Settings > General > Sharing >
 # Remote Login, or:
-sudo dseditgroup -o edit -a bbbox-admin -t user com.apple.access_ssh
+sudo dseditgroup -o edit -a aliabox-admin -t user com.apple.access_ssh
 sudo systemsetup -setremotelogin on
 ```
 
-Then, as `bbbox-admin`, install Tart:
+Then, as `aliabox-admin`, install Tart:
 
 ```sh
 brew install openai/tools/tart     # or: nix profile install nixpkgs#tart
@@ -334,7 +334,7 @@ A host has a short name, a switch, and these fields:
 | Field | Example | Meaning |
 | --- | --- | --- |
 | `address` | `192.0.2.20` | The Mac's address, with `:port` when SSH is not on 22 |
-| `user` | `bbbox-admin` | The host user alia-box logs in as |
+| `user` | `aliabox-admin` | The host user alia-box logs in as |
 | `host-keys` | `192.0.2.20 ssh-ed25519 AAAA...` | `ssh-keyscan -t ed25519 192.0.2.20` prints it. alia-box checks it on every connection |
 
 A new box goes to the first Mac in the list with room. A Mac that is off keeps

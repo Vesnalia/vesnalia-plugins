@@ -1,14 +1,14 @@
 #!/bin/bash
 set -uo pipefail
 cd "$HOME"
-B=./bbc
+B=./aliac
 export PATH=$HOME/.local/share/alia-box/microsandbox/bin:$PATH
 now() { date +%s.%N; }
 $B box machines add linux --on microsandbox --name msb-cut | grep -E 'State|Timings'
 $B box run msb-cut --machine 'echo before > ~/work.txt; sync'
 $B box snapshot take msb-cut --machine --name before | head -1
 $B box run msb-cut --machine 'echo after > ~/work.txt; sync'
-old=$(msb ls --format json | python3 -c 'import json,sys; print([s["name"] for s in json.load(sys.stdin) if s["name"].startswith("bbbox-")][0])')
+old=$(msb ls --format json | python3 -c 'import json,sys; print([s["name"] for s in json.load(sys.stdin) if s["name"].startswith("aliabox-")][0])')
 echo "old guest $old"
 $B box snapshot hold-next --at answered
 began=$(date +%s)
@@ -36,4 +36,4 @@ msb ls
 echo "box runs on: $($B box status msb-cut 2>/dev/null | grep -i guest)"
 $B box run msb-cut --machine 'cat ~/work.txt; [ -e /run/alia-box/ready ] && echo ready-file; hostname; sudo alia-box-identity status | grep -E "^boot="'
 $B machine list | grep msb-cut
-grep -E 'msb-cut|'"$old" bbdata/logs/server.1.log | sed -E 's/.*"msg":"//' | grep -E 'Restored|Deleted guest|restart|recover|cut short|confirm' | tail -6 | cut -c1-250
+grep -E 'msb-cut|'"$old" aliadata/logs/server.1.log | sed -E 's/.*"msg":"//' | grep -E 'Restored|Deleted guest|restart|recover|cut short|confirm' | tail -6 | cut -c1-250

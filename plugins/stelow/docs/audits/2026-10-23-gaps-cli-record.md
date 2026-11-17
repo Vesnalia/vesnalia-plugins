@@ -198,7 +198,7 @@ There was a second, quieter defect under it. That line counted registry **rows**
 documents. The measured card `card_wxpaf8ll` writes the same three findings into
 `report.md`, `evidence.md` and `requirements.md` — 9 rows, 3 findings — so the
 trailer said `9 documented` above a list of three. Two accountings of one field,
-one level down from the defect `bbd6d497` fixed.
+one level down from the defect `aliad6d497` fixed.
 
 ### 4.2 The decision
 

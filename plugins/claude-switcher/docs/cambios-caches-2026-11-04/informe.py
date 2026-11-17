@@ -63,7 +63,7 @@ def main():
     print(f"- {c['fria']} cambios llegaron con la caché ya caducada (pausa de más de 1 h antes del cambio): no mataron nada. {c['caduca-tras-mover']} más estaban vivas al mover el proyecto, pero el siguiente turno llegó pasada la hora: sin tics habrían caducado igual.")
     rees = r["reescrituras"]
     total_rees = sum(v[2] for v in rees.values())
-    print(f"- Proporción: de todo lo reescrito en estos 7 días por los hilos de bb (≈ {d(total_rees)} $, proxy), el cambio de cuenta con caché viva es el {round(100 * total / total_rees)} %.\n")
+    print(f"- Proporción: de todo lo reescrito en estos 7 días por los hilos de alia (≈ {d(total_rees)} $, proxy), el cambio de cuenta con caché viva es el {round(100 * total / total_rees)} %.\n")
 
     print("## Canario: el hilo de la mudanza al i9\n")
     filas = [f for f in F if f["hilo"] == CANARIO]
@@ -113,7 +113,7 @@ def main():
             resumen["viva, y el proyecto sigue en su organización"] += 1
         else:
             resumen["viva, pero el siguiente turno irá a otra organización"] += 1
-    print(f"`bb calor list` da {len(frios)} hilos «fría: la cuenta del proyecto cambió» de {len(calor)}, a la hora de la ventana. Medido con su última petición y la cuenta real de su proceso:\n")
+    print(f"`alia calor list` da {len(frios)} hilos «fría: la cuenta del proyecto cambió» de {len(calor)}, a la hora de la ventana. Medido con su última petición y la cuenta real de su proceso:\n")
     for k, v in sorted(resumen.items(), key=lambda kv: -kv[1]):
         print(f"- {k}: {v}")
     print("\nCalor juzga por la variable del proyecto: no sabe que entre Team la caché sigue viva, ni que un proceso abierto sigue en su cuenta. Se pide aparte a su buzón; este encargo no lo toca.\n")
@@ -125,17 +125,17 @@ def main():
     print()
 
     print("## Cómo se mide\n")
-    print(f"""- **Unidad**: la tanda, un mensaje procesado, de `thread/tokenUsage/updated` en `bb.db` (leída en solo lectura, `extraer.py`): {r['tandas']} tandas de {len(hilos)} hilos de Claude Code. Cada una lleva {r['ttl']} como `promptCacheTtlMs`, de ahí 1 h.
+    print(f"""- **Unidad**: la tanda, un mensaje procesado, de `thread/tokenUsage/updated` en `alia.db` (leída en solo lectura, `extraer.py`): {r['tandas']} tandas de {len(hilos)} hilos de Claude Code. Cada una lleva {r['ttl']} como `promptCacheTtlMs`, de ahí 1 h.
 - **Cuenta real de cada tanda**: el `provider.env-resolved` que arrancó el proceso, el que llega pegado a `turn/started` o con el hilo parado. El que llega con un turno abierto no cambia nada (un `tell` que entra en un turno en marcha), y el «running on» del registro del plugin dice dónde está el proyecto, no dónde corre el proceso. Prueba: con esa regla, {c["sin-explicar"]} sin explicar; sin ella salían 17 en esta misma semana (medido antes de añadirla).
 - **¿Se perdió la caché?** Primera petición de la tanda, de la transcripción de Claude Code de su máquina (`primeras.py`, en el NUC, el Mac y el i9; {r['sin_primera']} tandas sin encontrar): perdida si escribe al menos la mitad de lo que lee y escribe, en un contexto de 1.000 tokens o más.
 - **Clases**: `mata` hueco < 1 h y perdida; `caduca-tras-mover` hueco ≥ 1 h, viva al escribirse el movimiento; `fria` caducada antes de moverse; `misma-org` hueco < 1 h entre Team, sin pérdida; `cambia-modelo` y `compacta` son reescrituras que habrían ocurrido igual.
 - **Coste** (misma fórmula que `Optimizador/informes/2026-11-04/friki/cache-viva.md` §Procedencia): tokens × precio de escritura de 1 h, por modelo (Fable 20, Opus 8, Sonnet 4, Haiku 0,2 $/M, tabla de `Optimizador/informes/2026-10-14/cache/medir-cache.py:20-26`). La doc oficial da 5 $/M de entrada para Opus 5 (Context7, `platform.claude.com/docs/pt-BR/models/opus-5/overview`), que con escritura de 1 h al doble serían 10 en vez de 8: el total subiría {d(sum(f['tokens'] for f in matadas if 'opus' in (f['modelo'] or '')) * 2 / 1e6)} $.
 - **Motivo**: la última línea del registro con movimiento del proyecto hacia esa cuenta. Registro: `plugin.log` del NUC desde el 2026-10-29 01:08 UTC y el del Mac hasta entonces, con 50 líneas de proyectos ya borrados sin resolver a un id.
-- **Calor**: `bb calor list --json` a la hora de la extracción (motivo y fin del último turno). Sus tics se identifican por `calor/logs/plugin.log`.
+- **Calor**: `alia calor list --json` a la hora de la extracción (motivo y fin del último turno). Sus tics se identifican por `calor/logs/plugin.log`.
 
 ## Lo que este informe no ve
 
-- Las sesiones interactivas del Mac y los subagentes: solo hilos de bb. Por eso {d(total / dias)} $/día no es comparable con los ~73 $/día de la remedición del 2026-10-26 (`cache-prompts.md:16`), que medía transcripciones de todas las sesiones y tiempos anteriores a las reglas de hoy.
+- Las sesiones interactivas del Mac y los subagentes: solo hilos de alia. Por eso {d(total / dias)} $/día no es comparable con los ~73 $/día de la remedición del 2026-10-26 (`cache-prompts.md:16`), que medía transcripciones de todas las sesiones y tiempos anteriores a las reglas de hoy.
 - Las plazas y la sesión de cada cuenta tienen un agujero de unos 2 días en las muestras del plugin (10-31 a 11-03): el almacén de muestras dejó de caber en el KV el 2026-11-01 y una recarga se lleva lo no guardado. Las plazas se reconstruyen del registro; el porcentaje de Fable de cada cuenta en el pasado no se guarda en ninguna parte.
 - Una versión instalada nueva (0.2.39, 2026-11-04 04:58) solo lleva horas: casi todo el registro es de versiones anteriores, con otras reglas.""")
 

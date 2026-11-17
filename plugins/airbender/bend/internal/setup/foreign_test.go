@@ -3,7 +3,7 @@
 // What: with origin on GitHub and a stand-in for GitHub saying it is a fork
 // (or not), checks the warning, the refusal without --anyway, keeping the
 // issues in another repository with nothing of Airbender's left for git,
-// and that a repository already set up never asks GitHub (bead-bb-dof).
+// and that a repository already set up never asks GitHub (bead-alia-dof).
 
 package setup
 

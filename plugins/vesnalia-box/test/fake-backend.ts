@@ -938,8 +938,8 @@ export class FakeTransport implements CommandTransport {
       PATH: pathRefusingRealHostTools("The fake box", pathWithHostStubs(hostStubsRootForThisProcess(), identityBin ? [identityBin] : [], process.env.PATH)),
       HOME: home,
       ...(shell ? { SHELL: shell } : {}),
-      ...(process.env.BBBOX_CGROUP ? { BBBOX_CGROUP: process.env.BBBOX_CGROUP } : {}),
-      BBBOX_IDENTITY_ROOT: identityRoot ?? join(home, ".no-identity-root"),
+      ...(process.env.ALIABOX_CGROUP ? { ALIABOX_CGROUP: process.env.ALIABOX_CGROUP } : {}),
+      ALIABOX_IDENTITY_ROOT: identityRoot ?? join(home, ".no-identity-root"),
       ...this.#owned,
     };
     const sh = (script: string) => ["sh", "-c", script] as const;

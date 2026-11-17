@@ -37,11 +37,11 @@ function assertUnchanged(node: FakeNode, before: Map<number, string>): void {
 test("writes are off unless gpu.conf, owned by the helper's user alone, says on, and pve-container is a version the release was tested on", () => {
   const cases: { readonly name: string; readonly setup: (node: FakeNode) => void; readonly writes: "on" | "off"; readonly error: RegExp | null }[] = [
     { name: "no gpu.conf", setup: (node) => rmSync(node.file("etc/alia-box/gpu.conf")), writes: "off", error: /^error no \/etc\/alia-box\/gpu\.conf$/ },
-    { name: "writes off", setup: (node) => node.setHelperConfig(["bbbox"], "off"), writes: "off", error: null },
-    { name: "a gpu.conf others may write", setup: (node) => node.setHelperConfig(["bbbox"], "on", 0o666), writes: "off", error: /not owned by this user alone, so writes stay off/ },
-    { name: "an untested pve-container", setup: (node) => (node.setHelperConfig(["bbbox"], "on"), node.write("pve-container-version", "6.2.1\n")), writes: "off", error: /pve-container 6\.2\.1 is not a version this release was tested on/ },
-    { name: "a line it cannot read", setup: (node) => node.write("etc/alia-box/gpu.conf", "pools bbbox\nwrites maybe\n"), writes: "off", error: /has a line this release cannot read/ },
-    { name: "writes on, tested", setup: (node) => node.setHelperConfig(["bbbox"], "on"), writes: "on", error: null },
+    { name: "writes off", setup: (node) => node.setHelperConfig(["aliabox"], "off"), writes: "off", error: null },
+    { name: "a gpu.conf others may write", setup: (node) => node.setHelperConfig(["aliabox"], "on", 0o666), writes: "off", error: /not owned by this user alone, so writes stay off/ },
+    { name: "an untested pve-container", setup: (node) => (node.setHelperConfig(["aliabox"], "on"), node.write("pve-container-version", "6.2.1\n")), writes: "off", error: /pve-container 6\.2\.1 is not a version this release was tested on/ },
+    { name: "a line it cannot read", setup: (node) => node.write("etc/alia-box/gpu.conf", "pools aliabox\nwrites maybe\n"), writes: "off", error: /has a line this release cannot read/ },
+    { name: "writes on, tested", setup: (node) => node.setHelperConfig(["aliabox"], "on"), writes: "on", error: null },
   ];
   for (const { name, setup, writes, error } of cases) {
     const node = new FakeNode();
@@ -474,11 +474,11 @@ test("the boot pass puts each claimed guest's lines right from its card's UUID, 
   node.setCards([movedA]);
   node.guest(1403, { box: "bx1403", marker: marker("shared", movedA, 1) });
   const unmarked = node.text(1402);
-  node.setHelperConfig(["bbbox"], "off");
+  node.setHelperConfig(["aliabox"], "off");
   const dryRun = ran(node, ["--boot"]);
   assert.deepEqual(node.guestWrites(), [], "a dry boot pass writes nothing");
   assert.match(dryRun, /would write CT 1400 for claim g1/);
-  node.setHelperConfig(["bbbox"], "on");
+  node.setHelperConfig(["aliabox"], "on");
   ran(node, ["--boot"]);
   assert.deepEqual(node.lines(1400), cardLines(movedA, "desktop"));
   assert.equal(node.config(1400).keys.dev7, TUN);
@@ -504,7 +504,7 @@ test("the report: today's VesnALIA Box reads its at and gpu lines, it names the 
   const body = node.reportLines();
   assert.deepEqual(body.slice(3, 8), [
     "helper alia-box-gpu 0.4.4 protocol 1 writes off pve-container 6.1.14 tested",
-    "serves bbbox",
+    "serves aliabox",
     body.find((line) => line.startsWith("driver "))!,
     `card ${A} pci 0000:21:00.0 minor 1 drm card2 renderD129`,
     `card ${B} pci 0000:d1:00.0 minor 0 drm card1 renderD128`,
@@ -650,7 +650,7 @@ test("the service answers a marker within about a second, logs each write it wou
     assert.ok(answeredMs < 2_500, `answered in ${answeredMs} ms`);
     assert.deepEqual(node.lines(1700), []);
 
-    node.setHelperConfig(["bbbox"], "off");
+    node.setHelperConfig(["aliabox"], "off");
     node.guest(1701, { box: "bx1701", marker: marker("shared", CARD_B, 1) });
     await sleep(2_500);
     assert.equal(service.output().match(/would write CT 1701 for request g1/g)?.length, 1, "logged once, though seen on every pass");
@@ -835,7 +835,7 @@ test("with writes off, recovery stores no strip, yield or whole grant; once writ
   assert.deepEqual(node.guestWrites(), []);
 
   node.remove(2000);
-  node.setHelperConfig(["bbbox"], "on");
+  node.setHelperConfig(["aliabox"], "on");
   const stderr = ran(node);
   assert.match(stderr, /writes are on: the claims granted with writes off stand \(\d+\), and every request refused or left waiting with writes off is decided again \(\d+\)/);
   assert.deepEqual(node.lines(2001), cardLines(CARD_A, "server"), "the copy's source has gone, so it is decided afresh and keeps its card");
@@ -1642,7 +1642,7 @@ test("071 unit 5, go review 4 N5: a start is refused beside a guest running on i
   held.guest(2762, { box: "bx2762", kind: "linux-desktop", lines: cardLines(CARD_A, "desktop") });
   ran(held);
   assert.deepEqual(lines(held, "unsettled"), [`unsettled 2760 ${A} g1`]);
-  held.ask(2762, asked("start", "bx2762", 0, "bbbb0001"));
+  held.ask(2762, asked("start", "bx2762", 0, "aliabb0001"));
   ran(held);
   assert.ok(powered(held).includes("power 2762 nbbbb0001 start refused unsettled 2760"), `an unmarked guest on a card a guest the lost ledger left unresolved may hold: ${powered(held).join(" | ")}`);
   assert.deepEqual(held.powerLog(), []);

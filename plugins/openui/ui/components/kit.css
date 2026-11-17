@@ -5,121 +5,121 @@
 /* Tokens. Every colour and font below this block goes through one of these. They point at ALIA's
    own variables, so ALIA's light/dark switch and custom themes flow through unchanged. */
 :root {
-  --bbui-font: var(--font-sans, Inter, system-ui, sans-serif);
-  --bbui-mono: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  --bbui-ink: var(--foreground);
-  --bbui-muted: var(--muted-foreground);
-  --bbui-surface: var(--card);
-  --bbui-well: var(--muted);
-  --bbui-rule: var(--border);
-  --bbui-field: var(--input);
-  --bbui-ring: var(--ring);
-  /* Data accent: marks, the current value, the selected item. The one primary action uses --bbui-action. */
-  --bbui-accent: var(--color-timeline-accent, var(--primary));
-  --bbui-accent-soft: color-mix(in oklch, var(--bbui-accent) 16%, transparent);
-  --bbui-action: var(--primary);
-  --bbui-action-ink: var(--primary-foreground);
-  --bbui-success: var(--success, oklch(72% 0.15 155));
-  --bbui-warning: var(--warning, oklch(72% 0.16 50));
-  --bbui-danger: var(--destructive, oklch(56% 0.19 22));
-  --bbui-attention: var(--attention, oklch(77% 0.15 80));
+  --aliaui-font: var(--font-sans, Inter, system-ui, sans-serif);
+  --aliaui-mono: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  --aliaui-ink: var(--foreground);
+  --aliaui-muted: var(--muted-foreground);
+  --aliaui-surface: var(--card);
+  --aliaui-well: var(--muted);
+  --aliaui-rule: var(--border);
+  --aliaui-field: var(--input);
+  --aliaui-ring: var(--ring);
+  /* Data accent: marks, the current value, the selected item. The one primary action uses --aliaui-action. */
+  --aliaui-accent: var(--color-timeline-accent, var(--primary));
+  --aliaui-accent-soft: color-mix(in oklch, var(--aliaui-accent) 16%, transparent);
+  --aliaui-action: var(--primary);
+  --aliaui-action-ink: var(--primary-foreground);
+  --aliaui-success: var(--success, oklch(72% 0.15 155));
+  --aliaui-warning: var(--warning, oklch(72% 0.16 50));
+  --aliaui-danger: var(--destructive, oklch(56% 0.19 22));
+  --aliaui-attention: var(--attention, oklch(77% 0.15 80));
   /* Status as text (labels, +/- counts): ALIA's darker variants; the base colours stay for fills and dots. */
-  --bbui-success-text: var(--success-foreground, oklch(53% 0.14 155));
-  --bbui-warning-text: var(--warning-text, oklch(55% 0.14 50));
-  --bbui-danger-text: var(--destructive-text, oklch(45% 0.19 26));
+  --aliaui-success-text: var(--success-foreground, oklch(53% 0.14 155));
+  --aliaui-warning-text: var(--warning-text, oklch(55% 0.14 50));
+  --aliaui-danger-text: var(--destructive-text, oklch(45% 0.19 26));
 
-  --bbui-s1: 4px;
-  --bbui-s2: 8px;
-  --bbui-s3: 12px;
-  --bbui-s4: 16px;
-  --bbui-s6: 24px;
-  --bbui-r-control: calc(var(--radius, 8px) - 2px);
-  --bbui-r-well: var(--radius, 8px);
+  --aliaui-s1: 4px;
+  --aliaui-s2: 8px;
+  --aliaui-s3: 12px;
+  --aliaui-s4: 16px;
+  --aliaui-s6: 24px;
+  --aliaui-r-control: calc(var(--radius, 8px) - 2px);
+  --aliaui-r-well: var(--radius, 8px);
 
-  --bbui-text: 400 13px/1.55 var(--bbui-font);
-  --bbui-small: 400 12px/1.45 var(--bbui-font);
-  --bbui-tiny: 400 11px/1.4 var(--bbui-font);
-  --bbui-head: 560 13px/1.35 var(--bbui-font);
-  --bbui-figure: 560 22px/1.15 var(--bbui-font);
+  --aliaui-text: 400 13px/1.55 var(--aliaui-font);
+  --aliaui-small: 400 12px/1.45 var(--aliaui-font);
+  --aliaui-tiny: 400 11px/1.4 var(--aliaui-font);
+  --aliaui-head: 560 13px/1.35 var(--aliaui-font);
+  --aliaui-figure: 560 22px/1.15 var(--aliaui-font);
 
-  --bbui-micro: 120ms;
-  --bbui-short: 220ms;
-  --bbui-long: 420ms;
-  --bbui-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --bbui-ease-in: cubic-bezier(0.7, 0, 0.84, 0);
-  --bbui-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --aliaui-micro: 120ms;
+  --aliaui-short: 220ms;
+  --aliaui-long: 420ms;
+  --aliaui-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --aliaui-ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --aliaui-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-.bbui {
-  font: var(--bbui-text);
-  color: var(--bbui-ink);
+.aliaui {
+  font: var(--aliaui-text);
+  color: var(--aliaui-ink);
   font-variant-numeric: tabular-nums;
   min-width: 0;
 }
-.bbui-label { font: var(--bbui-small); color: var(--bbui-muted); }
-.bbui-head { font: var(--bbui-head); color: var(--bbui-ink); text-wrap: balance; }
-.bbui-figure { font: var(--bbui-figure); color: var(--bbui-ink); font-variant-numeric: tabular-nums; }
-.bbui-mono { font-family: var(--bbui-mono); font-size: 12px; }
-.bbui-well { background: var(--bbui-well); border-radius: var(--bbui-r-well); padding: var(--bbui-s3); }
-.bbui-rule { border: 0; border-top: 1px solid var(--bbui-rule); margin: 0; }
+.aliaui-label { font: var(--aliaui-small); color: var(--aliaui-muted); }
+.aliaui-head { font: var(--aliaui-head); color: var(--aliaui-ink); text-wrap: balance; }
+.aliaui-figure { font: var(--aliaui-figure); color: var(--aliaui-ink); font-variant-numeric: tabular-nums; }
+.aliaui-mono { font-family: var(--aliaui-mono); font-size: 12px; }
+.aliaui-well { background: var(--aliaui-well); border-radius: var(--aliaui-r-well); padding: var(--aliaui-s3); }
+.aliaui-rule { border: 0; border-top: 1px solid var(--aliaui-rule); margin: 0; }
 
 /* The secondary control. The one primary action per block uses data-variant="primary". */
-.bbui-btn {
+.aliaui-btn {
   appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   position: relative;
   min-height: 32px;
-  padding: 0 var(--bbui-s3);
-  border: 1px solid var(--bbui-rule);
-  border-radius: var(--bbui-r-control);
+  padding: 0 var(--aliaui-s3);
+  border: 1px solid var(--aliaui-rule);
+  border-radius: var(--aliaui-r-control);
   background: transparent;
-  color: var(--bbui-ink);
-  font: var(--bbui-head);
+  color: var(--aliaui-ink);
+  font: var(--aliaui-head);
   cursor: pointer;
   outline: 2px solid transparent;
   outline-offset: 2px;
-  transition: background-color var(--bbui-micro) var(--bbui-ease-out), border-color var(--bbui-micro) var(--bbui-ease-out),
-    transform var(--bbui-micro) var(--bbui-ease-out);
+  transition: background-color var(--aliaui-micro) var(--aliaui-ease-out), border-color var(--aliaui-micro) var(--aliaui-ease-out),
+    transform var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-btn::before { content: ""; position: absolute; inset: -6px; } /* 44px hit area */
-.bbui-btn:focus-visible { outline-color: var(--bbui-ring); transition: none; }
+.aliaui-btn::before { content: ""; position: absolute; inset: -6px; } /* 44px hit area */
+.aliaui-btn:focus-visible { outline-color: var(--aliaui-ring); transition: none; }
 @media (hover: hover) {
-  .bbui-btn:hover { background: var(--bbui-well); }
-  .bbui-btn[data-variant="primary"]:hover { background: color-mix(in oklch, var(--bbui-action) 88%, var(--bbui-ink)); }
+  .aliaui-btn:hover { background: var(--aliaui-well); }
+  .aliaui-btn[data-variant="primary"]:hover { background: color-mix(in oklch, var(--aliaui-action) 88%, var(--aliaui-ink)); }
 }
-.bbui-btn:active { transform: translateY(1px); }
-.bbui-btn[data-variant="primary"] { background: var(--bbui-action); border-color: transparent; color: var(--bbui-action-ink); }
-.bbui-btn:disabled, .bbui-btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; transform: none; }
-.bbui-btn[data-state="loading"] { cursor: progress; }
-.bbui-btn[data-state="error"] { border-color: var(--bbui-danger); }
-.bbui-btn[data-state="success"] { border-color: var(--bbui-success); }
+.aliaui-btn:active { transform: translateY(1px); }
+.aliaui-btn[data-variant="primary"] { background: var(--aliaui-action); border-color: transparent; color: var(--aliaui-action-ink); }
+.aliaui-btn:disabled, .aliaui-btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; transform: none; }
+.aliaui-btn[data-state="loading"] { cursor: progress; }
+.aliaui-btn[data-state="error"] { border-color: var(--aliaui-danger); }
+.aliaui-btn[data-state="success"] { border-color: var(--aliaui-success); }
 
 /* Loading, empty and error: every region that loads data draws all three. */
-.bbui-skeleton {
+.aliaui-skeleton {
   display: grid;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
-.bbui-skeleton > span {
+.aliaui-skeleton > span {
   display: block;
   height: 12px;
-  border-radius: var(--bbui-r-control);
-  background: var(--bbui-well);
-  animation: bbui-pulse 1.4s var(--bbui-ease-in-out) infinite;
+  border-radius: var(--aliaui-r-control);
+  background: var(--aliaui-well);
+  animation: aliaui-pulse 1.4s var(--aliaui-ease-in-out) infinite;
 }
-@keyframes bbui-pulse { 50% { opacity: 0.45; } }
-.bbui-empty, .bbui-error {
+@keyframes aliaui-pulse { 50% { opacity: 0.45; } }
+.aliaui-empty, .aliaui-error {
   display: grid;
-  gap: var(--bbui-s1);
-  padding: var(--bbui-s3);
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
+  gap: var(--aliaui-s1);
+  padding: var(--aliaui-s3);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
 }
-.bbui-error { box-shadow: inset 2px 0 0 var(--bbui-danger); }
-.bbui-error .bbui-label { overflow-wrap: anywhere; }
+.aliaui-error { box-shadow: inset 2px 0 0 var(--aliaui-danger); }
+.aliaui-error .aliaui-label { overflow-wrap: anywhere; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bbui *, .bbui { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
-  .bbui-skeleton > span { animation: none; }
+  .aliaui *, .aliaui { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .aliaui-skeleton > span { animation: none; }
 }

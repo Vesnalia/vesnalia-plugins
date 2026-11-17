@@ -109,7 +109,7 @@ describe("SSH host pool settings", () => {
     const parsed = config("build-1 192.0.2.21 linux\nbuild-2 ops@192.0.2.22:2222 linux via=jump@192.0.2.9 reset=machine labels=fast,big # the big one");
     assert.deepEqual(parsed.machines[0], {
       name: "build-1",
-      admin: { host: "192.0.2.21", port: 22, user: "bbbox-admin" },
+      admin: { host: "192.0.2.21", port: 22, user: "aliabox-admin" },
       jump: null,
       kinds: ["linux"],
       os: "linux",
@@ -140,9 +140,9 @@ describe("SSH host pool settings", () => {
   });
 
   it("take IPv6 addresses in brackets and known_hosts names off port 22", () => {
-    assert.deepEqual(parseTarget("[2001:db8::5]:2200", "bbbox-admin"), { host: "2001:db8::5", port: 2200, user: "bbbox-admin" });
-    assert.equal(parseTarget("2001:db8::5", "bbbox-admin"), null, "an IPv6 address needs brackets");
-    assert.equal(parseTarget("host:0", "bbbox-admin"), null);
+    assert.deepEqual(parseTarget("[2001:db8::5]:2200", "aliabox-admin"), { host: "2001:db8::5", port: 2200, user: "aliabox-admin" });
+    assert.equal(parseTarget("2001:db8::5", "aliabox-admin"), null, "an IPv6 address needs brackets");
+    assert.equal(parseTarget("host:0", "aliabox-admin"), null);
     const lines = [`[192.0.2.22]:2222 ${HOST_KEY}`, `192.0.2.21 ${HOST_KEY}`];
     assert.deepEqual(hostKeysFor(lines, { host: "192.0.2.22", port: 2222 }), [lines[0]]);
     assert.deepEqual(hostKeysFor(lines, { host: "192.0.2.24", port: 22 }), []);
@@ -164,7 +164,7 @@ describe("SSH host pool settings", () => {
     assert.match(problems(settings("a 192.0.2.21 linux reset=sometimes")), /reset=home or reset=machine/);
     assert.match(problems(settings("a 192.0.2.21 linux colour=blue")), /The machine on line 1 has an option the SSH host pool does not know\./);
     assert.match(problems(settings("a 192.0.2.21 linux\na 192.0.2.22 linux")), /listed twice/);
-    assert.match(problems(settings("a 192.0.2.21 linux\nb bbbox-admin@192.0.2.21 linux")), /same address/);
+    assert.match(problems(settings("a 192.0.2.21 linux\nb aliabox-admin@192.0.2.21 linux")), /same address/);
     assert.match(problems(settings("a 192.0.2.21 linux", { "ssh-pool-known-hosts": "" })), /host key of machine a, 192\.0\.2\.21/);
     assert.match(problems(settings("a 192.0.2.21 linux via=192.0.2.9")), /jump host, 192\.0\.2\.9/);
     assert.match(problems(settings("a 192.0.2.21 linux", { "ssh-pool-known-hosts": `192.0.2.21 ${HOST_KEY}\nnonsense` })), /whole known_hosts lines/);
@@ -214,10 +214,10 @@ describe("SSH host pool", () => {
     const { backend } = pool("d1 192.0.2.43 linux reset=machine\nd2 192.0.2.44 linux,linux-docker reset=machine");
     const { guest } = await acquire(backend);
     assert.equal(guest.ref, "d1");
-    assert.deepEqual(guest.data, { box: guest.data!.box, generation: 0, user: "bbx-0" });
+    assert.deepEqual(guest.data, { box: guest.data!.box, generation: 0, user: "aliax-0" });
     const transports = await backend.transports(guest, "linux");
     assert.equal(transports.access?.dockerHost, "ssh://bbx-0@192.0.2.43");
-    assert.equal(transports.access?.ssh?.user, "bbx-0");
+    assert.equal(transports.access?.ssh?.user, "aliax-0");
     const second = await acquire(backend);
     assert.equal(second.guest.ref, "d2");
     await assert.rejects(backend.capacity("linux-docker", sizeOf("linux"), []), (error: unknown) => error instanceof BackendError && error.code === "unsupported");
@@ -447,7 +447,7 @@ describe("SSH host pool", () => {
     await backend.returnToService!("f");
     assert.equal((await member(backend, "f")).generation, 1, "returning a free machine to service does nothing");
     const next = await acquire(backend);
-    assert.equal(next.guest.data?.user, "bbx-1");
+    assert.equal(next.guest.data?.user, "aliax-1");
     await assert.rejects(backend.returnToService!("f"), /f is held by box .+\. Release the box first\./);
     await backend.release(next.guest, releaseHooks().hooks);
     await backend.dispose();
@@ -477,18 +477,18 @@ describe("SSH host pool", () => {
   });
 
   it("keeps a dirty machine out of service until someone resets it", async () => {
-    machine("192.0.2.53", { dirty: "/home/bbx-7" });
+    machine("192.0.2.53", { dirty: "/home/aliax-7" });
     const { backend } = pool("d 192.0.2.53 linux");
     const out = await member(backend, "d");
     assert.equal(out.state, "out-of-service");
-    assert.match(out.reason!, /An earlier box left \/home\/bbx-7/);
+    assert.match(out.reason!, /An earlier box left \/home\/aliax-7/);
     await assert.rejects(acquire(backend), (error: unknown) => error instanceof BackendError && error.code === "no_capacity");
     // A reset that leaves it dirty keeps it out of service.
-    await assert.rejects(backend.returnToService!("d"), /The reset left \/home\/bbx-7/);
+    await assert.rejects(backend.returnToService!("d"), /The reset left \/home\/aliax-7/);
     clearFlag("192.0.2.53", "dirty");
     // As the operator does on the machine, as the doctor says: a reset with no input.
     write("192.0.2.53", "flags/.keep", "");
-    const reset = await fake.ssh.run({ host: "192.0.2.53", port: 22, user: "bbbox-admin", hostKeys: [] }, `${HELPER} reset </dev/null`, { timeoutMs: 20_000 });
+    const reset = await fake.ssh.run({ host: "192.0.2.53", port: 22, user: "aliabox-admin", hostKeys: [] }, `${HELPER} reset </dev/null`, { timeoutMs: 20_000 });
     assert.equal(reset.exitCode, 0, reset.stderr);
     const back = await member(backend, "d");
     assert.equal(back.state, "free", "it is clean at a later generation");
@@ -622,7 +622,7 @@ describe("SSH host pool", () => {
     assert.match(state.fix!, /run "sudo \/usr\/local\/libexec\/alia-box\/machine reset" on r again/);
     assert.doesNotMatch(doctor.notes.join("\n"), /leaves alone/, "it is no other install's");
     assert.deepEqual(await backend.held(), [], "the sweep leaves it to the operator");
-    const reset = await fake.ssh.run({ host: "192.0.2.63", port: 22, user: "bbbox-admin", hostKeys: [] }, `${HELPER} reset </dev/null`, { timeoutMs: 20_000 });
+    const reset = await fake.ssh.run({ host: "192.0.2.63", port: 22, user: "aliabox-admin", hostKeys: [] }, `${HELPER} reset </dev/null`, { timeoutMs: 20_000 });
     assert.equal(reset.exitCode, 0, reset.stderr);
     assert.equal((await member(backend, "r")).state, "free");
     await backend.dispose();
@@ -764,7 +764,7 @@ describe("A machine taken out of the SSH host pool's settings while a box holds 
 
 describe("An SSH host pool of Macs (047)", () => {
   it("parses a Mac's line, and refuses one that mixes Linux and macOS kinds or asks for a whole-machine reset", () => {
-    const parsed = config("mac-mini bbbox-admin@192.0.2.80 macos,macos-desktop").machines[0]!;
+    const parsed = config("mac-mini aliabox-admin@192.0.2.80 macos,macos-desktop").machines[0]!;
     assert.deepEqual([parsed.os, parsed.kinds, parsed.docker, parsed.reset], ["macos", ["macos", "macos-desktop"], false, "home"]);
     assert.match(problems(settings("m 192.0.2.80 linux,macos")), /The machine on line 1 lists Linux and macOS kinds\. List linux on a Linux machine, and macos, macos-desktop or ios on a Mac\./);
     assert.match(problems(settings("m 192.0.2.80 macos reset=machine")), /The machine on line 1 is a Mac, which has no whole-machine reset\. Remove reset=machine/);
@@ -794,7 +794,7 @@ describe("An SSH host pool of Macs (047)", () => {
     mac(host);
     const { backend } = pool("g 192.0.2.79 macos");
     const { guest } = await acquire(backend, "macos");
-    const request = { program: "/Users/bbx-0/Applications/Probe.app", permissions: ["accessibility", "microphone"] as const };
+    const request = { program: "/Users/aliax-0/Applications/Probe.app", permissions: ["accessibility", "microphone"] as const };
     await assert.rejects(backend.grant!(guest, request), (error: unknown) => error instanceof BackendError && error.code === "unsupported" && /^System Integrity Protection is on/.test(error.message));
     assert.deepEqual(await backend.grants!(guest), { blockedBy: "sip-on", signingIdentity: true, grants: [] });
 
@@ -823,7 +823,7 @@ describe("An SSH host pool of Macs (047)", () => {
     machine("192.0.2.78");
     const { backend } = pool("l 192.0.2.78 linux");
     const { guest } = await acquire(backend);
-    await assert.rejects(backend.grant!(guest, { program: "/home/bbx-0/tool", permissions: ["accessibility"] }), /^BackendError: Machine l runs Linux: only a Mac's box has macOS permissions to grant\.$/);
+    await assert.rejects(backend.grant!(guest, { program: "/home/aliax-0/tool", permissions: ["accessibility"] }), /^BackendError: Machine l runs Linux: only a Mac's box has macOS permissions to grant\.$/);
     assert.equal(await backend.grants!(guest), null);
     await backend.release(guest, releaseHooks().hooks);
     await backend.dispose?.();
@@ -858,19 +858,19 @@ describe("An SSH host pool of Macs (047)", () => {
     const tests = fake.log().filter((entry) => entry.target.endsWith(`@${host}`) && script(entry.command).startsWith("test -S "));
     assert.deepEqual(
       tests.map((entry) => [entry.target, script(entry.command)]),
-      Array(2).fill(["bbx-0@192.0.2.82", `test -S "$HOME"/'Library/Caches/cua-driver/cua-driver.sock'`]),
+      Array(2).fill(["aliax-0@192.0.2.82", `test -S "$HOME"/'Library/Caches/cua-driver/cua-driver.sock'`]),
       "the box user tests the socket in its own home",
     );
     await backend.release(guest, releaseHooks().hooks);
 
     rmSync(join(fake.home(host), "Library"), { recursive: true, force: true });
     const quick = pool("m 192.0.2.82 macos-desktop").backend;
-    await assert.rejects(acquire(quick, "macos-desktop"), /^Error: Cua Driver's socket did not appear in box user bbx-1's session on m within 0 s\. Check that setup-mac\.sh installed Cua Driver there\.$/);
+    await assert.rejects(acquire(quick, "macos-desktop"), /^Error: Cua Driver's socket did not appear in box user aliax-1's session on m within 0 s\. Check that setup-mac\.sh installed Cua Driver there\.$/);
     assert.equal((await member(quick, "m")).state, "free", "the failed acquire released the Mac");
     cuaSocket(host);
     await assert.rejects(
       quick.acquire(identity("macos-desktop"), null, signingIn(1), AbortSignal.timeout(20_000)),
-      /^Error: Box user bbx-2 was not signed in at m's console within 0 s\. Check that FileVault is off and nobody else is signed in there/,
+      /^Error: Box user aliax-2 was not signed in at m's console within 0 s\. Check that FileVault is off and nobody else is signed in there/,
     );
   });
 
@@ -919,19 +919,19 @@ describe("An SSH host pool of Macs (047)", () => {
     const display = displays[0]!;
     const { input, ...first } = await display.open();
     const { input: _, ...second } = await display.open();
-    assert.deepEqual(first.auth, { type: "apple", user: "bbx-0", password: "pw-0f3c9a" });
+    assert.deepEqual(first.auth, { type: "apple", user: "aliax-0", password: "pw-0f3c9a" });
     assert.deepEqual(second, first);
     // Screen Sharing ignores the viewer's input, so it goes to the helper in the box user's desktop session (#406).
     // This fake box user has no desktop session to join, so the helper ends at once, and says so.
     assert.ok(input, "the display takes the viewer's input");
-    await assert.rejects(input({}), /^Error: The desktop's input helper did not start on m: box user bbx-0 may not be signed in to the desktop\./);
+    await assert.rejects(input({}), /^Error: The desktop's input helper did not start on m: box user aliax-0 may not be signed in to the desktop\./);
     assert.equal(first.route.type, "command");
-    assert.deepEqual(first.route.type === "command" ? first.route.argv.slice(-4) : [], ["ExitOnForwardFailure=yes", "-W", "127.0.0.1:5900", "bbx-0@192.0.2.83"]);
+    assert.deepEqual(first.route.type === "command" ? first.route.argv.slice(-4) : [], ["ExitOnForwardFailure=yes", "-W", "127.0.0.1:5900", "aliax-0@192.0.2.83"]);
     assert.equal(helperCalls(host).filter((call) => call === "display 0").length, 2, "the helper gives the sign-in for each connection");
     assert.deepEqual((await backend.transports(guest, "macos")).displays, [], "a macos box has no desktop");
 
-    setFlag(host, "display-user", "bbx-9");
-    await assert.rejects(display.open(), (error: Error) => /did not give box user bbx-0's sign-in/.test(error.message) && !error.message.includes("pw-0f3c9a"));
+    setFlag(host, "display-user", "aliax-9");
+    await assert.rejects(display.open(), (error: Error) => /did not give box user aliax-0's sign-in/.test(error.message) && !error.message.includes("pw-0f3c9a"));
     clearFlag(host, "display-user");
     const doctor = await backend.doctor();
     const everywhere = JSON.stringify([guest, [...storage.values], fake.log(), doctor, await backend.members!()]);
@@ -1021,8 +1021,8 @@ describe("An SSH host pool of Macs (047)", () => {
     const reason = async (name: string) => (await member(backend, name)).reason ?? "";
     assert.match(await reason("fv"), /^FileVault is on, so the Mac cannot sign its box user in\./);
     assert.match(await reason("fd"), /^The helper lacks Full Disk Access, which the Mac's reset needs\. .*Allow full disk access for remote users\.$/);
-    assert.match(await reason("person"), /^alex is signed in at the console, so box user bbx-0 cannot be\. Sign them out\./);
-    assert.match(await reason("nobody"), /^Box user bbx-0 is not signed in at the console\. If the Mac has just started/);
+    assert.match(await reason("person"), /^alex is signed in at the console, so box user aliax-0 cannot be\. Sign them out\./);
+    assert.match(await reason("nobody"), /^Box user aliax-0 is not signed in at the console\. If the Mac has just started/);
     assert.equal(await reason("penguin"), "It runs Linux, but its line lists macos, macos-desktop.");
     assert.equal((await member(backend, "dark")).state, "free", "a Mac without Screen Sharing still lends macos");
     const capacity = await backend.capacity("macos-desktop", sizeOf("macos-desktop"), []);
@@ -1056,14 +1056,14 @@ describe("An SSH host pool of Macs (047)", () => {
     // SIP's state, either way ok, saying what it gives (058).
     assert.match(check("machine.good.sip")!.detail, /^On\. Cua Driver has its grants/);
     assert.match(check("machine.away.sip")!.detail, /^Off, so ALIA Box grants box users' programs the macOS permissions they ask for/);
-    assert.match(check("machine.bad.signin")!.detail, /^Box user bbx-0 is at the console, but the automatic login is off/);
+    assert.match(check("machine.bad.signin")!.detail, /^Box user aliax-0 is at the console, but the automatic login is off/);
     assert.match(check("machine.bad.fulldisk")!.fix!, /^On bad: In System Settings, General, Sharing, select the \(i\) beside Remote Login/);
     assert.equal(check("machine.bad.grants")?.detail, "Cua Driver lacks Screen Recording, so computer use cannot see the desktop.");
     assert.equal(check("machine.bad.input")?.detail, "A pointer move posted in the box user's session did not move the pointer, so a person cannot type or click in the desktop's viewer.");
     assert.match(check("machine.bad.input")!.fix!, /^On bad, turn on osascript and sshd-keygen-wrapper under Accessibility/);
     assert.match(check("machine.bad.state")!.detail, /^Out of service: FileVault is on/);
     assert.deepEqual(status("away").filter((line) => /signin|grants|input/.test(line)), ["signin fail", "grants warn", "input warn"]);
-    assert.equal(check("machine.away.signin")?.detail, "Box user bbx-0 is not signed in at the console.");
+    assert.equal(check("machine.away.signin")?.detail, "Box user aliax-0 is not signed in at the console.");
     assert.deepEqual(status("headless"), ["ssh ok", "helper ok", "arch ok", "tools fail", "filevault ok", "signin ok", "fulldisk ok", "homes ok", "sip ok", "xcode ok", "state ok", "sizes warn", "snapshots ok"]);
     assert.equal(check("machine.headless.tools")?.fix, "On headless: Install Node.js 22.19 or newer with Homebrew: brew install node. VesnALIA's installer needs it to enrol a box. Install git and gh with Homebrew: brew install git gh.");
     assert.equal(check("machine.headless.sizes")?.detail, "headless has 8 cores, 6 GiB memory, 200 GiB free disk. It cannot hold a macos box at any of its presets, the smallest 4 cores, 8 GiB memory.");

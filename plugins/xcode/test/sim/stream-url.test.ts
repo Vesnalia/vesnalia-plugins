@@ -44,7 +44,7 @@ describe("the direct stream URL", () => {
   });
 
   it("binds one capability to one UDID while leaving both pixel codecs usable", () => {
-    const other = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE";
+    const other = "AAAAAAAA-ALIABB-CCCC-DDDD-EEEEEEEEEEEE";
     const capability = deriveStreamCapability(STREAM, UDID);
     expect(capability).toBe("e5wpLwpIEx4mQ3mbKr684ycqhYZVNpUnKkk5gox0Zfg");
     expect(deriveStreamCapability(STREAM, other)).not.toBe(capability);

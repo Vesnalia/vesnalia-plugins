@@ -57,7 +57,7 @@ test("with an Arm server type set, the backend also offers linux-arm64 and its d
   assert.equal(kinds.find((kind) => kind.id === "linux-arm64")!.label, "Linux on arm64");
   const plain = hetznerWorld().backend();
   assert.equal(plain.kinds().some((kind) => kind.capabilities.arch === "arm64"), false);
-  assert.equal(armImageOf("bbbox/linux:1"), "bbbox/linux:1-arm64");
+  assert.equal(armImageOf("aliabox/linux:1"), "aliabox/linux:1-arm64");
 });
 
 test("a linux-arm64 box makes an Arm host, builds the arm64 image there, and comes back as linux-arm64; an x86 box never goes on it", async () => {
@@ -69,7 +69,7 @@ test("a linux-arm64 box makes an Arm host, builds the arm64 image there, and com
   const arm = await hetzner.acquire(identity("linux-arm64"), null, value, signal());
   const armServer = [...api.servers.values()].find((server) => server.name === arm.host)!;
   assert.equal(armServer.serverType, "cax31");
-  assert.deepEqual(built, [{ host: "cax31", image: "bbbox/linux:1-arm64", target: "linux", architecture: "arm" }]);
+  assert.deepEqual(built, [{ host: "cax31", image: "aliabox/linux:1-arm64", target: "linux", architecture: "arm" }]);
   assert.ok(timings["build image"] !== undefined);
   const held = await hetzner.held(signal());
   assert.equal(held.find((each) => each.ref === arm.ref)!.owner!.kind, "linux-arm64", "the box's kind as it asked, not the Docker kind it runs as");
@@ -106,11 +106,11 @@ test("each architecture has its own host image: an Arm build on an Arm server wi
   const hetzner = backend();
   await hetzner.buildHostImage("there is no host image yet", signal(), "arm");
   assert.deepEqual(built.map((each) => [each.host, each.image, each.target, each.architecture]), [
-    ["cax31", "bbbox/linux:1-arm64", "linux", "arm"],
-    ["cax31", "bbbox/linux-desktop:1-arm64", "desktop", "arm"],
+    ["cax31", "aliabox/linux:1-arm64", "linux", "arm"],
+    ["cax31", "aliabox/linux-desktop:1-arm64", "desktop", "arm"],
   ]);
   const [snapshot] = api.images.values();
-  assert.equal(snapshot!.labels["bbbox-arch"], "arm");
+  assert.equal(snapshot!.labels["aliabox-arch"], "arm");
   const report = await hetzner.doctor(signal());
   assert.match(report.checks.find((each) => each.id === "hetzner.arm-image")!.detail, new RegExp(`^Arm hosts start from snapshot ${snapshot!.id}`));
   assert.match(report.checks.find((each) => each.id === "hetzner.image")!.detail, /^None yet: x86 hosts start from ubuntu-26\.04/);
@@ -126,10 +126,10 @@ test("maintain builds a host image for each architecture that has none, one afte
   const hetzner = backend();
   await hetzner.maintain(signal());
   for (let i = 0; i < 400 && (api.images.size < 1 || api.servers.size > 0); i++) await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.deepEqual([...api.images.values()].map((each) => each.labels["bbbox-arch"]), ["x86"]);
+  assert.deepEqual([...api.images.values()].map((each) => each.labels["aliabox-arch"]), ["x86"]);
   await hetzner.maintain(signal());
   for (let i = 0; i < 400 && api.images.size < 2; i++) await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.deepEqual([...api.images.values()].map((each) => each.labels["bbbox-arch"]), ["x86", "arm"]);
+  assert.deepEqual([...api.images.values()].map((each) => each.labels["aliabox-arch"]), ["x86", "arm"]);
 });
 
 test("the month's spend counts each host at its own type's price", async () => {

@@ -2,13 +2,13 @@
 
 ## 0.3.4
 
-- Make New thread readable on phones (the bb mobile app and phone browsers).
+- Make New thread readable on phones (the VesnALIA mobile app and phone browsers).
   The Recent list and the project row sit on their own glass card instead of
   bare wallpaper, and the opaque band around the composer clears so the
   wallpaper shows as one picture.
 - On phones, Sheer chats use Glass's fill, so a bright video frame behind the
   full-width message column no longer washes out muted text.
-- Phone rules use the same test BB uses for touch sizing
+- Phone rules use the same test VesnALIA uses for touch sizing
   (`max-width: 767px` with a coarse pointer), so desktop, including a narrow
   window driven by a mouse, looks exactly as before.
 
@@ -23,7 +23,7 @@
 - Make the area behind the composer nearly opaque in Glass and Sheer (95%
   tint) and raise the composer capsule to 95% in light and 92% in dark, so
   text scrolling underneath no longer shows through.
-- Give BB's question card, which replaces the composer while an agent waits
+- Give VesnALIA's question card, which replaces the composer while an agent waits
   for an answer, the same glass fill; on its own it is only 6% opaque.
 - Move the workflows to `actions/checkout@v5` and `actions/setup-node@v5`,
   which run on Node 24.
@@ -58,7 +58,7 @@
   a raised thumb, styled sliders and selects, slot cards, a glass action bar, and
   a live preview that toggles between Chat (showing the chosen surface) and New
   thread.
-- Add `bb aura-motion chat solid|glass|sheer`.
+- Add `alia aura-motion chat solid|glass|sheer`.
 - Tests: sheet geometry at 13 device widths, chat-surface persistence and CLI,
   settings editor behavior, and an opt-in browser check (`npm run test:responsive`)
   across eight device sizes in light and dark.
@@ -108,6 +108,6 @@ The entries below are Aura's own changelog up to the fork.
 - Extend chat wallpapers to the bottom of the pane, including beside the composer.
 - Keep half/full wallpaper selection in Aura settings; remove the composer toggle.
 - Fade half wallpapers out at the midpoint of New thread; keep chats full-height.
-- Restore the correct background when BB reuses panels during navigation.
+- Restore the correct background when VesnALIA reuses panels during navigation.
 - Keep wide tables readable beyond the message column, with horizontal scrolling.
 - Preserve saved images, slots, dimming preference and scope across reloads.

@@ -43,13 +43,13 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- Automatically delete BB prediction helpers when their source conversation moves
+- Automatically delete VesnALIA prediction helpers when their source conversation moves
   on or a prediction is regenerated. Helpers are stopped and archived first.
   Startup also recovers stale helpers, including archived helpers and finished
   helpers from older versions; failed cleanup is retried on reload.
   Provider sessions are archived where supported, rather than permanently deleted.
 - Run startup recovery in the background so a large helper backlog does not
-  exceed BB's plugin loading timeout.
+  exceed VesnALIA's plugin loading timeout.
 
 ## 0.4.5 - 2026-10-19
 
@@ -131,7 +131,7 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- A bundled agent skill for `bb composer-predictions`, offered to ordinary
+- A bundled agent skill for `alia composer-predictions`, offered to ordinary
   threads. Prediction helpers still receive no skills.
 
 ### Changed
@@ -158,7 +158,7 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Ready suggestions, abstentions and dismissals persist across BB restarts and
+- Ready suggestions, abstentions and dismissals persist across VesnALIA restarts and
   plugin reloads in the plugin's SQLite database. Each is checked against the
   current thread before it is shown, and no conversation text is stored.
 - At most 1,000 saved thread entries; the oldest are evicted.
@@ -167,7 +167,7 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- A **Prediction model** settings section with BB's native provider and model
+- A **Prediction model** settings section with VesnALIA's native provider and model
   picker, reasoning effort and service tier, an explicit save, and a reset to
   each conversation's model.
 - A custom input-field and text-cursor icon.

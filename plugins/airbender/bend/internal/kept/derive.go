@@ -12,7 +12,7 @@
 // issue would go on showing "blocked". So only each issue's own facts are
 // believed (its fields, its parent, the links recorded on it), and
 // everything that depends on another issue is worked out when read
-// (bead-bb-c9l.15). The same holds for changes that wait to be sent: laid
+// (bead-alia-c9l.15). The same holds for changes that wait to be sent: laid
 // on the facts, they show in every issue they touch.
 //
 // Design notes:

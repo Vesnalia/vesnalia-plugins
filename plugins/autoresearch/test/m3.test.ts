@@ -205,7 +205,7 @@ describe("operations on a running study (fake host)", () => {
     const h = store.latestHarvest(id)!;
     // Seed a finished harvest whose contributions don't add up.
     const c1 = store.insertChangeset({ harvest_id: h.id, study_id: id, k: 1, title: "One", rationale: "", candidates_json: "[1]", commits_json: '["aaaaaaa"]', paths_json: '["src/a"]' });
-    const c2 = store.insertChangeset({ harvest_id: h.id, study_id: id, k: 2, title: "Two", rationale: "", candidates_json: "[2]", commits_json: '["bbbbbbb"]', paths_json: '["src/b"]' });
+    const c2 = store.insertChangeset({ harvest_id: h.id, study_id: id, k: 2, title: "Two", rationale: "", candidates_json: "[2]", commits_json: '["aliabbbbb"]', paths_json: '["src/b"]' });
     engine.harvester.cancel(h.id);
     store.updateChangeset(c1.id, { ablation_status: "measured", contribution: 0.05, ci_lo: 0.04, ci_hi: 0.06 });
     store.updateChangeset(c2.id, { ablation_status: "measured", contribution: 0.05, ci_lo: 0.04, ci_hi: 0.06 });

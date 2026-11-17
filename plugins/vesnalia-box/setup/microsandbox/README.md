@@ -93,7 +93,7 @@ git clone <alia-box repository> && cd alia-box
 setup/docker/build.sh linux desktop
 ```
 
-alia-box imports `bbbox/linux:1` and `bbbox/linux-desktop:1` into `msb` with
+alia-box imports `aliabox/linux:1` and `aliabox/linux-desktop:1` into `msb` with
 `docker save` and `msb load`: the linux image in about 6 s and the desktop in
 about 20 s, at the first box of each kind, or by its upkeep within a few
 minutes. It imports an image again when Docker's has changed. A host that is
@@ -110,8 +110,8 @@ a kind is refused, saying so, until its image is built.
 ### On a Mac
 
 A Mac with Apple silicon runs the arm64 kinds, `linux-arm64` and
-`linux-arm64-desktop-cpu` (040), from `bbbox/linux:1-arm64` and
-`bbbox/linux-desktop:1-arm64`, beside Tart's VMs of the same kinds and after
+`linux-arm64-desktop-cpu` (040), from `aliabox/linux:1-arm64` and
+`aliabox/linux-desktop:1-arm64`, beside Tart's VMs of the same kinds and after
 them in the backend order. msb uses the Hypervisor framework, so the Mac
 needs nothing installed: reach it as a VesnALIA machine, `alia:<machine ID>`, or over
 `ssh://` as Tart's backend does. alia-box keeps `msb`, its state and the
@@ -127,10 +127,10 @@ fields, press Check, then Save and turn on.
 | Field | Default | Meaning |
 | --- | --- | --- |
 | `host` | empty | `alia:<machine ID>` for a VesnALIA machine, which alia-box reaches through VesnALIA, or `ssh://user@host`. Empty uses the machine that runs VesnALIA |
-| `linux-image` | `bbbox/linux:1` | The image of linux boxes. Empty turns them off |
-| `desktop-image` | `bbbox/linux-desktop:1` | The image of linux-desktop-cpu boxes. Empty turns them off |
-| `linux-arm64-image` | `bbbox/linux:1-arm64` | The image of linux-arm64 boxes, on an arm64 host such as a Mac. Empty turns them off |
-| `desktop-arm64-image` | `bbbox/linux-desktop:1-arm64` | The image of linux-arm64-desktop-cpu boxes, on an arm64 host. Empty turns them off |
+| `linux-image` | `aliabox/linux:1` | The image of linux boxes. Empty turns them off |
+| `desktop-image` | `aliabox/linux-desktop:1` | The image of linux-desktop-cpu boxes. Empty turns them off |
+| `linux-arm64-image` | `aliabox/linux:1-arm64` | The image of linux-arm64 boxes, on an arm64 host such as a Mac. Empty turns them off |
+| `desktop-arm64-image` | `aliabox/linux-desktop:1-arm64` | The image of linux-arm64-desktop-cpu boxes, on an arm64 host. Empty turns them off |
 | `docker` | on | Each box has a Docker daemon of its own, with its data on an ext4 disk of `msb`'s own, which a snapshot holds too. Off, boxes have no Docker |
 | `docker-disk-gib` | 64 | The most each box's Docker disk may grow to |
 | `disk-gib` | 32 | The most a box's root disk may grow to, when no disk size is asked for |
@@ -318,7 +318,7 @@ npm run conformance -- --backend microsandbox --settings msb.json
    ```
 
 3. Remove the images from Docker if no Docker backend uses them:
-   `docker image rm bbbox/linux:1 bbbox/linux-desktop:1`.
+   `docker image rm aliabox/linux:1 aliabox/linux-desktop:1`.
 
 ## When it goes wrong
 
@@ -335,5 +335,5 @@ npm run conformance -- --backend microsandbox --settings msb.json
   reach: keep `private` for a private or tailnet address.
 - **"belongs to another user"**: someone else owns `/tmp/alia-box-msb-<uid>`.
   Remove it.
-- **A box does not come up**: `<folder>/bin/msb logs bbbox-<box ID>` shows
+- **A box does not come up**: `<folder>/bin/msb logs aliabox-<box ID>` shows
   its output. alia-box's error says what it saw.

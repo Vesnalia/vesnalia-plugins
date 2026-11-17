@@ -157,7 +157,7 @@ start, stop, resize and release go on (see [Decided during unit
 | `forkSafe` | the version of the identity reset found in the box at the take, or null | 1 | see [section 9](#9-a-fork-is-a-new-box-with-a-new-identity); a snapshot without it neither forks nor is kept |
 | `dependsOn` | snapshot IDs, or none | | microsandbox's chain: the snapshot this one was taken after, shown on its row; each holds its own data, so any is deleted first (changed during unit 10) |
 | `picture` | the picture's state | `taken`, `none` (headless), `off`, `failed` | the image is in its own table, see [section 10](#10-a-picture-of-the-screen) |
-| `ref` | the backend's reference | `bbsn7kq2m9xa4pd` on Proxmox | opaque to the core |
+| `ref` | the backend's reference | `aliasn7kq2m9xa4pd` on Proxmox | opaque to the core |
 | `state` | see below | `ready` | |
 | `error` | the backend's words, or null | | on `failed`, `incomplete` and `lost` |
 
@@ -1777,7 +1777,7 @@ release alia-box pins) in a nested-KVM box, the lead decided:
 Built so:
 
 - **A snapshot's name says whose it is.** Each box's snapshots are one
-  group, `bbbox-<box ID>`, named `<install>-<snapshot ID>-r<version of the
+  group, `aliabox-<box ID>`, named `<install>-<snapshot ID>-r<version of the
   identity reset>`, so `msb snapshot list` alone gives the install, box,
   snapshot and `forkSafe`, as a label carries them on Proxmox. `msb` cannot
   change a snapshot's labels once taken, so Keep writes the keep date in a
@@ -1789,8 +1789,8 @@ Built so:
   refuses another), then sets the box's labels and environment on it with
   `msb modify` before anything of the box runs there. Each start of a box
   mounts `/run` in memory again when it is not, and sets the box's hostname
-  from `BBBOX_HOSTNAME`.
-- **The identity source is a value**, `BBBOX_IDENTITY`, as on Docker (unit
+  from `ALIABOX_HOSTNAME`.
+- **The identity source is a value**, `ALIABOX_IDENTITY`, as on Docker (unit
   2): alia-box sets the box's ID on each sandbox, passes it on in a same-box
   swap, and sets the fork's own ID on a fork, so the reset runs in a fork
   and in no swap. A fork's check reads the marker's value, not MAC
@@ -1798,7 +1798,7 @@ Built so:
   (`--disk-only`), and nothing of the box runs in it until alia-box starts its
   image's command, which runs the reset first. Forks from version 7 of the
   identity program, as on Proxmox LXC.
-- **A restored sandbox is `bbbox-<box ID>-<token>`**, and a part-made one,
+- **A restored sandbox is `aliabox-<box ID>-<token>`**, and a part-made one,
   before its labels are set, is still the box's to delete: a release and a
   restore's clean-up remove a sandbox of that name with no alia-box labels.
 - **A restore gives the new sandbox the box's network profiles** as rules
@@ -1879,7 +1879,7 @@ Built so:
   allows 63 and no labels. alia-box lists, reconciles and deletes only names
   of its own install.
 - **A restored box runs on a new sandbox** labelled as the box, with a
-  token of its own (`bbbox-guest`), so its guest reference differs from the
+  token of its own (`aliabox-guest`), so its guest reference differs from the
   old sandbox's, and alia-box never takes one for the other. boat.dev gives a
   sandbox deployed from a saved snapshot no labels, so the restore deploys
   it under a name that carries the box and the token, stops it, forks it
@@ -1925,7 +1925,7 @@ On 1 November 2026, during unit 11b, after a live probe of boat.dev's
 per-sandbox `env` and create-time `files` (070 results, unit 11b), the lead
 decided:
 
-- **boat.dev's identity source is the per-sandbox `env`**, `BBBOX_IDENTITY`
+- **boat.dev's identity source is the per-sandbox `env`**, `ALIABOX_IDENTITY`
   set to the box's ID. boat.dev writes it to `/run/ascii-secrets/env.sh`
   at each start, before it starts the sandbox's own services; a fork or a
   deploy takes the value the request gives, and inherits its source's

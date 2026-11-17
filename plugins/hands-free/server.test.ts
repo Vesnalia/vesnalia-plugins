@@ -27,7 +27,7 @@ describe("hands-free", () => {
   it("records bounded audio lifecycle events without accepting reply text or arbitrary errors", async () => {
     const { alia, harness } = createFakePluginHost({ pluginId: "hands-free" });
     plugin(alia);
-    const input = { session: "51c0b6db-5c61-4094-bbc3-ae5373abc18d", event: "speech-failed", detail: "aborted", elapsedMs: 123 };
+    const input = { session: "51c0b6db-5c61-4094-aliac3-ae5373abc18d", event: "speech-failed", detail: "aborted", elapsedMs: 123 };
     expect(await harness.behavior.callRpc("audioDiagnostic", input)).toEqual({ recorded: true });
     expect(harness.logEntries.some(entry => entry.message.includes("event=speech-failed detail=aborted elapsedMs=123"))).toBe(true);
     await expect(harness.behavior.callRpc("audioDiagnostic", { ...input, text: "Private answer" })).rejects.toThrow();

@@ -428,7 +428,7 @@ func helperWords(state kept.HelperState) string {
 	case state.Running && state.Since == 0:
 		// A helper takes its lock first and writes when it started a moment
 		// later; a look in between has no start time, which would read as
-		// 1970 (bead-bb-p1z).
+		// 1970 (bead-alia-p1z).
 		return "starting"
 	case state.Running:
 		return "running since " + when(state.Since)

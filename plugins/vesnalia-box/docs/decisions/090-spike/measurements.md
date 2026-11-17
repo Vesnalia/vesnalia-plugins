@@ -9,7 +9,7 @@ for the spike and released afterwards. No pool machine was used.
   FileVault off, Xcode 27 with the iOS 27.0 runtime. Spotlight indexing is
   off in this image, as `setup-mac.sh` turns it off on pool Macs.
 
-Test users were made as the pool makes box users: `bbx-<n>` with UIDs from
+Test users were made as the pool makes box users: `aliax-<n>` with UIDs from
 70001, and on the Mac by `sysadminctl`, hidden, in `_developer`, signed in at
 the console by the automatic login, as `machine-mac.sh` does.
 
@@ -44,7 +44,7 @@ Today's reset on a subvolume home:
 - The read-only snapshots survive `rm -rf` ("Read-only file system") and
   `rm -rf --one-file-system` ("since it's on a different device"), which the
   helper's sweep uses.
-- The helper's `dirt` check looks at `/home/bbx-*` only, so snapshots left
+- The helper's `dirt` check looks at `/home/aliax-*` only, so snapshots left
   in another folder would not stop the next claim. They would stay, holding
   the earlier box's files.
 
@@ -143,7 +143,7 @@ Fork of a logged-in home into a new user, with ALIA-style files planted:
   folder named by the Mac's hardware UUID.
 - Kept: the user's SSH key and `gh` token, as 070 says of every fork.
 - No file named the source user's GeneratedUID.
-- 6 files named the source's home path, `/Users/bbx-1`: Photos libraries'
+- 6 files named the source's home path, `/Users/aliax-1`: Photos libraries'
   `appPrivateData.plist`, CoreSpotlight's `EnabledIndexes`, a photolibraryd
   plist, and VesnALIA's launch agent before the reset.
 - `ByHost` preferences name the Mac's hardware UUID, which a fork on the

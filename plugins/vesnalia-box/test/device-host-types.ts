@@ -41,7 +41,7 @@ export const illegal = {
   // @ts-expect-error
   carriedThird: { carried: true, generation: 3 } satisfies SlotName,
   // @ts-expect-error
-  slotWithItsUser: { host: "h", carried: false, generation: 7, user: "bbd-7", uid: 80009, state: { is: "resetting", step: "sweep", since: 0 } } satisfies Slot,
+  slotWithItsUser: { host: "h", carried: false, generation: 7, user: "aliad-7", uid: 80009, state: { is: "resetting", step: "sweep", since: 0 } } satisfies Slot,
   // @ts-expect-error
   makingForNobodySaid: { is: "making", step: "user", since: 0 } satisfies SlotState,
   // @ts-expect-error

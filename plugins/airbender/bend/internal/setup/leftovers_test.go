@@ -1,5 +1,5 @@
 // leftovers_test.go — telling a file of beads' alone from one of the
-// owner's, before anything is deleted (bead-bb-cnv).
+// owner's, before anything is deleted (bead-alia-cnv).
 
 package setup
 

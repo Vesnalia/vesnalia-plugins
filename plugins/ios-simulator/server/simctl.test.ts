@@ -23,8 +23,8 @@ export const DEVICE_LIST = JSON.stringify({
       { udid: "AAAA-3", name: "iPad Pro 13-inch (M5)", state: "Shutdown", isAvailable: true },
     ],
     "com.apple.CoreSimulator.SimRuntime.iOS-18-4": [
-      { udid: "BBBB-1", name: "iPhone SE (3rd generation)", state: "Shutdown", isAvailable: true },
-      { udid: "BBBB-9", name: "Broken", state: "Shutdown", isAvailable: false },
+      { udid: "ALIABB-1", name: "iPhone SE (3rd generation)", state: "Shutdown", isAvailable: true },
+      { udid: "ALIABB-9", name: "Broken", state: "Shutdown", isAvailable: false },
     ],
   },
 });
@@ -32,7 +32,7 @@ export const DEVICE_LIST = JSON.stringify({
 describe("parseDeviceList", () => {
   it("flattens runtimes, labels them, and sorts booted then newest", () => {
     const devices = parseDeviceList(DEVICE_LIST);
-    expect(devices.map((device) => device.udid)).toEqual(["AAAA-2", "AAAA-3", "AAAA-1", "BBBB-9", "BBBB-1"]);
+    expect(devices.map((device) => device.udid)).toEqual(["AAAA-2", "AAAA-3", "AAAA-1", "ALIABB-9", "ALIABB-1"]);
     expect(devices[0]).toMatchObject({ runtime: "iOS 26.0", state: "Booted", isAvailable: true });
     expect(runtimeLabel("com.apple.CoreSimulator.SimRuntime.iOS-18-4")).toBe("iOS 18.4");
   });
@@ -41,7 +41,7 @@ describe("parseDeviceList", () => {
     const devices = parseDeviceList(DEVICE_LIST);
     expect(matchDevice(devices, "aaaa-1")?.name).toBe("iPhone 17 Pro");
     expect(matchDevice(devices, "iphone 17")?.udid).toBe("AAAA-2");
-    expect(matchDevice(devices, "iPhone SE")?.udid).toBe("BBBB-1");
+    expect(matchDevice(devices, "iPhone SE")?.udid).toBe("ALIABB-1");
     expect(matchDevice(devices, "ipad")?.udid).toBe("AAAA-3");
     expect(matchDevice(devices, "broken")).toBeNull();
     expect(matchDevice(devices, "pixel")).toBeNull();

@@ -27,19 +27,19 @@
 ## 0.7.2
 
 - The page header's link is **Open in browser**, and the context picker says
-  what it does: switching changes the login bb uses, so the inbox, memories,
-  connections, and bb's own saves and searches all follow it.
+  what it does: switching changes the login VesnALIA uses, so the inbox, memories,
+  connections, and VesnALIA's own saves and searches all follow it.
 
 ## 0.7.1
 
-- The Lobu page's header has a context picker: switch the `lobu` CLI login bb
+- The Lobu page's header has a context picker: switch the `lobu` CLI login VesnALIA
   uses without leaving the page. A signed-out context starts its browser
   sign-in and the page switches once it lands.
 
 ## 0.7.0
 
-- A **Lobu** page in bb's sidebar. **Saved from bb** is the default memory
-  view: what agents saved in bb threads, with the project, reuse count, and
+- A **Lobu** page in VesnALIA's sidebar. **Saved from VesnALIA** is the default memory
+  view: what agents saved in VesnALIA threads, with the project, reuse count, and
   links to the Lobu event and the source thread. **All of Lobu** searches
   across every workspace the login reaches. The page also shows the inbox and
   the devices and connections that need attention, and **Open in Lobu** opens
@@ -48,20 +48,20 @@
 ## 0.6.0
 
 - Automatic session entity discovery & graph linking: when memories are saved or
-  archived threads are recapped, the memory system automatically inspects open BB
+  archived threads are recapped, the memory system automatically inspects open VesnALIA
   desktop browser tabs and conversation turns to discover, resolve, or auto-create
   relevant Lobu entities (projects, repositories, documentation, and tools), linking
   their IDs directly into the saved memory events in Lobu's knowledge graph.
-- Native BB desktop browser tabs (`bb.sdk.experimental_desktopBrowsers`) are
+- Native VesnALIA desktop browser tabs (`alia.sdk.experimental_desktopBrowsers`) are
   prioritized as the primary browser context for thread sessions ahead of external
   Chrome bridge connections.
 - Setup reuses the Lobu logins you already have instead of creating new ones.
   The Connect card and Settings → Plugins → Lobu list every `lobu` CLI context
-  as a collapsible **CONTEXT** list with a checkmark on the login bb uses, so
+  as a collapsible **CONTEXT** list with a checkmark on the login VesnALIA uses, so
   switching is one click; **Use Lobu Cloud** and **Run Lobu on this machine**
   only appear when no such login exists yet. The card names the login in use
-  and stays out of the way once bb is connected.
-- The New thread screen shows your **Inbox** when bb is connected: unread Lobu
+  and stays out of the way once VesnALIA is connected.
+- The New thread screen shows your **Inbox** when VesnALIA is connected: unread Lobu
   notifications in the personal workspace, loaded when you open it, with a
   retry when it fails and nothing at all when it is empty.
 - Type `@` in a composer to reference Lobu without pasting: memories, feeds,
@@ -87,12 +87,12 @@
 - Setup is built in. A **Connect Lobu memory** card on the New thread screen
   installs or updates the Lobu CLI with bun or npm (showing the command when
   it cannot), then signs you in to Lobu Cloud or runs Lobu on this machine
-  (`lobu run` in `~/lobu-bb`, or a local Lobu already serving), as the Lobu
-  Mac app does, and disappears once bb is connected. Settings → Plugins → Lobu gains a **Lobu account**
-  section showing the Lobu bb uses and how many memories it saved there,
+  (`lobu run` in `~/lobu-alia`, or a local Lobu already serving), as the Lobu
+  Mac app does, and disappears once VesnALIA is connected. Settings → Plugins → Lobu gains a **Lobu account**
+  section showing the Lobu VesnALIA uses and how many memories it saved there,
   with buttons to switch between Lobu Cloud, Lobu on this machine, or
   another Lobu.
-- bb uses one CLI login, picked in the Lobu account section (the CLI's active
+- VesnALIA uses one CLI login, picked in the Lobu account section (the CLI's active
   context until you pick one). The Lobu URL comes from the login. Identity,
   workspaces, and tokens come from `lobu whoami --json`, like the Mac app.
 - Removed the `baseUrl`, `hiddenWorkspaces`, `lobuBin`, `recapProvider`, and
@@ -108,8 +108,8 @@
   connected and to continue without it, instead of returning an error.
 - Requests to a Lobu on this machine wait up to two minutes, since a new
   local Lobu loads its search model on the first search.
-- **Open what bb saved in Lobu**, in the thread's ⋯ menu and the Lobu memory
-  panel, opens Lobu's events page filtered to the memories bb saved.
+- **Open what VesnALIA saved in Lobu**, in the thread's ⋯ menu and the Lobu memory
+  panel, opens Lobu's events page filtered to the memories VesnALIA saved.
 - Removed the Lobu sidebar page: the Needs you dashboard (approvals, failed
   runs, connections and devices, activity, metrics), its New thread screen
   summary, and the `metrics` setting. Lobu's own app covers them.
@@ -128,14 +128,14 @@
   rows.
 - `lobu_remember` accepts `replacesEventId` (`supersedes_event_id`) to replace
   an outdated memory in Lobu and drop the stale entry from the project brief.
-- Added `bb lobu search` and `bb lobu remember` plugin CLI commands so ACP
+- Added `alia lobu search` and `alia lobu remember` plugin CLI commands so ACP
   agent providers without native plugin tools participate in the same memory
   loop.
 - Saved memories and pins reconcile against Lobu's `read_knowledge` (pruning
   tombstoned memories, updating superseded ones, and hydrating saved memories
   from linked workspaces).
 
-- The plugin runs the `lobu` CLI with your login shell's `PATH`. bb opened
+- The plugin runs the `lobu` CLI with your login shell's `PATH`. VesnALIA opened
   from the Dock only sees launchd's minimal `PATH`, so a CLI that needs a
   Homebrew, nvm, or Bun `node` failed to start and the plugin wrongly
   asked you to log in.

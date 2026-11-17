@@ -148,7 +148,7 @@ describe("::crew directive", () => {
     slot.lifecycle.unmount();
   });
 
-  it("BBP-49: falls back to the Crews nav panel when the surface has no thread side panel", async () => {
+  it("ALIAP-49: falls back to the Crews nav panel when the surface has no thread side panel", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(
       app.messageDirectives[0]!,
@@ -183,7 +183,7 @@ describe("::crew directive", () => {
   });
 });
 
-describe("crew thread panel (BBP-49)", () => {
+describe("crew thread panel (ALIAP-49)", () => {
   it("opened from the directive's params: the member graph on top, the crew log below", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(
@@ -254,7 +254,7 @@ describe("crew thread panel (BBP-49)", () => {
   });
 });
 
-describe("crew sidepanel chrome (BBP-79)", () => {
+describe("crew sidepanel chrome (ALIAP-79)", () => {
   it("shows the crew picker, Apply/Stop/Edit/+New and the CLI hint, with Preview above the topology", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const calls: { method: string; input: unknown }[] = [];
@@ -401,7 +401,7 @@ describe("topology", () => {
     slot.lifecycle.unmount();
   });
 
-  it("BBP-31: a member with open graph runs shows a sub-row per run; negative: none means no list", async () => {
+  it("ALIAP-31: a member with open graph runs shows a sub-row per run; negative: none means no list", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.navPanels[0]!, { subPath: "" }, {
       rpc: backend({
@@ -470,7 +470,7 @@ describe("topology edges (research template)", () => {
     expect(canvas.edges).toEqual([]);
   });
 
-  it("BBP-48: the legend shows every link kind without hiding it below a panel-width breakpoint", () => {
+  it("ALIAP-48: the legend shows every link kind without hiding it below a panel-width breakpoint", () => {
     const { container } = render(<TopologyLegend kinds={["assigns_to", "escalates_to"]} messages={false} />);
     const items = within(container).getAllByRole("listitem");
     expect(items).toHaveLength(2);
@@ -566,7 +566,7 @@ describe("crew header", () => {
       }),
     });
     await openCrew(slot, "Members");
-    // BBP-83: the breadcrumb names the crew; the old crew dropdown is gone.
+    // ALIAP-83: the breadcrumb names the crew; the old crew dropdown is gone.
     expect(within(slot.getByRole("navigation", { name: "Breadcrumb" })).getByRole("button", { name: "trio" }).getAttribute("aria-current")).toBe("page");
     expect(slot.queryByLabelText("Crew")).toBeNull();
     fireEvent.click(slot.getByRole("button", { name: "Open all" }));

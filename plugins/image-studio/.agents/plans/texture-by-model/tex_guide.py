@@ -103,9 +103,9 @@ def guide(src, out):
     polys = [[list(uv[li].uv) for li in p.loop_indices] for p in ob.data.polygons]
     json.dump(polys, open(os.path.join(out, "uv_polys.json"), "w"))
     # ракурсы: 4 вокруг + сверху, ортогонально, кадр по габариту
-    bb = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
-    ctr = sum(bb, Vector()) / 8
-    size = max((b - ctr).length for b in bb) * 2.1
+    alia = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+    ctr = sum(alia, Vector()) / 8
+    size = max((b - ctr).length for b in alia) * 2.1
     sc = bpy.context.scene
     sc.render.resolution_x = sc.render.resolution_y = RES
     sc.render.film_transparent = True
@@ -135,8 +135,8 @@ def textured_mat(img):
 def hero_render(path):
     sc = bpy.context.scene
     ob = bpy.data.objects["model"]
-    bb = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
-    ctr = sum(bb, Vector()) / 8
+    alia = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+    ctr = sum(alia, Vector()) / 8
     cam = bpy.data.objects.new("hero", bpy.data.cameras.new("hero")); sc.collection.objects.link(cam)
     cam.data.lens = 50
     cam.location = ctr + Vector((60, -90, 55))

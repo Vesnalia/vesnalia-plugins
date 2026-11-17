@@ -56,13 +56,13 @@ start, as they are at any start.
 
 | Object | Name | Labels |
 | --- | --- | --- |
-| Snapshot image | `bbbox-snapshot/<install>/<box>:<snapshot>` | `bbbox.snapshot`, the install, the box, the kind, the reset version, when it was taken, the size, the volume name, and the sizes. The box's own `bbbox.*` labels and `BBBOX_IDENTITY` are blank |
-| Snapshot volume | `bbbox-snapshot-<snapshot>-docker` | `bbbox.snapshot`, the install and the box |
-| Keep date | tag `bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>` | one tag, moved when the date changes |
-| The box's Docker data | `<container>-docker` | `bbbox.volume-of` is the container's name, and `bbbox.install` is the install |
+| Snapshot image | `aliabox-snapshot/<install>/<box>:<snapshot>` | `aliabox.snapshot`, the install, the box, the kind, the reset version, when it was taken, the size, the volume name, and the sizes. The box's own `aliabox.*` labels and `ALIABOX_IDENTITY` are blank |
+| Snapshot volume | `aliabox-snapshot-<snapshot>-docker` | `aliabox.snapshot`, the install and the box |
+| Keep date | tag `aliabox-kept/<install>/<snapshot>:<yyyy-mm-dd>` | one tag, moved when the date changes |
+| The box's Docker data | `<container>-docker` | `aliabox.volume-of` is the container's name, and `aliabox.install` is the install |
 
-A restored or forked container is named `bbbox-<box>-<8 hex>` and carries
-`bbbox.from-snapshot`. Its volume is `bbbox-<box>-<8 hex>-docker`, the same
+A restored or forked container is named `aliabox-<box>-<8 hex>` and carries
+`aliabox.from-snapshot`. Its volume is `aliabox-<box>-<8 hex>-docker`, the same
 rule: the volume name is the container name with `-docker` on the end.
 
 The questions a later sweep has to answer come from that structure.
@@ -75,9 +75,9 @@ The questions a later sweep has to answer come from that structure.
 - The keep date is the tag. A lost record of snapshots loses no keep date,
   because the tag is on the engine.
 - Deleting a snapshot frees its volume at once. Its image layer is freed
-  when no container carries `bbbox.from-snapshot` for it and no other
+  when no container carries `aliabox.from-snapshot` for it and no other
   snapshot image is built on its layers.
-- A release removes only volumes labelled `bbbox.volume-of` that container,
+- A release removes only volumes labelled `aliabox.volume-of` that container,
   for this install. A snapshot volume is never labelled that way, so a
   release cannot delete one. [096](096-a-docker-volume-a-restores-copy-made-again-is-removed-by-its-note.md)
   supersedes this for a volume a restore's copy made again, without
@@ -123,8 +123,8 @@ Taking, listing, restoring, forking and keeping a snapshot come later, in
 the sequence below. They are not built with this record.
 
 Every privileged Docker box VesnALIA Box makes from now on gets a volume named
-`<container>-docker`. The labels are `bbbox.volume-of` set to the
-container's name, and `bbbox.install` set to the install. The volume is
+`<container>-docker`. The labels are `aliabox.volume-of` set to the
+container's name, and `aliabox.install` set to the install. The volume is
 created before the container, so Docker does not invent an unlabelled
 volume of that name. It is mounted at `/var/lib/docker`.
 
@@ -133,14 +133,14 @@ it. A later restore and a later fork use the same function. The function
 takes the box, the install, the container name, the image, the volume name
 or none, the placement, LXCFS, whether the container is privileged, the
 network, the restart policy, and the snapshot id or none. It sets
-`BBBOX_IDENTITY` to the box id of the box that will run. It does not take a
-separate identity. When a snapshot id is set, it adds `bbbox.from-snapshot`.
+`ALIABOX_IDENTITY` to the box id of the box that will run. It does not take a
+separate identity. When a snapshot id is set, it adds `aliabox.from-snapshot`.
 Acquire passes none.
 
 The environment variables that function sets are one list:
-`BBBOX_IDENTITY`, `BBBOX_DOCKERD`, `NVIDIA_DRIVER_CAPABILITIES`,
-`CUDA_VISIBLE_DEVICES`, `NVIDIA_VISIBLE_DEVICES`, `BBBOX_GPU_CARD`,
-`BBBOX_GPU`, `BBBOX_GPU_ID` and `OMP_NUM_THREADS`. A later commit blanks
+`ALIABOX_IDENTITY`, `ALIABOX_DOCKERD`, `NVIDIA_DRIVER_CAPABILITIES`,
+`CUDA_VISIBLE_DEVICES`, `NVIDIA_VISIBLE_DEVICES`, `ALIABOX_GPU_CARD`,
+`ALIABOX_GPU`, `ALIABOX_GPU_ID` and `OMP_NUM_THREADS`. A later commit blanks
 that same list, so a new variable a box is given is blanked in a snapshot
 image without a second edit.
 
@@ -154,7 +154,7 @@ container went can finish. At each maintenance pass, the backend also finds
 this install's labelled volumes without a container and removes them. It
 leaves volumes of boxes being made alone, using the engine's shared placement
 reservations. Restored and forked containers use names of the form
-`bbbox-<box>-<8 hex>` and make their volumes before their containers.
+`aliabox-<box>-<8 hex>` and make their volumes before their containers.
 A restore reserves creation under the new container's name until its
 container exists, so cleanup cannot remove the volume in between. Cleanup runs after CPU and LXCFS
 upkeep. Each removal failure is logged and retried on the next pass,
@@ -221,8 +221,8 @@ is `unless-stopped` from the start, as it is the box. Docker does not
 restart a container stopped by `docker kill`, so the old one stays stopped.
 
 A fork is a new container from the snapshot image, placed again, with its
-own box id in `BBBOX_IDENTITY`, restart policy `no` and a hold,
-`BBBOX_FORK_HOLD=1`. Its first start runs the identity reset and nothing
+own box id in `ALIABOX_IDENTITY`, restart policy `no` and a hold,
+`ALIABOX_FORK_HOLD=1`. Its first start runs the identity reset and nothing
 else, then waits until VesnALIA Box releases it. Once the core's checks pass, the
 policy becomes `unless-stopped` and VesnALIA Box releases the hold. Item 4's
 results below say why and how.
@@ -246,7 +246,7 @@ an 80 GB ext4 disk (2 GiB written directly in 8.8 s, about 240 MB/s). It
 ran Ubuntu 24.04.5, kernel 6.8.0-149, Docker Engine 29.1.3, and Docker
 29.9.3 inside the box. The stand-in was the `docker:29-dind` image, made
 with the flags a box gets: privileged, `--init`, a tmpfs on `/run`, a
-volume at `/var/lib/docker`, `BBBOX_IDENTITY` and `bbbox.*` labels. Its
+volume at `/var/lib/docker`, `ALIABOX_IDENTITY` and `aliabox.*` labels. Its
 Docker held `postgres:17`, `nginx:alpine`, an image with a deleted file,
 and a running Postgres with 100,000 rows.
 
@@ -368,8 +368,8 @@ image starts, and anything a copied container runs, could do the same.
 
 So a fork's first start holds every service until VesnALIA Box has checked it:
 
-- VesnALIA Box makes the fork with `BBBOX_FORK_HOLD=1` beside its own box ID in
-  `BBBOX_IDENTITY`. A new box, a restore and an image box are made without
+- VesnALIA Box makes the fork with `ALIABOX_FORK_HOLD=1` beside its own box ID in
+  `ALIABOX_IDENTITY`. A new box, a restore and an image box are made without
   it, and start as before.
 - The image's start script runs the identity reset, then
   `/usr/local/libexec/alia-box/fork-hold`. In a fork that has not been
@@ -389,9 +389,9 @@ So a fork's first start holds every service until VesnALIA Box has checked it:
   is on its disk, and only VesnALIA Box writes the release.
 - The release names the box, so a fork of a fork is held again, though its
   copy carries the first fork's release. A snapshot's image blanks
-  `BBBOX_FORK_HOLD`, as it blanks every value VesnALIA Box gives a box, so a
+  `ALIABOX_FORK_HOLD`, as it blanks every value VesnALIA Box gives a box, so a
   restore of a fork's snapshot is not held.
-- The images say they hold forks with the label `bbbox.fork-hold="1"`,
+- The images say they hold forks with the label `aliabox.fork-hold="1"`,
   which a snapshot's image keeps from its box's. A snapshot of a box made
   from an image built before the hold has no such label, and does not fork:
   the fork plan says why, and nothing is copied. This change rebuilds the
@@ -405,7 +405,7 @@ boots with `armFork("boot")` after the check. Measured in
 
 ## Item 5: Keep, as built
 
-Keep is the tag above, `bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, on
+Keep is the tag above, `aliabox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, on
 the snapshot's image. Writing a date records the change in the backend's own
 storage, tags the image, then removes any other keep tag of that snapshot,
 then drops the record. The new tag is written before the old one goes, so a
@@ -436,7 +436,7 @@ Three things differ from the package:
   its disk with nothing to delete it. The refusal's words now fit a backend
   that charges nothing: "on its host", not "on its provider's account".
 - A snapshot's image also carries its box's name and thread,
-  `bbbox.snapshot.box-name` and `bbbox.snapshot.thread`, beside its kind.
+  `aliabox.snapshot.box-name` and `aliabox.snapshot.thread`, beside its kind.
   A snapshot found again after a lost `snapshots.db` keeps its box's kind,
   which a fork after the release needs, and its name. A snapshot taken
   before this change has its kind only.

@@ -3,15 +3,15 @@ import { NO_PAUSE, type DoctorCheck, type MachineSize, type SnapshotSize, type S
 import { LXCFS_TARGETS } from "./lxcfs.ts";
 import { ENV_A_BOX_IS_GIVEN, IMAGE_HOLDS_FORKS, labelsOf } from "./box-container.ts";
 
-export const SNAPSHOT_LABEL = "bbbox.snapshot";
-export const SNAPSHOT_INSTALL = "bbbox.snapshot.install";
-export const SNAPSHOT_BOX = "bbbox.snapshot.box";
-export const SNAPSHOT_BOX_NAME = "bbbox.snapshot.box-name";
-export const SNAPSHOT_THREAD = "bbbox.snapshot.thread";
-export const COPY_INTO = "bbbox.snapshot.copy-into";
-export const COPY_FOR = "bbbox.snapshot.copy-for";
-export const COPY_OP = "bbbox.snapshot.copy-op";
-export const KEPT_REPOSITORY = "bbbox-kept";
+export const SNAPSHOT_LABEL = "aliabox.snapshot";
+export const SNAPSHOT_INSTALL = "aliabox.snapshot.install";
+export const SNAPSHOT_BOX = "aliabox.snapshot.box";
+export const SNAPSHOT_BOX_NAME = "aliabox.snapshot.box-name";
+export const SNAPSHOT_THREAD = "aliabox.snapshot.thread";
+export const COPY_INTO = "aliabox.snapshot.copy-into";
+export const COPY_FOR = "aliabox.snapshot.copy-for";
+export const COPY_OP = "aliabox.snapshot.copy-op";
+export const KEPT_REPOSITORY = "aliabox-kept";
 export const LAYERS_REFUSED_FROM = 120;
 export const RESTORE_START_ABOUT_MS = 5_000;
 export const KILL_ABOUT_MS = 1_000;
@@ -38,11 +38,11 @@ export interface SnapshotDisk {
 }
 
 export function snapshotImage(install: string, box: string, id: string): string {
-  return `bbbox-snapshot/${install}/${box}:${id}`;
+  return `aliabox-snapshot/${install}/${box}:${id}`;
 }
 
 export function snapshotVolume(id: string): string {
-  return `bbbox-snapshot-${id}-docker`;
+  return `aliabox-snapshot-${id}-docker`;
 }
 
 export function keptTag(install: string, id: string, day: string): string {
@@ -97,8 +97,8 @@ export function isBoxContainerName(boxContainer: string, name: string): boolean 
 }
 
 export function sizeTakenAt(labels: Readonly<Record<string, string>>): MachineSize | null {
-  const cores = Number(labels["bbbox.snapshot.cores"]);
-  const memoryMiB = Number(labels["bbbox.snapshot.memory-mib"]);
+  const cores = Number(labels["aliabox.snapshot.cores"]);
+  const memoryMiB = Number(labels["aliabox.snapshot.memory-mib"]);
   return cores > 0 && memoryMiB > 0 ? { cores, memoryMiB, diskGiB: null } : null;
 }
 
@@ -129,9 +129,9 @@ export function takePause(disk: SnapshotDisk, running: boolean): TakePause {
 }
 
 export function sizeFromLabels(labels: Readonly<Record<string, string>>): SnapshotSize | null {
-  const layerBytes = Number(labels["bbbox.snapshot.layer-bytes"]);
-  const volumeBytes = Number(labels["bbbox.snapshot.volume-bytes"] ?? 0);
-  const store = labels["bbbox.snapshot.store"];
+  const layerBytes = Number(labels["aliabox.snapshot.layer-bytes"]);
+  const volumeBytes = Number(labels["aliabox.snapshot.volume-bytes"] ?? 0);
+  const store = labels["aliabox.snapshot.store"];
   if (!(layerBytes >= 0 && volumeBytes >= 0) || (store !== "overlay2" && store !== "containerd")) return null;
   return { bytes: pauseEstimate({ layerBytes, volumeBytes, store }).addsBytes, means: "own", estimated: true };
 }

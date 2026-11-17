@@ -1327,7 +1327,7 @@ describe("the Review tab", () => {
   });
 
   it("adds a comment on the lines the gutter picked, with their text as the anchor", async () => {
-    const created = thread({ id: "bbbbbb000001", body: "Rename b", startLine: 1, endLine: 2, anchorContent: "const a = 1;\nconst b = 3;" });
+    const created = thread({ id: "aliabbbb000001", body: "Rename b", startLine: 1, endLine: 2, anchorContent: "const a = 1;\nconst b = 3;" });
     const slot = render({ createThread: () => ({ thread: created }) });
     fireEvent.click(await screen.findByText("gutter +"));
     expect(screen.getByText("New comment on lines 1–2 (new side)")).toBeTruthy();
@@ -1430,7 +1430,7 @@ describe("the Review tab", () => {
     const PATCH_B = PATCH.replaceAll("src/a.ts", "src/b.ts");
     /** What the RPC returns, as the wire does: a fresh copy each time. */
     const fresh = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-    const onB = thread({ id: "bbbbbb000009", body: "Untouched", filePath: "src/b.ts" });
+    const onB = thread({ id: "aliabbbb000009", body: "Untouched", filePath: "src/b.ts" });
     const twoFiles = { ...VIEW, files: [VIEW.files[0]!, { ...VIEW.files[0]!, path: "src/b.ts", patch: PATCH_B }], threads: [...VIEW.threads, onB] };
     const annotationsOf = (patch: string) => new Set(pierre.renders.filter((entry) => entry.patch === patch).map((entry) => entry.annotations));
 
@@ -2039,7 +2039,7 @@ describe("the Review tab", () => {
 
     describe("a reply typed on a copy of a GitHub thread that is folded into the kept one", () => {
       const kept = { ...VIEW.threads[0]!, githubThreadId: "PRRT_9" };
-      const copy = thread({ id: "bbbbbb000009", body: "GitHub's copy", startLine: 5, endLine: 5, githubThreadId: "PRRT_9" });
+      const copy = thread({ id: "aliabbbb000009", body: "GitHub's copy", startLine: 5, endLine: 5, githubThreadId: "PRRT_9" });
       const folded = { [copy.id]: kept.id };
       const card = (id: string) => document.querySelector(`[data-thread-id="${id}"]`) as HTMLElement;
       const savedDrafts = (slot: Slot) => slot.inspection.rpcCalls.filter((call) => call.method === "saveViewState").map((call) => Object.keys((call.input as { state: ViewState }).state.drafts));

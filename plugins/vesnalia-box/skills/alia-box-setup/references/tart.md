@@ -25,14 +25,14 @@ when they plan more than their own use.
    Login for it:
 
    ```sh
-   sudo sysadminctl -addUser bbbox-admin -fullName "alia-box" -password -
-   sudo dseditgroup -o edit -a bbbox-admin -t user com.apple.access_ssh
+   sudo sysadminctl -addUser aliabox-admin -fullName "alia-box" -password -
+   sudo dseditgroup -o edit -a aliabox-admin -t user com.apple.access_ssh
    sudo systemsetup -setremotelogin on
    ```
 
    The `-password -` prompts for a password. The person types it; do not
    choose one for them.
-2. As `bbbox-admin`, install Tart: `brew install openai/tools/tart`.
+2. As `aliabox-admin`, install Tart: `brew install openai/tools/tart`.
 3. Add the backend off, and get alia-box's public key from its checks:
 
    ```sh
@@ -40,9 +40,9 @@ when they plan more than their own use.
    alia box backend set tart --check     # a note gives the public key, ssh-ed25519 ...
    ```
 
-   Add that key to `bbbox-admin`'s `~/.ssh/authorized_keys` on the Mac.
+   Add that key to `aliabox-admin`'s `~/.ssh/authorized_keys` on the Mac.
 4. Copy `setup/tart` from a checkout of alia-box at the installed commit to the
-   Mac, and as `bbbox-admin` build the images you want:
+   Mac, and as `aliabox-admin` build the images you want:
 
    ```sh
    tart pull ghcr.io/cirruslabs/macos-golden-gate-xcode:27     # about 69 GB
@@ -60,7 +60,7 @@ when they plan more than their own use.
 ```sh
 ssh-keyscan -t ed25519 192.0.2.20 > "$ALIA_THREAD_STORAGE/mac-1.keys"
 alia box backend host add tart mac-1 --field address=192.0.2.20 \
-  --field user=bbbox-admin --field-file host-keys="$ALIA_THREAD_STORAGE/mac-1.keys"
+  --field user=aliabox-admin --field-file host-keys="$ALIA_THREAD_STORAGE/mac-1.keys"
 alia box backend set tart --field ios-image=alia-box-ios --on --check
 alia box backend set tart --field ios-image=alia-box-ios --on
 ```

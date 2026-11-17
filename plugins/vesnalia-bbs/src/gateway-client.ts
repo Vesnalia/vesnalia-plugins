@@ -92,7 +92,7 @@ export class GatewayClient {
       this.rejectConnect = reject;
       socket.once('open', () => {
         if (this.socket !== socket || this.stopped) return;
-        this.sendControl({ t: 'hello', v: 1, client: 'bbbbs/0.1.0', cols: this.cols, rows: this.rows, kind: this.options.kind, auth: this.auth });
+        this.sendControl({ t: 'hello', v: 1, client: 'aliabbs/0.1.0', cols: this.cols, rows: this.rows, kind: this.options.kind, auth: this.auth });
         if (this.auth.mode === 'register') { registerSent = true; this.setState({ status: 'registering' }); }
         if (this.stopped) return;
         this.startHeartbeat(socket);

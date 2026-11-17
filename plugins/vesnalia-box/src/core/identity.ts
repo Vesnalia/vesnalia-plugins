@@ -10,7 +10,7 @@ export function withDesktopForkSafety(kind: string, offer: Snapshotting): Snapsh
   return kind.startsWith("linux-") && kind.includes("desktop") && offer.fork === "copy" ? { ...offer, forkSafeFrom: Math.max(DESKTOP_FORK_SAFE_FROM, offer.forkSafeFrom ?? 1) } : offer;
 }
 export const IDENTITY_TOOL_MISSING = 64;
-export const IDENTITY_VARIABLE = "BBBOX_IDENTITY";
+export const IDENTITY_VARIABLE = "ALIABOX_IDENTITY";
 export const MARKER_WRITE_MS = 20_000;
 export const FORK_SAFE_PROBE_MS = 10_000;
 export const STOPPED_ANOTHER_WAY = `A snapshot of a stopped box is fork-safe only when ${PRODUCT} stopped the box and it has not run since, as ${PRODUCT} reads the identity reset just before its stop: start the box, stop it with ${PRODUCT} and take the snapshot again`;
@@ -86,7 +86,7 @@ export function forkSafeVersion(status: IdentityStatus | null): number | null {
   return status.enabled && !status.pending && BOOT_CHECK_RAN.has(status.boot) && status.marker === "matches" && status.armed ? status.version : null;
 }
 
-const IDENTITY_FILES_ROOT = "r=${BBBOX_IDENTITY_ROOT:-}";
+const IDENTITY_FILES_ROOT = "r=${ALIABOX_IDENTITY_ROOT:-}";
 const PROBES_DONE = "probes=done";
 const HASH = /^[0-9a-f]{64}$/;
 const EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";

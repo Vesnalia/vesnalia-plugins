@@ -799,7 +799,7 @@ control (`src/relay/mux.ts`).
   `/tmp/alia-box-msb-<uid>`. Through a link, such as that one or a path in a
   Mac's `/tmp`, which is itself a link, msb indexes each snapshot under
   both paths and refuses its ID, so alia-box names a snapshot by its group
-  and member (`bbbox-<box>:<name>`), which works with or without a link.
+  and member (`aliabox-<box>:<name>`), which works with or without a link.
 - **File streams** carry a `box_copy` larger than VesnALIA's file API takes, on
   the `/file-relay` route, from the worker on the machine that holds the
   thread's workspace (#492).
@@ -945,7 +945,7 @@ Code in [src/backends/docker/](../src/backends/docker/). Set up by
   over `ssh://`, or a VesnALIA machine's through the Docker relay. It reaches a
   box only through `docker exec`, so VesnALIA's server needs no network path to
   a box ([031](decisions/031-docker-boxes-are-reached-through-docker-exec.md)).
-- A box is a container named `bbbox-<box ID>`, with labels set at creation
+- A box is a container named `aliabox-<box ID>`, with labels set at creation
   that name the backend, install, box, thread, name and kind. Its size is
   `--cpus` and `--memory`; it shares the host's disk, so a disk size is
   refused. It runs under `--init` with the image's start script and no
@@ -954,7 +954,7 @@ Code in [src/backends/docker/](../src/backends/docker/). Set up by
 - A box is privileged, unless `privileged` is off
   ([041](decisions/041-every-linux-box-has-docker.md)). Its Docker data
   is a named volume, `<container>-docker`, labelled
-  `bbbox.volume-of` with the container's name and `bbbox.install` with
+  `aliabox.volume-of` with the container's name and `aliabox.install` with
   the install, on the same engine as the container: a local daemon, one
   over SSH, or a VesnALIA machine's Docker
   ([082](decisions/082-docker-snapshots.md)). A box made before that
@@ -998,14 +998,14 @@ microVM only when it asks for this backend.
   tries the next offer, such as Tart.
 - On such a host the nightly refresh (049) rebuilds the images too: the
   backend's `build` makes a new one in a builder with `--alia-url`, under
-  `<image>:refresh-<time>`; a trial box of it, `bbbox-image-<id>`, runs
+  `<image>:refresh-<time>`; a trial box of it, `aliabox-image-<id>`, runs
   Docker's check; and `replace` puts it under the image's name with
   `msb save` into `msb load`, as `msb` has no tag command, which share their
   layers. The images' `room` asks for 80 GiB free on the volume `msb` keeps
   them on, measured through any link, so a short host's image waits rather
   than fails. On a host with Docker it lists no builds: `msb` imports
   Docker's.
-- A box is a microVM named `bbbox-<box ID>`, with labels set at creation
+- A box is a microVM named `aliabox-<box ID>`, with labels set at creation
   that name the backend, install, box, thread, name and kind; `msb modify`
   changes the thread and name when the box changes hands. Its size is
   `--cpus`, `--memory` and `--root-disk`, a sparse disk of 32 GiB unless a
@@ -1029,11 +1029,11 @@ microVM only when it asks for this backend.
   `/run/alia-box/ready`.
 - Snapshots ([070](decisions/070-snapshots.md#decided-during-unit-10)) are
   `msb snapshot create`, with `--full` for memory, in a group per box,
-  `bbbox-<box ID>`, named `<install>-<snapshot ID>-r<identity reset
+  `aliabox-<box ID>`, named `<install>-<snapshot ID>-r<identity reset
   version>` so the listing alone says whose each is. `msb` cannot change a
   snapshot's labels once taken, so a keep date is a file in the folder's
   `kept`. A snapshot outlives its microVM. A restore is `msb snapshot
-  restore` into a new microVM, `bbbox-<box ID>-<token>`, which keeps none
+  restore` into a new microVM, `aliabox-<box ID>-<token>`, which keeps none
   of the old one's settings: alia-box sets the box's labels and environment on
   it with `msb modify`, and each start mounts `/run` in memory again and sets
   the box's hostname. A fork restores the snapshot's disk only, never its
@@ -1073,7 +1073,7 @@ Code in [src/backends/ssh-pool/](../src/backends/ssh-pool/). Set up by
 - alia-box logs in as an admin user whose key is `restrict`ed and whose sudo
   rule allows only the helper. The helper reads and prints `key=value`
   lines, and holds a lock on the machine while it acts.
-- A box is a new user on the machine, `bbx-<generation>`. Ownership lives
+- A box is a new user on the machine, `aliax-<generation>`. Ownership lives
   on the machine, in `/var/lib/alia-box` (`/var/db/alia-box` on a Mac): the
   reset generation and an `owner` marker, written before the user is made.
   A release renames it to `resetting`, so a cut-short reset is finished.
@@ -1152,7 +1152,7 @@ a host in `reach.ts`, the host image in `host-image.ts`, first-boot data in
   it, or else over the internet from the addresses in **SSH from** alone.
   The host's firewall lets in only Tailscale and ping, and boxes cannot
   reach the metadata service.
-- Records: every server carries `bbbox-install=<install ID>`, and each host
+- Records: every server carries `aliabox-install=<install ID>`, and each host
   has a record written before the server is made. The sweep finishes or
   deletes a host whose making or deleting was cut short, takes back a host
   whose record was lost, and deletes another server with the install's
@@ -1204,7 +1204,7 @@ API client in `api.ts`, settings in `config.ts`, the backend in
   with `setup/docker/build.sh` and pushed from it, as instances are
   signed in to the registry already; one is rebuilt, while boxes use it,
   when the setup scripts or VesnALIA's app change, or weekly. A build instance
-  has the label `bbbox-role=image-build`, is not a box's guest, and ends
+  has the label `aliabox-role=image-build`, is not a box's guest, and ends
   within the hour.
 - A Mac ends at the plan's longest life whatever alia-box does. Its guest
   says when, which the panel and `box_status` show, and the box's thread

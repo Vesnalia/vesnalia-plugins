@@ -10,7 +10,7 @@ import { pickSimulator, udidFromDestination, type PickCandidate } from "../../sr
 
 const UDID = {
   a: "11111111-2222-3333-4444-555555555555",
-  b: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+  b: "AAAAAAAA-ALIABB-CCCC-DDDD-EEEEEEEEEEEE",
   c: "99999999-8888-7777-6666-555555555555",
 };
 

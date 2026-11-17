@@ -10,8 +10,8 @@
 //
 // Why: these rules are what make a hosted tracker usable at all, and what
 // keep a change from being lost or silently replaced. They were first
-// tested with the copy inside the GitHub adapter (bead-bb-c9l.5); these are
-// those tests on the new seat (bead-bb-c9l.15), so that nothing was lost in
+// tested with the copy inside the GitHub adapter (bead-alia-c9l.5); these are
+// those tests on the new seat (bead-alia-c9l.15), so that nothing was lost in
 // the move.
 //
 // Gotchas:
@@ -1037,7 +1037,7 @@ func TestStoppingShowsAtOnceAndIsSentInItsTurn(t *testing.T) {
 }
 
 func TestSomedayShowsAtOnceAndIsSentInItsTurn(t *testing.T) {
-	// bead-bb-26g.
+	// bead-alia-26g.
 	w := newWorld(t)
 	one := w.desk(t.TempDir())
 	_, err := one.tracker.Create(tracker.Draft{Title: "Maybe later"})

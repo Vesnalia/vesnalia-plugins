@@ -4,7 +4,7 @@ export { livePreview } from "./live-preview";
 export type { LivePreviewConfig } from "./live-preview";
 export { wikiLinks } from "./wiki-links";
 export type { WikiLinkConfig } from "./wiki-links";
-export { bbnotesHighlightStyle, bbnotesTheme } from "./theme";
+export { alianotesHighlightStyle, alianotesTheme } from "./theme";
 export {
   isBareUrl,
   isTableDelimiterLine,

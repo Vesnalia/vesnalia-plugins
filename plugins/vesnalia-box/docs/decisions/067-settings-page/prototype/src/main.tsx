@@ -255,7 +255,7 @@ function Frame() {
     };
   }, []);
   const getScroller = useCallback(() => scroller.current, []);
-  const toBB = (target: string) => {
+  const toALIA = (target: string) => {
     history.pushState({}, "", `${location.pathname}${location.search}${target}`);
     setHash(target);
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -274,7 +274,7 @@ function Frame() {
         </nav>
         <aside aria-label="Settings sections" className="w-72 shrink-0 overflow-y-auto bg-sidebar px-2 py-3 text-sm max-lg:hidden">
           {ALIA_SECTIONS.map((section) => (
-            <button key={section} type="button" className={cn("block w-full rounded-md px-2 py-1.5 text-left text-foreground/90 hover:bg-state-hover", section === "General" && hash === "#alia-general" && "bg-state-active", FOCUS_RING)} onClick={() => (section === "General" ? toBB("#alia-general") : undefined)}>
+            <button key={section} type="button" className={cn("block w-full rounded-md px-2 py-1.5 text-left text-foreground/90 hover:bg-state-hover", section === "General" && hash === "#alia-general" && "bg-state-active", FOCUS_RING)} onClick={() => (section === "General" ? toALIA("#alia-general") : undefined)}>
               {section}
             </button>
           ))}
@@ -284,7 +284,7 @@ function Frame() {
           </button>
           <p className="mt-4 px-2 pb-1 text-xs text-subtle-foreground">Plugins</p>
           {PLUGINS.map((plugin) => (
-            <button key={plugin} type="button" className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-state-hover", plugin === "VesnALIA Box" && onSettings ? "bg-state-active text-foreground" : "text-foreground/90", FOCUS_RING)} onClick={() => (plugin === "VesnALIA Box" ? toBB("") : undefined)}>
+            <button key={plugin} type="button" className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-state-hover", plugin === "VesnALIA Box" && onSettings ? "bg-state-active text-foreground" : "text-foreground/90", FOCUS_RING)} onClick={() => (plugin === "VesnALIA Box" ? toALIA("") : undefined)}>
               {plugin === "VesnALIA Box" ? <ProviderGlyph type="box" className="text-foreground" /> : null}
               {plugin}
             </button>

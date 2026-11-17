@@ -3,7 +3,7 @@
  * tested without a plugin host.
  *
  * Why per provider: `providers.models()` without a `providerId` answers with
- * the catalogue of the environment's *default* provider only (BBP-21: the
+ * the catalogue of the environment's *default* provider only (ALIAP-21: the
  * crew-sandbox environment returned three pi models, none from claude-code),
  * so a node naming any other provider's model was refused although VesnALIA lists
  * it. Each named provider is therefore asked for its own catalogue.

@@ -171,11 +171,11 @@ describe("parseLog", () => {
   it("reads commits newest first and turns the author time into milliseconds", () => {
     const output = [
       line("a".repeat(40), "aaaaaaa", "Ada", "1700000100", "Second: fix it"),
-      line("b".repeat(40), "bbbbbbb", "Grace Hopper", "1700000000", "First"),
+      line("b".repeat(40), "aliabbbbb", "Grace Hopper", "1700000000", "First"),
     ].join("\n") + "\n";
     expect(parseLog(output)).toEqual([
       { sha: "a".repeat(40), shortSha: "aaaaaaa", authorName: "Ada", authoredAt: 1_700_000_100_000, subject: "Second: fix it" },
-      { sha: "b".repeat(40), shortSha: "bbbbbbb", authorName: "Grace Hopper", authoredAt: 1_700_000_000_000, subject: "First" },
+      { sha: "b".repeat(40), shortSha: "aliabbbbb", authorName: "Grace Hopper", authoredAt: 1_700_000_000_000, subject: "First" },
     ]);
   });
 

@@ -42,7 +42,7 @@ function oncePerImage(images: readonly SnapshotImage[]): readonly SnapshotImage[
 type MeasuredStorage = SnapshotStorage & { readonly totalBytes: number; readonly usedBytes: number };
 
 function ownerTakenFrom(box: string, labels: Readonly<Record<string, string>>): BoxOwner {
-  return { boxId: box, threadId: labels[SNAPSHOT_THREAD] || "unknown", name: labels[SNAPSHOT_BOX_NAME] || null, kind: labels["bbbox.snapshot.kind"] || null, createdAt: null };
+  return { boxId: box, threadId: labels[SNAPSHOT_THREAD] || "unknown", name: labels[SNAPSHOT_BOX_NAME] || null, kind: labels["aliabox.snapshot.kind"] || null, createdAt: null };
 }
 
 const KEEP_CHANGE_PREFIX = "docker-snapshot-keep:";
@@ -156,8 +156,8 @@ export class DockerSnapshotEngine {
   async #space(helperImage: string, signal?: AbortSignal): Promise<{ readonly store: ImageStore; readonly storage: MeasuredStorage }> {
     const info = snapshotStoreSchema.parse(JSON.parse(await this.#cli.ok(["info", "--format", "{{json .}}"], { signal })));
     const store: ImageStore = JSON.stringify(info.DriverStatus ?? []).includes("containerd") ? "containerd" : "overlay2";
-    const probe = `bbbox-snapshot-space-${this.#context.installId}-${randomUUID()}`;
-    await this.#cli.ok(["volume", "create", "--label", `bbbox.snapshot.probe=${this.#context.installId}`, probe], { signal });
+    const probe = `aliabox-snapshot-space-${this.#context.installId}-${randomUUID()}`;
+    await this.#cli.ok(["volume", "create", "--label", `aliabox.snapshot.probe=${this.#context.installId}`, probe], { signal });
     let df: string;
     try {
       df = await this.#cli.ok([...HELPER, "--volume", `${probe}:/space:ro`, helperImage, "-c", "df -Pk /space"], { signal });
@@ -229,8 +229,8 @@ export class DockerSnapshotEngine {
     return {
       id: ref.id,
       image: ref.ref,
-      volume: labels["bbbox.snapshot.volume"] || null,
-      volumeBytes: Number(labels["bbbox.snapshot.volume-bytes"]) || 0,
+      volume: labels["aliabox.snapshot.volume"] || null,
+      volumeBytes: Number(labels["aliabox.snapshot.volume-bytes"]) || 0,
       size: sizeTakenAt(labels),
       holdsForks: holdsForks(labels),
     };
@@ -255,7 +255,7 @@ export class DockerSnapshotEngine {
       const [image] = snapshotImagesSchema.parse(JSON.parse(await this.#cli.ok(["image", "inspect", ref], { signal })));
       if (!image) return null;
       const labels = image.Config.Labels;
-      const layers = { layers: image.RootFS.Layers, layerBytes: await this.#layerBytes(ref, signal), imageBytes: image.Size, store: labels["bbbox.snapshot.store"] === "containerd" ? "containerd" as const : "overlay2" as const, volumeBytes: Number(labels["bbbox.snapshot.volume-bytes"]) || 0 };
+      const layers = { layers: image.RootFS.Layers, layerBytes: await this.#layerBytes(ref, signal), imageBytes: image.Size, store: labels["aliabox.snapshot.store"] === "containerd" ? "containerd" as const : "overlay2" as const, volumeBytes: Number(labels["aliabox.snapshot.volume-bytes"]) || 0 };
       const otherImages = await this.#layersOfOtherImages(image.Id, signal);
       const sharers = (await this.#aContainerUses(image.Id, signal)) ? [...otherImages, image.RootFS.Layers] : otherImages;
       return retainedOnEngine(layers, sharers);
@@ -298,17 +298,17 @@ export class DockerSnapshotEngine {
     }
     const labels = {
       ...snapshotLabels(this.#context.installId, take.box, take.id),
-      "bbbox.snapshot.kind": facts.container.Config.Labels[LABELS.kind] ?? "linux",
+      "aliabox.snapshot.kind": facts.container.Config.Labels[LABELS.kind] ?? "linux",
       [SNAPSHOT_BOX_NAME]: facts.container.Config.Labels[LABELS.name] ?? "",
       [SNAPSHOT_THREAD]: facts.container.Config.Labels[LABELS.thread] ?? "",
-      "bbbox.snapshot.reset": String(take.forkSafe ?? 0),
-      "bbbox.snapshot.taken": String(state.startedAt),
-      "bbbox.snapshot.cores": String(guest.size?.cores ?? 0),
-      "bbbox.snapshot.memory-mib": String(guest.size?.memoryMiB ?? 0),
-      "bbbox.snapshot.volume": volume ?? "",
-      "bbbox.snapshot.layer-bytes": String(facts.container.SizeRw),
-      "bbbox.snapshot.volume-bytes": String(facts.volumeBytes),
-      "bbbox.snapshot.store": facts.store,
+      "aliabox.snapshot.reset": String(take.forkSafe ?? 0),
+      "aliabox.snapshot.taken": String(state.startedAt),
+      "aliabox.snapshot.cores": String(guest.size?.cores ?? 0),
+      "aliabox.snapshot.memory-mib": String(guest.size?.memoryMiB ?? 0),
+      "aliabox.snapshot.volume": volume ?? "",
+      "aliabox.snapshot.layer-bytes": String(facts.container.SizeRw),
+      "aliabox.snapshot.volume-bytes": String(facts.volumeBytes),
+      "aliabox.snapshot.store": facts.store,
     };
     await hooks.submitting();
     await this.#context.storage.set(this.#key(take.id), state);
@@ -323,8 +323,8 @@ export class DockerSnapshotEngine {
         await this.#cli.ok(["pause", guest.ref], { signal });
       }
       if (volume && facts.volume) {
-        await this.#cli.ok(["volume", "create", ...Object.entries({ ...snapshotLabels(this.#context.installId, take.box, take.id), "bbbox.snapshot.started": String(state.startedAt), "bbbox.snapshot.estimate-ms": String(state.estimateMs), "bbbox.snapshot.container": guest.ref }).flatMap(([key, value]) => ["--label", `${key}=${value}`]), volume], { signal });
-        await this.#cli.ok(["run", "--rm", "--name", `bbbox-snapshot-copy-${take.id}`, "--label", `bbbox.snapshot.install=${this.#context.installId}`, "--label", `bbbox.snapshot=${take.id}`, "--pull", "never", "--privileged", "--network", "none", "--entrypoint", "cp", "--volume", `${facts.volume}:/from:ro`, "--volume", `${volume}:/to`, facts.container.Image, "-a", "--reflink=auto", "/from/.", "/to/"], { signal, timeoutMs: 15 * 60_000 });
+        await this.#cli.ok(["volume", "create", ...Object.entries({ ...snapshotLabels(this.#context.installId, take.box, take.id), "aliabox.snapshot.started": String(state.startedAt), "aliabox.snapshot.estimate-ms": String(state.estimateMs), "aliabox.snapshot.container": guest.ref }).flatMap(([key, value]) => ["--label", `${key}=${value}`]), volume], { signal });
+        await this.#cli.ok(["run", "--rm", "--name", `aliabox-snapshot-copy-${take.id}`, "--label", `aliabox.snapshot.install=${this.#context.installId}`, "--label", `aliabox.snapshot=${take.id}`, "--pull", "never", "--privileged", "--network", "none", "--entrypoint", "cp", "--volume", `${facts.volume}:/from:ro`, "--volume", `${volume}:/to`, facts.container.Image, "-a", "--reflink=auto", "/from/.", "/to/"], { signal, timeoutMs: 15 * 60_000 });
       }
       await this.#cli.ok(["container", "commit", "--pause=false", ...commitChanges(facts.container.Config.Labels, labels).flatMap((change) => ["--change", change]), guest.ref, image], { signal, timeoutMs: 15 * 60_000 });
       committed = true;
@@ -346,8 +346,8 @@ export class DockerSnapshotEngine {
   }
 
   async #discard(state: TakeState): Promise<void> {
-    const helper = (await this.#cli.inspect([`bbbox-snapshot-copy-${state.id}`]))[0];
-    if (helper?.labels[SNAPSHOT_INSTALL] === this.#context.installId && helper.labels["bbbox.snapshot"] === state.id) await this.#cli.ok(["container", "rm", "--force", helper.id]);
+    const helper = (await this.#cli.inspect([`aliabox-snapshot-copy-${state.id}`]))[0];
+    if (helper?.labels[SNAPSHOT_INSTALL] === this.#context.installId && helper.labels["aliabox.snapshot"] === state.id) await this.#cli.ok(["container", "rm", "--force", helper.id]);
     const removed = await this.#cli.run(["image", "rm", "--force", snapshotImage(this.#context.installId, state.box, state.id)]);
     if (removed.exitCode !== 0 && !/no such image/i.test(removed.stderr)) throw this.#cli.error("Removing failed snapshot image", removed);
     await this.#removeVolume(state.id, state.box);
@@ -395,8 +395,8 @@ export class DockerSnapshotEngine {
     const images = ids.length ? oncePerImage(snapshotImagesSchema.parse(JSON.parse(await this.#cli.ok(["image", "inspect", ...new Set(ids)], { signal })))) : [];
     return images.flatMap((image) => {
       const labels = image.Config.Labels;
-      const id = labels["bbbox.snapshot"];
-      const box = labels["bbbox.snapshot.box"];
+      const id = labels["aliabox.snapshot"];
+      const box = labels["aliabox.snapshot.box"];
       if (labels[SNAPSHOT_INSTALL] !== this.#context.installId || !id || !box || !image.RepoTags.includes(snapshotImage(this.#context.installId, box, id))) return [];
       return [{ id, box, image }];
     });
@@ -409,44 +409,44 @@ export class DockerSnapshotEngine {
 
     for (const { id, box, image } of images) {
       const labels = image.Config.Labels;
-      const takenAt = Number(labels["bbbox.snapshot.taken"]);
+      const takenAt = Number(labels["aliabox.snapshot.taken"]);
       if (!Number.isFinite(takenAt) || takenAt <= 0) continue;
       const state = await this.#context.storage.get<TakeState>(this.#key(id));
-      const volume = labels["bbbox.snapshot.volume"];
+      const volume = labels["aliabox.snapshot.volume"];
       const owned = volume ? volumesByName.get(volume) : null;
-      const exists = !volume || (volume === snapshotVolume(id) && owned?.[SNAPSHOT_INSTALL] === this.#context.installId && owned["bbbox.snapshot"] === id && owned["bbbox.snapshot.box"] === box);
+      const exists = !volume || (volume === snapshotVolume(id) && owned?.[SNAPSHOT_INSTALL] === this.#context.installId && owned["aliabox.snapshot"] === id && owned["aliabox.snapshot.box"] === box);
       result.push({
         id, box,
         ref: snapshotImage(this.#context.installId, box, id),
         owner: ownerTakenFrom(box, labels),
-        guest: { ref: state?.container ?? `bbbox-${box}`, host: null, address: null, size: null, data: { box } },
+        guest: { ref: state?.container ?? `aliabox-${box}`, host: null, address: null, size: null, data: { box } },
         where: "current",
         state: state?.phase.startsWith("failed") || !exists ? "incomplete" : this.#active.has(id) ? "in-progress" : "complete",
         words: state?.phase.startsWith("failed") ? "The snapshot's take failed." : exists ? null : "The snapshot's Docker data is missing.",
         holds: "disk",
         takenAt,
         keptUntil: keptUntilWith(image.RepoTags, this.#context.installId, id, (await this.#context.storage.get<KeepChange>(this.#keepKey(id))) ?? null),
-        storage: { name: "Docker's disk", type: `docker-${labels["bbbox.snapshot.store"]}` },
-        forkSafe: Number(labels["bbbox.snapshot.reset"]) || null,
+        storage: { name: "Docker's disk", type: `docker-${labels["aliabox.snapshot.store"]}` },
+        forkSafe: Number(labels["aliabox.snapshot.reset"]) || null,
         size: sizeFromLabels(labels),
       });
     }
 
     for (const volume of volumes) {
       const labels = volume.Labels;
-      const id = labels["bbbox.snapshot"];
-      const box = labels["bbbox.snapshot.box"];
+      const id = labels["aliabox.snapshot"];
+      const box = labels["aliabox.snapshot.box"];
       if (!id || !box || labels[SNAPSHOT_INSTALL] !== this.#context.installId || volume.Name !== snapshotVolume(id) || result.some((held) => held.id === id)) continue;
       result.push({
         id, box,
         ref: snapshotImage(this.#context.installId, box, id),
         owner: null,
-        guest: { ref: labels["bbbox.snapshot.container"] ?? `bbbox-${box}`, host: null, address: null, size: null, data: { box } },
+        guest: { ref: labels["aliabox.snapshot.container"] ?? `aliabox-${box}`, host: null, address: null, size: null, data: { box } },
         where: "current",
         state: this.#active.has(id) ? "in-progress" : "incomplete",
         words: "The snapshot has Docker data but no completed disk image.",
         holds: "disk",
-        takenAt: Number(labels["bbbox.snapshot.started"]) || null,
+        takenAt: Number(labels["aliabox.snapshot.started"]) || null,
         keptUntil: null,
         storage: { name: "Docker's disk", type: "docker" },
       });
@@ -492,11 +492,11 @@ export class DockerSnapshotEngine {
     const complete = new Set((await this.#listed(volumes)).filter((held) => held.state === "complete").map((held) => held.id));
     for (const volume of volumes) {
       const labels = volume.Labels;
-      const id = labels["bbbox.snapshot"];
-      const box = labels["bbbox.snapshot.box"];
-      const container = labels["bbbox.snapshot.container"];
-      const startedAt = Number(labels["bbbox.snapshot.started"]);
-      const estimateMs = Number(labels["bbbox.snapshot.estimate-ms"]);
+      const id = labels["aliabox.snapshot"];
+      const box = labels["aliabox.snapshot.box"];
+      const container = labels["aliabox.snapshot.container"];
+      const startedAt = Number(labels["aliabox.snapshot.started"]);
+      const estimateMs = Number(labels["aliabox.snapshot.estimate-ms"]);
       if (!id || !box || !container || volume.Name !== snapshotVolume(id) || !Number.isFinite(startedAt) || !Number.isFinite(estimateMs)) continue;
       if (!complete.has(id) && pausedTooLong({ startedAt, estimateMs }, this.#now()) && !(await this.#context.storage.get(this.#key(id)))) await this.#context.storage.set(this.#key(id), { id, box, container, startedAt, estimateMs, phase: "failed-resumed" });
     }
@@ -534,7 +534,7 @@ export class DockerSnapshotEngine {
     }
     const entries = snapshotVolumesSchema.parse(JSON.parse(result.stdout));
     const labels = entries[0]?.Labels;
-    if (labels?.[SNAPSHOT_INSTALL] !== this.#context.installId || labels["bbbox.snapshot"] !== id || labels["bbbox.snapshot.box"] !== box) throw new Error("The snapshot volume belongs to another box or install. Check its labels before deleting it.");
+    if (labels?.[SNAPSHOT_INSTALL] !== this.#context.installId || labels["aliabox.snapshot"] !== id || labels["aliabox.snapshot.box"] !== box) throw new Error("The snapshot volume belongs to another box or install. Check its labels before deleting it.");
     await this.#cli.ok(["volume", "rm", volume], { signal });
   }
 
@@ -546,7 +546,7 @@ export class DockerSnapshotEngine {
     }
     const [image] = snapshotImagesSchema.parse(JSON.parse(found.stdout));
     const labels = image?.Config.Labels ?? {};
-    return image && labels[SNAPSHOT_INSTALL] === this.#context.installId && labels["bbbox.snapshot"] === ref.id && image.RepoTags.includes(ref.ref) ? image : null;
+    return image && labels[SNAPSHOT_INSTALL] === this.#context.installId && labels["aliabox.snapshot"] === ref.id && image.RepoTags.includes(ref.ref) ? image : null;
   }
 
   async #untag(tag: string, signal?: AbortSignal): Promise<void> {

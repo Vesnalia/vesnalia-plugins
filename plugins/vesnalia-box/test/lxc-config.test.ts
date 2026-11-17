@@ -13,7 +13,7 @@ test("valid settings parse with defaults", () => {
   const config = lxcConfig();
   assert.equal(config.proxmox.apiUrl, "https://pve.example.com:8006");
   assert.equal(config.proxmox.node, null);
-  assert.equal(config.proxmox.pool, "bbbox");
+  assert.equal(config.proxmox.pool, "aliabox");
   assert.equal(config.proxmox.tlsFingerprint, null);
   assert.equal(config.ssh.user, "box");
   assert.deepEqual(config.vmids, { first: 9900, last: 9999 });
@@ -42,7 +42,7 @@ test("the setup guide's token file values work as they are", () => {
 test("the network and template defaults match the setup guide's", () => {
   const result = parseLxcSettings({
     "proxmox-lxc-url": "https://192.0.2.10:8006",
-    "proxmox-lxc-token-id": "bbbox@pve!plugin",
+    "proxmox-lxc-token-id": "aliabox@pve!plugin",
     "proxmox-lxc-token-secret": "s3cret",
   });
   assert.ok(result.enabled && result.ok, JSON.stringify(result));

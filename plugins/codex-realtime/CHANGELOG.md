@@ -17,5 +17,5 @@ The first release.
 - **Your Codex sign-in is only read.** The plugin never renews it and never changes Codex's files.
   When the sign-in is missing or has expired, the message says to run `codex login`.
 - **A Realtime model setting**, `gpt-realtime-2.1` to begin with.
-- **A list of the plugins allowed to use the sign-in**, only Voice Mode to begin with. The bb app and
+- **A list of the plugins allowed to use the sign-in**, only Voice Mode to begin with. The VesnALIA app and
   agents never receive it.

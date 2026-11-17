@@ -46,7 +46,7 @@ function spacingPx(source, pattern, what) {
 /** The column's own inset: `p-2` each side plus a 1px border each side. */
 export function columnChromePx() {
   const column = read(COLUMN_SOURCE);
-  const padding = spacingPx(column, /\bborder bg-muted\/30 p-(\d+(?:\.\d+)?)\b/, "the column's padding");
+  const padding = spacingPx(column, /\aliaorder bg-muted\/30 p-(\d+(?:\.\d+)?)\b/, "the column's padding");
   if (!/\brounded-lg border bg-muted\/30\b/.test(column)) {
     throw new Error(`selection-metrics: the column's border moved out of ${COLUMN_SOURCE}`);
   }
@@ -56,7 +56,7 @@ export function columnChromePx() {
 /** The tile's own inset: `p-3` each side plus a 1px border each side. */
 export function tileChromePx() {
   const cards = read(CARD_SOURCE);
-  const padding = spacingPx(cards, /\bborder bg-card p-(\d+(?:\.\d+)?)\b/, "the tile's padding");
+  const padding = spacingPx(cards, /\aliaorder bg-card p-(\d+(?:\.\d+)?)\b/, "the tile's padding");
   return 2 * (padding + BORDER_PX);
 }
 

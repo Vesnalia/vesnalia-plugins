@@ -50,7 +50,7 @@ const held = (at: Guest) => existsSync(join(at.root, "run/alia-box/held"));
 test("a box that is not a held fork goes past the hold at once and writes no hold", async () => {
   const at = guest();
 
-  const code = await ended(hold(at, { BBBOX_IDENTITY: FORK }), 5_000);
+  const code = await ended(hold(at, { ALIABOX_IDENTITY: FORK }), 5_000);
 
   assert.equal(code, 0);
   assert.equal(held(at), false);
@@ -58,7 +58,7 @@ test("a box that is not a held fork goes past the hold at once and writes no hol
 
 test("a held fork says it is held and waits until VesnALIA Box releases it as its own box, then goes on", async (t) => {
   const at = guest();
-  const child = hold(at, { BBBOX_FORK_HOLD: "1", BBBOX_IDENTITY: FORK });
+  const child = hold(at, { ALIABOX_FORK_HOLD: "1", ALIABOX_IDENTITY: FORK });
   t.after(() => child.kill("SIGKILL"));
 
   assert.equal(await ended(child, STILL_HELD_AFTER_MS), "still held");
@@ -73,7 +73,7 @@ test("a held fork says it is held and waits until VesnALIA Box releases it as it
 test("a held fork stays held when the release it finds names another box, such as the source it was copied from", async (t) => {
   const at = guest();
   release(at, "bxsource00001");
-  const child = hold(at, { BBBOX_FORK_HOLD: "1", BBBOX_IDENTITY: FORK });
+  const child = hold(at, { ALIABOX_FORK_HOLD: "1", ALIABOX_IDENTITY: FORK });
   t.after(() => child.kill("SIGKILL"));
 
   assert.equal(await ended(child, STILL_HELD_AFTER_MS), "still held");
@@ -83,7 +83,7 @@ test("a held fork stays held when the release it finds names another box, such a
 test("a held fork with no identity value stays held, even with an empty release", async (t) => {
   const at = guest();
   release(at, "");
-  const child = hold(at, { BBBOX_FORK_HOLD: "1", BBBOX_IDENTITY: "" });
+  const child = hold(at, { ALIABOX_FORK_HOLD: "1", ALIABOX_IDENTITY: "" });
   t.after(() => child.kill("SIGKILL"));
 
   assert.equal(await ended(child, STILL_HELD_AFTER_MS), "still held");
@@ -93,7 +93,7 @@ test("a fork VesnALIA Box released goes past the hold at once at each later star
   const at = guest();
   release(at, FORK);
 
-  const code = await ended(hold(at, { BBBOX_FORK_HOLD: "1", BBBOX_IDENTITY: FORK }), 5_000);
+  const code = await ended(hold(at, { ALIABOX_FORK_HOLD: "1", ALIABOX_IDENTITY: FORK }), 5_000);
 
   assert.equal(code, 0);
   assert.equal(held(at), false);
@@ -101,7 +101,7 @@ test("a fork VesnALIA Box released goes past the hold at once at each later star
 
 test("a Docker box holds right after its identity reset, before it starts any service or says it is ready", () => {
   const start = readFileSync(DOCKER_START, "utf8");
-  const reset = start.indexOf('alia-box-identity boot --value "${BBBOX_IDENTITY:-}"');
+  const reset = start.indexOf('alia-box-identity boot --value "${ALIABOX_IDENTITY:-}"');
   const holdAt = start.indexOf("/usr/local/libexec/alia-box/fork-hold &");
   const services = ['rm -f "$home"/.alia-machines/*/daemon.lock.lock', "systemd-socket-activate", "dbus-daemon", "/usr/local/libexec/alia-box/display", 'touch "$run/ready"'];
 
@@ -117,6 +117,6 @@ test("every Docker image installs the hold and says so in its labels, as the sna
   assert.equal(images.length, 3);
   for (const image of images) {
     assert.match(image, /^COPY --chmod=0755 docker\/fork-hold \/usr\/local\/libexec\/alia-box\/fork-hold$/m);
-    assert.match(image, /^LABEL .*bbbox\.fork-hold="1"/m);
+    assert.match(image, /^LABEL .*aliabox\.fork-hold="1"/m);
   }
 });

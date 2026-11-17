@@ -3,7 +3,7 @@ set -uo pipefail
 [ $# -eq 3 ] || { echo "usage: tart-stopped-source-fork.sh <user@mac> <known_hosts file> <private key file>"; exit 2; }
 target=$1 known=$2 key=$3
 cd "$HOME"
-B=./bbc
+B=./aliac
 install=$($B box install-id --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["installId"])')
 now() { date +%s.%N; }
 since() { awk -v a="$1" -v b="$(now)" 'BEGIN { printf "%.1f s", b - a }'; }

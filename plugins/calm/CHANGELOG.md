@@ -84,7 +84,7 @@ Prepared public launch.
   and they never take focus from the composer.
 - A text label on the strip that screen readers announce politely on each
   change, and that phone docks folding cards into pills can show.
-- Follows bb's light and dark mode, the system's reduced-motion setting, and
+- Follows VesnALIA's light and dark mode, the system's reduced-motion setting, and
   pauses while hidden. A Still pictures switch keeps every scene still
   regardless of the system setting.
 - A faint ambient glow behind every scene, by day, dusk, and night: a soft
@@ -97,11 +97,11 @@ Prepared public launch.
   mid-run or while the strip closes, and remembered across restarts.
   A pause of a few seconds between steps counts as the same run.
 - The full scene means only that the main agent is working. While it is idle,
-  helpers that are only working show nothing (bb's own child thread bar covers
+  helpers that are only working show nothing (VesnALIA's own child thread bar covers
   them). A helper that needs you gets a half-height mini scene in the current
   scene's style, with the words beside it: an amber "!" for one waiting on
   you, a rain cloud for one that failed. Tap a figure to open that helper. A
-  failed helper you have opened, from the alert or anywhere in bb, stays
+  failed helper you have opened, from the alert or anywhere in VesnALIA, stays
   dismissed across reloads and restarts.
 - Light on CPU: drawn at CSS-pixel resolution and scaled up crisply, cached
   static layers, an adaptive frame rate that stops when nothing moves, and one
@@ -113,7 +113,7 @@ Prepared public launch.
   a strip open and Calm on. A run that starts while the last one's steps are
   being read keeps its own count.
 - Safety nets: "waiting on you" clears once the question is answered even if
-  bb's thread events are missing, and a strip whose run-ended event never
+  VesnALIA's thread events are missing, and a strip whose run-ended event never
   arrives closes on its own after 10 seconds of the composer saying nothing
   runs.
 - A thread header control to turn Calm off for one thread or pin a scene to
@@ -124,9 +124,9 @@ Prepared public launch.
 - "A new one each time" is the default scene choice.
 - A scene kit: scenes are small modules of pixel art and one hook per moment,
   with a style guide and a guide for adding a scene.
-- Tested on bb 0.45 and declared for bb 0.45 and newer, built against plugin
+- Tested on VesnALIA 0.45 and declared for VesnALIA 0.45 and newer, built against plugin
   SDK 0.6.15.
-  The three experimental bb APIs it uses each have a fallback, so a bb change
+  The three experimental VesnALIA APIs it uses each have a fallback, so a VesnALIA change
   never stops it from loading.
 
 ## 1.0.0

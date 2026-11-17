@@ -9,11 +9,11 @@ make() {
   echo "$out" | grep -q "result box_acquire: Box" || { echo "$out" >&2; return 1; }
 }
 if [ "$enrolled" -gt 0 ]; then
-  ./bbc box option set enrol=true > /dev/null
+  ./aliac box option set enrol=true > /dev/null
   i=0; while [ $i -lt "$enrolled" ]; do make; i=$((i + 1)); done
 fi
 if [ "$routed" -gt 0 ]; then
-  ./bbc box option set enrol=false > /dev/null
+  ./aliac box option set enrol=false > /dev/null
   i=0; while [ $i -lt "$routed" ]; do make || break; i=$((i + 1)); done
-  ./bbc box option set enrol=true > /dev/null
+  ./aliac box option set enrol=true > /dev/null
 fi

@@ -32,5 +32,5 @@ Thumbs.db
 # Test coverage
 coverage/
 
-# BB local state
-.bb/
+# ALIA local state
+.vesnalia/

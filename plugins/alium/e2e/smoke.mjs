@@ -1,4 +1,4 @@
-// End-to-end smoke test against a running VesnALIA with bbium installed.
+// End-to-end smoke test against a running VesnALIA with alium installed.
 //   ALIA_URL=http://localhost:38886 npm run e2e
 // ALIA_THREAD=/projects/<id>/threads/<id> adds scroll checks on a long thread.
 // Uses playwright-core chromium-headless-shell (not Chrome.app: its launch makes macOS reindex Shortcuts).
@@ -19,7 +19,7 @@ function check(name, ok, detail = "") {
   if (!ok) failed++;
 }
 
-const hints = () => page.locator("[data-bbium-root] .bbium-hint").count();
+const hints = () => page.locator("[data-alium-root] .alium-hint").count();
 const focus = () =>
   page.evaluate(() => {
     const a = document.activeElement;
@@ -76,7 +76,7 @@ try {
     const editor = [...document.querySelectorAll(".ProseMirror[contenteditable=true]")].at(-1);
     if (!editor) return null;
     const r = editor.getBoundingClientRect();
-    const hint = [...document.querySelectorAll("[data-bbium-root] .bbium-hint")].find((n) => {
+    const hint = [...document.querySelectorAll("[data-alium-root] .alium-hint")].find((n) => {
       const h = n.getBoundingClientRect();
       return n.style.display !== "none" && Math.abs(h.left - Math.max(r.left, 0)) < 2 && Math.abs(h.top - Math.max(r.top, 0)) < 2;
     });

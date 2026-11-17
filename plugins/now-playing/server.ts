@@ -44,14 +44,14 @@ const appearancePatchSchema = z.union([
 ]);
 export type AppearancePatch = z.infer<typeof appearancePatchSchema>;
 
-/** v0.3.0 called the alia-amp style "winamp"; read those values as "bbamp". */
+/** v0.3.0 called the alia-amp style "winamp"; read those values as "aliaamp". */
 function renameWinamp(value: unknown): unknown {
   if (typeof value !== "object" || value === null) return value;
   const { style, accents } = value as { style?: unknown; accents?: unknown };
-  const next: Record<string, unknown> = { ...value, style: style === "winamp" ? "bbamp" : style };
+  const next: Record<string, unknown> = { ...value, style: style === "winamp" ? "aliaamp" : style };
   if (typeof accents === "object" && accents !== null && "winamp" in accents) {
     const { winamp, ...rest } = accents as Record<string, unknown>;
-    next.accents = { bbamp: winamp, ...rest };
+    next.accents = { aliaamp: winamp, ...rest };
   }
   return next;
 }

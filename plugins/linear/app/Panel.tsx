@@ -601,7 +601,7 @@ function GroupedRows({
                 !isGroupCollapsed(group, collapsed, searching) &&
                 group.rows.some((row) => row.id === selected),
             )
-              ? `bbl-row-${selected}`
+              ? `alial-row-${selected}`
               : undefined
           }
           onScroll={onScroll}
@@ -611,7 +611,7 @@ function GroupedRows({
             right one, and the eye stops connecting them — the row stops being
             a row and becomes two columns that happen to share a line.
           */
-          className="bbl-scroller w-full max-w-[56rem] flex-1 overflow-y-auto px-1 pb-3 focus-visible:outline-none"
+          className="alial-scroller w-full max-w-[56rem] flex-1 overflow-y-auto px-1 pb-3 focus-visible:outline-none"
         >
           {state.groups.map((group) => {
             /*
@@ -640,7 +640,7 @@ function GroupedRows({
                     type="button"
                     aria-expanded={!isCollapsed}
                     onClick={() => chrome.toggleCollapsed(group.key)}
-                    className="bbl-section sticky top-0 z-10 flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                    className="alial-section sticky top-0 z-10 flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground"
                   >
                     <Icon
                       name={isCollapsed ? "ChevronRight" : "ChevronDown"}
@@ -656,7 +656,7 @@ function GroupedRows({
                         disambiguate. A pill rather than "· 12", so the number
                         is a shape the eye finds instead of punctuation it has
                         to parse. */}
-                    <span className="bbl-count rounded-full px-1.5 py-px text-[10px] tabular-nums">
+                    <span className="alial-count rounded-full px-1.5 py-px text-[10px] tabular-nums">
                       {group.count}
                     </span>
                   </button>
@@ -725,7 +725,7 @@ function Segments() {
       <div
         role="tablist"
         aria-label="Linear segments"
-        className="bbl-segments inline-flex items-center gap-0.5 rounded-lg p-0.5"
+        className="alial-segments inline-flex items-center gap-0.5 rounded-lg p-0.5"
       >
         {tabs.map((tab) => (
           <button
@@ -734,7 +734,7 @@ function Segments() {
             aria-selected={state.segment === tab.id}
             className={`flex items-center rounded-[0.3rem] px-2.5 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
               state.segment === tab.id
-                ? "bbl-segment-active font-medium text-foreground"
+                ? "alial-segment-active font-medium text-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => chrome.setSegment(tab.id)}
@@ -818,7 +818,7 @@ function WorkingSet({
       <div className="flex w-full max-w-[56rem] flex-1 flex-col items-center justify-center px-6 py-10">
         <div className="w-full max-w-sm space-y-4">
           <div className="flex items-center gap-2.5">
-            <span className="bbl-completed bbl-glyph">
+            <span className="alial-completed alial-glyph">
               <StateGlyph tone="completed" glyph={COMPLETED_GLYPH_SPEC} className="size-5" />
             </span>
             <p className="text-sm font-medium text-foreground">Nothing needs you right now.</p>
@@ -840,13 +840,13 @@ function WorkingSet({
     <ul
       role="listbox"
       aria-label="Working set"
-      className="bbl-scroller w-full max-w-[56rem] flex-1 overflow-y-auto px-1 pb-3"
+      className="alial-scroller w-full max-w-[56rem] flex-1 overflow-y-auto px-1 pb-3"
     >
       {state.buckets.map((bucket) => (
         <li key={bucket.id} role="group" aria-label={bucket.label}>
-          <div className="bbl-section sticky top-0 z-10 flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <div className="alial-section sticky top-0 z-10 flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             <span className="truncate">{bucket.label}</span>
-            <span className="bbl-count rounded-full px-1.5 py-px text-[10px] tabular-nums">
+            <span className="alial-count rounded-full px-1.5 py-px text-[10px] tabular-nums">
               {bucket.rows.length}
             </span>
           </div>
@@ -871,19 +871,19 @@ function WorkingSet({
  *  as the list, so nothing jumps sideways when the panel changes what it is
  *  showing. */
 function Body({ children }: { children: React.ReactNode }) {
-  return <div className="bbl-scroller min-h-0 w-full max-w-[56rem] flex-1 space-y-3 overflow-y-auto p-4 md:p-5">{children}</div>;
+  return <div className="alial-scroller min-h-0 w-full max-w-[56rem] flex-1 space-y-3 overflow-y-auto p-4 md:p-5">{children}</div>;
 }
 
 function Notice({ tone, children }: { tone: "warn" | "error"; children: React.ReactNode }) {
   return (
     <div
-      className={`${tone === "error" ? "bbl-danger" : "bbl-triage"} bbl-notice px-3 py-2`}
+      className={`${tone === "error" ? "alial-danger" : "alial-triage"} alial-notice px-3 py-2`}
       // `status`, not `alert`: a stale panel is a fact, not an interruption,
       // and an assertive live region would talk over whatever the user is
       // doing every time a poll fails.
       role="status"
     >
-      <p className="bbl-text text-sm">{children}</p>
+      <p className="alial-text text-sm">{children}</p>
     </div>
   );
 }
@@ -904,10 +904,10 @@ function SkeletonList() {
     <ul className="px-1 pb-3" aria-hidden>
       {Array.from({ length: 9 }, (_, index) => (
         <li key={index} className="flex items-center gap-2.5 py-1.5 pl-2 pr-1.5">
-          <span className="bbl-skeleton size-3.5 shrink-0 rounded-full" />
-          <span className="bbl-skeleton h-2.5 w-[4.75rem] shrink-0 rounded-sm" />
+          <span className="alial-skeleton size-3.5 shrink-0 rounded-full" />
+          <span className="alial-skeleton h-2.5 w-[4.75rem] shrink-0 rounded-sm" />
           <span
-            className="bbl-skeleton h-2.5 rounded-sm"
+            className="alial-skeleton h-2.5 rounded-sm"
             style={{
               width: `${String(38 + ((index * 17) % 44))}%`,
               // Later rows fade out, so the list reads as continuing past the
@@ -915,7 +915,7 @@ function SkeletonList() {
               opacity: 1 - index * 0.08,
             }}
           />
-          <span className="bbl-skeleton ml-auto size-5 shrink-0 rounded-full" />
+          <span className="alial-skeleton ml-auto size-5 shrink-0 rounded-full" />
         </li>
       ))}
     </ul>

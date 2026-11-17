@@ -101,7 +101,7 @@ export interface LxcConfig {
 }
 
 export const LXC_DEFAULTS = {
-  pool: "bbbox",
+  pool: "aliabox",
   linuxTemplate: 9100,
   vmidFirst: 9900,
   vmidLast: 9999,
@@ -263,7 +263,7 @@ export const LXC_SETTINGS: Record<string, PluginSettingDescriptor> = {
   [LXC_KEYS.tokenId]: {
     type: "string",
     label: "Proxmox LXC: API token ID",
-    description: `The Proxmox API token ${PRODUCT} signs in with, such as bbbox@pve!plugin. The setup guide lists the privileges it needs.`,
+    description: `The Proxmox API token ${PRODUCT} signs in with, such as aliabox@pve!plugin. The setup guide lists the privileges it needs.`,
     default: "",
   },
   [LXC_KEYS.tokenSecret]: { type: "string", label: "Proxmox LXC: API token secret", description: "The secret of the API token, from the setup guide's token file.", secret: true },
@@ -336,7 +336,7 @@ export const LXC_SETTINGS: Record<string, PluginSettingDescriptor> = {
     type: "string",
     label: "Proxmox LXC: SSH private key",
     description:
-      `The SSH key ${PRODUCT} reaches boxes with. Paste the unencrypted OpenSSH private key the templates were built with, the setup guide's BBBOX_SSH_KEY. Leave it empty and ${PRODUCT} makes one and shows its public key, which the templates must then accept.`,
+      `The SSH key ${PRODUCT} reaches boxes with. Paste the unencrypted OpenSSH private key the templates were built with, the setup guide's ALIABOX_SSH_KEY. Leave it empty and ${PRODUCT} makes one and shows its public key, which the templates must then accept.`,
     secret: true,
   },
   [LXC_KEYS.sshUser]: {

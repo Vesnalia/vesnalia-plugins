@@ -20,7 +20,7 @@ const FIRST = "namespace";
 const TEAM_B = "namespace:team-b";
 const SECOND_TOKEN = "nsct_secondWORKSPACEtoken.0123456789";
 const START = Date.parse("2030-01-01T00:00:00Z");
-const IMAGE_SCRIPT = (target: string, tag: string) => `cat >/dev/null; echo "nscr.io/ws1/bbbox/${target}:${tag}"`;
+const IMAGE_SCRIPT = (target: string, tag: string) => `cat >/dev/null; echo "nscr.io/ws1/aliabox/${target}:${tag}"`;
 
 const IOS_REPORT: MacReport = {
   mac: "Apple M4 Pro (Virtual)",
@@ -115,8 +115,8 @@ test("two Namespace backends on one workspace each label what they make with the
 
   assert.equal(machineOf(fake, "b1").labels[LABELS.backend], "namespace");
   assert.equal(machineOf(fake, "b2").labels[LABELS.backend], "namespace-team-b");
-  assert.equal(machineOf(fake, "b1").uniqueTag, "bbbox-inst1-b1", "the first backend's names are as before");
-  assert.equal(machineOf(fake, "b2").uniqueTag, "bbbox-inst1-namespace-team-b-b2");
+  assert.equal(machineOf(fake, "b1").uniqueTag, "aliabox-inst1-b1", "the first backend's names are as before");
+  assert.equal(machineOf(fake, "b2").uniqueTag, "aliabox-inst1-namespace-team-b-b2");
   assert.deepEqual((await first.held()).map((guest) => guest.data?.box), ["b1"]);
   assert.deepEqual((await second.held()).map((guest) => guest.data?.box), ["b2"]);
 
@@ -135,7 +135,7 @@ test("after the upgrade, a machine labelled only with the install is the first N
   const first = backendOn(fake, FIRST);
   const second = backendOn(fake, TEAM_B);
   const older = plant(fake, "older1", { [LABELS.install]: "inst1", [LABELS.box]: "old", [LABELS.thread]: "thr_1", [LABELS.name]: "box-old", [LABELS.kind]: "linux", [LABELS.created]: String(START) });
-  const guest: Guest = { ref: "bbbox-inst1-old", host: null, address: null, size: null, data: { box: "old", instance: older.id } };
+  const guest: Guest = { ref: "aliabox-inst1-old", host: null, address: null, size: null, data: { box: "old", instance: older.id } };
 
   assert.deepEqual((await second.held()).map((held) => held.data?.box), []);
   assert.deepEqual((await first.held()).map((held) => held.owner?.boxId), ["old"]);
@@ -170,16 +170,16 @@ test("each backend builds its own Linux images, labelled and tagged with its ID,
 
   const image = await second.linuxImages.forBox("linux", new AbortController().signal);
   assert.ok(logs.some((line) => line.startsWith("Namespace (team-b): built and pushed the linux image")), logs.join("\n"));
-  assert.match(image.ref, /^nscr\.io\/ws1\/bbbox\/linux:team-b-[0-9a-f]{12}-aaaaaaaaaaaa$/);
-  const build = [...fake.instances.values()].find((instance) => instance.labels["bbbox-role"] === "image-build")!;
+  assert.match(image.ref, /^nscr\.io\/ws1\/aliabox\/linux:team-b-[0-9a-f]{12}-aaaaaaaaaaaa$/);
+  const build = [...fake.instances.values()].find((instance) => instance.labels["aliabox-role"] === "image-build")!;
   assert.equal(build.labels[LABELS.backend], "namespace-team-b");
-  assert.equal(build.uniqueTag, "bbbox-inst1-namespace-team-b-image-linux", "not the first backend's build of the same image");
+  assert.equal(build.uniqueTag, "aliabox-inst1-namespace-team-b-image-linux", "not the first backend's build of the same image");
   assert.equal(await first.linuxImages.record("linux"), undefined, "the first backend has no image from it");
 
   const earlier = START - 10 * 60_000;
-  const firsts = plant(fake, "firstbuild", { [LABELS.install]: "inst1", [LABELS.backend]: "namespace", "bbbox-role": "image-build", "bbbox-target": "desktop" }, earlier);
-  const older = plant(fake, "olderbuild", { [LABELS.install]: "inst1", "bbbox-role": "image-build", "bbbox-target": "desktop" }, earlier);
-  const seconds = plant(fake, "secondbuild", { [LABELS.install]: "inst1", [LABELS.backend]: "namespace-team-b", "bbbox-role": "image-build", "bbbox-target": "desktop" }, earlier);
+  const firsts = plant(fake, "firstbuild", { [LABELS.install]: "inst1", [LABELS.backend]: "namespace", "aliabox-role": "image-build", "aliabox-target": "desktop" }, earlier);
+  const older = plant(fake, "olderbuild", { [LABELS.install]: "inst1", "aliabox-role": "image-build", "aliabox-target": "desktop" }, earlier);
+  const seconds = plant(fake, "secondbuild", { [LABELS.install]: "inst1", [LABELS.backend]: "namespace-team-b", "aliabox-role": "image-build", "aliabox-target": "desktop" }, earlier);
   await second.maintain();
   assert.deepEqual([firsts.status, older.status, seconds.status], ["RUNNING", "RUNNING", "DESTROYED"]);
   await first.maintain();
@@ -339,6 +339,6 @@ test("alia box images list shows each Namespace backend's own Linux images, by b
 
   assert.equal(lines.length, 6);
   assert.equal(lines[0], "namespace/linux (linux): not built yet; Namespace builds it when a box first needs it.");
-  assert.match(lines[3]!, /^namespace:team-b\/linux \(linux\): nscr\.io\/ws1\/bbbox\/linux:team-b-[0-9a-f]{12}-a{12}, built today; not due; Namespace \(team-b\) builds and refreshes it by itself\.$/);
+  assert.match(lines[3]!, /^namespace:team-b\/linux \(linux\): nscr\.io\/ws1\/aliabox\/linux:team-b-[0-9a-f]{12}-a{12}, built today; not due; Namespace \(team-b\) builds and refreshes it by itself\.$/);
   assert.equal(lines[4], "namespace:team-b/linux-desktop-cpu (linux-desktop-cpu): not built yet; Namespace (team-b) builds it when a box first needs it.");
 });

@@ -144,13 +144,13 @@ export function appendToBody(body: string, text: string): string {
 }
 
 /**
- * Attachment ids referenced by `bbnote://attachment/<id>` occurrences in a
+ * Attachment ids referenced by `alianote://attachment/<id>` occurrences in a
  * body (image refs, links, or bare urls), deduped in order of first use.
  * The GC compares this set against the attachments table after body writes.
  */
 export function referencedAttachmentIds(body: string): string[] {
   const ids = new Set<string>();
-  for (const match of body.matchAll(/bbnote:\/\/attachment\/([A-Za-z0-9_-]+)/g)) {
+  for (const match of body.matchAll(/alianote:\/\/attachment\/([A-Za-z0-9_-]+)/g)) {
     ids.add(match[1]!);
   }
   return [...ids];
@@ -158,7 +158,7 @@ export function referencedAttachmentIds(body: string): string[] {
 
 /**
  * Remove every reference to one attachment from a body: markdown image refs
- * (`![alt](bbnote://attachment/<id>)`) and bare `bbnote://attachment/<id>`
+ * (`![alt](alianote://attachment/<id>)`) and bare `alianote://attachment/<id>`
  * urls. A line the ref had to itself is dropped entirely rather than left as
  * a stray blank; other attachments' refs (including ids this id prefixes)
  * are untouched.
@@ -166,11 +166,11 @@ export function referencedAttachmentIds(body: string): string[] {
 export function stripAttachmentRefs(body: string, id: string): string {
   const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const imageRe = new RegExp(
-    `!\\[[^\\]]*\\]\\(\\s*bbnote://attachment/${escaped}\\s*\\)`,
+    `!\\[[^\\]]*\\]\\(\\s*alianote://attachment/${escaped}\\s*\\)`,
     "g",
   );
   const bareRe = new RegExp(
-    `bbnote://attachment/${escaped}(?![A-Za-z0-9_-])`,
+    `alianote://attachment/${escaped}(?![A-Za-z0-9_-])`,
     "g",
   );
   const kept: string[] = [];

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// The config panel vocabulary shared with the crew plugin (BBP-50). The file
+// The config panel vocabulary shared with the crew plugin (ALIAP-50). The file
 // exists in both plugins; the twin check keeps them from drifting apart, the
 // render checks pin each optional part both ways.
 import { readFileSync } from "node:fs";

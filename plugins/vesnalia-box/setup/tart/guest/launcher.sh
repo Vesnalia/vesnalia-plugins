@@ -82,14 +82,14 @@ int main(int argc, char *argv[]) {
   sa.sa_handler = forward;
   for (size_t i = 0; i < sizeof sigs / sizeof *sigs; i++) sigaction(sigs[i], &sa, NULL);
   /* First, itself again, disclaimed; then, in that copy, the command. */
-  if (!getenv("BBBOX_LAUNCHER_DISCLAIMED")) {
+  if (!getenv("ALIABOX_LAUNCHER_DISCLAIMED")) {
     char self[PATH_MAX];
     uint32_t size = sizeof self;
     if (_NSGetExecutablePath(self, &size) != 0) return 127;
-    setenv("BBBOX_LAUNCHER_DISCLAIMED", "1", 1);
+    setenv("ALIABOX_LAUNCHER_DISCLAIMED", "1", 1);
     return run(self, argv, 1);
   }
-  unsetenv("BBBOX_LAUNCHER_DISCLAIMED");
+  unsetenv("ALIABOX_LAUNCHER_DISCLAIMED");
   return run(argv[1], argv + 1, 0);
 }
 EOF

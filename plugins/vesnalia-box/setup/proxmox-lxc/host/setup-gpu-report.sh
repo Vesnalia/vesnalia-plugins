@@ -4,8 +4,8 @@
 # - a VM named alia-box-gpu-memory, never started, whose notes carry the
 #   report. It has no disk and no network, protection on, and is outside
 #   alia-box's pool, so the token's role on the pool does not reach it. Its
-#   VMID is BBBOX_GPU_REPORT_VMID, which must be set: the next free VMID is
-#   where template builds work unless BBBOX_BUILD_VMID is set;
+#   VMID is ALIABOX_GPU_REPORT_VMID, which must be set: the next free VMID is
+#   where template builds work unless ALIABOX_BUILD_VMID is set;
 # - PVEAuditor on that VM alone for alia-box's user and token, so the token can
 #   read its notes and change nothing new;
 # - alia-box-gpu-memory and alia-box-gpu-memory.timer, which write the notes every
@@ -16,25 +16,25 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=common.sh
 . "$here/common.sh"
-root=${BBBOX_ROOT:-}
+root=${ALIABOX_ROOT:-}
 [ -d "$root/proc/driver/nvidia/gpus" ] || die "no NVIDIA driver loaded: there is no GPU to report"
 name=alia-box-gpu-memory
-tokenid="$BBBOX_API_USER!$BBBOX_API_TOKEN"
+tokenid="$ALIABOX_API_USER!$ALIABOX_API_TOKEN"
 
 conf=$(grep -lx "name: $name" "$root"/etc/pve/qemu-server/*.conf 2>/dev/null | head -1) || true
 if [ -n "$conf" ]; then
   vmid=$(basename "$conf" .conf)
 else
-  [ -n "$BBBOX_GPU_REPORT_VMID" ] ||
-    die "set BBBOX_GPU_REPORT_VMID in $BBBOX_ENV to a free VMID outside alia-box's VMID range, not the next free one, which template builds borrow"
-  vmid=$BBBOX_GPU_REPORT_VMID
+  [ -n "$ALIABOX_GPU_REPORT_VMID" ] ||
+    die "set ALIABOX_GPU_REPORT_VMID in $ALIABOX_ENV to a free VMID outside alia-box's VMID range, not the next free one, which template builds borrow"
+  vmid=$ALIABOX_GPU_REPORT_VMID
   qm create "$vmid" --name "$name" --memory 16 --protection 1 --onboot 0 \
     --description "alia-box: each GPU's memory, from alia-box-gpu-memory.timer on this host. It is never started."
 fi
 
 # With privilege separation a token has the intersection of its own ACLs and
 # its user's, so both get it.
-pveum acl modify "/vms/$vmid" --users "$BBBOX_API_USER" --roles PVEAuditor
+pveum acl modify "/vms/$vmid" --users "$ALIABOX_API_USER" --roles PVEAuditor
 pveum acl modify "/vms/$vmid" --tokens "$tokenid" --roles PVEAuditor
 
 if [ -e "$root/usr/local/sbin/alia-box-gpu" ] || [ -e "$root/etc/systemd/system/alia-box-gpu.service" ]; then

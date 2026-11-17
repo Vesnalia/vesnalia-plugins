@@ -137,7 +137,7 @@ export function buildScript(kind: string, aliaUrl: string | null, buildId: strin
     `BOX_IDENTITY_RESET=${identityResetFor(kind)}`,
     `PREPARE=${prepare}`,
     "EOF",
-    `sudo env BBBOX_ENV=/nonexistent BBBOX_ALIA_URL=${quote(aliaUrl ?? "")} bash ${src}/fetch-artifacts.sh ${src}/artifacts ${build.userspaceOfHostDriver ? '"$artifacts"' : build.artifacts} "$arch"`,
+    `sudo env ALIABOX_ENV=/nonexistent ALIABOX_ALIA_URL=${quote(aliaUrl ?? "")} bash ${src}/fetch-artifacts.sh ${src}/artifacts ${build.userspaceOfHostDriver ? '"$artifacts"' : build.artifacts} "$arch"`,
     `sudo bash ${src}/guest/customize-base.sh ${src}`,
     `[ "$runtime" != vm ] || sudo bash ${BUILD_DIR}/proxmox-qemu/linux/customize-vm.sh ${src}`,
     ...(build.finalize === "desktop" ? [`sudo bash ${src}/guest/customize-desktop.sh ${src}`] : []),

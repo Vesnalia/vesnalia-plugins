@@ -1,22 +1,22 @@
 import AppKit
 
 extension NSTouchBarItem.Identifier {
-    static let bbStrip = NSTouchBarItem.Identifier("app.getbb.touchbar.strip")
-    static let bbList = NSTouchBarItem.Identifier("app.getbb.touchbar.list")
-    static let bbSettingsPanel = NSTouchBarItem.Identifier("app.getbb.touchbar.settings-panel")
-    static let bbSettings = NSTouchBarItem.Identifier("app.getbb.touchbar.settings")
-    static let bbPriority = NSTouchBarItem.Identifier("app.getbb.touchbar.priority")
-    static let bbProject = NSTouchBarItem.Identifier("app.getbb.touchbar.project")
-    static let bbDock = NSTouchBarItem.Identifier("app.getbb.touchbar.dock")
-    static let bbCarousel = NSTouchBarItem.Identifier("app.getbb.touchbar.carousel")
-    static let bbUsage = NSTouchBarItem.Identifier("app.getbb.touchbar.usage")
-    static let bbHostMonitor = NSTouchBarItem.Identifier("app.getbb.touchbar.host-monitor")
-    static let bbUsageToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.usage-toggle")
-    static let bbHostToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.host-toggle")
-    static let bbCodexToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.codex-toggle")
-    static let bbClaudeToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.claude-toggle")
-    static let bbCursorToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.cursor-toggle")
-    static let bbClose = NSTouchBarItem.Identifier("app.getbb.touchbar.close")
+    static let aliaStrip = NSTouchBarItem.Identifier("app.getbb.touchbar.strip")
+    static let aliaList = NSTouchBarItem.Identifier("app.getbb.touchbar.list")
+    static let aliaSettingsPanel = NSTouchBarItem.Identifier("app.getbb.touchbar.settings-panel")
+    static let aliaSettings = NSTouchBarItem.Identifier("app.getbb.touchbar.settings")
+    static let aliaPriority = NSTouchBarItem.Identifier("app.getbb.touchbar.priority")
+    static let aliaProject = NSTouchBarItem.Identifier("app.getbb.touchbar.project")
+    static let aliaDock = NSTouchBarItem.Identifier("app.getbb.touchbar.dock")
+    static let aliaCarousel = NSTouchBarItem.Identifier("app.getbb.touchbar.carousel")
+    static let aliaUsage = NSTouchBarItem.Identifier("app.getbb.touchbar.usage")
+    static let aliaHostMonitor = NSTouchBarItem.Identifier("app.getbb.touchbar.host-monitor")
+    static let aliaUsageToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.usage-toggle")
+    static let aliaHostToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.host-toggle")
+    static let aliaCodexToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.codex-toggle")
+    static let aliaClaudeToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.claude-toggle")
+    static let aliaCursorToggle = NSTouchBarItem.Identifier("app.getbb.touchbar.cursor-toggle")
+    static let aliaClose = NSTouchBarItem.Identifier("app.getbb.touchbar.close")
 }
 
 private enum SortMode: String {
@@ -870,23 +870,23 @@ struct TouchBarMenuState {
 final class TouchBarController: NSObject, NSTouchBarDelegate {
     var onSettingsRequested: (() -> Void)?
     private let store = AgentStore()
-    private let stripItem = NSCustomTouchBarItem(identifier: .bbStrip)
+    private let stripItem = NSCustomTouchBarItem(identifier: .aliaStrip)
     private let stripButton = NSButton(title: "", target: nil, action: nil)
-    private let panelItem = NSCustomTouchBarItem(identifier: .bbList)
-    private let settingsPanelItem = NSCustomTouchBarItem(identifier: .bbSettingsPanel)
-    private let settingsItem = NSCustomTouchBarItem(identifier: .bbSettings)
-    private let priorityItem = NSCustomTouchBarItem(identifier: .bbPriority)
-    private let projectItem = NSCustomTouchBarItem(identifier: .bbProject)
-    private let dockItem = NSCustomTouchBarItem(identifier: .bbDock)
-    private let carouselItem = NSCustomTouchBarItem(identifier: .bbCarousel)
-    private let usageItem = NSCustomTouchBarItem(identifier: .bbUsage)
-    private let hostMonitorItem = NSCustomTouchBarItem(identifier: .bbHostMonitor)
-    private let usageToggleItem = NSCustomTouchBarItem(identifier: .bbUsageToggle)
-    private let hostToggleItem = NSCustomTouchBarItem(identifier: .bbHostToggle)
-    private let codexToggleItem = NSCustomTouchBarItem(identifier: .bbCodexToggle)
-    private let claudeToggleItem = NSCustomTouchBarItem(identifier: .bbClaudeToggle)
-    private let cursorToggleItem = NSCustomTouchBarItem(identifier: .bbCursorToggle)
-    private let closeItem = NSCustomTouchBarItem(identifier: .bbClose)
+    private let panelItem = NSCustomTouchBarItem(identifier: .aliaList)
+    private let settingsPanelItem = NSCustomTouchBarItem(identifier: .aliaSettingsPanel)
+    private let settingsItem = NSCustomTouchBarItem(identifier: .aliaSettings)
+    private let priorityItem = NSCustomTouchBarItem(identifier: .aliaPriority)
+    private let projectItem = NSCustomTouchBarItem(identifier: .aliaProject)
+    private let dockItem = NSCustomTouchBarItem(identifier: .aliaDock)
+    private let carouselItem = NSCustomTouchBarItem(identifier: .aliaCarousel)
+    private let usageItem = NSCustomTouchBarItem(identifier: .aliaUsage)
+    private let hostMonitorItem = NSCustomTouchBarItem(identifier: .aliaHostMonitor)
+    private let usageToggleItem = NSCustomTouchBarItem(identifier: .aliaUsageToggle)
+    private let hostToggleItem = NSCustomTouchBarItem(identifier: .aliaHostToggle)
+    private let codexToggleItem = NSCustomTouchBarItem(identifier: .aliaCodexToggle)
+    private let claudeToggleItem = NSCustomTouchBarItem(identifier: .aliaClaudeToggle)
+    private let cursorToggleItem = NSCustomTouchBarItem(identifier: .aliaCursorToggle)
+    private let closeItem = NSCustomTouchBarItem(identifier: .aliaClose)
     private let settingsButton = CompactNativeButton(title: "", width: 34)
     private let priorityButton = SettingsControlButton(title: "PRIORITY", width: 52)
     private let projectButton = SettingsControlButton(title: "PROJECT", width: 48)
@@ -911,21 +911,21 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
     private var hostViewVisible = false
     private var hostMonitorOpenPending = false
     private var showUsage = UserDefaults.standard.object(
-        forKey: "BBTouchBarShowUsage"
+        forKey: "AliaTouchBarShowUsage"
     ) as? Bool ?? true
     private var showHostMonitor = UserDefaults.standard.object(
-        forKey: "BBTouchBarShowHostMonitor"
+        forKey: "AliaTouchBarShowHostMonitor"
     ) as? Bool ?? true
     private var usageProviderVisibility: [String: Bool] = [
-        "codex": UserDefaults.standard.object(forKey: "BBTouchBarUsageCodex") as? Bool ?? true,
-        "claudeCode": UserDefaults.standard.object(forKey: "BBTouchBarUsageClaude") as? Bool ?? true,
-        "cursor": UserDefaults.standard.object(forKey: "BBTouchBarUsageCursor") as? Bool ?? true,
+        "codex": UserDefaults.standard.object(forKey: "AliaTouchBarUsageCodex") as? Bool ?? true,
+        "claudeCode": UserDefaults.standard.object(forKey: "AliaTouchBarUsageClaude") as? Bool ?? true,
+        "cursor": UserDefaults.standard.object(forKey: "AliaTouchBarUsageCursor") as? Bool ?? true,
     ]
     private var selectedProject = UserDefaults.standard.string(
-        forKey: "BBTouchBarSelectedProject"
+        forKey: "AliaTouchBarSelectedProject"
     )
     private var sortMode: SortMode = {
-        let stored = UserDefaults.standard.string(forKey: "BBTouchBarSortMode") ?? ""
+        let stored = UserDefaults.standard.string(forKey: "AliaTouchBarSortMode") ?? ""
         return SortMode(rawValue: stored) ?? .status
     }()
 
@@ -957,7 +957,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
 
     func setUsageVisibilityFromMenu(_ visible: Bool) {
         showUsage = visible
-        UserDefaults.standard.set(visible, forKey: "BBTouchBarShowUsage")
+        UserDefaults.standard.set(visible, forKey: "AliaTouchBarShowUsage")
         refreshAccessoryLayout()
         schedulePanelRender()
     }
@@ -965,16 +965,16 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
     func setHostVisibilityFromMenu(_ visible: Bool) {
         showHostMonitor = visible
         if !visible { hostViewVisible = false }
-        UserDefaults.standard.set(visible, forKey: "BBTouchBarShowHostMonitor")
+        UserDefaults.standard.set(visible, forKey: "AliaTouchBarShowHostMonitor")
         refreshAccessoryLayout()
         schedulePanelRender()
     }
 
     func setProviderVisibilityFromMenu(_ id: String, visible: Bool) {
         let keys = [
-            "codex": "BBTouchBarUsageCodex",
-            "claudeCode": "BBTouchBarUsageClaude",
-            "cursor": "BBTouchBarUsageCursor",
+            "codex": "AliaTouchBarUsageCodex",
+            "claudeCode": "AliaTouchBarUsageClaude",
+            "cursor": "AliaTouchBarUsageCursor",
         ]
         guard let defaultsKey = keys[id] else { return }
         usageProviderVisibility[id] = visible
@@ -994,7 +994,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         stripButton.target = self
         stripButton.action = #selector(openPanel)
         stripButton.font = .monospacedDigitSystemFont(ofSize: 14, weight: .semibold)
-        stripButton.setAccessibilityLabel("BB agents")
+        stripButton.setAccessibilityLabel("ALIA agents")
         stripButton.frame = NSRect(x: 0, y: 0, width: 88, height: Self.barHeight)
         stripItem.view = stripButton
         configurePanelControls()
@@ -1020,10 +1020,10 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         settingsButton.target = self
         settingsButton.action = #selector(settingsTapped(_:))
         settingsButton.bezelColor = NSColor(white: 0.18, alpha: 1)
-        settingsButton.setAccessibilityLabel("BB Touch Bar settings")
+        settingsButton.setAccessibilityLabel("ALIA Touch Bar settings")
         if let image = NSImage(
             systemSymbolName: "slider.horizontal.3",
-            accessibilityDescription: "BB Touch Bar settings"
+            accessibilityDescription: "ALIA Touch Bar settings"
         ) {
             settingsButton.image = image
             settingsButton.imagePosition = .imageOnly
@@ -1085,7 +1085,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         closeButton.target = self
         closeButton.action = #selector(closeTapped(_:))
         closeButton.bezelColor = NSColor(white: 0.18, alpha: 1)
-        closeButton.setAccessibilityLabel("Close BB agent panel")
+        closeButton.setAccessibilityLabel("Close ALIA agent panel")
 
         settingsItem.view = settingsButton
         usageItem.view = usageIconsView
@@ -1130,13 +1130,13 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         spinnerTimer = nil
         store.stop()
         NSWorkspace.shared.notificationCenter.removeObserver(self)
-        DFRElementSetControlStripPresenceForIdentifier(.bbStrip, false)
+        DFRElementSetControlStripPresenceForIdentifier(.aliaStrip, false)
         NSTouchBarItem.removeSystemTrayItem(stripItem)
         NativeLog.info("native Control Strip item removed")
     }
 
     @objc private func assertStripPresence() {
-        DFRElementSetControlStripPresenceForIdentifier(.bbStrip, true)
+        DFRElementSetControlStripPresenceForIdentifier(.aliaStrip, true)
     }
 
     private func installSignalHandlers() {
@@ -1205,7 +1205,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
 
     private func renderStrip(_ snapshot: AgentSnapshot) {
         guard snapshot.connected else {
-            stripButton.attributedTitle = attributed("⃠ BB", color: .white)
+            stripButton.attributedTitle = attributed("⃠ ALIA", color: .white)
             stripButton.bezelColor = .systemRed
             return
         }
@@ -1246,21 +1246,21 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         NSTouchBar.presentSystemModalTouchBar(
             bar,
             placement: 1,
-            systemTrayItemIdentifier: .bbStrip
+            systemTrayItemIdentifier: .aliaStrip
         )
         assertStripPresence()
     }
 
     private func panelIdentifiers() -> [NSTouchBarItem.Identifier] {
         var identifiers: [NSTouchBarItem.Identifier] = [
-            configurationVisible ? .bbSettingsPanel : .bbList,
+            configurationVisible ? .aliaSettingsPanel : .aliaList,
         ]
         identifiers.append(.flexibleSpace)
         if !configurationVisible {
-            if showUsage { identifiers.append(.bbUsage) }
-            if showHostMonitor { identifiers.append(.bbHostMonitor) }
+            if showUsage { identifiers.append(.aliaUsage) }
+            if showHostMonitor { identifiers.append(.aliaHostMonitor) }
         }
-        identifiers.append(contentsOf: [.bbSettings, .bbClose])
+        identifiers.append(contentsOf: [.aliaSettings, .aliaClose])
         return identifiers
     }
 
@@ -1328,7 +1328,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
             guard let self else { return }
             self.hostMonitorOpenPending = false
             if opened {
-                NativeLog.info("opened host \(hostId) in BB Host Monitor")
+                NativeLog.info("opened host \(hostId) in ALIA Host Monitor")
                 self.closePanel()
                 return
             }
@@ -1370,7 +1370,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         guard let project = sender.identifier?.rawValue else { return }
         NativeLog.info("settings project dock tapped \(project)")
         selectedProject = project
-        UserDefaults.standard.set(project, forKey: "BBTouchBarSelectedProject")
+        UserDefaults.standard.set(project, forKey: "AliaTouchBarSelectedProject")
         schedulePanelRender()
     }
 
@@ -1378,7 +1378,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         sortMode = mode
         hostViewVisible = false
         configurationVisible = false
-        UserDefaults.standard.set(sortMode.rawValue, forKey: "BBTouchBarSortMode")
+        UserDefaults.standard.set(sortMode.rawValue, forKey: "AliaTouchBarSortMode")
         updateControlColors()
         panelTouchBar?.defaultItemIdentifiers = panelIdentifiers()
         schedulePanelRender()
@@ -1403,21 +1403,21 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
         makeItemForIdentifier identifier: NSTouchBarItem.Identifier
     ) -> NSTouchBarItem? {
         switch identifier {
-        case .bbList: return panelItem
-        case .bbSettingsPanel: return settingsPanelItem
-        case .bbSettings: return settingsItem
-        case .bbPriority: return priorityItem
-        case .bbProject: return projectItem
-        case .bbDock: return dockItem
-        case .bbCarousel: return carouselItem
-        case .bbUsage: return usageItem
-        case .bbHostMonitor: return hostMonitorItem
-        case .bbUsageToggle: return usageToggleItem
-        case .bbHostToggle: return hostToggleItem
-        case .bbCodexToggle: return codexToggleItem
-        case .bbClaudeToggle: return claudeToggleItem
-        case .bbCursorToggle: return cursorToggleItem
-        case .bbClose: return closeItem
+        case .aliaList: return panelItem
+        case .aliaSettingsPanel: return settingsPanelItem
+        case .aliaSettings: return settingsItem
+        case .aliaPriority: return priorityItem
+        case .aliaProject: return projectItem
+        case .aliaDock: return dockItem
+        case .aliaCarousel: return carouselItem
+        case .aliaUsage: return usageItem
+        case .aliaHostMonitor: return hostMonitorItem
+        case .aliaUsageToggle: return usageToggleItem
+        case .aliaHostToggle: return hostToggleItem
+        case .aliaCodexToggle: return codexToggleItem
+        case .aliaClaudeToggle: return claudeToggleItem
+        case .aliaCursorToggle: return cursorToggleItem
+        case .aliaClose: return closeItem
         default: return nil
         }
     }
@@ -1447,7 +1447,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
             panelItem.view = scrollContainer(views)
             return
         } else if entries.isEmpty {
-            views.append(message(snapshot.connected ? "No BB threads" : "BB is offline"))
+            views.append(message(snapshot.connected ? "No ALIA threads" : "ALIA is offline"))
         } else {
             if !snapshot.connected {
                 views.append(message("Reconnecting…"))
@@ -1680,7 +1680,7 @@ final class TouchBarController: NSObject, NSTouchBarDelegate {
             return selectedProject
         }
         selectedProject = projects[0]
-        UserDefaults.standard.set(projects[0], forKey: "BBTouchBarSelectedProject")
+        UserDefaults.standard.set(projects[0], forKey: "AliaTouchBarSelectedProject")
         return projects[0]
     }
 

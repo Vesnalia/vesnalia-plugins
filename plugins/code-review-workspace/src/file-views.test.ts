@@ -156,9 +156,9 @@ test("a mark saved with the legacy whole-diff hash still counts as viewed", () =
 
 test("a binary stays viewed across a rebase but goes stale when replaced", () => {
   const bin = (index: string) => `diff --git a/x.png b/x.png\nindex ${index} 100644\nBinary files a/x.png and b/x.png differ\n`;
-  const hash = hashForFile(bin("aaaaaaa..bbbbbbb"), "x.png")!;
+  const hash = hashForFile(bin("aaaaaaa..aliabbbbb"), "x.png")!;
   const view = [{ file: "x.png", hash, viewedAt: 1 }];
-  expect(viewStateOf(view, bin("ccccccc..bbbbbbb"))[0]).toMatchObject({ viewed: true, stale: false });
+  expect(viewStateOf(view, bin("ccccccc..aliabbbbb"))[0]).toMatchObject({ viewed: true, stale: false });
   expect(viewStateOf(view, bin("aaaaaaa..ddddddd"))[0]).toMatchObject({ viewed: false, stale: true });
 });
 

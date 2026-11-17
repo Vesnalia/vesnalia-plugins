@@ -1,4 +1,4 @@
-// Bridge to alia-plugin-graph-studio for crew.yaml's `graphs: [...]` (BBP-30):
+// Bridge to alia-plugin-graph-studio for crew.yaml's `graphs: [...]` (ALIAP-30):
 // the names used to validate that field, and running one to completion for
 // `crew_graph_run`. Pure over the RPC call and the clock, so both are
 // fakeable in tests without a real graph-studio or real timers.
@@ -13,9 +13,9 @@ export type GraphRun = {
   error: string | null;
   /** The run's state (graph-studio's `RunDto.state`); opaque here, formatted by the caller. */
   state: unknown;
-  /** Worker thread ids of its member nodes (`NodeRunDto.childThreadId`), for BBP-31's delete cleanup. */
+  /** Worker thread ids of its member nodes (`NodeRunDto.childThreadId`), for ALIAP-31's delete cleanup. */
   childThreadIds: string[];
-  /** Set while status is "waiting-human" (BBP-32); graph-studio's own `RunDto.pendingQuestion`. */
+  /** Set while status is "waiting-human" (ALIAP-32); graph-studio's own `RunDto.pendingQuestion`. */
   pendingQuestion: { nodeId: string; label: string; question: string } | null;
 };
 
@@ -24,7 +24,7 @@ export type GraphsRpc = {
   /** `threadId` is required: graph-studio's startRun rejects a run without a parent thread, whose environment the workers inherit. */
   startRun(args: { graphId: string; input: string; threadId: string; projectId: string | null }): Promise<GraphRun>;
   getRun(id: string): Promise<GraphRun | null>;
-  /** BBP-31: `alia crew stop` cancels open runs with this. */
+  /** ALIAP-31: `alia crew stop` cancels open runs with this. */
   stopRun(id: string): Promise<GraphRun | null>;
 };
 
@@ -77,7 +77,7 @@ export type RunToCompletionOptions = {
   timeoutMs?: number;
   wait?: (ms: number) => Promise<void>;
   now?: () => number;
-  /** Fires right after the run starts, so the caller can record it durably (BBP-31). */
+  /** Fires right after the run starts, so the caller can record it durably (ALIAP-31). */
   onStart?: (run: GraphRun) => void;
   /** Fires after every status change seen while polling, including the final one. */
   onPoll?: (run: GraphRun) => void;

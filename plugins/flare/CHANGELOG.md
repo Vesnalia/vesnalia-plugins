@@ -35,7 +35,7 @@ Agents draw what they found in a flare instead of describing it.
 ### Added
 
 - When a body over 200 characters has no block, table or image but holds 6 or more numbers, 3 or more list items or a thread-storage file, "Flare sent" comes back with a hint naming the views that fit. It comes once a turn, or once an hour outside a turn, and never for a blocker.
-- The help for `bb flare send --body` and the skill show how to send a body with fenced blocks: write it to a file and pass `--body "$(cat body.md)"`.
+- The help for `alia flare send --body` and the skill show how to send a body with fenced blocks: write it to a file and pass `--body "$(cat body.md)"`.
 
 ### Changed
 
@@ -54,13 +54,13 @@ Fixes from the code review of the Shopify marketplace listing.
 
 ## 0.2.0 (2026-11-05)
 
-Flares render the way bb renders a reply, with no plugin code in Flare.
+Flares render the way VesnALIA renders a reply, with no plugin code in Flare.
 
 ### Added
 
-- The Flares tab shows each flare as bb shows a reply, so any block an installed plugin draws, such as a genui view, an inline-vis page or a mermaid diagram, appears there. Flare keeps a hidden companion thread for each thread with flares, on Flare's own renderer, a provider that runs no model: each flare comes back word for word as an assistant message, at no cost in tokens or money. The companion reuses the thread's environment, tells nobody when its turns end, is muted in push notifications when that plugin is on, is archived with its thread and is deleted with it.
+- The Flares tab shows each flare as VesnALIA shows a reply, so any block an installed plugin draws, such as a genui view, an inline-vis page or a mermaid diagram, appears there. Flare keeps a hidden companion thread for each thread with flares, on Flare's own renderer, a provider that runs no model: each flare comes back word for word as an assistant message, at no cost in tokens or money. The companion reuses the thread's environment, tells nobody when its turns end, is muted in push notifications when that plugin is on, is archived with its thread and is deleted with it.
 - A new companion replays the thread's newest 100 flares in order, so flares sent before it, or while the tab showed cards, are drawn too. Older ones, and any not drawn yet, show as cards above the rendered flares.
-- Thread-storage files a flare names, as `$BB_THREAD_STORAGE/<path>` or by absolute path, are copied into a folder for that flare in the companion, so views that load them still find them.
+- Thread-storage files a flare names, as `$ALIA_THREAD_STORAGE/<path>` or by absolute path, are copied into a folder for that flare in the companion, so views that load them still find them.
 - In the rendered view, a divider over each flare shows its kind, the time it arrived, how long ago and the child thread it came from, and each turn opens with the same header the cards use.
 - Rendered and Cards buttons in the tab switch views, and the Flares tab shows setting picks the default; Plain cards starts no companion.
 
@@ -85,7 +85,7 @@ The first release: agents send up a flare mid-turn and keep working.
 - A banner above the thread's message box with the newest flare of the current turn, how long ago it arrived and how many more there are. Its title opens the detail, and it can be dismissed until the next flare.
 - A Flares tab in the thread's side panel that lists every flare by the turn it arrived in, with the message that started each turn and whether it finished or failed, and copies them as Markdown.
 - A thread's banner and tab include the flares of the threads it started, each linked to its child thread.
-- Push notifications for blockers and urgent flares through bb's push notifications plugin, never for a thread muted there, and optionally a notification with the last flare when a turn fails.
+- Push notifications for blockers and urgent flares through VesnALIA's push notifications plugin, never for a thread muted there, and optionally a notification with the last flare when a turn fails.
 - A child thread's blockers reach its parent's agent as a note while the parent's turn is running; a note never starts a turn.
 - An optional reminder for a turn that has gone quiet for a set number of minutes, at most three per turn.
-- `flare_list` for agents, the `bb flare send` and `bb flare list` commands, and the palette command Flare: show this thread's flares.
+- `flare_list` for agents, the `alia flare send` and `alia flare list` commands, and the palette command Flare: show this thread's flares.

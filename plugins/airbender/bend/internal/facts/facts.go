@@ -7,7 +7,7 @@
 // Why: the owner chose a file over a tracker's own memory ("use file"): a
 // file works with every tracker, survives a fresh clone, and can be
 // reviewed like any other project text. And a file of its own over a
-// section of AGENTS.md (bead-bb-c9l.8): the instructions are the owner's
+// section of AGENTS.md (bead-alia-c9l.8): the instructions are the owner's
 // and change rarely, facts are added by agents as they work, and in one
 // file every new fact was a change to the owner's rules, where a careless
 // edit could damage them.

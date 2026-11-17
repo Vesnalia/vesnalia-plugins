@@ -4,7 +4,7 @@
 # such as "measure judge" or "measure r101".
 import argparse, collections, concurrent.futures as cf, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from paired import bb, price_thread
+from paired import alia, price_thread
 from sources import when
 
 def main():
@@ -14,9 +14,9 @@ def main():
     o = a.parse_args()
     since = when(o.since).timestamp() * 1000
     threads = {}
-    for project in json.loads(bb("project", "list", "--json")):
+    for project in json.loads(alia("project", "list", "--json")):
         for flags in ([], ["--archived"]):
-            for t in json.loads(bb("thread", "list", "--project", project["id"], *flags, "--json")):
+            for t in json.loads(alia("thread", "list", "--project", project["id"], *flags, "--json")):
                 if (t.get("title") or "").startswith(o.prefix) and t["createdAt"] >= since:
                     threads[t["id"]] = t["title"]
     with cf.ThreadPoolExecutor(6) as ex:

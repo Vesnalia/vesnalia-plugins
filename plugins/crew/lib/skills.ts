@@ -1,4 +1,4 @@
-// Skill name resolution for crew.yaml's `skills: [...]` field (BBP-29).
+// Skill name resolution for crew.yaml's `skills: [...]` field (ALIAP-29).
 //
 // Names are matched against SKILL.md frontmatter under VesnALIA's roots (the two
 // global directories in ~/.vesnalia, `skills` and `skills-generated`, and the

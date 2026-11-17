@@ -3,7 +3,7 @@ set -euo pipefail
 [ $# -ge 1 ] || { echo "usage: HZ_TOKEN_FILE=<file holding the token> $0 <server-id, or find>" >&2; exit 2; }
 SERVER=$1
 API=https://api.hetzner.cloud/v1
-TAG=bbsnap-research
+TAG=aliasnap-research
 WORK=$(mktemp -d); chmod 700 "$WORK"
 printf 'Authorization: Bearer %s\n' "$(tr -d '\r\n' < "${HZ_TOKEN_FILE:?set HZ_TOKEN_FILE}")" > "$WORK/auth"
 IMAGE= FORK=
@@ -26,7 +26,7 @@ cleanup() {
 trap cleanup EXIT
 
 if [ "$SERVER" = find ]; then
-  SERVER=$(api GET "/servers?per_page=50" | python3 -c "import json,sys; s=[x for x in json.load(sys.stdin)['servers'] if x['name'].startswith('alia-box-hz-') and x['labels'].get('bbbox-role')!='image-build']; print(s[0]['id'] if len(s)==1 else '')")
+  SERVER=$(api GET "/servers?per_page=50" | python3 -c "import json,sys; s=[x for x in json.load(sys.stdin)['servers'] if x['name'].startswith('alia-box-hz-') and x['labels'].get('aliabox-role')!='image-build']; print(s[0]['id'] if len(s)==1 else '')")
   [ -n "$SERVER" ] || { echo "Not exactly one alia-box host; give its server ID." >&2; exit 1; }
   echo "server id: $SERVER"
 fi

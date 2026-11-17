@@ -26,7 +26,7 @@ project uses [Semantic Versioning](https://semver.org/).
 
 - A **Mixture of Agents** provider in the model picker, with one model per
   preset: each preset pairs up to six advisor slots with one aggregator slot,
-  and any installed BB provider and model can fill a slot.
+  and any installed VesnALIA provider and model can fill a slot.
 - Advisors answer your message in parallel as hidden worker threads, told to
   change nothing and to keep to the workspace, and the aggregator receives
   their notes as a private block before it does the work.
@@ -41,7 +41,7 @@ project uses [Semantic Versioning](https://semver.org/).
 - `/moa <question>` in any other thread, and **Ask MoA** in the composer's
   **+** menu, with the `moa_ask` and `moa_answers` tools, so that thread's own
   agent plays the aggregator.
-- A **Presets** page in the plugin's settings, built on BB's own
+- A **Presets** page in the plugin's settings, built on VesnALIA's own
   provider/model picker.
-- `bb moa-provider list` to print the presets, and the `moa` and
+- `alia moa-provider list` to print the presets, and the `moa` and
   `moa-threads` skills.

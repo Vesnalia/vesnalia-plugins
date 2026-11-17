@@ -34,7 +34,7 @@ import * as core from "./core";
 import {
   ensureSection,
   excerptSafe,
-  gitIgnoresBB,
+  gitIgnoresALIA,
   helpersOf,
   inferLeadRole,
   joinPath,
@@ -134,7 +134,7 @@ export {
   NOTIFY_EVENTS,
   applyVars,
   findSourceByPath,
-  gitIgnoresBB,
+  gitIgnoresALIA,
   joinPath,
   requireInsideWorkspace,
   teamConfigSchema,
@@ -472,11 +472,11 @@ export const rpcContract = defineRpcContract({
         team: teamSchema,
         id: z.union([z.number().int().positive(), z.string().min(1).max(200)]),
         status: z.enum(TASK_STATUSES),
-        /** bbt-iwi.2: review submission / acceptance grounds (manual path from the panel). */
+        /** aliat-iwi.2: review submission / acceptance grounds (manual path from the panel). */
         review: z.unknown().optional(),
         acceptReason: z.string().max(4000).optional(),
         returnReason: z.string().max(4000).optional(),
-        /** bbt-iwi.2 fix: the id of the submission the caller reviewed; a mismatch is a conflict with no writes. */
+        /** aliat-iwi.2 fix: the id of the submission the caller reviewed; a mismatch is a conflict with no writes. */
         expectedSubmissionId: z.string().min(1).max(100).nullable().optional(),
       })
       .strict(),
@@ -642,7 +642,7 @@ export default async function plugin(alia: AliaPluginApi) {
     const layout = teamLayout(scope.team, legacy);
     const ignore = await readFileOrNull(alia, scope, layout.ignoreFile);
     const root = await readFileOrNull(alia, scope, ".gitignore");
-    const blocked = root !== null && gitIgnoresBB(root);
+    const blocked = root !== null && gitIgnoresALIA(root);
     return { layout, blocked, versioned: !blocked && isVersioned(ignore, layout.ignoreEntries) };
   };
 
@@ -1175,7 +1175,7 @@ export default async function plugin(alia: AliaPluginApi) {
       await assertRoleAvailable(scope, previous.role);
       // Deterministic preflight first: every read-only refusal happens
       // BEFORE the first tracker write, so a rejected request never leaves
-      // review/acceptance data behind (bbt-iwi.2 review fix).
+      // review/acceptance data behind (aliat-iwi.2 review fix).
       if ((patch.status === "in-progress" || patch.status === "review") && previous.status !== patch.status && busyTasks(store,previous.role,id).length) {
         throw new PluginCliError("Role already has an active package",{code:"role_busy"});
       }
@@ -1192,7 +1192,7 @@ export default async function plugin(alia: AliaPluginApi) {
         }
         if (!target || RUNNING.includes(target.status) || await readPause(scope)) throw new PluginCliError("Role thread must be idle and unpaused to start the package",{code:"role_busy"});
       }
-      // bbt-iwi.2: verifiable-acceptance gate in the existing update path.
+      // aliat-iwi.2: verifiable-acceptance gate in the existing update path.
       // The server stamps the actor and time; a rewritten report never
       // re-grounds an old accept. Team threads must ground every acceptance
       // step; the manual path always requires an explicit reason too.
@@ -1296,7 +1296,7 @@ export default async function plugin(alia: AliaPluginApi) {
       if (closingOpenTask) {
         await resources.finished(scope,id,caller==="manual"&&!!patch.acceptReason?.trim());
         await dispatchNextPackage(scope, result.task.role, t);
-        // Acceptance auto-continue (bbt-er6.4): arm the durable request for the
+        // Acceptance auto-continue (aliat-er6.4): arm the durable request for the
         // consumed executor session, then wake requests of other roles — a
         // closed package can make their dependencies ready.
         await scheduleAutoContinue(scope, result.task.role, result.task.id, t);
@@ -1323,7 +1323,7 @@ export default async function plugin(alia: AliaPluginApi) {
     throw new PluginCliError(err.message, { code: "only_lead_accepts", hint: err.hint });
   };
 
-  /* ── Session continuation: shared handler (bbt-er6.4) ── */
+  /* ── Session continuation: shared handler (aliat-er6.4) ── */
 
   /**
    * Shared continuation handler for `alia team replace` and the acceptance
@@ -1454,7 +1454,7 @@ export default async function plugin(alia: AliaPluginApi) {
     return { result, continuing, kept: Boolean(pending?.keep ?? options.keep) };
   };
 
-  /* ── Acceptance auto-continue (bbt-er6.4) ── */
+  /* ── Acceptance auto-continue (aliat-er6.4) ── */
 
   // Only genuinely transient busy states retry on the next trigger; every
   // other error (missing host/environment, lifecycle ownership, provider,
@@ -1477,7 +1477,7 @@ export default async function plugin(alia: AliaPluginApi) {
    * Durable, technical auto-continue request (KV): ids and stages only.
    * reason "context" marks an explicit or automatic context-rotation request
    * (the same open package continues in a fresh session); absence or
-   * "accepted" keeps the acceptance policy (bbt-er6.4).
+   * "accepted" keeps the acceptance policy (aliat-er6.4).
    */
   interface AutoContinueRecord {
     /** The package that consumed the session (accepted) or continues in it (context). */
@@ -1707,7 +1707,7 @@ export default async function plugin(alia: AliaPluginApi) {
     }
   };
 
-  /* ── Context rotation (bbt-er6.8) ── */
+  /* ── Context rotation (aliat-er6.8) ── */
 
   // Fill ratio at or above which an idle session asks for rotation.
   const CONTEXT_ROTATION_THRESHOLD = 0.8;

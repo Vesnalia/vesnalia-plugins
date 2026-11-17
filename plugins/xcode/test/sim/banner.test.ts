@@ -12,7 +12,7 @@ function look(over: Partial<BannerLook> = {}): BannerLook {
     scopeKey: "s",
     kind: "stills",
     status: "ok",
-    commitSha: "bbbbbbbb",
+    commitSha: "aliabbbbbb",
     branch: "main",
     deviceKey: "d",
     deviceUdid: "u",

@@ -8,7 +8,7 @@
 // deleting it is harmless.
 //
 // Why: the copy exists to spare the half second bd takes to open its
-// database on every read (bead-bb-c9l.14), and must never show less than
+// database on every read (bead-alia-c9l.14), and must never show less than
 // asking bd would.
 //
 // Gotchas:

@@ -36,7 +36,7 @@ export async function sideBySide(browser, out, panels, { dark = false } = {}) {
     )
     .join("");
   await page.setContent(`<style>
-    body{margin:0;display:inline-flex;align-items:flex-start;gap:16px;padding:16px;background:${dark ? "#000" : "#e9e9ec"};font:600 22px/1.2 system-ui;color:${dark ? "#bbb" : "#444"}}
+    body{margin:0;display:inline-flex;align-items:flex-start;gap:16px;padding:16px;background:${dark ? "#000" : "#e9e9ec"};font:600 22px/1.2 system-ui;color:${dark ? "#aliab" : "#444"}}
     figure{margin:0}figcaption{padding:4px 4px 10px}img{display:block;width:auto;border-radius:8px}
   </style>${cells}`);
   // Measure only once every image has decoded, or the capture repeats its top.

@@ -21,7 +21,7 @@ lxc start the clone, no network                          1.10 s
 lxc stop the clone                                       1.33 s
 lxc destroy the clone                                    0.60 s
 lxc thin snapshot of the snapshot (a linked fork)        0.13 s
-  bbsnap-thin-fork 16.00g 36.19%, origin snap_vm-3150-disk-0_s1
+  aliasnap-thin-fork 16.00g 36.19%, origin snap_vm-3150-disk-0_s1
 lxc remove the thin fork                                 0.08 s
 lxc vzdump, snapshot mode, zstd                         13.18 s, 2982 MiB
 lxc restore the vzdump to a spare VMID                   6.48 s

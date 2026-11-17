@@ -14,9 +14,9 @@ async function setup(anonymous = false) {
   const cli = new DockerCli(null, fake.binary);
   await cli.ok(["network", "create", "snapshot-test"]);
   if (!anonymous) await cli.ok(["volume", "create", "box-docker"]);
-  await cli.ok(["container", "create", "--name", "bbbox-bx123", "--network", "snapshot-test", "--label", "bbbox.backend=docker", "--label", "bbbox.kind=linux", "--label", "bbbox.install=test", "--label", "bbbox.box=bx123", "--env", "BBBOX_IDENTITY=source", "--env", "BBBOX_GPU_CARD=source-card", "--volume", anonymous ? "/var/lib/docker" : "box-docker:/var/lib/docker", "bbbox/linux:1"]);
-  await cli.ok(["container", "start", "bbbox-bx123"]);
-  const guest: Guest = { ref: "bbbox-bx123", host: null, address: null, size: null, data: { box: "bx123" } };
+  await cli.ok(["container", "create", "--name", "aliabox-bx123", "--network", "snapshot-test", "--label", "aliabox.backend=docker", "--label", "aliabox.kind=linux", "--label", "aliabox.install=test", "--label", "aliabox.box=bx123", "--env", "ALIABOX_IDENTITY=source", "--env", "ALIABOX_GPU_CARD=source-card", "--volume", anonymous ? "/var/lib/docker" : "box-docker:/var/lib/docker", "aliabox/linux:1"]);
+  await cli.ok(["container", "start", "aliabox-bx123"]);
+  const guest: Guest = { ref: "aliabox-bx123", host: null, address: null, size: null, data: { box: "bx123" } };
   const context = testContext();
   const engine = new DockerSnapshotEngine(cli, context, () => 100_000);
   const hooks = { submitting: async () => {}, task: async () => {} };
@@ -32,11 +32,11 @@ test("Docker snapshots retain disk and Docker data, and can be deleted", async (
   const taken = await engine.take(guest, { id: "sn123", box: "bx123", memory: false }, hooks);
   assert.equal(taken.holds, "disk");
   assert.equal(taken.size?.means, "own");
-  assert.deepEqual(fake.volumeFiles("bbbox-snapshot-sn123-docker"), { value: "A" });
+  assert.deepEqual(fake.volumeFiles("aliabox-snapshot-sn123-docker"), { value: "A" });
   const images = JSON.parse(await cli.ok(["image", "inspect", taken.ref]));
-  assert.equal(images[0].Config.Labels["bbbox.box"], "");
-  assert.ok(images[0].Config.Env.includes("BBBOX_IDENTITY="));
-  assert.ok(images[0].Config.Env.includes("BBBOX_GPU_CARD="));
+  assert.equal(images[0].Config.Labels["aliabox.box"], "");
+  assert.ok(images[0].Config.Env.includes("ALIABOX_IDENTITY="));
+  assert.ok(images[0].Config.Env.includes("ALIABOX_GPU_CARD="));
   assert.equal(taken.size?.bytes, 4096 + 1024 * 1024);
   assert.equal(fake.inspect(guest.ref).State.Status, "running");
   assert.equal((await engine.listed())[0]?.state, "complete");
@@ -75,10 +75,10 @@ test("Docker snapshot estimates account for the image store and bound recovery",
   assert.equal(pauseEstimate({ layerBytes: 100, volumeBytes: 30, store: "containerd" }).addsBytes, 230);
   assert.equal(pausedTooLong({ startedAt: 100, estimateMs: 1000 }, 63099), false);
   assert.equal(pausedTooLong({ startedAt: 100, estimateMs: 1000 }, 63100), true);
-  assert.equal(snapshotImage("test", "bx123", "sn123"), "bbbox-snapshot/test/bx123:sn123");
+  assert.equal(snapshotImage("test", "bx123", "sn123"), "aliabox-snapshot/test/bx123:sn123");
   assert.equal(mountRefusal([{ type: "volume", name: "anonymous", destination: "/var/lib/docker", writable: true }]), null);
-  assert.ok(commitChanges({ "bbbox.box": "source" }, {}).includes('LABEL bbbox.box=""'));
-  assert.ok(commitChanges({}, {}).includes("ENV BBBOX_IDENTITY="));
+  assert.ok(commitChanges({ "aliabox.box": "source" }, {}).includes('LABEL aliabox.box=""'));
+  assert.ok(commitChanges({}, {}).includes("ENV ALIABOX_IDENTITY="));
 });
 
 test("Docker refuses images at the layer limit before pausing", async () => {
@@ -93,22 +93,22 @@ test("Docker refuses images at the layer limit before pausing", async () => {
 test("Docker recovers an interrupted take and removes its partial volume", async () => {
   const { cli, guest, hooks, context } = await setup();
   await context.storage.set("docker-snapshot-take:sn123", { id: "sn123", box: "bx123", container: guest.ref, startedAt: 0, estimateMs: 1000, phase: "taking" });
-  await cli.ok(["volume", "create", "--label", "bbbox.snapshot=sn123", "--label", "bbbox.snapshot.box=bx123", "--label", "bbbox.snapshot.install=test", "bbbox-snapshot-sn123-docker"]);
+  await cli.ok(["volume", "create", "--label", "aliabox.snapshot=sn123", "--label", "aliabox.snapshot.box=bx123", "--label", "aliabox.snapshot.install=test", "aliabox-snapshot-sn123-docker"]);
   await cli.ok(["pause", guest.ref]);
   const restarted = new DockerSnapshotEngine(cli, context, () => 100_000);
 
   assert.equal((await restarted.settle({ ref: "take:sn123@0", host: null })).state, "failed");
   assert.equal((await cli.inspect([guest.ref]))[0]?.status, "running");
-  assert.notEqual((await cli.run(["volume", "inspect", "bbbox-snapshot-sn123-docker"])).exitCode, 0);
+  assert.notEqual((await cli.run(["volume", "inspect", "aliabox-snapshot-sn123-docker"])).exitCode, 0);
   assert.deepEqual(await restarted.listed(), []);
 });
 
 test("Docker deletion leaves another install's snapshot volume alone", async () => {
   const { cli, engine, guest, hooks } = await setup();
-  await cli.ok(["volume", "create", "--label", "bbbox.snapshot=sn123", "--label", "bbbox.snapshot.box=bx123", "--label", "bbbox.snapshot.install=other", "bbbox-snapshot-sn123-docker"]);
+  await cli.ok(["volume", "create", "--label", "aliabox.snapshot=sn123", "--label", "aliabox.snapshot.box=bx123", "--label", "aliabox.snapshot.install=other", "aliabox-snapshot-sn123-docker"]);
 
   await assert.rejects(engine.remove({ id: "sn123", ref: snapshotImage("test", "bx123", "sn123"), guest }, hooks), /another box or install/);
-  assert.equal((await cli.run(["volume", "inspect", "bbbox-snapshot-sn123-docker"])).exitCode, 0);
+  assert.equal((await cli.run(["volume", "inspect", "aliabox-snapshot-sn123-docker"])).exitCode, 0);
 });
 
 test("Docker finds complete snapshots without local records", async () => {
@@ -243,8 +243,8 @@ test("Docker recovery does not take ownership of a later manual pause", async ()
 test("Docker backend release leaves snapshots for the core to manage", async () => {
   const { engine, guest, hooks, cli, fake, context } = await setup();
   await engine.take(guest, { id: "sn123", box: "bx123", memory: false }, hooks);
-  await cli.ok(["container", "create", "--name", "bbbox-bxother", "--network", "snapshot-test", "--label", "bbbox.install=test", "--label", "bbbox.box=bxother", "--volume", "/var/lib/docker", "bbbox/linux:1"]);
-  const other: Guest = { ...guest, ref: "bbbox-bxother", data: { box: "bxother" } };
+  await cli.ok(["container", "create", "--name", "aliabox-bxother", "--network", "snapshot-test", "--label", "aliabox.install=test", "--label", "aliabox.box=bxother", "--volume", "/var/lib/docker", "aliabox/linux:1"]);
+  const other: Guest = { ...guest, ref: "aliabox-bxother", data: { box: "bxother" } };
   await engine.take(other, { id: "snother", box: "bxother", memory: false }, hooks);
   const backend = new DockerBackend(dockerConfig(), context, { binary: fake.binary });
 
@@ -265,7 +265,7 @@ test("Docker deletes the snapshot tag and volume while another container uses it
 
   assert.deepEqual(await engine.listed(), []);
   assert.equal((await cli.inspect(["manual-copy"])).length, 1);
-  assert.notEqual((await cli.run(["volume", "inspect", "bbbox-snapshot-sn123-docker"])).exitCode, 0);
+  assert.notEqual((await cli.run(["volume", "inspect", "aliabox-snapshot-sn123-docker"])).exitCode, 0);
 });
 
 
@@ -317,9 +317,9 @@ test("Docker rebuilding lost records leaves a person's pause alone", async () =>
 });
 
 test("Docker snapshot changes preserve image metadata", () => {
-  const changes = commitChanges({ "bbbox.box": "source", "bbbox.image-version": "1", "bbbox.alia-app": "digest", "bbbox.image-record": "record", "bbbox.gpu-bus-id": "slot" }, {});
+  const changes = commitChanges({ "aliabox.box": "source", "aliabox.image-version": "1", "aliabox.alia-app": "digest", "aliabox.image-record": "record", "aliabox.gpu-bus-id": "slot" }, {});
 
-  assert.deepEqual(changes.filter((value) => value.startsWith("LABEL")), ['LABEL bbbox.box=""']);
+  assert.deepEqual(changes.filter((value) => value.startsWith("LABEL")), ['LABEL aliabox.box=""']);
 });
 
 
@@ -336,19 +336,19 @@ test("Docker space probes leave no volume behind and doctor does not scan box da
 
 test("Docker cleans an orphan snapshot volume without unpausing its box", async () => {
   const { engine, cli, guest } = await setup();
-  await cli.ok(["volume", "create", "--label", "bbbox.snapshot=sn123", "--label", "bbbox.snapshot.box=bx123", "--label", "bbbox.snapshot.install=test", "--label", `bbbox.snapshot.container=${guest.ref}`, "--label", "bbbox.snapshot.started=0", "--label", "bbbox.snapshot.estimate-ms=1000", "bbbox-snapshot-sn123-docker"]);
+  await cli.ok(["volume", "create", "--label", "aliabox.snapshot=sn123", "--label", "aliabox.snapshot.box=bx123", "--label", "aliabox.snapshot.install=test", "--label", `aliabox.snapshot.container=${guest.ref}`, "--label", "aliabox.snapshot.started=0", "--label", "aliabox.snapshot.estimate-ms=1000", "aliabox-snapshot-sn123-docker"]);
   await cli.ok(["pause", guest.ref]);
 
   await engine.maintain();
 
   assert.equal((await cli.inspect([guest.ref]))[0]?.status, "paused");
-  assert.notEqual((await cli.run(["volume", "inspect", "bbbox-snapshot-sn123-docker"])).exitCode, 0);
+  assert.notEqual((await cli.run(["volume", "inspect", "aliabox-snapshot-sn123-docker"])).exitCode, 0);
 });
 
 test("Docker maintenance unpauses later takes when an earlier cleanup fails", async () => {
   const { cli, guest, context } = await setup();
   await context.storage.set("docker-snapshot-take:stuck", { id: "stuck", box: "bx123", container: guest.ref, startedAt: 0, estimateMs: 1000, phase: "failed-resumed" });
-  await cli.ok(["volume", "create", "--label", "bbbox.snapshot.install=other", "bbbox-snapshot-stuck-docker"]);
+  await cli.ok(["volume", "create", "--label", "aliabox.snapshot.install=other", "aliabox-snapshot-stuck-docker"]);
   await context.storage.set("docker-snapshot-take:later", { id: "later", box: "bx123", container: guest.ref, startedAt: 0, estimateMs: 1000, phase: "taking" });
   await cli.ok(["pause", guest.ref]);
   const restarted = new DockerSnapshotEngine(cli, context, () => 100_000);
@@ -356,13 +356,13 @@ test("Docker maintenance unpauses later takes when an earlier cleanup fails", as
   await restarted.maintain();
 
   assert.equal((await cli.inspect([guest.ref]))[0]?.status, "running");
-  assert.equal((await cli.run(["volume", "inspect", "bbbox-snapshot-stuck-docker"])).exitCode, 0);
+  assert.equal((await cli.run(["volume", "inspect", "aliabox-snapshot-stuck-docker"])).exitCode, 0);
 });
 
 test("Docker recovery unpauses before a cleanup that fails", async () => {
   const { cli, guest, context } = await setup();
   await context.storage.set("docker-snapshot-take:stuck", { id: "stuck", box: "bx123", container: guest.ref, startedAt: 0, estimateMs: 1000, phase: "taking" });
-  await cli.ok(["volume", "create", "--label", "bbbox.snapshot.install=other", "bbbox-snapshot-stuck-docker"]);
+  await cli.ok(["volume", "create", "--label", "aliabox.snapshot.install=other", "aliabox-snapshot-stuck-docker"]);
   await cli.ok(["pause", guest.ref]);
   const restarted = new DockerSnapshotEngine(cli, context, () => 100_000);
 
@@ -373,7 +373,7 @@ test("Docker recovery unpauses before a cleanup that fails", async () => {
 
 test("Docker reports the commit error when cleanup also fails", async () => {
   const { engine, guest, hooks, fake } = await setup();
-  fake.set({ failSnapshotCommit: true, failVolumeRemove: "bbbox-snapshot-sn123-docker" });
+  fake.set({ failSnapshotCommit: true, failVolumeRemove: "aliabox-snapshot-sn123-docker" });
 
   await assert.rejects(engine.take(guest, { id: "sn123", box: "bx123", memory: false }, hooks), /commit failed/);
 

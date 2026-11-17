@@ -1,4 +1,4 @@
-// BBP-20: a driver that takes a run over re-attaches to the previous driver's
+// ALIAP-20: a driver that takes a run over re-attaches to the previous driver's
 // still-living agent worker instead of spawning the node a second time. Only
 // a worker that is really lost gets the node run again — exactly once.
 import { afterEach, describe, expect, it, vi } from "vitest";

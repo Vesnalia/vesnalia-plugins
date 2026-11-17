@@ -98,7 +98,7 @@ export class HostReach {
   }
 
   get labels(): Labels {
-    return { "bbbox-install": this.#options.installId };
+    return { "aliabox-install": this.#options.installId };
   }
 
   get resourceName(): string {

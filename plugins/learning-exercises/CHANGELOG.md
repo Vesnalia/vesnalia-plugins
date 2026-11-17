@@ -47,7 +47,7 @@ First release.
 
 - After a commit, new source files, a schema change or a merged pull request in one of your threads,
   an offer appears above the composer: Start a 10–15 minute exercise on it, ask again Later, or turn
-  offers off for the thread or the project. Offers are decided from bb's own data, not by an AI, and
+  offers off for the thread or the project. Offers are decided from VesnALIA's own data, not by an AI, and
   stop at 3 a day, 2 hours apart, 2 sessions per thread.
 - Start opens the exercise in a side thread forked from your work, so the work thread is left as it
   was. Agents that cannot fork run it in the same thread.
@@ -61,7 +61,7 @@ First release.
   matching pairs, a list or a table to fill in. A simple question keeps its single text box. Form
   answers appear part by part in the transcript and in the Learning tab, and survive a pause.
 - The agent's feedback on each answer shows in the chat as a card with its verdict, above the last
-  message of the turn that gave it, so bb's "Worked for" fold no longer hides it, the last answer's
+  message of the turn that gave it, so VesnALIA's "Worked for" fold no longer hides it, the last answer's
   included. The next question's card shows it above the question too, and it is kept with each
   question, so it comes back after a reload and on other devices. Sessions already under way get
   their feedback back from the thread's own messages.
@@ -72,7 +72,7 @@ First release.
   the project's paused and earlier sessions with your answers and the feedback; each can be deleted.
 - In sub-agent threads, which never get offers, the Learning tab is on the side panel's tab bar too,
   to start or resume an exercise there by hand.
-- Files named in a question open in bb with a click, at the line or range the question points to; so
+- Files named in a question open in VesnALIA with a click, at the line or range the question points to; so
   do the files in your past answers and in an offer.
 - No skill, tool or instruction from this plugin reaches an agent until you start a session.
 - Exercises adapted from Dr. Cat Hicks's Learning Opportunities (CC BY 4.0); not affiliated.

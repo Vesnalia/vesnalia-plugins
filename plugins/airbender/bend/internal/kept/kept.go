@@ -10,7 +10,7 @@
 // tracker costs a request each time. One copy above the adapters, in bend's
 // common issue shape, is written once for every tracker, and gives the
 // agent in a terminal, the Airbender tab and the sync one and the same
-// view (bead-bb-c9l.14; the owner: "we can move this cache inside of bend
+// view (bead-alia-c9l.14; the owner: "we can move this cache inside of bend
 // command").
 //
 // Design notes:
@@ -22,7 +22,7 @@
 //     machine: the change is made at once and its answer reported, then the
 //     copy is marked as behind and reread by a process started after the
 //     command. Queued, for a tracker reached over the network, is
-//     bead-bb-c9l.15; until then such a tracker is not put under this
+//     bead-alia-c9l.15; until then such a tracker is not put under this
 //     package (GitHub keeps the copy inside its adapter).
 //   - How the copy knows it is behind, without asking the tracker: the
 //     adapter's sign, where it has one (tracker.Signed; beads' is the file
@@ -629,7 +629,7 @@ func (kept *Tracker) Reopen(id string) error {
 	return kept.record(change{Kind: opReopen, ID: id})
 }
 
-// Defer puts an issue in Someday (bead-bb-26g).
+// Defer puts an issue in Someday (bead-alia-26g).
 func (kept *Tracker) Defer(id string) error {
 	if !kept.isQueued() {
 		return kept.changed(kept.inner.Defer(id))

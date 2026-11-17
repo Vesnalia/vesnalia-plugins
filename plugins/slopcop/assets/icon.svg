@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
      stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Siren beacon, outline style to match BB's stroked icon set (1.75 at a
-       24 viewBox). BB renders plugin icons as CSS masks, which key off alpha
+  <!-- Siren beacon, outline style to match ALIA's stroked icon set (1.75 at a
+       24 viewBox). ALIA renders plugin icons as CSS masks, which key off alpha
        coverage, so the stroke is deliberately an opaque literal rather than
        currentColor — currentColor has no inherited context inside a mask
        source and would not be guaranteed to resolve. -->

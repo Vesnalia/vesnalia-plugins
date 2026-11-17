@@ -29,7 +29,7 @@ const workspace: Workspace = {
     behindCount: 1,
     commits: [
       { sha: "aaaa111", shortSha: "aaaa111", subject: "First", authorName: "Ana", authoredAt: 1 },
-      { sha: "bbbb222", shortSha: "bbbb222", subject: "Second", authorName: "Ana", authoredAt: 2 },
+      { sha: "aliabb222", shortSha: "aliabb222", subject: "Second", authorName: "Ana", authoredAt: 2 },
     ],
   },
 };
@@ -52,9 +52,9 @@ test("targets: branch work by default, uncommitted on the base branch, commits b
   const onBase = { ...workspace, checkout: { kind: "branch", branchName: "master" } };
   assert.deepEqual(resolveTarget(undefined, onBase).target, { type: "uncommitted" });
   assert.deepEqual(resolveTarget(undefined, { ...workspace, checkout: { kind: "detached", headSha: "x" } }).target, { type: "uncommitted" });
-  const commit = resolveTarget("BBBB", workspace);
-  assert.deepEqual(commit.target, { type: "commit", sha: "bbbb" });
-  assert.deepEqual(commit.scope, { kind: "commit", sha: "bbbb222", subject: "Second" });
+  const commit = resolveTarget("ALIABB", workspace);
+  assert.deepEqual(commit.target, { type: "commit", sha: "aliabb" });
+  assert.deepEqual(commit.scope, { kind: "commit", sha: "aliabb222", subject: "Second" });
 });
 
 test("path filters: exact, folder, glob", () => {

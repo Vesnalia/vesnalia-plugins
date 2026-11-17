@@ -60,7 +60,7 @@ if (!process.argv.includes('--isolated')) {
       usage=await fresh.experimental_call('read',{provider:'pi',sessionId:providerSession});assert.equal(usage.aic,'1.23');assert.equal(usage.coverage,'partial');await fresh.experimental_dispose();
       const legacy=join(root,'.pi/agent/session-credits'); // Explicit default-root compatibility fixture; never a new writer destination.
       mkdirSync(legacy,{mode:0o700});
-      const newRoot=join(root,'.pi/agent/copilot-session-credits'),legacyEpoch='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',legacyCall='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+      const newRoot=join(root,'.pi/agent/copilot-session-credits'),legacyEpoch='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',legacyCall='aliabbbbbb-aliabb-4bbb-8bbb-aliabbbbbbbbbb';
       const legacyRows=readFileSync(join(newRoot,readdirSync(newRoot)[0]),'utf8').trim().split('\n').map(JSON.parse).map(row=>({...row,epoch:legacyEpoch,...row.callId?{callId:legacyCall}:{},...row.billing?.length?{billing:[{nanoAiu:'770000000'}]}:{}}));
       const legacyText=legacyRows.map(JSON.stringify).join('\n')+'\n';writeFileSync(join(legacy,legacyEpoch+'.jsonl'),legacyText,{mode:0o600});
       const combined=experimental_createHostEntryHarness(createHostEntry());

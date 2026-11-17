@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP="$HOME/Applications/BBTouchBar.app"
+APP="$HOME/Applications/AliaTouchBar.app"
 PLIST="$HOME/Library/LaunchAgents/app.getbb.touchbar.native.plist"
 DOMAIN="gui/$(id -u)"
 

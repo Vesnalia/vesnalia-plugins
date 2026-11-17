@@ -7,7 +7,7 @@ describe("git output parsers", () => {
   it("parses porcelain v2 status records, including paths with spaces", () => {
     const output = nul(
       "1 .M N... 100644 100644 100644 aaaa aaaa src/my file.ts",
-      "1 .D N... 100644 100644 000000 bbbb bbbb gone.txt",
+      "1 .D N... 100644 100644 000000 aliabb aliabb gone.txt",
       "? new dir/new.txt",
       "? nested-repo/",
       "! ignored.log",

@@ -1008,7 +1008,7 @@ test("a history reading after a restore reads the box's new guest, and a reading
   } as unknown as ReachCheck;
   const record = (guest: string): BoxRecord =>
     ({ id: "bxrestored0001", name: "amber-fox", state: "ready", guest: { ref: guest, host: null, address: null, size: null }, enrol: { state: "off", hostId: null, error: null }, capabilities: { command: {}, os: "linux" } }) as unknown as BoxRecord;
-  let current = record("bbbox-new");
+  let current = record("aliabox-new");
   let duringRun: () => void = () => {};
   const boxes = {
     find: async () => current,
@@ -1028,13 +1028,13 @@ test("a history reading after a restore reads the box's new guest, and a reading
   const signal = new AbortController().signal;
 
   await read(listedBeforeTheRestore, { own: false, machine: true }, signal);
-  assert.deepEqual(told.splice(0), ["answered bbbox-new"], "the box as it is now, not as the minute's listing had it");
+  assert.deepEqual(told.splice(0), ["answered aliabox-new"], "the box as it is now, not as the minute's listing had it");
 
-  current = record("bbbox-old");
+  current = record("aliabox-old");
   duringRun = () => {
-    current = record("bbbox-new-again");
+    current = record("aliabox-new-again");
   };
-  await assert.rejects(read(listedBeforeTheRestore, { own: false, machine: true }, signal), /bbbox-old did not answer/);
+  await assert.rejects(read(listedBeforeTheRestore, { own: false, machine: true }, signal), /aliabox-old did not answer/);
   assert.deepEqual(told.splice(0), [], "a guest the box no longer runs says nothing of the box");
 });
 

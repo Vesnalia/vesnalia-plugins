@@ -12,7 +12,7 @@ import (
 )
 
 // A helper that holds its lock but has not yet written when it started is
-// starting, never "running since" the zero time (bead-bb-p1z).
+// starting, never "running since" the zero time (bead-alia-p1z).
 func TestHelperJustStartedHasNoZeroTime(t *testing.T) {
 	got := FormatHelper(kept.HelperState{Running: true, Pid: 0, Since: 0}, nil)
 	if got != "The helper is starting." {

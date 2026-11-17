@@ -1,8 +1,8 @@
-// bb-plugin-xlsx-preview — renders .xlsx/.xlsm files as HTML tables in the file panel.
+// alia-plugin-xlsx-preview — renders .xlsx/.xlsm files as HTML tables in the file panel.
 import { useEffect, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { definePluginApp, useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
-import type { ExperimentalLiveFileTarget, PluginFileOpenerProps, PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalLiveFileTarget, PluginFileOpenerProps, PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { colName, parseXlsx, type Sheet } from "@/lib/xlsx";
 import { cn } from "@/lib/utils";
@@ -143,7 +143,7 @@ const isSheet = (p: string) => /\.(xlsx|xlsm)$/i.test(p);
 /** Thread-header button: lists spreadsheets in this thread's storage and workspace. */
 function SpreadsheetsButton({ threadId, projectId, isCompactViewport }: PluginThreadHeaderActionProps) {
   const sdk = useSdk();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [files, setFiles] = useState<Found[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

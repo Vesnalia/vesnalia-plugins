@@ -4,8 +4,8 @@ node_modules/
 coverage/
 *.tsbuildinfo
 
-# bb and agent workspace state (chat copies, notes, local settings)
-.bb/
+# alia and agent workspace state (chat copies, notes, local settings)
+.vesnalia/
 .claude/
 .codex/
 .cursor/

@@ -9,7 +9,7 @@
 // - Images: alia-box never pulls one. It imports each kind's image from
 //   Docker on the host, where setup/docker/build.sh builds it, with
 //   `docker save` and `msb load`, and again when Docker's image changes.
-// - Acquire: the box's microVM is named bbbox-<box ID>, so it is claimed
+// - Acquire: the box's microVM is named aliabox-<box ID>, so it is claimed
 //   before anything is made. It is made with its owner in its labels, at
 //   its size, with /run a tmpfs, Docker's data on an ext4 disk of its own,
 //   and the network profiles that reach VesnALIA's server. Neither `msb create`
@@ -146,7 +146,7 @@ const STARTED = "/run/alia-box-started";
  */
 const REPORTING_ORDER = "/sys/module/page_reporting/parameters/page_reporting_order";
 export const RUN_IN_MEMORY = String.raw`awk '$2 == "/run" { found = 1 } END { exit !found }' /proc/mounts || { held=$(mktemp -d /tmp/alia-box-run.XXXXXX) && cp -a /run/. "$held"/ 2>/dev/null; mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run && cp -a "$held"/. /run/ 2>/dev/null; rm -rf "$held" /run/alia-box /run/alia-box-started /run/alia-box-start.log; }`;
-export const HOSTNAME_VARIABLE = "BBBOX_HOSTNAME";
+export const HOSTNAME_VARIABLE = "ALIABOX_HOSTNAME";
 export const OWN_HOSTNAME = String.raw`h=${"$"}{${HOSTNAME_VARIABLE}:-}; [ -z "$h" ] || [ "$(hostname)" = "$h" ] || { hostname "$h"; printf '%s\n' "$h" >/etc/hostname; grep -q "[[:space:]]$h$" /etc/hosts || printf '127.0.1.1\t%s\n' "$h" >>/etc/hosts; }`;
 /** The TUN device, which msb's guest makes root's alone (#595). */
 const TUN = "/dev/net/tun";
@@ -208,19 +208,19 @@ const MSB_COMMAND: CommandCapability = { transport: "msb", shell: "sh", admin: t
 
 /** The alia-box labels on a box's microVM, from its creation. */
 export const LABELS = {
-  backend: "bbbox.backend",
-  install: "bbbox.install",
-  box: "bbbox.box",
-  thread: "bbbox.thread",
-  name: "bbbox.name",
-  kind: "bbbox.kind",
-  created: "bbbox.created",
+  backend: "aliabox.backend",
+  install: "aliabox.install",
+  box: "aliabox.box",
+  thread: "aliabox.thread",
+  name: "aliabox.name",
+  kind: "aliabox.kind",
+  created: "aliabox.created",
   /** On a refresh's trial box: the install's ID, so no sweep takes it. */
-  imageBox: "bbbox.image-box",
+  imageBox: "aliabox.image-box",
   /** On a builder microVM (#build): the install's ID. */
-  builder: "bbbox.builder",
+  builder: "aliabox.builder",
   /** On an image setup/docker/build.sh made: its record, as JSON (049). */
-  imageRecord: "bbbox.image-record",
+  imageRecord: "aliabox.image-record",
 } as const;
 
 export interface MsbBackendOptions extends MsbCliOptions {
@@ -297,7 +297,7 @@ function formatMiB(value: number): string {
 
 /** The microVM of a box. Box IDs are letters and digits; anything else becomes "-". */
 export function sandboxName(boxId: string): string {
-  return `bbbox-${boxId.replace(/[^A-Za-z0-9_.-]/g, "-")}`;
+  return `aliabox-${boxId.replace(/[^A-Za-z0-9_.-]/g, "-")}`;
 }
 
 /** A box's name as a hostname, so the shell prompt and VesnALIA's machine name agree with it. */
@@ -784,7 +784,7 @@ export class MsbBackend implements Backend {
   /** A trial box of a build, made as a box of its kind is, labelled so that no sweep takes it. */
   async #imageBox(build: ImageBuild, label: string, signal: AbortSignal): Promise<ImageBox> {
     const kind = this.#kind(build.kind);
-    const name = `bbbox-image-${randomBytes(6).toString("hex")}`;
+    const name = `aliabox-image-${randomBytes(6).toString("hex")}`;
     const { cores, memoryMiB } = this.#context.kind(build.kind).defaultSize;
     try {
       const docker = this.#dockerDisk();
@@ -817,7 +817,7 @@ export class MsbBackend implements Backend {
 
   /** Removes a trial box of this install's, or a refresh's build, and nothing else. */
   async #removeImage(ref: string, signal?: AbortSignal): Promise<void> {
-    if (ref.startsWith("bbbox-image-")) {
+    if (ref.startsWith("aliabox-image-")) {
       const found = await this.#cli.inspect(ref, signal);
       if (found && found.labels[LABELS.imageBox] !== this.#context.installId) throw new Error(`The microVM ${ref} is not a trial box of this install's, so ${PRODUCT} leaves it.`);
       if (found) await this.#cli.run(["remove", "--force", "--quiet", ref], { timeoutMs: 120_000, signal });
@@ -894,7 +894,7 @@ export class MsbBackend implements Backend {
   }
 
   #dockerDisk(): string[] {
-    return this.#config.docker ? ["--mount-owned", `${DOCKER_GUEST}:kind=disk,size=${this.#config.dockerDiskGiB}G`, "--env", "BBBOX_DOCKERD=1"] : [];
+    return this.#config.docker ? ["--mount-owned", `${DOCKER_GUEST}:kind=disk,size=${this.#config.dockerDiskGiB}G`, "--env", "ALIABOX_DOCKERD=1"] : [];
   }
 
   // Capacity and placement.
@@ -903,7 +903,7 @@ export class MsbBackend implements Backend {
     await this.#install(signal);
     const facts = await this.#hostFacts(signal);
     const [all, availableMiB] = await Promise.all([this.#cli.status(signal), this.#available(facts, signal)]);
-    return { facts, boxes: all.filter((box) => box.name.startsWith("bbbox-")), availableMiB };
+    return { facts, boxes: all.filter((box) => box.name.startsWith("aliabox-")), availableMiB };
   }
 
   /**
@@ -1450,7 +1450,7 @@ export class MsbBackend implements Backend {
       let state: HostState | null = null;
       try {
         state = facts.installed
-          ? { facts, boxes: (await this.#cli.status(signal)).filter((box) => box.name.startsWith("bbbox-")), availableMiB: await this.#available(facts, signal) }
+          ? { facts, boxes: (await this.#cli.status(signal)).filter((box) => box.name.startsWith("aliabox-")), availableMiB: await this.#available(facts, signal) }
           : { facts, boxes: [], availableMiB: null };
       } catch (error) {
         if (signal?.aborted) throw error;
@@ -1741,7 +1741,7 @@ export class MsbBackend implements Backend {
   }
 
   async #claimRestored(name: string, box: BoxIdentity, value: string, diskGiB: number | null, signal: AbortSignal | undefined): Promise<SandboxInfo> {
-    const env = [`${IDENTITY_VARIABLE}=${value}`, `${HOSTNAME_VARIABLE}=${hostnameOf(box.name)}`, ...(this.#config.docker ? ["BBBOX_DOCKERD=1"] : [])];
+    const env = [`${IDENTITY_VARIABLE}=${value}`, `${HOSTNAME_VARIABLE}=${hostnameOf(box.name)}`, ...(this.#config.docker ? ["ALIABOX_DOCKERD=1"] : [])];
     await this.#cli.ok(
       ["modify", name, ...Object.entries(this.#labels(box)).flatMap(([key, label]) => ["--label", `${key}=${label}`]), ...env.flatMap((each) => ["--env", each]), "--next-start", "--format", "json"],
       { timeoutMs: 60_000, signal },

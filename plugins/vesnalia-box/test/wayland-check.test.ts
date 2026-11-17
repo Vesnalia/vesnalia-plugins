@@ -23,7 +23,7 @@ function sandbox(): { root: string; run: string; libexec: string; bin: string } 
   writeFileSync(
     join(bin, "swaymsg"),
     `#!/bin/bash
-[ "\${SWAYSOCK:-}" = "$BBBOX_RUN_DIR/sway.sock" ] || { echo "[swaymsg/main.c:509] Unable to retrieve socket path" >&2; exit 1; }
+[ "\${SWAYSOCK:-}" = "$ALIABOX_RUN_DIR/sway.sock" ] || { echo "[swaymsg/main.c:509] Unable to retrieve socket path" >&2; exit 1; }
 case "$*" in
   *get_version*) echo '{"human_readable": "1.11"}' ;;
   *get_outputs*) echo '[{"name": "HEADLESS-1", "rect": {"width": 1920, "height": 1080}}]' ;;
@@ -42,7 +42,7 @@ function swayWritesItsEnvironment(run: string): void {
 async function checkLinesUpToSway(box: ReturnType<typeof sandbox>): Promise<string[]> {
   const check = spawn("bash", [join(GUEST, "check-desktop-wayland.sh")], {
     detached: true,
-    env: { PATH: `${box.bin}:/usr/bin:/bin`, HOME: box.root, BBBOX_RUN_DIR: box.run, BBBOX_LIBEXEC: box.libexec },
+    env: { PATH: `${box.bin}:/usr/bin:/bin`, HOME: box.root, ALIABOX_RUN_DIR: box.run, ALIABOX_LIBEXEC: box.libexec },
     stdio: ["ignore", "pipe", "ignore"],
   });
   const lines: string[] = [];

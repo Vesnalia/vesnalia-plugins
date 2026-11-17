@@ -99,12 +99,12 @@ describe("parseLifecycle", () => {
 
 describe("parseMarker", () => {
   it("accepts one distinct marker only", () => {
-    expect(parseMarker("done\nBB_GITEA_AUTO_FIX: MERGED")).toBe("merged");
+    expect(parseMarker("done\nALIA_GITEA_AUTO_FIX: MERGED")).toBe("merged");
     expect(
-      parseMarker("ALIA_GITEA_AUTO_FIX: MERGED\nBB_GITEA_AUTO_FIX: MERGED"),
+      parseMarker("ALIA_GITEA_AUTO_FIX: MERGED\nALIA_GITEA_AUTO_FIX: MERGED"),
     ).toBe("merged");
     expect(
-      parseMarker("ALIA_GITEA_AUTO_FIX: MERGED\nBB_GITEA_AUTO_FIX: FAILED"),
+      parseMarker("ALIA_GITEA_AUTO_FIX: MERGED\nALIA_GITEA_AUTO_FIX: FAILED"),
     ).toBeNull();
     expect(parseMarker("ALIA_GITHUB_AUTO_FIXER: MERGED")).toBeNull();
     expect(parseMarker(null)).toBeNull();
@@ -248,13 +248,13 @@ describe("transitions", () => {
     expect(
       onIdle(
         watching,
-        "Need a token.\nBB_GITEA_AUTO_FIX: NEEDS_YOU",
+        "Need a token.\nALIA_GITEA_AUTO_FIX: NEEDS_YOU",
         open,
         now,
       ),
     ).toMatchObject({
       status: "needs_you",
-      note: "Need a token.\nBB_GITEA_AUTO_FIX: NEEDS_YOU",
+      note: "Need a token.\nALIA_GITEA_AUTO_FIX: NEEDS_YOU",
     });
     expect(
       onIdle(

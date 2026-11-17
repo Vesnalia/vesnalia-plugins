@@ -1398,10 +1398,10 @@ PY
 # File-handoff question protocol. Writes ask/pending.json, blocks until
 # ask/answer.json appears or the timeout lapses. Hosts fulfill by rendering
 # their own UI or by watching the directory — the CLI never renders.
-# Identity comes from STELOW_THREAD_ID (fallback BB_THREAD_ID) only; there
+# Identity comes from STELOW_THREAD_ID (fallback ALIA_THREAD_ID) only; there
 # is no --thread flag (explicit ids get copied wrong — see plugin history).
 do_ask() {
-  local thread_id="${STELOW_THREAD_ID:-${BB_THREAD_ID:-}}"
+  local thread_id="${STELOW_THREAD_ID:-${ALIA_THREAD_ID:-}}"
   [ -n "$thread_id" ] || usage_error "ask needs a worker identity: export STELOW_THREAD_ID (no --thread flag; identity is never copied by hand)"
   local timeout_ms="${STELOW_ASK_TIMEOUT_MS:-3600000}"
   case "$timeout_ms" in ''|*[!0-9]*) usage_error "ask: STELOW_ASK_TIMEOUT_MS must be a millisecond integer" ;; esac
@@ -2612,7 +2612,7 @@ PY
 # A selection the worker writes down itself is self-attestation, and a receipt
 # nobody reads is decoration. The worker proposes through this verb; the helper
 # mints the host-side record into <statedir>/decision-receipts.json — the same
-# file and schema the BB plugin reads and writes, so the two never diverge.
+# file and schema the ALIA plugin reads and writes, so the two never diverge.
 # Contradicting a live receipt refuses unless --challenge names it.
 do_decide() {
   python3 - "$STATEDIR" "$STATE" "$@" <<'PY' || exit $?
@@ -2620,7 +2620,7 @@ import json, os, re, sys, tempfile, datetime
 statedir, state_path, argv = sys.argv[1], sys.argv[2], sys.argv[3:]
 STORE = os.path.join(statedir, "decision-receipts.json")
 ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
-# Receipt contract v1, shared with the BB plugin (lib/decision-receipts.mjs).
+# Receipt contract v1, shared with the ALIA plugin (lib/decision-receipts.mjs).
 # A helper that emits anything else breaks every host that reads this file.
 SCHEMA_VERSION = 1
 

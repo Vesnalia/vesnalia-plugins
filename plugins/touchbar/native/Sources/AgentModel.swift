@@ -51,7 +51,7 @@ struct AgentSnapshot: Equatable {
     var done: Int { agents.filter { $0.status == .done }.count }
 }
 
-private struct BBSnapshot: Decodable {
+private struct AliaSnapshot: Decodable {
     struct Summary: Decodable {
         let active: Int
         let attention: Int
@@ -82,7 +82,7 @@ private struct BBSnapshot: Decodable {
     let usage: [Usage]?
 }
 
-private struct BBHostSnapshot: Decodable {
+private struct AliaHostSnapshot: Decodable {
     struct Thresholds: Decodable {
         let attentionPercent: Double
         let criticalPercent: Double
@@ -136,7 +136,7 @@ final class AgentStore {
                     self.publish(next)
                     if failuresBeforePoll > 0 {
                         NativeLog.info(
-                            "BB reconnected after \(failuresBeforePoll) failed poll(s)"
+                            "ALIA reconnected after \(failuresBeforePoll) failed poll(s)"
                         )
                     }
                 } else {
@@ -146,7 +146,7 @@ final class AgentStore {
                         stale.connected = false
                         self.publish(stale)
                         NativeLog.error(
-                            "BB entering reconnecting after \(self.consecutiveFailures) failed poll(s)"
+                            "ALIA entering reconnecting after \(self.consecutiveFailures) failed poll(s)"
                         )
                     }
                 }
@@ -180,7 +180,7 @@ final class AgentStore {
     }
 
     private static func fetch(previousHosts: [HostMetricEntry]) -> AgentSnapshot? {
-        guard let data = BBCommand.run(["touchbar", "snapshot"], timeout: 5) else {
+        guard let data = AliaCommand.run(["touchbar", "snapshot"], timeout: 5) else {
             NativeLog.debug("snapshot command returned no data")
             return nil
         }
@@ -188,7 +188,7 @@ final class AgentStore {
             NativeLog.error("snapshot output too large")
             return nil
         }
-        guard let payload = try? JSONDecoder().decode(BBSnapshot.self, from: data) else {
+        guard let payload = try? JSONDecoder().decode(AliaSnapshot.self, from: data) else {
             NativeLog.error("snapshot JSON could not be decoded (\(data.count) bytes)")
             return nil
         }
@@ -225,14 +225,14 @@ final class AgentStore {
 
     private static func fetchHosts(fallback: [HostMetricEntry]) -> [HostMetricEntry] {
         let enabled = UserDefaults.standard.object(
-            forKey: "BBTouchBarShowHostMonitor"
+            forKey: "AliaTouchBarShowHostMonitor"
         ) as? Bool ?? true
         guard enabled else {
             return fallback
         }
-        guard let data = BBCommand.run(["host-monitor", "snapshot"], timeout: 5),
+        guard let data = AliaCommand.run(["host-monitor", "snapshot"], timeout: 5),
               data.count <= 65_536,
-              let payload = try? JSONDecoder().decode(BBHostSnapshot.self, from: data),
+              let payload = try? JSONDecoder().decode(AliaHostSnapshot.self, from: data),
               payload.schemaVersion == 1 else {
             NativeLog.debug("host monitor snapshot unavailable")
             return fallback
@@ -254,7 +254,7 @@ final class AgentStore {
         }
     }
 
-    private static func status(for thread: BBSnapshot.Thread) -> AgentStatus {
+    private static func status(for thread: AliaSnapshot.Thread) -> AgentStatus {
         if thread.status == "error" { return .error }
         if thread.attention == "input" { return .blocked }
         if thread.status == "active" || thread.status == "stopping" { return .working }
@@ -266,13 +266,13 @@ final class AgentStore {
 
     static func focus(_ entry: AgentEntry) {
         DispatchQueue.global(qos: .userInitiated).async {
-            let opened = BBCommand.run(
+            let opened = AliaCommand.run(
                 ["touchbar", "open", entry.id], timeout: 5
             ) != nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 if opened {
-                    NativeLog.info("opened thread \(entry.id) in BB")
-                    activateBB()
+                    NativeLog.info("opened thread \(entry.id) in ALIA")
+                    activateALIA()
                 } else {
                     NativeLog.error("could not open thread \(entry.id)")
                 }
@@ -285,30 +285,30 @@ final class AgentStore {
         completion: @escaping (Bool) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
-            let opened = BBCommand.run(
+            let opened = AliaCommand.run(
                 ["host-monitor", "open", hostId], timeout: 5
             ) != nil
             DispatchQueue.main.async {
-                if opened { activateBB() }
+                if opened { activateALIA() }
                 completion(opened)
             }
         }
     }
 
-    private static func activateBB() {
+    private static func activateALIA() {
         let workspace = NSWorkspace.shared
         if let app = workspace.runningApplications.first(where: {
-            $0.bundleIdentifier == "dev.bb.desktop" ||
-                $0.localizedName?.caseInsensitiveCompare("bb") == .orderedSame
+            $0.bundleIdentifier == "dev.alia.desktop" ||
+                $0.localizedName?.caseInsensitiveCompare("alia") == .orderedSame
         }) {
             app.activate(options: [.activateAllWindows])
-            NativeLog.info("activated BB for selected thread")
+            NativeLog.info("activated ALIA for selected thread")
             return
         }
         guard let url = workspace.urlForApplication(
-            withBundleIdentifier: "dev.bb.desktop"
+            withBundleIdentifier: "dev.alia.desktop"
         ) else {
-            NativeLog.error("BB desktop application was not found")
+            NativeLog.error("ALIA desktop application was not found")
             return
         }
         let configuration = NSWorkspace.OpenConfiguration()
@@ -316,27 +316,27 @@ final class AgentStore {
         workspace.openApplication(at: url, configuration: configuration) {
             _, error in
             if let error {
-                NativeLog.error("could not activate BB: \(error.localizedDescription)")
+                NativeLog.error("could not activate ALIA: \(error.localizedDescription)")
             }
         }
     }
 }
 
-enum BBCommand {
+enum AliaCommand {
     private static let maximumOutputBytes = 65_536
     private static let terminationGraceInterval: TimeInterval = 0.4
 
     static func run(_ arguments: [String], timeout: TimeInterval = 1.5) -> Data? {
-        guard let executable = NativeConfig.bbExecutable else { return nil }
+        guard let executable = NativeConfig.aliaExecutable else { return nil }
         let process = Process()
         let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("bb-touchbar-\(UUID().uuidString).out")
+            .appendingPathComponent("alia-touchbar-\(UUID().uuidString).out")
         guard FileManager.default.createFile(
             atPath: outputURL.path,
             contents: nil,
             attributes: [.posixPermissions: 0o600]
         ), let output = try? FileHandle(forWritingTo: outputURL) else {
-            NativeLog.error("could not create bounded bb output file")
+            NativeLog.error("could not create bounded alia output file")
             return nil
         }
         defer {
@@ -355,7 +355,7 @@ enum BBCommand {
         process.standardError = FileHandle.nullDevice
 
         do { try process.run() } catch {
-            NativeLog.error("could not launch bb: \(error.localizedDescription)")
+            NativeLog.error("could not launch alia: \(error.localizedDescription)")
             return nil
         }
         let deadline = Date().addingTimeInterval(timeout)
@@ -363,14 +363,14 @@ enum BBCommand {
             Thread.sleep(forTimeInterval: 0.04)
         }
         if process.isRunning {
-            NativeLog.error("bb command timed out: \(arguments.first ?? "unknown")")
+            NativeLog.error("alia command timed out: \(arguments.first ?? "unknown")")
             process.terminate()
             let terminateDeadline = Date().addingTimeInterval(terminationGraceInterval)
             while process.isRunning && Date() < terminateDeadline {
                 Thread.sleep(forTimeInterval: 0.02)
             }
             if process.isRunning {
-                NativeLog.error("bb did not terminate; forcing exit")
+                NativeLog.error("alia did not terminate; forcing exit")
                 Darwin.kill(process.processIdentifier, SIGKILL)
                 let killDeadline = Date().addingTimeInterval(terminationGraceInterval)
                 while process.isRunning && Date() < killDeadline {
@@ -378,7 +378,7 @@ enum BBCommand {
                 }
             }
             if process.isRunning {
-                NativeLog.error("bb process remained alive after forced exit")
+                NativeLog.error("alia process remained alive after forced exit")
             }
             return nil
         }
@@ -389,11 +389,11 @@ enum BBCommand {
         let size = (attributes?[.size] as? NSNumber)?.intValue ?? 0
         guard size <= maximumOutputBytes,
               let data = try? Data(contentsOf: outputURL) else {
-            NativeLog.error("bb output too large")
+            NativeLog.error("alia output too large")
             return nil
         }
         guard process.terminationStatus == 0 else {
-            NativeLog.error("bb exited with status \(process.terminationStatus)")
+            NativeLog.error("alia exited with status \(process.terminationStatus)")
             return nil
         }
         return data

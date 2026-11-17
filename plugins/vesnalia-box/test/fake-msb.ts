@@ -41,8 +41,8 @@ export interface FakeMsbHost {
 /** As setup/docker/build.sh labels its images: a fresh record (049). */
 export function imageLabels(kind: string, build = "build.fake"): Record<string, string> {
   return {
-    "bbbox.image-version": "1",
-    "bbbox.image-record": JSON.stringify({ contract: 1, image: "standard", kind, arch: "x86_64", build, built: new Date().toISOString(), os: "Ubuntu 24.04.5 LTS", tools: { node: "24.21.0" } }),
+    "aliabox.image-version": "1",
+    "aliabox.image-record": JSON.stringify({ contract: 1, image: "standard", kind, arch: "x86_64", build, built: new Date().toISOString(), os: "Ubuntu 24.04.5 LTS", tools: { node: "24.21.0" } }),
   };
 }
 
@@ -56,10 +56,10 @@ export function fakeMsbHost(options: { imported?: boolean } = {}): FakeMsbHost {
   writeFileSync(binary, `#!/bin/sh\nFAKE_MSB_ROOT='${root}' exec '${process.execPath}' '${script}' "$@"\n`);
   chmodSync(binary, 0o755);
   const docker = new Map([
-    ["bbbox/linux:1", { id: "sha256:linux1", labels: imageLabels("linux") }],
-    ["bbbox/linux-desktop:1", { id: "sha256:desktop1", labels: imageLabels("linux-desktop") }],
-    ["bbbox/linux:1-arm64", { id: "sha256:linuxarm1", labels: imageLabels("linux-arm64") }],
-    ["bbbox/linux-desktop:1-arm64", { id: "sha256:desktoparm1", labels: imageLabels("linux-arm64-desktop-cpu") }],
+    ["aliabox/linux:1", { id: "sha256:linux1", labels: imageLabels("linux") }],
+    ["aliabox/linux-desktop:1", { id: "sha256:desktop1", labels: imageLabels("linux-desktop") }],
+    ["aliabox/linux:1-arm64", { id: "sha256:linuxarm1", labels: imageLabels("linux-arm64") }],
+    ["aliabox/linux-desktop:1-arm64", { id: "sha256:desktoparm1", labels: imageLabels("linux-arm64-desktop-cpu") }],
   ]);
   const imagesFile = join(root, "images.json");
   const readImages = (): Record<string, Record<string, string>> => (existsSync(imagesFile) ? JSON.parse(readFileSync(imagesFile, "utf8")) : {});

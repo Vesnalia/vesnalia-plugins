@@ -1,11 +1,11 @@
-// bb-box-type: types text on a Wayland desktop through a virtual keyboard
+// alia-box-type: types text on a Wayland desktop through a virtual keyboard
 // with a fixed US layout (evdev, pc105, us), so every app takes each key as
 // a person's (#707). wtype makes a keymap up as it goes, and Chrome
 // mishandled some of its keycodes: "/" deleted the character before it,
 // and spaces went missing. Text with a character that layout lacks types
 // nothing and exits 3, so the caller pastes it instead. Built by the
 // Wayland desktop template (customize-desktop-wayland.sh) as
-// /usr/local/libexec/bb-box/type.
+// /usr/local/libexec/alia-box/type.
 //
 // usage: type [delay-ms] < text   (WAYLAND_DISPLAY in the environment)
 // Exits 0 when typed (empty text types nothing), 3 when the text has a
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   struct xkb_rule_names names = {.rules = "evdev", .model = "pc105", .layout = "us"};
   struct xkb_keymap *keymap = context ? xkb_keymap_new_from_names(context, &names, XKB_KEYMAP_COMPILE_NO_FLAGS) : NULL;
   if (!keymap) {
-    fprintf(stderr, "bb-box-type: no US keymap\n");
+    fprintf(stderr, "alia-box-type: no US keymap\n");
     return 1;
   }
   for (xkb_keycode_t key = xkb_keymap_min_keycode(keymap); key <= xkb_keymap_max_keycode(keymap); key++) {
@@ -104,14 +104,14 @@ int main(int argc, char **argv) {
 
   struct wl_display *display = wl_display_connect(NULL);
   if (!display) {
-    fprintf(stderr, "bb-box-type: no Wayland display\n");
+    fprintf(stderr, "alia-box-type: no Wayland display\n");
     return 1;
   }
   struct wl_registry *registry = wl_display_get_registry(display);
   wl_registry_add_listener(registry, &registry_listener, NULL);
   wl_display_roundtrip(display);
   if (!seat || !manager) {
-    fprintf(stderr, "bb-box-type: the compositor offers no virtual keyboard\n");
+    fprintf(stderr, "alia-box-type: the compositor offers no virtual keyboard\n");
     return 1;
   }
   struct wl_proxy *keyboard =
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 
   char *map = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
   size_t map_size = strlen(map) + 1;
-  int fd = memfd_create("bb-box-keymap", MFD_CLOEXEC);
+  int fd = memfd_create("alia-box-keymap", MFD_CLOEXEC);
   if (fd < 0 || write(fd, map, map_size) != (ssize_t)map_size) return 1;
   wl_proxy_marshal_flags(keyboard, 0, NULL, 1, 0, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, fd, (uint32_t)map_size);
   wl_display_roundtrip(display);

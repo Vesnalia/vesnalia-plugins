@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""connect-probe — a session's page as a remote reader gets it, through this bb's Connect origin (cell E2).
+"""connect-probe — a session's page as a remote reader gets it, through this alia's Connect origin (cell E2).
 
-What it does: finds this bb's Connect origin (`bb connect status`) and the session's page address on it (PAGE_PATH).
+What it does: finds this alia's Connect origin (`alia connect status`) and the session's page address on it (PAGE_PATH).
 Without a reader credential it checks what anyone on the internet gets: the page address answers, asks for sign-in,
 and shows nothing of the page. With a reader credential (`--cookie-file`, the Set-Cookie value of a signed-in reader,
 exported by the owner) it also loads the page in a browser engine through the origin (Playwright, resolved from
@@ -12,7 +12,7 @@ release passed every loopback check and failed for remote readers on its own fil
 an authenticated origin. Without a credential the probe still catches an origin that is down or leaks a page.
 When it does not: to test the page's logic; the fixture on loopback does that for less.
 
-How to run (python3, standard library; calls bb, and node with Playwright for the signed-in half):
+How to run (python3, standard library; calls alia, and node with Playwright for the signed-in half):
   python3 verify/connect-probe [--session <scratch session>] [--cookie-file F --playwright-from DIR] [--json]
 Exit: 0 clean (coverage says how much ran) · 1 the gate leaked, the origin failed, or the signed-in load failed ·
 2 setup.
@@ -68,10 +68,10 @@ def sh(cmd, timeout=600):
 
 
 def origin():
-    rc, out, err = sh(["bb", "connect", "status"])
+    rc, out, err = sh(["alia", "connect", "status"])
     m = re.search(r"^\S+\s+(https://\S+)\s+connected", out, re.M)
     if rc or not m:
-        raise Setup(f"bb Connect is not connected: {(out or err).strip()[:200]}")
+        raise Setup(f"alia Connect is not connected: {(out or err).strip()[:200]}")
     return m.group(1).rstrip("/")
 
 
@@ -88,7 +88,7 @@ def anonymous(url):
     leaked = "tp-frame-host" in body or "window.threadPage" in body
     gated = status in (401, 403) or (status in (302, 303) and "sign" in body.lower())
     ok = gated and not leaked
-    return ok, f"anonymous GET {status}{', sign-in page' if 'sign' in body.lower() or 'bb connect' in body else ''}" \
+    return ok, f"anonymous GET {status}{', sign-in page' if 'sign' in body.lower() or 'alia connect' in body else ''}" \
                f"{', PAGE CONTENT LEAKED' if leaked else ', no page content'}"
 
 
@@ -109,8 +109,8 @@ def parse_cookie(text):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="connect-probe: E2, the page through the bb Connect origin")
-    ap.add_argument("--session", help="the session whose page to read (default $BB_THREAD_ID)")
+    ap = argparse.ArgumentParser(description="connect-probe: E2, the page through the alia Connect origin")
+    ap.add_argument("--session", help="the session whose page to read (default $ALIA_THREAD_ID)")
     ap.add_argument("--cookie-file", help="a signed-in reader's Set-Cookie value: also load the page signed in")
     ap.add_argument("--playwright-from", help="a folder whose node_modules hold playwright (with --cookie-file)")
     ap.add_argument("--json", action="store_true")
@@ -118,9 +118,9 @@ def main():
     notes, ok = [], True
     try:
         base = origin()
-        session = a.session or os.environ.get("BB_THREAD_ID")
+        session = a.session or os.environ.get("ALIA_THREAD_ID")
         if not session:
-            raise Setup("no session: pass --session or run inside a bb thread")
+            raise Setup("no session: pass --session or run inside a alia thread")
         url = base + PAGE_PATH.format(session=session)
         gate_ok, ev = anonymous(url)
         ok &= gate_ok

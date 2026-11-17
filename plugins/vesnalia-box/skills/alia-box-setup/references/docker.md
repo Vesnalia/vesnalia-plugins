@@ -77,11 +77,11 @@ the PC, in PowerShell 7 as an administrator. Follow
 
 When VesnALIA's server is another machine and the PC is a VesnALIA machine, the
 backend's `host` is already `alia:<machine ID>`. Set `machine-docker-host` to
-`wsl://<distro>` (the distribution the script created, `bbdocker` unless
+`wsl://<distro>` (the distribution the script created, `aliadocker` unless
 they named another):
 
 ```sh
-alia box backend set docker:<name> --field machine-docker-host=wsl://bbdocker
+alia box backend set docker:<name> --field machine-docker-host=wsl://aliadocker
 ```
 
 alia-box sends that when the machine's relay opens. The Windows daemon dials
@@ -90,7 +90,7 @@ and docker context alone. Do not set them to `wsl://`: `docker.exe` does not
 understand it. `tcp://127.0.0.1:2375` is WSL's localhost forwarder, which
 drops attached output, so `docker exec` prints nothing and exits 0.
 
-When VesnALIA runs on the PC itself, set `host` to `wsl://bbdocker` instead.
+When VesnALIA runs on the PC itself, set `host` to `wsl://aliadocker` instead.
 When the PC is not a VesnALIA machine, set `host` to `ssh://box@<pc>:2222`.
 
 ## Fields worth knowing
@@ -101,7 +101,7 @@ When the PC is not a VesnALIA machine, set `host` to `ssh://box@<pc>:2222`.
 | --- | --- | --- |
 | `host` | empty | `unix:///path/docker.sock`, `ssh://user@host`, `wsl://distro`, `tcp://host:port`, `alia:<machine ID>`, or empty for the `docker` CLI's own default |
 | `machine-docker-host` | empty | For a `alia:<machine ID>` host: `wsl://distro`, a unix socket or `tcp://host:port` on that machine. Empty leaves the machine's own `DOCKER_HOST`. On Windows set `wsl://<distro>` |
-| `linux-image`, `desktop-image`, `wayland-desktop-image` | `bbbox/...:1` | The image of each kind. Empty turns the kind off here |
+| `linux-image`, `desktop-image`, `wayland-desktop-image` | `aliabox/...:1` | The image of each kind. Empty turns the kind off here |
 | `privileged` | `true` | Boxes have Docker of their own and can take over the host |
 | `gpus` | `false` | GPU boxes: offers `linux` with a GPU and `linux-desktop` on the host's NVIDIA cards, through CDI. Unset, the replaced `gpu-desktops` is read |
 | `boxes-per-card` | 4 | The most boxes on one card, of every install, running or stopped. Unset, the replaced `desktops-per-gpu` is read |

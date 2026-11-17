@@ -34,7 +34,7 @@ docs/local/
 # Editor and agent workspace state
 .idea/
 .vscode/
-.bb/
+.vesnalia/
 .codex/
 .agents/
 .DS_Store

@@ -1,11 +1,11 @@
 [Unit]
-Description=bb-box: the host's GPU helper, which reports each GPU in the notes of VM bb-box-gpu-memory and answers boxes' GPU markers
-After=pve-cluster.service bb-box-nvidia-devices.service bb-box-gpu-boot.service
+Description=alia-box: the host's GPU helper, which reports each GPU in the notes of VM alia-box-gpu-memory and answers boxes' GPU markers
+After=pve-cluster.service alia-box-nvidia-devices.service alia-box-gpu-boot.service
 Wants=pve-cluster.service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/sbin/bb-box-gpu --dry-run
+ExecStart=/usr/local/sbin/alia-box-gpu --dry-run
 Restart=always
 RestartSec=5
 TimeoutStopSec=10

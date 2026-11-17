@@ -36,10 +36,10 @@ export const LEAD_TOOL_NAMES = ["crew_deliver"] as const;
 /** §4.5: tools that change the team. Other members do not get them at all, and the tools re-check the lead at call time. */
 export const LEAD_ADMIN_TOOL_NAMES = ["crew_add_member", "crew_remove_member", "crew_reset", "crew_status"] as const;
 export const INTEGRATOR_TOOL_NAMES = ["crew_merges", "crew_merge"] as const;
-/** BBP-30: only for members whose crew.yaml lists at least one graph. */
+/** ALIAP-30: only for members whose crew.yaml lists at least one graph. */
 export const GRAPH_TOOL_NAME = "crew_graph_run";
 
-/** The `graphs:` names crew.yaml gave this member (BBP-30), or none. */
+/** The `graphs:` names crew.yaml gave this member (ALIAP-30), or none. */
 export function memberGraphs(config: Record<string, unknown>): string[] {
   return Array.isArray(config.graphs) ? config.graphs.filter((entry): entry is string => typeof entry === "string") : [];
 }

@@ -18,15 +18,15 @@ M = [
      "    account.team !== true &&\n    account.weekly.absent !== true", "    account.weekly.absent !== true",
      "server.test.ts", "T1 reserve"),
     ("T2 pin a Team", "un `use` no repregunta", "server.ts",
-     '''        void bb.experimental_hooks
+     '''        void alia.experimental_hooks
           .recheck("message.dispatch")
           .catch((error: unknown) =>
-            bb.log.warn(
-              `bb not asked again after a pick''',
+            alia.log.warn(
+              `alia not asked again after a pick''',
      '''        void Promise.resolve()
           .catch((error: unknown) =>
-            bb.log.warn(
-              `bb not asked again after a pick''',
+            alia.log.warn(
+              `alia not asked again after a pick''',
      "server.test.ts", "T2 a pin"),
     # La reserva decide en dos sitios (chooseAccount y spendsReservedWeekly en
     # decidePlacement): el mutante de la tabla del plan muere en la política, y el
@@ -99,7 +99,7 @@ M = [
      "        `thread ${thread.id}: not placed (another thread is about to start on ${fromName})`,\n      );\n      return;\n", "        `thread ${thread.id}: not placed (another thread is about to start on ${fromName})`,\n      );\n      await markHandled(projectId);\n      return;\n",
      "server.test.ts", "T16 a sibling"),
     ("T16 hermano", "un mensaje encolado tras un turno cuenta como arranque", "server.ts",
-     "      // Queued behind a turn: bb asks again when it sends the message.\n      TURN_UNDER_WAY.has(thread.status) ||\n", "",
+     "      // Queued behind a turn: alia asks again when it sends the message.\n      TURN_UNDER_WAY.has(thread.status) ||\n", "",
      "server.test.ts", "T16 a sibling"),
     ("T16 hermano", "la retención se renueva con cada pregunta", "server.ts",
      "        first: toldToStart.get(thread.id)?.first ?? at,\n", "        first: at,\n",
@@ -211,7 +211,7 @@ M = [
      "server.test.ts", "an account unknown for now"),
     ("T5 agotada", "los intentos no se devuelven al salir", "server.ts",
      "    waitAsked.delete(threadId);\n    blockedWaits.delete(threadId);\n", "    waitAsked.delete(threadId);\n",
-     "server.test.ts", "a bb that fails every write"),
+     "server.test.ts", "a alia that fails every write"),
     ("T13 atasco", "salir no olvida la espera", "server.ts",
      "    } else if (ctx.attempt === \"start-turn\") {\n      forgetWait(ctx.thread.id);\n", "    } else if (ctx.attempt === \"start-turn\") {\n",
      "server.test.ts", "the wait is forgotten once it goes"),
@@ -236,9 +236,9 @@ M = [
     ("T5 agotada", "cancelar no devuelve los intentos", "server.ts",
      "    await forgetCancelledWait(entry.threadId);\n", "",
      "server.test.ts", "a message cancelled by hand"),
-    ("T5 agotada", "espera sin tope si bb falla al escribir", "server.ts",
+    ("T5 agotada", "espera sin tope si alia falla al escribir", "server.ts",
      "if (waited < BLOCKED_WAITS) {", "if (waited >= 0) {",
-     "server.test.ts", "a bb that fails every write"),
+     "server.test.ts", "a alia that fails every write"),
     ("T5 agotada", "plaza propia con la capacidad bajada", "server.ts",
      "? Math.max(freeSeats(name), 0) + 1", "? freeSeats(name) + 1",
      "server.test.ts", "admitted, with the capacity lowered"),
@@ -300,9 +300,9 @@ M = [
     ("T13 atasco", "[] al fallar la lectura", "server.ts",
      'return typeof read === "object" ? read.value : null;', 'return typeof read === "object" ? read.value : [];',
      "server.test.ts", "an unreadable queue"),
-    ("T13 atasco", "un hueco de bb borra la antigüedad", "server.ts",
+    ("T13 atasco", "un hueco de alia borra la antigüedad", "server.ts",
      "        readAt - asked > WAIT_FORGOTTEN_MS &&\n", "        readAt - asked > -1 &&\n",
-     "server.test.ts", "a row bb hides"),
+     "server.test.ts", "a row alia hides"),
     ("T13 atasco", "cancelar no borra la antigüedad", "server.ts",
      "    await forgetCancelledWait(entry.threadId);\n", "",
      "server.test.ts", "the last held message cancelled"),
@@ -354,9 +354,9 @@ M = [
     ("C7 canario", "sin nadie en el caso no olvida el aviso", "scripts/canario-cola.mjs",
      "      delete avisado[SIN_DESTINO];\n  } else if (avisado", "      void 0;\n  } else if (avisado",
      "scripts/canario-cola.test.ts", ""),
-    ("C7 canario", "un bb colgado lo deja parado", "scripts/canario-cola.mjs",
-     "          timeout: BB_MS,\n", "",
-     "scripts/canario-cola.test.ts", "un bb colgado"),
+    ("C7 canario", "un alia colgado lo deja parado", "scripts/canario-cola.mjs",
+     "          timeout: ALIA_MS,\n", "",
+     "scripts/canario-cola.test.ts", "un alia colgado"),
     ("C7 canario", "sin poder mirar no avisa nunca", "scripts/canario-cola.mjs",
      "      return avisarFallo({ motivo: error.message });\n", "",
      "scripts/canario-cola.test.ts", ""),
@@ -372,7 +372,7 @@ M = [
     ("C7 canario", "se fía de la ventana que solo el reloj da por libre", "scripts/canario-cola.mjs",
      "propia?.sinConfirmar === true || exacto(propia) >= 100", "exacto(propia) >= 100",
      "scripts/canario-cola.test.ts", ""),
-    ("C7 canario", "un hueco de bb borra la antigüedad", "scripts/canario-cola.mjs",
+    ("C7 canario", "un hueco de alia borra la antigüedad", "scripts/canario-cola.mjs",
      "if (ahora - cuando < OLVIDO_MS && estado.primeraVez?.[id] !== undefined) {", "if (ahora - cuando < -1 && estado.primeraVez?.[id] !== undefined) {",
      "scripts/canario-cola.test.ts", ""),
     ("C7 canario", "lectura fallida sale con 0", "scripts/canario-cola.mjs",

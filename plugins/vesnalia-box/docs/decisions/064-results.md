@@ -403,8 +403,8 @@ Built and checked on 26 October 2026.
 - **The image's additions,** [`host-ios.sh`](../../setup/tart/ios/host-ios.sh),
   which `build-ios.sh` runs as root: the helper and its daemons, the slots'
   home from the pool's `.zshenv`, each runtime's `disabled.plist` kept
-  from the image's slim devices, and the carried slots `bbd-i1` and
-  `bbd-i2`. `alia-box-check-ios` checks the helper, its daemons, the held
+  from the image's slim devices, and the carried slots `aliad-i1` and
+  `aliad-i2`. `alia-box-check-ios` checks the helper, its daemons, the held
   ports, the carried slots and the UID ranges.
 - **The device server under a host's daemon.** A slot's server is
   `host`-managed: `install` and `restart` end it, and launchd starts the
@@ -438,7 +438,7 @@ The image's own iPhone 18 Pro stayed booted throughout.
 
 `host-ios.sh` ran in 54.2 s: it kept the iOS 27.0 `disabled.plist` from
 the image's iPhone 18 Pro, loaded the helper's daemons, and made
-`bbd-i1` in 28.1 s and `bbd-i2` in 25.5 s (user 2.0 and 1.9 s, device
+`aliad-i1` in 28.1 s and `aliad-i2` in 25.5 s (user 2.0 and 1.9 s, device
 7.3 and 5.7 s, first boot 18.8 and 17.8 s). The check's new lines all
 passed but the held ports, whose daemon failed to start as `nobody` with a
 log path it could not write; fixed, and passed. The UID check walks the
@@ -481,16 +481,16 @@ as enrol.ts now runs it; then the helper's `daemon`:
 
 | Slot | Installer | `daemon` | Connected after `daemon` |
 | --- | --- | --- | --- |
-| `bbd-i1` | 5.8 s | 0.98 s | 0.8 s |
-| `bbd-1` | 4.7 s | 1.43 s | |
-| `bbd-2` | 6.3 s | 1.43 s | 0.6 s |
-| `bbd-3` | 5.5 s | 1.40 s | 0.6 s |
+| `aliad-i1` | 5.8 s | 0.98 s | 0.8 s |
+| `aliad-1` | 4.7 s | 1.43 s | |
+| `aliad-2` | 6.3 s | 1.43 s | 0.6 s |
+| `aliad-3` | 5.5 s | 1.40 s | 0.6 s |
 
 Each installer's own daemon connected 0.6 s after it returned, as M14
 found. `daemon` moved it into a LaunchDaemon as the slot's user, with its
 command, port (38889 and 38890, as the installer chose) and data folder,
 and stopped the installer's. A terminal made through the fresh VesnALIA on
-`bbd-i1`'s machine ran as `bbd-i1`, UID 79991, with `ALIA_PORT_BASE=20000`,
+`aliad-i1`'s machine ran as `aliad-i1`, UID 79991, with `ALIA_PORT_BASE=20000`,
 and `simctl` listed one device, its own.
 
 ### A new device server delivered to a slot
@@ -500,15 +500,15 @@ run as the slot's user against a running version 19:
 
 | Slot | Delivery | Serving the new version after |
 | --- | --- | --- |
-| `bbd-3` | 0.12 s | 0.25 s |
-| `bbd-4` | 0.11 s | 0.26 s |
-| `bbd-5` | 0.10 s | 0.25 s |
+| `aliad-3` | 0.12 s | 0.25 s |
+| `aliad-4` | 0.11 s | 0.26 s |
+| `aliad-5` | 0.10 s | 0.25 s |
 
 Asked: within 2 s. M15 measured 1.67 s. The log says `start ... by host`.
-The carried `bbd-i1`, claimed with no server, got one by the same
+The carried `aliad-i1`, claimed with no server, got one by the same
 delivery in 0.19 s; its device, first booted when the image's setup made
 it, booted cold in 1.5 s, and its companion listened 108 ms after it
-started. The claim itself took 0.13 s, and booted `bbd-i2` in the
+started. The claim itself took 0.13 s, and booted `aliad-i2` in the
 background as the ready slot.
 
 ### A cold restart with slots held
@@ -580,7 +580,7 @@ The image's own user binding 8081 on 127.0.0.1 and on 0.0.0.0, with
 
 A's release took 15.6 s: 5 s of it waiting for the process that ignores
 SIGTERM, the rest the devices' shutdown. Its sweep found 32 paths and left
-none. Then, as the next slot's user, `bbd-14`: every planted file, the
+none. Then, as the next slot's user, `aliad-14`: every planted file, the
 home, the crontab and the cron job's file gone; no process of UID 80007;
 A's port free to bind. A check as root, `find -xdev -uid 80007` over the
 Data volume, found nothing, in 35 s. One run had found one process of the
@@ -728,16 +728,16 @@ and the image check's slot-UID line found no file of 80000 to 89999 on the
 Data volume, in 21 s. Its daemons, held-ports and carried-slots lines
 passed too.
 
-**Finding 1's attack.** As `bbd-1`, over SSH with the box's key, as
+**Finding 1's attack.** As `aliad-1`, over SSH with the box's key, as
 `box_run` reaches a box: a stand-in for VesnALIA's daemon running as the user,
 its pid and port files, and `logs` linked to `/Library/LaunchDaemons`.
 `daemon` took 0.17 s. `/Library/LaunchDaemons` stayed `root:wheel`,
 `drwxr-xr-x`, with the same entries, owners and modes, plus only
-`app.alia-box.alia.bbd-1.plist`. launchd ran the stand-in as `bbd-1`, writing
-to `/private/var/log/alia-box-slots/bbd-1.log`. As `bbd-1`, adding a link,
+`app.alia-box.alia.aliad-1.plist`. launchd ran the stand-in as `aliad-1`, writing
+to `/private/var/log/alia-box-slots/aliad-1.log`. As `aliad-1`, adding a link,
 moving the log or making a file in that folder were each refused. At a
 new boot, `resume` left a root folder behind a linked data folder and a
-linked `.alia-machines` alone, and cleared `bbd-2`'s own lock as `bbd-2`.
+linked `.alia-machines` alone, and cleared `aliad-2`'s own lock as `aliad-2`.
 
 **The sweep file "80001 0",** written as root with a root file, a root
 process and the IPC table as canaries. `reset`, traced with `sh -x`,
@@ -796,7 +796,7 @@ These were measured in a dedicated ios box made from the image built from
 | --- | --- | --- |
 | Held ports | `perl` as `nobody`, 9.0 MiB resident, 16 listening sockets: 8 ports on 127.0.0.1 and ::1 | gone |
 | The helper's daemon | `sh` as root, 2.6 MiB resident. Each boot it ran `resume`, then every 5 s ran `bound`, which uses `ps` and `awk`. One `bound` took 0.03 s of CPU, measured 3 times with `time`, so about 0.006 of a core | not loaded, and `run` returns before `init` |
-| Carried slot users | `bbd-i1` and `bbd-i2`, UIDs 79991 and 79992: hidden, standard, in `_developer` and `com.apple.access_ssh`, each with a random password that is never written down and no SSH key until a claim | unchanged |
+| Carried slot users | `aliad-i1` and `aliad-i2`, UIDs 79991 and 79992: hidden, standard, in `_developer` and `com.apple.access_ssh`, each with a random password that is never written down and no SSH key until a claim | unchanged |
 | Their homes in `/Users` | 283 MiB and 297 MiB, mode 700 | unchanged |
 | Their devices | one iPhone 18 Pro each, shut down, 0.4 MiB each in `/private/var/tmp`. The box user's `simctl` does not list them | unchanged |
 | Their processes | none, after a boot | unchanged |
@@ -970,8 +970,8 @@ driven by playwriter.
 
 | Check | Result |
 | --- | --- |
-| Three asked for at once, by three `alia box acquire ios --shared` started together (PR 1174) | one host, `alia-box-host-<id>` at one address; slots 1, 2 and 3 (`bbd-i1`, `bbd-i2`, `bbd-1`). Ready in 47.0 s (the first carried slot), 66.3 s (the second, which waited 14.7 s for its warm-up) and 127.9 s (a slot made after the host started, 67.1 s); VesnALIA machines 20.4 to 22.0 s after each was ready |
-| 8 boxes, each its own device | 8 users, `bbd-i1`, `bbd-i2`, `bbd-1` to `bbd-6`, UIDs 79991, 79992, 80001 to 80006, ports 20000 to 20799, each device a UDID of its own. Each served a page on its own `ALIA_PORT_BASE` and opened it in its device: each agent screenshot showed its own box's name, user and port |
+| Three asked for at once, by three `alia box acquire ios --shared` started together (PR 1174) | one host, `alia-box-host-<id>` at one address; slots 1, 2 and 3 (`aliad-i1`, `aliad-i2`, `aliad-1`). Ready in 47.0 s (the first carried slot), 66.3 s (the second, which waited 14.7 s for its warm-up) and 127.9 s (a slot made after the host started, 67.1 s); VesnALIA machines 20.4 to 22.0 s after each was ready |
+| 8 boxes, each its own device | 8 users, `aliad-i1`, `aliad-i2`, `aliad-1` to `aliad-6`, UIDs 79991, 79992, 80001 to 80006, ports 20000 to 20799, each device a UDID of its own. Each served a page on its own `ALIA_PORT_BASE` and opened it in its device: each agent screenshot showed its own box's name, user and port |
 | Tapped, by the agent | one tap each through `computer_act`; each box's own page server logged exactly one `GET /tapped-1` |
 | Tapped, by a person | in the panel, Take control, a tap on the device, control handed back, on each of the 8: every device showed "tapped 2" |
 | Streamed | the 8 devices' panels in one Helium tab, 200 px each, the busy page on each: 48.0 to 49.8 frames a second over 10 s each, every one at a third (402x874), as 200 px asks; the worst gap 284 to 304 ms in every panel at the same moment |
@@ -979,7 +979,7 @@ driven by playwriter.
 | A ninth | refused: "The shared iOS host alia-box-host-<id> has all its 8 slots making, ready, held or promised (8 held). No shared iOS host can start on mac-1: mac-1 runs a shared iOS host already, as many as it may (1)." PR 1173 adds what frees first |
 | A release racing a claim (PR 1174) | the host's last box released, and 1 s later a shared box acquired: the release marked the host deleting; the acquire was placed on a new host, which waited for the old VM to stop, then started: ready in 91.5 s, 61.3 s of it the host. A fault here: see below |
 | The last release deletes the host | after the race, and after each of the five first boxes below: the doctor's check says "No shared iOS host runs", and the Mac's room "guests 1 of 2", the other thread's box. The queued image build took the freed VM slot at 03:05:44, 36 s after the release began |
-| H3 through the plugin | every slot box was a connected VesnALIA machine, `enrolled` by alia-box's own enrolment, its daemon the helper's LaunchDaemon (`system/app.alia-box.alia.<user>` running). A terminal made through VesnALIA on two of them ran as `bbd-i1`, UID 79991, and `bbd-6`, UID 80006, each with its own booted device and ports |
+| H3 through the plugin | every slot box was a connected VesnALIA machine, `enrolled` by alia-box's own enrolment, its daemon the helper's LaunchDaemon (`system/app.alia-box.alia.<user>` running). A terminal made through VesnALIA on two of them ran as `aliad-i1`, UID 79991, and `aliad-6`, UID 80006, each with its own booted device and ports |
 | H9: 8 held slots idle | each device on its Home Screen, no viewer, a minute to settle. `top`, three 10 s samples inside a slot: the host's 8 cores 87 to 91% idle, about 0.7 to 1.0 core used in all; the helper's `status`: each slot 0.01 to 0.08 cores, a footprint of 1.4 to 1.5 GiB, a home of 0.5 to 0.6 GiB; `memory_pressure` 86% free. 32 GiB and 8 cores carry 8 idle slots with room |
 | Disk | a host just made: 40.8 GiB free on its Data volume (the image's disk is 140 GB, its recovery partition after the main container). With 3 slots, 39.5 GiB; with 8, 36.5 GiB: about 0.5 to 0.6 GiB a slot as made. `disk-reserve-gib` 10 leaves about 26 GiB for 8 slots' builds, about 3.3 GiB each |
 | H5: the host's VM stopped with 8 held slots | `tart stop` by the lead at 01:59:37. Under PR 1172, alia-box started it again only at 02:04:09, at the end of a sweep (below); it ran at 02:04:29. Every slot's device server was listening as it ran; the 7 devices then held (one box had been released meanwhile) booted cold together in 33.5 to 35.2 s, their companions listening about 50 s after the VM ran, and all 7 VesnALIA machines connected at 02:05:50, 81 s after it ran. In the panel all 7 drew their devices |
@@ -1145,14 +1145,14 @@ On a Linux box, against a fake Mac running the real `machine-mac.sh` and
 Then on a real Mac: a dedicated ios box, a Tart VM of the iOS image at 6
 cores and 16 GiB, macOS 27.0, Xcode 27.0, iOS 27.0, made to stand in for a
 fresh pool Mac. The image's carried slots, helper state and seed were
-removed, a `bbbox-admin` user made, and this branch's `machine-mac.sh`
+removed, a `aliabox-admin` user made, and this branch's `machine-mac.sh`
 installed and initialised. Times are wall-clock in the VM.
 
 | Step | Result |
 | --- | --- |
-| `mac-ios.sh`, as root | 186 s: idb_companion 1.7.7 downloaded and checked; the seed made as `bbbox-admin`, 112 of 112 labels off; the helper kept and closed, its own daemon loaded, no ports held |
+| `mac-ios.sh`, as root | 186 s: idb_companion 1.7.7 downloaded and checked; the seed made as `aliabox-admin`, 112 of 112 labels off; the helper kept and closed, its own daemon loaded, no ports held |
 | `machine slot open`, then `make` | 0.13 s; then 30.7 s: user 2.0 s, device 7.7 s, first boot 20.7 s |
-| `machine slot claim` | 0.15 s. SSH as `bbd-1` with the box's key: its own booted iPhone 18 Pro, `ALIA_PORT_BASE=20000`, no sudo. 127.0.0.1:8081 answered with the held ports' words |
+| `machine slot claim` | 0.15 s. SSH as `aliad-1` with the box's key: its own booted iPhone 18 Pro, `ALIA_PORT_BASE=20000`, no sudo. 127.0.0.1:8081 answered with the held ports' words |
 | A whole claim while slot 1 was held | refused, exit 3: "The pool's Mac is lending iOS slots (1 held). It is lent whole again when they are released." |
 | `machine slot release` | 11.7 s, with the gentle stop; no process of UID 80001 left |
 | A whole claim with a ready spare | 11.8 s: the spare's user removed, port 8081 free; then `promise` refused, exit 7 |
@@ -1172,13 +1172,13 @@ sweeps from the helper's status, as root.
 
 | Check | Result |
 | --- | --- |
-| 12 slots made and held | the first claimed the ready spare: ready in 5.0 s. The next 11 one after another, each claiming the spare made after the one before: ready in 10.3 to 26.4 s. Slots 1 to 12 of 12, users `bbd-4` to `bbd-15`, ports 20000 to 21199, one booted iPhone 18 Pro each. The doctor: "12 held, 0 ready, 0 making, 0 sweeping, of 12" |
+| 12 slots made and held | the first claimed the ready spare: ready in 5.0 s. The next 11 one after another, each claiming the spare made after the one before: ready in 10.3 to 26.4 s. Slots 1 to 12 of 12, users `aliad-4` to `aliad-15`, ports 20000 to 21199, one booted iPhone 18 Pro each. The doctor: "12 held, 0 ready, 0 making, 0 sweeping, of 12" |
 | 12 held, idle | each slot 0.00 to 0.01 cores, a footprint of 1.4 to 1.9 GiB, a home of 0.0 to 0.4 GiB. The Mac 94.6% idle over 3 s by `top`; `memory_pressure` 78% free; 293 GiB of disk free |
-| Between two slots | as `bbd-15`: `bbd-4`'s home refused, its process not signalled, a file it left readable in `/tmp` readable, 127.0.0.1:8081 answered with the held ports' words |
+| Between two slots | as `aliad-15`: `aliad-4`'s home refused, its process not signalled, a file it left readable in `/tmp` readable, 127.0.0.1:8081 answered with the held ports' words |
 | A whole box while slots are held | `alia box acquire macos-desktop --on "SSH host pool"` refused: "The pool's Mac mac-1 is lending iOS slots (12 held). It is lent whole again when they are released." A `macos` box earlier, with 1 held, the same words with "(1 held)" |
 | Releases | one slot box in 10 s; the other 11 together in 17 s |
 | Lent whole once they end | the same `macos-desktop` box: a claim of 12.6 s, which removed the ready spare first; ready in 13.9 s. A `macos` box earlier: a claim of 9.0 s |
-| A reset leaves nothing | one slot box planted a file in `/tmp`, `/private/var/tmp` and `/Users/Shared`, a crontab and a process that ignores SIGTERM. From the whole box, after the 12 releases: no process of a slot UID, none of the planted files, no `bbd-` user or home, 8081 free. 48 entries in `/private/var/tmp` and 12 folders in `/private/var/folders` of slot UIDs were left to the sweep queue, and gone 91 s later |
+| A reset leaves nothing | one slot box planted a file in `/tmp`, `/private/var/tmp` and `/Users/Shared`, a crontab and a process that ignores SIGTERM. From the whole box, after the 12 releases: no process of a slot UID, none of the planted files, no `aliad-` user or home, 8081 free. 48 entries in `/private/var/tmp` and 12 folders in `/private/var/folders` of slot UIDs were left to the sweep queue, and gone 91 s later |
 | H11 | every sweep the doctor showed left nothing: passes of 1 to 4 UIDs found 8 to 38 paths and left 0, in 33 to 51 s; after the H1 boxes' releases, passes found 30 paths and left 0, in 34 s. The helper has Full Disk Access for remote users |
 | The whole box's release | 75 s and 35 s, two releases, each stopping the box user gently, as helper version 2 does; the next box user signed in, and the slots reopened at the next upkeep |
 | H1: ready claims | 10 claims, 50 s apart so the spare was made again: ready in 4.9 to 8.9 s, median 5.35 s; VesnALIA machines enrolled 6.8 to 11.7 s after. The first, opening the closed Mac and making its slot, 27.2 s |
@@ -1188,7 +1188,7 @@ sweeps from the helper's status, as root.
 
 | Found | Fix |
 | --- | --- |
-| The pool Mac's sshd had `AllowUsers ... bbbox-admin bbx-*`, so SSH as a slot user never answered and the first box failed after 300 s | a host step: the owner added `bbd-*`. PR 1187: the error, the pool's guide and `mac-ios.sh` name it, and `mac-ios.sh` warns when sshd refuses slot users |
+| The pool Mac's sshd had `AllowUsers ... aliabox-admin aliax-*`, so SSH as a slot user never answered and the first box failed after 300 s | a host step: the owner added `aliad-*`. PR 1187: the error, the pool's guide and `mac-ios.sh` name it, and `mac-ios.sh` warns when sshd refuses slot users |
 | That failed box's slot stayed held after the box was released, until the sweep restored the box and a second release freed it: the slot acquire did not give back what it took when it failed | PR 1187: a failed slot acquire gives back its slot or promise |
 | H11 had no reading but as root on the Mac | PR 1185: the doctor's line gives each held slot's load and the last sweeps |
 | The doctor gave a sweep pass's paths found once for each UID in it, and no sweeps while the Mac is closed or lent whole | in this commit: once a pass, with its UIDs, and in every state |
@@ -1300,14 +1300,14 @@ Helium, in its "var" profile, driven by playwriter in a tab of its own.
 | --- | --- |
 | box_list | the `macos` line says what `shared: true` gives, as built |
 | A first `macos` box with `shared: true`, no host running | a new host, slot 1 of 8, ports 20000 to 20099: ready in 52.3 s (host 37.6 s, slot 5.2 s, SSH 0.3 s), a VesnALIA machine 8.6 s after |
-| In it, by box_run | user `bbd-i1`, UID 79991, in `_developer`; `ALIA_PORT_BASE` 20000; `sudo -n` asks for a password; `simctl list devices` lists no device; no device server daemon for the user; home `drwx------`; Xcode 27.0 |
+| In it, by box_run | user `aliad-i1`, UID 79991, in `_developer`; `ALIA_PORT_BASE` 20000; `sudo -n` asks for a password; `simctl list devices` lists no device; no device server daemon for the user; home `drwx------`; Xcode 27.0 |
 | A second `macos` box with `shared: true` | the ready spare: slot 2, ready in 9.4 s, a VesnALIA machine 6.1 s after |
 | box_status | Where, Root and Desktop lines as built; no Size line |
 | Refusals, each in its words, none naming `dedicated` | box_stop, box_start, box_resize, box_resize with restart, box_grant, box_run with `desktop`, box_record and computer_windows |
 | A size with `shared` | "A shared macos box has no size of its own. Leave shared out for a VM of its own at that size." |
 | A `macos` box without `shared`, on Tart, its two VMs in use | refused: "No Mac can take this macos box: Two macOS VMs already run on mac-1, Apple's limit (...). Release or stop a macOS box, or stop another VM there." and then what `shared: true` gives |
-| The second box released | within 15 s, from the first box: no user `bbd-i2`, no process of UID 79992, no LaunchDaemon for it |
-| The next ios box with `shared: true` on that host | slot 3, user `bbd-1`, UID 80001: a new slot, not `bbd-i2`'s, with its own booted iPhone 18 Pro. Ready in 8.1 s, a VesnALIA machine 9.7 s after |
+| The second box released | within 15 s, from the first box: no user `aliad-i2`, no process of UID 79992, no LaunchDaemon for it |
+| The next ios box with `shared: true` on that host | slot 3, user `aliad-1`, UID 80001: a new slot, not `aliad-i2`'s, with its own booted iPhone 18 Pro. Ready in 8.1 s, a VesnALIA machine 9.7 s after |
 | The last release | the host deleted: the doctor says "No shared iOS host runs", and the Mac's room is back to 1 of 2 VMs |
 
 The New box form, in the production panel at 360 px wide:
@@ -1389,10 +1389,10 @@ app. After: VesnALIA's app for the fresh VesnALIA put in the image user's home a
 
 | | Slot | `make` (user step) | The installer | Of it, VesnALIA's app |
 | --- | --- | --- | --- | --- |
-| Before | `bbd-3` | 27.8 s (2.2 s) | 5.80 s | downloaded and installed, 3.48 s |
-| Before | `bbd-4` | 25.2 s (2.0 s) | 4.72 s | downloaded and installed, 2.57 s |
-| After | `bbd-5` | 27.2 s (3.0 s) | 2.75 s | "The identical server host artifact is already installed", 0.14 s |
-| After | `bbd-6` | 31.9 s (3.7 s) | 2.64 s | the same, 0.13 s |
+| Before | `aliad-3` | 27.8 s (2.2 s) | 5.80 s | downloaded and installed, 3.48 s |
+| Before | `aliad-4` | 25.2 s (2.0 s) | 4.72 s | downloaded and installed, 2.57 s |
+| After | `aliad-5` | 27.2 s (3.0 s) | 2.75 s | "The identical server host artifact is already installed", 0.14 s |
+| After | `aliad-6` | 31.9 s (3.7 s) | 2.64 s | the same, 0.13 s |
 
 - **The installer is 2.1 to 3.2 s shorter,** each daemon connected 1.2 s
   after it was started either way.
@@ -1462,7 +1462,7 @@ build log said "kept VesnALIA's app for <server>, build 3427d9e8...".
 | --- | --- |
 | Item 1: a shared ios box with no host running, and alia-box reloaded 38 s later, while its host started | ready 83 s after the acquire, 45 s after the reload, in slot 1 of the host that was starting, a connected VesnALIA machine. Timings: choosing a shared host 14.7 s, host 35.6 s, slot 0.4 s, ssh 0.3 s, total 74.4 s. The 23.4 s no step counts is the time from the old instance stopping to the new one's sweep resuming the acquire |
 | A second shared ios box, the host's ready spare | choosing a shared host 6.5 s, ssh 0.3 s, total 6.8 s; VesnALIA enrolment 6.9 s. The first box's: 11.5 s |
-| Item 2: the slots' homes | the slots' home holds VesnALIA's app, build 3427d9e8..., and the carried slot `bbd-i2`'s home had it from the image build. VesnALIA's server gives build 634c1bfd... now, so its installer downloaded and installed that build over it, and the doctor warns that the ios image "has another build of VesnALIA's app than VesnALIA's server gives" |
+| Item 2: the slots' homes | the slots' home holds VesnALIA's app, build 3427d9e8..., and the carried slot `aliad-i2`'s home had it from the image build. VesnALIA's server gives build 634c1bfd... now, so its installer downloaded and installed that build over it, and the doctor warns that the ios image "has another build of VesnALIA's app than VesnALIA's server gives" |
 | The last release | the host deleted: "No shared iOS host runs" |
 
 Item 2 saves its 2 to 3 s only while VesnALIA's server gives the build the
@@ -1940,10 +1940,10 @@ October (build 20261028-002015-21e2), as root.
 
 | | Slot | `make` (user step) | The installer | Of it, VesnALIA's app |
 | --- | --- | --- | --- | --- |
-| Without | `bbd-1` | 24.3 s (2.6 s) | 5.01 s | downloaded and installed, 3.10 s |
-| Without | `bbd-2` | 22.8 s (2.4 s) | 4.81 s | downloaded and installed, 2.76 s |
-| With, `keep-app` 2.12 s | `bbd-3` | 23.8 s (2.6 s) | 2.24 s | "The identical server host artifact is already installed", 0.05 s |
-| With | `bbd-4` | 24.1 s (2.7 s) | 2.31 s | the same, 0.05 s |
+| Without | `aliad-1` | 24.3 s (2.6 s) | 5.01 s | downloaded and installed, 3.10 s |
+| Without | `aliad-2` | 22.8 s (2.4 s) | 4.81 s | downloaded and installed, 2.76 s |
+| With, `keep-app` 2.12 s | `aliad-3` | 23.8 s (2.6 s) | 2.24 s | "The identical server host artifact is already installed", 0.05 s |
+| With | `aliad-4` | 24.1 s (2.7 s) | 2.31 s | the same, 0.05 s |
 
 The kept app saves 2.5 to 2.8 s of each slot's installer, as F-7's image
 copy did, and the user step is no longer.
@@ -2253,7 +2253,7 @@ Built on 28 October 2026, as decided in
   setting `ios-hosts-on`, on by default, turns it off. Its tier is the last
   of 064's order, `new-host` at a Namespace Mac's cost.
 - **A host is a Namespace Mac made for an ios box,** at the largest shape
-  the workspace allows, labelled `bbbox-role=device-host`. Its record, with
+  the workspace allows, labelled `aliabox-role=device-host`. Its record, with
   the boxes promised while it starts, is in the backend's storage, as a
   Namespace Mac has no owner file to keep it on. Its start: the Mac ready,
   the tailnet joined, the Mac measured, then alia-box's setup unpacked and
@@ -2737,8 +2737,8 @@ same slot.
 On the fakes, on a Linux box:
 
 - **Item 1.** On the Tart fake, three boxes on a new host, the two that
-  joined acquired before the first: they took `bbd-i2` and made slot 1,
-  and the first box got `bbd-i1`. A box asking meanwhile was not offered
+  joined acquired before the first: they took `aliad-i2` and made slot 1,
+  and the first box got `aliad-i1`. A box asking meanwhile was not offered
   the first box's ready slot. On the Namespace stub, the same with two
   ready slots: the joiners took slot 2 and made slot 3, and the first box
   got slot 1. Both tests fail on main, where the joiners take both ready
@@ -2763,8 +2763,8 @@ alia-box's records of each box.
 
 | Box | Asked for | Ready | Ready after its ask | Its timings | Slot |
 | --- | --- | --- | --- | --- | --- |
-| First | 10:07:09.4 | 10:07:27.3 | 17.9 s | choosing 0.5 s, host 15.3 s, slot 1.5 s, ssh 0.6 s | `bbd-i1`, place 1 |
-| Second | 10:07:15.7 | 10:07:26.9 | 11.1 s | choosing 0.3 s, host 9.1 s, slot 1.3 s, ssh 0.4 s | `bbd-i2`, place 2 |
+| First | 10:07:09.4 | 10:07:27.3 | 17.9 s | choosing 0.5 s, host 15.3 s, slot 1.5 s, ssh 0.6 s | `aliad-i1`, place 1 |
+| Second | 10:07:15.7 | 10:07:26.9 | 11.1 s | choosing 0.3 s, host 9.1 s, slot 1.3 s, ssh 0.4 s | `aliad-i2`, place 2 |
 | Third | 10:07:20.5 | 10:08:17.1 | 56.6 s | choosing 0.5 s, host 4.1 s, slot 51.6 s, ssh 0.3 s | slot 2, made for it |
 
 - **The slots went in the order asked.** The first box got the host's

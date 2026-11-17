@@ -1,8 +1,8 @@
-// bb-box-cursor: the box's pointer on a Wayland desktop whose compositor has
+// alia-box-cursor: the box's pointer on a Wayland desktop whose compositor has
 // ext-image-copy-capture, as Sway 1.11 does (060): where it is and what it
 // looks like, from a pointer cursor session on the desktop's output. Neither
 // stream sends it: Selkies sends the browser one arrow and paints none, and
-// wayvnc sends no position. bb-box shows the shape to the person in control
+// wayvnc sends no position. alia-box shows the shape to the person in control
 // and draws the agent's pointer over the picture for people watching.
 //
 // usage: cursor   (WAYLAND_DISPLAY in the environment)
@@ -149,7 +149,7 @@ static void session_done(void *data, struct ext_image_copy_capture_session_v1 *s
   width = next_width;
   height = next_height;
   pixels_size = (size_t)width * height * 4;
-  int fd = memfd_create("bb-box-cursor", MFD_CLOEXEC);
+  int fd = memfd_create("alia-box-cursor", MFD_CLOEXEC);
   if (fd < 0 || ftruncate(fd, pixels_size) != 0) {
     fprintf(stderr, "cursor: no memory for the cursor's image\n");
     exit(1);

@@ -51,7 +51,7 @@ test("BetterTouchTool preset is global, persistent, bounded, and action-safe", (
     assert.equal(trigger.BTTTriggerConfig.BTTTouchBarScriptUpdateInterval, 2);
     assert.match(
       String(trigger.BTTTriggerConfig.BTTTouchBarShellScriptString),
-      /BBTouchBar\/alia-touchbar" card/u,
+      /AliaTouchBar\/alia-touchbar" card/u,
     );
     assert.equal(trigger.BTTActionsToExecute.length, 1);
     assert.equal(trigger.BTTActionsToExecute[0]?.BTTPredefinedActionType, 206);
@@ -74,13 +74,13 @@ test("companion scripts are POSIX-shell parseable and avoid eval", () => {
   }
   const installer = readFileSync(join(companion, "install.sh"), "utf8");
   assert.match(installer, /BetterTouchTool\/Plugins/u);
-  assert.match(installer, /BBTouchBar\.swift/u);
+  assert.match(installer, /AliaTouchBar\.swift/u);
   assert.match(installer, /Compile & Load/u);
   assert.match(installer, /--preset/u);
 });
 
 test("Swift source plugin renders native status cards with safe VesnALIA actions", () => {
-  const source = readFileSync(join(companion, "BBTouchBar.swift"), "utf8");
+  const source = readFileSync(join(companion, "AliaTouchBar.swift"), "utf8");
   assert.match(source, /BTT-Plugin-Type: TouchBar/u);
   assert.match(source, /BTTPluginInterface/u);
   assert.match(source, /process\.executableURL/u);
@@ -88,7 +88,7 @@ test("Swift source plugin renders native status cards with safe VesnALIA actions
   assert.match(source, /\["touchbar", "open", threadId\]/u);
   assert.match(source, /Date\(\) < deadline/u);
   assert.match(source, /AgentCardView/u);
-  assert.match(source, /BBStripButton/u);
+  assert.match(source, /AliaStripButton/u);
   assert.match(source, /func touchBarButton\(\) -> NSButton\?/u);
   assert.match(source, /func touchBarViewController\(\) -> NSViewController\? \{ nil \}/u);
   assert.match(source, /class func configurationFormItems/u);
@@ -100,7 +100,7 @@ test("Swift source plugin renders native status cards with safe VesnALIA actions
   assert.match(source, /RUN/u);
   assert.match(source, /IDLE/u);
   assert.match(source, /INPUT/u);
-  assert.match(source, /Application Support\/BBTouchBar\/alia-path/u);
+  assert.match(source, /Application Support\/AliaTouchBar\/alia-path/u);
   assert.match(source, /thread\.providerId\.uppercased\(\)/u);
   assert.doesNotMatch(source, /DFRFoundation|TouchBarServer|\/bin\/(?:ba|z)?sh/u);
 });
@@ -131,7 +131,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
     execFileSync("/bin/bash", ["-n", join(native, script)]);
   }
 
-  const header = readFileSync(join(native, "Sources/BBTouchBarPrivate.h"), "utf8");
+  const header = readFileSync(join(native, "Sources/AliaTouchBarPrivate.h"), "utf8");
   const controller = readFileSync(join(native, "Sources/TouchBarController.swift"), "utf8");
   const model = readFileSync(join(native, "Sources/AgentModel.swift"), "utf8");
   const support = readFileSync(join(native, "Sources/Support.swift"), "utf8");
@@ -164,7 +164,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(controller, /ProjectInitialBadge/u);
   assert.match(controller, /case \.done: return "UNREAD"/u);
   assert.match(controller, /enum SortMode/u);
-  assert.match(controller, /BBTouchBarSortMode/u);
+  assert.match(controller, /AliaTouchBarSortMode/u);
   assert.match(controller, /settingsTapped/u);
   assert.match(controller, /slider\.horizontal\.3/u);
   assert.match(controller, /schedulePanelRender/u);
@@ -188,7 +188,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.doesNotMatch(controller, /aliaPreviousProject|aliaNextProject/u);
   assert.doesNotMatch(controller, /title: "[‹›]"/u);
   assert.match(controller, /projectDockTapped/u);
-  assert.match(controller, /BBTouchBarSelectedProject/u);
+  assert.match(controller, /AliaTouchBarSelectedProject/u);
   assert.match(controller, /private final class GroupDividerView: NSButton/u);
   assert.match(controller, /private final class ProjectGroupView: NSView/u);
   assert.match(controller, /projectGroups\(for: entries\)/u);
@@ -294,11 +294,11 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(controller, /title: "PANEL"/u);
   assert.match(controller, /selected: true, color: \.systemRed/u);
   assert.doesNotMatch(controller, /usageButton\.title/u);
-  assert.match(controller, /BBTouchBarShowUsage/u);
-  assert.match(controller, /BBTouchBarShowHostMonitor/u);
-  assert.match(controller, /BBTouchBarUsageCodex/u);
-  assert.match(controller, /BBTouchBarUsageClaude/u);
-  assert.match(controller, /BBTouchBarUsageCursor/u);
+  assert.match(controller, /AliaTouchBarShowUsage/u);
+  assert.match(controller, /AliaTouchBarShowHostMonitor/u);
+  assert.match(controller, /AliaTouchBarUsageCodex/u);
+  assert.match(controller, /AliaTouchBarUsageClaude/u);
+  assert.match(controller, /AliaTouchBarUsageCursor/u);
   assert.match(controller, /0x34A853/u);
   assert.match(controller, /0xD9911A/u);
   assert.match(controller, /0x3B82C4/u);
@@ -327,7 +327,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(model, /\["touchbar", "open", entry\.id\], timeout: 5/u);
   assert.ok(model.includes("opened thread \\(entry.id) in VesnALIA"));
   assert.match(model, /dev\.alia\.desktop/u);
-  assert.match(model, /activateBB/u);
+  assert.match(model, /activateALIA/u);
   assert.match(model, /\["host-monitor", "open", hostId\]/u);
   assert.doesNotMatch(model, /readabilityHandler\s*=/u);
   assert.match(model, /maximumOutputBytes = 65_536/u);
@@ -364,13 +364,13 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(build, /DFRFoundation/u);
   assert.match(build, /codesign --force --sign -/u);
   assert.match(build, /ALIA_TOUCHBAR_SIGN_IDENTITY/u);
-  assert.match(packager, /BBTouchBar-\$VERSION-universal\.zip/u);
+  assert.match(packager, /AliaTouchBar-\$VERSION-universal\.zip/u);
   assert.match(packager, /notarytool submit/u);
   assert.match(packager, /stapler staple/u);
   assert.match(brewInstaller, /launchctl bootstrap/u);
   assert.match(brewUninstaller, /launchctl bootout/u);
   assert.match(cask, /cask "alia-touch-bar"/u);
-  assert.match(cask, /app "package-#\{version\}\/BBTouchBar\.app"/u);
+  assert.match(cask, /app "package-#\{version\}\/AliaTouchBar\.app"/u);
   assert.match(cask, /postflight do/u);
   assert.doesNotMatch(cask, /RELEASE_SHA256/u);
   assert.match(installer, /app\.getbb\.touchbar\.native\.plist/u);

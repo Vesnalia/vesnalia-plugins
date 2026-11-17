@@ -26,14 +26,14 @@ const ONE_CARD = { gpus: [DEVICE], cards: [{ index: 0, uuid: CARD, name: "NVIDIA
 const QUIET: SnapshotHooks = { submitting: async () => {}, task: async () => {} };
 const ACQUIRING: AcquireHooks = { claim: async () => {}, starting: async () => {}, timing: () => {} };
 const COPYING: CopyHooks = { claimed: async () => {}, submitting: async () => {}, task: async () => {} };
-const IMAGE_OF: Readonly<Record<string, string>> = { linux: "bbbox/linux:1", "linux-desktop-cpu": "bbbox/linux-desktop:1" };
+const IMAGE_OF: Readonly<Record<string, string>> = { linux: "aliabox/linux:1", "linux-desktop-cpu": "aliabox/linux-desktop:1" };
 
 function forkingWorld(fake: FakeDockerHost): World {
   return world({ forkWaitMs: 300, backend: (storage) => new DockerBackend(dockerConfig(), testContext(storage, "test", { id: "fake" }), { binary: fake.binary, readyTimeoutMs: 2_000 }) as never });
 }
 
 function forkName(boxId: string): RegExp {
-  return new RegExp(`^bbbox-${boxId}-[0-9a-f]{8}$`);
+  return new RegExp(`^aliabox-${boxId}-[0-9a-f]{8}$`);
 }
 
 function writeTree(root: string, files: Readonly<Record<string, string>>): void {
@@ -142,11 +142,11 @@ test("Docker forks a snapshot into a new container with the fork's own ID, name,
   const container = fork.guest!.ref;
   assert.match(container, forkName(fork.id));
   const made = fake.inspect(container);
-  assert.ok(made.Config.Env.includes(`BBBOX_IDENTITY=${fork.id}`), "the fork's identity value is its own box ID");
-  assert.ok(!made.Config.Env.includes(`BBBOX_IDENTITY=${source.id}`));
-  assert.equal(made.Config.Labels["bbbox.box"], fork.id);
-  assert.equal(made.Config.Labels["bbbox.name"], "the-fork");
-  assert.equal(made.Config.Labels["bbbox.from-snapshot"], target.id);
+  assert.ok(made.Config.Env.includes(`ALIABOX_IDENTITY=${fork.id}`), "the fork's identity value is its own box ID");
+  assert.ok(!made.Config.Env.includes(`ALIABOX_IDENTITY=${source.id}`));
+  assert.equal(made.Config.Labels["aliabox.box"], fork.id);
+  assert.equal(made.Config.Labels["aliabox.name"], "the-fork");
+  assert.equal(made.Config.Labels["aliabox.from-snapshot"], target.id);
   assert.equal(made.Config.Image, snapshotImage("test", source.id, target.id));
   assert.deepEqual(readBoth(fake, fork), ["A", "A"]);
 
@@ -195,7 +195,7 @@ test("Docker forks a desktop from a snapshot taken with identity reset version 9
 
   assert.equal(fork.state, "ready", fork.error ?? "");
   assert.equal(fork.kind, "linux-desktop-cpu");
-  assert.ok(fake.inspect(fork.guest!.ref).Config.Env.includes(`BBBOX_IDENTITY=${fork.id}`));
+  assert.ok(fake.inspect(fork.guest!.ref).Config.Env.includes(`ALIABOX_IDENTITY=${fork.id}`));
 });
 
 for (const each of [
@@ -236,7 +236,7 @@ test("Docker releases a fork whose boot reset did not run, says why, and never l
   const name = made[made.indexOf("--name") + 1]!;
   assert.equal(made[made.indexOf("--restart") + 1], "no");
   assert.ok(!restartUpdates(fake, name).includes("unless-stopped"), "its restart policy never let Docker start it again");
-  assert.ok(createOf(fake, name).includes("BBBOX_FORK_HOLD=1"), "it was made held");
+  assert.ok(createOf(fake, name).includes("ALIABOX_FORK_HOLD=1"), "it was made held");
   assert.deepEqual(fake.servicesStarted(name), [], "nothing copied from the source ran in it: no inner Docker, SSH, VesnALIA daemon, Tailscale or desktop");
   assert.equal(callIndex(fake, name, "fork-released"), -1, "VesnALIA Box never released it");
   assert.equal(fake.inspect(source.guest!.ref).State.Status, "running");
@@ -320,8 +320,8 @@ test("Docker places a fork as a new box, so a fork without a GPU of a box with o
 
   const made = fake.inspect(fork.ref);
   assert.deepEqual(made.HostConfig.Devices, []);
-  assert.deepEqual(made.Config.Env.filter((entry) => /^(CUDA_VISIBLE_DEVICES|NVIDIA_VISIBLE_DEVICES|BBBOX_GPU_CARD|NVIDIA_DRIVER_CAPABILITIES)=./.test(entry)), []);
-  assert.equal(made.Config.Labels["bbbox.gpu"] ?? "", "");
+  assert.deepEqual(made.Config.Env.filter((entry) => /^(CUDA_VISIBLE_DEVICES|NVIDIA_VISIBLE_DEVICES|ALIABOX_GPU_CARD|NVIDIA_DRIVER_CAPABILITIES)=./.test(entry)), []);
+  assert.equal(made.Config.Labels["aliabox.gpu"] ?? "", "");
   assert.equal(fork.data?.card, undefined);
 });
 
@@ -350,7 +350,7 @@ test("Docker holds every service of a fork until VesnALIA Box's check has passed
 
   assert.equal(fork.state, "ready", fork.error ?? "");
   const container = fork.guest!.ref;
-  assert.ok(createOf(fake, container).includes("BBBOX_FORK_HOLD=1"));
+  assert.ok(createOf(fake, container).includes("ALIABOX_FORK_HOLD=1"));
   const checked = callIndex(fake, container, "tailnet_node");
   const released = callIndex(fake, container, "fork-released");
   assert.ok(checked >= 0 && released > checked, "VesnALIA Box released the fork only after its check");
@@ -391,7 +391,7 @@ test("Docker leaves a fork held when VesnALIA Box stops before its check, and re
 
 test("Docker refuses to fork a snapshot of a box made from an image that cannot hold a fork, saying why, before anything is copied", async () => {
   const fake = fakeDockerHost();
-  fake.withoutForkHold("bbbox/linux:1");
+  fake.withoutForkHold("aliabox/linux:1");
   const { state, source, target } = await sourceWithSnapshotOfA(fake);
   const containers = fake.containers();
   const volumesBefore = volumes(fake);
@@ -406,7 +406,7 @@ test("Docker refuses to fork a snapshot of a box made from an image that cannot 
 
 test("Docker refuses such a fork itself too, before it removes, places or copies anything", async () => {
   const { fake, backend } = gpuBackend();
-  fake.withoutForkHold("bbbox/linux:1");
+  fake.withoutForkHold("aliabox/linux:1");
   const source = await backend.acquire(boxOf("bxsource00003", "none"), null, ACQUIRING, AbortSignal.timeout(30_000));
   const taken = await backend.snapshot(source, { id: "snold", box: "bxsource00003", memory: false, forkSafe: 9 }, QUIET);
   const containers = fake.containers();
@@ -440,7 +440,7 @@ test("Docker starts a new box, an ordinary start and a restore at once, with no 
 
   assert.equal(fake.servicesStarted(restored.ref).length, 1, "a restore's services start with it");
   for (const each of [made.ref, restored.ref]) {
-    assert.ok(!createOf(fake, each).includes("BBBOX_FORK_HOLD=1"), `${each} was made with no hold`);
+    assert.ok(!createOf(fake, each).includes("ALIABOX_FORK_HOLD=1"), `${each} was made with no hold`);
     assert.equal(createOf(fake, each)[createOf(fake, each).indexOf("--restart") + 1], "unless-stopped");
   }
 });
@@ -463,5 +463,5 @@ test("Docker holds a fork of a fork, though its copy carries the first fork's re
   const restored = await backend.adoptSnapshot!({ id: "snsecond", ref: taken.ref, guest: first }, boxOf("bxfork0000005", "none"), { macs: {}, smbios: null, value: "bxfork0000005" }, COPYING);
   await backend.start!(restored);
   assert.equal(fake.servicesStarted(restored.ref).length, 1, "a restore of the first fork's snapshot starts at once");
-  assert.ok(fake.inspect(restored.ref).Config.Env.includes("BBBOX_FORK_HOLD="), "the snapshot holds no fork's hold");
+  assert.ok(fake.inspect(restored.ref).Config.Env.includes("ALIABOX_FORK_HOLD="), "the snapshot holds no fork's hold");
 });

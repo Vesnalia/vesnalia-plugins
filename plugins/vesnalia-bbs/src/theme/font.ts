@@ -1,7 +1,7 @@
 import { VGA_FONT_WOFF_BASE64 } from "./font-data";
 
 /** CSS font-family name the bundled VGA font is registered under. */
-export const BBS_FONT_NAME = "bbbbs PxPlus IBM VGA 8x16";
+export const BBS_FONT_NAME = "aliabbs PxPlus IBM VGA 8x16";
 
 /** Use this as xterm's fontFamily: the VGA font, then sane monospace fallbacks. */
 export const BBS_FONT_FAMILY = `"${BBS_FONT_NAME}", "Px437 IBM VGA 8x16", "PxPlus IBM VGA 8x16", ui-monospace, Menlo, Consolas, monospace`;

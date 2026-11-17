@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
-# Local desktop rig for comparing computer-use tools. Not a bb-box template.
+# Local desktop rig for comparing computer-use tools. Not a alia-box template.
 # See docs/research/computer-use.md. Build from this directory:
-#   docker build -t bbbox-cu-rig .
+#   docker build -t aliabox-cu-rig .
 
 FROM ubuntu:24.04 AS acli-build
 ENV DEBIAN_FRONTEND=noninteractive

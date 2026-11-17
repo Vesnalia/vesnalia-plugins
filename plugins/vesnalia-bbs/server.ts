@@ -155,7 +155,7 @@ export default async function plugin(alia: AliaPluginApi) {
     async execute(input, { threadId, signal }) { return JSON.stringify(await manager.agentKeys(threadId, input, signal)); },
   });
   alia.agents.configure(() => allowAgents
-    ? { tools: ["bbs_screen", "bbs_keys"], skills: ["bbbbs"], instructions: "Each BBS thread uses its own assigned bot slot (<handle>.bot, <handle>.bot2, <handle>.bot3, and so on). The server allows 3 concurrent slots per owner by default; the plugin bounds local sessions to 8. Reconnect may assign a different slot: read the current screen before typing. All your owner's bot slots share one chat line per 30 seconds; never post to boards. Agent capacity errors are final with no automatic retry; report full and wait for a free slot." }
+    ? { tools: ["bbs_screen", "bbs_keys"], skills: ["aliabbs"], instructions: "Each BBS thread uses its own assigned bot slot (<handle>.bot, <handle>.bot2, <handle>.bot3, and so on). The server allows 3 concurrent slots per owner by default; the plugin bounds local sessions to 8. Reconnect may assign a different slot: read the current screen before typing. All your owner's bot slots share one chat line per 30 seconds; never post to boards. Agent capacity errors are final with no automatic retry; report full and wait for a free slot." }
     : { tools: [], skills: [] });
   alia.events.on("thread.archived", ({ thread }) => manager.closeAgent(thread.id));
   alia.events.on("thread.deleted", ({ thread }) => manager.closeAgent(thread.id));

@@ -304,7 +304,7 @@ describe("what agents are told", () => {
 
   it("the fragment and the guide name no host: the declaration is the same on every host (07 R-X1)", () => {
     for (const text of [declaration.instruction!, declaration.guide]) {
-      expect(text).not.toMatch(/\bbb (thread-page|pages|plugin)\b|unife-pages\.js|\$ALIA_|\bbb session\b/);
+      expect(text).not.toMatch(/\aliab (thread-page|pages|plugin)\b|unife-pages\.js|\$ALIA_|\aliab session\b/);
     }
   });
 

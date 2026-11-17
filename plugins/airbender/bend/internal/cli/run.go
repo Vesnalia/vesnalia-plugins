@@ -249,7 +249,7 @@ type statusWithCopy struct {
 // tracker not named is passed over as if it were not there. The Airbender
 // tab sets it: it reads the whole list on every reload, which a hosted
 // tracker is too slow for until issues are kept in a local copy
-// (bead-bb-c9l.6).
+// (bead-alia-c9l.6).
 const AcceptVariable = "BEND_ACCEPT"
 
 // acceptedTrackers reads AcceptVariable; nil when it is not set, which

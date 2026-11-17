@@ -4,7 +4,7 @@ stuck projects by itself).
 
 Every run reads the plugin's own STUCK lines of the last minutes (a thread
 held 10 min while another account had a free seat), and moves the project of
-each stuck non-Fable thread with `bb claude-switcher use` to the Team account
+each stuck non-Fable thread with `alia claude-switcher use` to the Team account
 with the most free seats among the ones the line names as free. Never to an
 Ultra or Max account: the plugin moves an Opus turn off one that keeps Fable's
 weekly within a second (measured 2026-11-04 23:00:59), so such a move only
@@ -171,7 +171,7 @@ def main() -> int:
     ap.add_argument("--health-file")
     ap.add_argument("--plugins-file")
     ap.add_argument("--now-ms", type=int)
-    ap.add_argument("--project", action="append", default=[], help="thr_x=proj_y, instead of asking bb")
+    ap.add_argument("--project", action="append", default=[], help="thr_x=proj_y, instead of asking alia")
     ap.add_argument("--until", default="2026-11-05T08:00:00+01:00")
     args = ap.parse_args()
 
@@ -197,21 +197,21 @@ def main() -> int:
 
     if args.now_ms is None and now > dt.datetime.fromisoformat(args.until):
         return off(f"pasada la hora de corte {args.until}")
-    version = plugin_version(read(args.plugins_file, ["bb", "plugin", "list"]))
+    version = plugin_version(read(args.plugins_file, ["alia", "plugin", "list"]))
     if version is None:
         # Without the installed version a move could fight a plugin that
         # already moves stuck projects itself (code-reviewer r1 L1).
-        log("pasada: sin versión del plugin en `bb plugin list`; no muevo nada")
+        log("pasada: sin versión del plugin en `alia plugin list`; no muevo nada")
         return 0
     if version >= OFF_VERSION:
         return off(f"el plugin instalado es {'.'.join(map(str, version))}: ya mueve él los proyectos atascados")
 
-    stuck = parse_stuck(read(args.log_file, ["bb", "plugin", "logs", "claude-switcher", "-n", "3000"]), now_ms)
+    stuck = parse_stuck(read(args.log_file, ["alia", "plugin", "logs", "claude-switcher", "-n", "3000"]), now_ms)
     if not stuck:
         log(f"pasada: sin STUCK en los últimos {WINDOW_MIN} min; nada que mover")
         return 0
-    room = parse_seats(read(args.seats_file, ["bb", "claude-switcher", "seats"]))
-    health = parse_health(read(args.health_file, ["bb", "claude-switcher", "health"]))
+    room = parse_seats(read(args.seats_file, ["alia", "claude-switcher", "seats"]))
+    health = parse_health(read(args.health_file, ["alia", "claude-switcher", "health"]))
     given = dict(p.split("=", 1) for p in args.project)
 
     def project_of(thread: str):
@@ -220,7 +220,7 @@ def main() -> int:
         if args.log_file:
             return None
         try:
-            return json.loads(run(["bb", "thread", "show", thread, "--json"]))["thread"]["projectId"]
+            return json.loads(run(["alia", "thread", "show", thread, "--json"]))["thread"]["projectId"]
         except Exception as e:  # noqa: BLE001 (una pasada fallida se registra y no para las demás)
             log(f"{thread}: no se pudo leer su proyecto: {e}")
             return None
@@ -231,7 +231,7 @@ def main() -> int:
     for mv in moves:
         if not args.dry_run:
             try:
-                run(["bb", "claude-switcher", "use", mv["proyecto"], mv["a"]])
+                run(["alia", "claude-switcher", "use", mv["proyecto"], mv["a"]])
             except Exception as e:  # noqa: BLE001 (una pasada fallida se registra y no para las demás)
                 log(f"falló mover {mv['proyecto']} a {mv['a']}: {e}")
                 continue

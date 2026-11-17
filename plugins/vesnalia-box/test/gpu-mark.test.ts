@@ -292,7 +292,7 @@ test("alia box gpu mark refuses the whole run, changing nothing, with no helper,
     [
       ["no helper", "pve has no GPU helper: VM 9190's report has no helper line, and only the helper, alia-box-gpu, answers a marker.", "Run host/setup-gpu.sh from the setup guide as root on pve.", 0],
       ["old", "The GPU helper on pve last reported 3 minutes ago, in VM 9190.", "Run systemctl status alia-box-gpu as root on pve, and check the host's clock.", 0],
-      ["not served", "alia-box-gpu 0.4.4 on pve serves pool team, not this install's pool bbbox.", "Run host/setup-gpu.sh --pool bbbox as root on pve.", 0],
+      ["not served", "alia-box-gpu 0.4.4 on pve serves pool team, not this install's pool aliabox.", "Run host/setup-gpu.sh --pool aliabox as root on pve.", 0],
       ["no cards", "The GPU helper on pve lists no card in VM 9190's report, so VesnALIA Box cannot tell which card a guest's lines name.", "Run systemctl status alia-box-gpu and nvidia-smi as root on pve.", 0],
       ["no report VM", "The token can read no VM named alia-box-gpu-memory on pve, so VesnALIA Box cannot read the GPU helper's report.", "Run host/setup-gpu-report.sh, then host/setup-gpu.sh, from the setup guide as root on pve.", 0],
     ],
@@ -340,7 +340,7 @@ test("proxmox.gpu-migration fails on a write the helper would make or a refusal 
   const other = new Bridge();
   other.guest(7120, desktop("bx7120", "fine", CARD_A, { marker: marker("shared", CARD_A, 1) }));
   other.guest(7121, { ...boxLabels("bx7121", "theirs", "linux-desktop", "zz99"), lines: cardLines(CARD_A, "desktop"), marker: marker("shared", CARD_B, 1), pool: "team" });
-  other.node.setHelperConfig(["bbbox", "team"], "off");
+  other.node.setHelperConfig(["aliabox", "team"], "off");
   other.helper();
   other.guest(7122, desktop("bx7122", "just-marked", CARD_B, { marker: marker("shared", CARD_B, 1) }));
   assert.deepEqual(await check(other), [

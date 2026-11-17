@@ -12,7 +12,7 @@ import tempfile
 import urllib.request
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--destination', required=True, type=Path, help='Executable path inside BB plugin-owned host storage')
+parser.add_argument('--destination', required=True, type=Path, help='Executable path inside ALIA plugin-owned host storage')
 args = parser.parse_args()
 executable_path = args.destination.expanduser().resolve()
 destination = executable_path.parent

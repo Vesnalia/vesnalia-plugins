@@ -476,7 +476,7 @@ func TestStoppingTakesInProgressOffAndLeavesTheAssignee(t *testing.T) {
 }
 
 func TestSomedayIsALabelThatStartingAndClosingTakeOff(t *testing.T) {
-	// bead-bb-26g.
+	// bead-alia-26g.
 	github, adapter := fresh("")
 	id := create(t, adapter, tracker.Draft{Title: "Maybe later"})
 	must(t, adapter.Edit(id, tracker.Changes{AddLabels: []string{"ui"}}))

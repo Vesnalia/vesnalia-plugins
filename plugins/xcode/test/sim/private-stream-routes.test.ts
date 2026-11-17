@@ -9,7 +9,7 @@ import {
   type PrivateStreamRouteDeps,
 } from "../../src/sim/private-stream-routes.js";
 
-const UDID = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE";
+const UDID = "AAAAAAAA-ALIABB-CCCC-DDDD-EEEEEEEEEEEE";
 const ADDRESS = { port: 58123, secret: "secret", streamToken: "stream" };
 
 function context(signal: AbortSignal = new AbortController().signal): PrivateRouteContext {
@@ -174,7 +174,7 @@ describe("the private stream route", () => {
         currentDeviceUdid: () => current,
         open: async () => {
           attempt += 1;
-          if (attempt === 1) current = "BBBBBBBB-CCCC-DDDD-EEEE-FFFFFFFFFFFF";
+          if (attempt === 1) current = "ALIABBBBBB-CCCC-DDDD-EEEE-FFFFFFFFFFFF";
           return upstream();
         },
       }),

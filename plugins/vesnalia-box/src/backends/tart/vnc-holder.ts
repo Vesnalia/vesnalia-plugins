@@ -28,7 +28,7 @@
 // reads the run's VNC URL from Tart's output, so the password is never on a
 // command line, and answers VNC authentication with DES through openssl.
 
-/** The holder's source, written to the Mac for each run. It has no line `BBBOX_HOLDER`, which ends it in holderScript's heredoc. */
+/** The holder's source, written to the Mac for each run. It has no line `ALIABOX_HOLDER`, which ends it in holderScript's heredoc. */
 export const VNC_HOLDER_PY = String.raw`# alia-box's VNC holder for one run of a Tart macOS VM (#406).
 #
 #   python3 holder.py <tart run output> <socket> <status file>
@@ -313,7 +313,7 @@ class Holder:
     def request(self, whole=False):
         # The one outstanding request, sent after the sign-in and after each update.
         self.asked_whole = whole
-        self.writer.write(struct.pack(">BBHHHH", 3, 0 if whole else 1, 0, 0, self.width, self.height))
+        self.writer.write(struct.pack(">ALIAHHHH", 3, 0 if whole else 1, 0, 0, self.width, self.height))
 
     async def serve(self, reader, writer):
         viewer = Viewer(writer)

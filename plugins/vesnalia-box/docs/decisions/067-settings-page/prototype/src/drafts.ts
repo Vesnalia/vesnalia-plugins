@@ -36,7 +36,7 @@ const memory = new Map<string, Edits>();
 const listeners = new Set<() => void>();
 
 function storageKey(part: string): string {
-  return `bbbox-draft:${part}`;
+  return `aliabox-draft:${part}`;
 }
 
 export function isSecretEdit(value: unknown): value is SecretEdit {
@@ -94,7 +94,7 @@ export function forgetDrafts(): void {
   memory.clear();
   try {
     Object.keys(sessionStorage)
-      .filter((key) => key.startsWith("bbbox-draft:"))
+      .filter((key) => key.startsWith("aliabox-draft:"))
       .forEach((key) => sessionStorage.removeItem(key));
   } catch {
     return;
@@ -108,7 +108,7 @@ export function draftParts(): string[] {
   try {
     for (let index = 0; index < sessionStorage.length; index += 1) {
       const key = sessionStorage.key(index);
-      if (key?.startsWith("bbbox-draft:") && !(memory.has(key.slice("bbbox-draft:".length)) && !Object.keys(memory.get(key.slice("bbbox-draft:".length))!).length)) parts.add(key.slice("bbbox-draft:".length));
+      if (key?.startsWith("aliabox-draft:") && !(memory.has(key.slice("aliabox-draft:".length)) && !Object.keys(memory.get(key.slice("aliabox-draft:".length))!).length)) parts.add(key.slice("aliabox-draft:".length));
     }
   } catch {
     return [...parts];

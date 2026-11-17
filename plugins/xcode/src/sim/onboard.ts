@@ -41,7 +41,7 @@ export const SNAPSHOT_PREVIEWS_VERSION = "0.18.0";
 export const SNAPSHOT_PREVIEWS_URL = "https://github.com/EmergeTools/SnapshotPreviews";
 
 /** The class the onboarder writes. Greppable, and unlikely to collide. */
-export const TEST_CLASS_NAME = "BBPreviewSnapshotTests";
+export const TEST_CLASS_NAME = "AliaPreviewSnapshotTests";
 /** A corrupt or generated project manifest must not become a server-heap allocation. */
 export const MAX_PROJECT_MANIFEST_BYTES = 32 * 1024 * 1024;
 

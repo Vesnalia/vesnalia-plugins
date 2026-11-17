@@ -401,7 +401,7 @@ A record alia-box keeps, beside the box's record and its log (069 unit 1b):
 | `size` | 1.2 GB | what it adds, where the provider says; else what it holds |
 | `cost` | "free", "about $0.06 a month", "EUR 0.02 a month" | words, from the backend |
 | `lives` | "on pve-1's storage", "on boat", "on mac-1" | where it is, for the person |
-| `ref` | `bbsnap-<id>` on Proxmox, a folder on a Mac, a boat snapshot ID | the backend's, opaque to the core |
+| `ref` | `aliasnap-<id>` on Proxmox, a folder on a Mac, a boat snapshot ID | the backend's, opaque to the core |
 | `owner` | the box's thread, or the person | see below |
 | `keptUntil` | null, or a date | set when the person keeps one |
 | `picture` | a small JPEG of the screen | see [a picture of the screen](#a-picture-of-the-screen) |

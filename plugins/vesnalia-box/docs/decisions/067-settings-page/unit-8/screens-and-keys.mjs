@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 
 const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
-const aliaCli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "bbcli");
+const aliaCli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "aliacli");
 const projectDir = process.env.LIVE_PROJECT ?? join(process.env.HOME ?? "", "proj");
 mkdirSync(out, { recursive: true });
 

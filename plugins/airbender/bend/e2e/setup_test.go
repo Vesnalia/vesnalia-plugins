@@ -83,7 +83,7 @@ func bare(t *testing.T) *repository {
 		t.Skip("bd is not available")
 	}
 	// bend's own runs get the same git as repo.run: no user settings or
-	// hooks, a fixed name; setup's commit step commits (bead-bb-25p).
+	// hooks, a fixed name; setup's commit step commits (bead-alia-25p).
 	repo := &repository{t: t, root: root, env: []string{
 		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
 		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.com",
@@ -150,7 +150,7 @@ func TestSetupOfANewRepository(t *testing.T) {
 	same(t, repo.fails("setup", "all").Kind, "usage", "all without a yes")
 	chosen := repo.setup()
 	same(t, chosen.states(), "tracker=done program=done issues=missing instructions=blocked facts=not-needed commit=missing publish=blocked", "after choosing beads")
-	// Beads is set up without questions, as the maintainer (bead-bb-dof).
+	// Beads is set up without questions, as the maintainer (bead-alia-dof).
 	if !strings.HasSuffix(chosen.Steps[2].Runs, " init --skip-agents --non-interactive --role maintainer") {
 		t.Fatalf("the issues step runs %q", chosen.Steps[2].Runs)
 	}
@@ -165,7 +165,7 @@ func TestSetupOfANewRepository(t *testing.T) {
 	}
 	same(t, repo.file("CLAUDE.md"), "", "no CLAUDE.md is made where there was none")
 	// Setup's files are committed, in one commit of their own, and nothing
-	// is left over (bead-bb-25p).
+	// is left over (bead-alia-25p).
 	same(t, strings.TrimSpace(repo.run("git", "log", "-1", "--format=%s")), "Set up Airbender: .bend.json, AGENTS.md, FACTS.md, .beads/config.yaml", "setup's commit")
 	same(t, strings.TrimSpace(repo.run("git", "status", "--porcelain")), "", "git status after setup")
 	// The repository works: an issue can be made and read.
@@ -241,7 +241,7 @@ func TestSetupSwitchesARepositorySetUpTheOldWay(t *testing.T) {
 		t.Fatalf("the facts file is not as chosen:\n%s", facts)
 	}
 	same(t, repo.setup().Steps[4].State, "done", "the facts step")
-	// Ready once setup's files are committed (bead-bb-25p).
+	// Ready once setup's files are committed (bead-alia-25p).
 	same(t, repo.setup().Ready, false, "ready before committing setup's files")
 	repo.ok("setup", "commit", "-y")
 	same(t, repo.setup().Ready, true, "ready")
@@ -601,7 +601,7 @@ func (repo *repository) commitAll(message string) {
 }
 
 func TestSetupCommitsItsFilesAndNothingElse(t *testing.T) {
-	// bead-bb-25p: only setup's files go in; what else is staged stays so.
+	// bead-alia-25p: only setup's files go in; what else is staged stays so.
 	newOnly(t)
 	repo := bare(t)
 	repo.commitAll("first")
@@ -623,7 +623,7 @@ func TestSetupCommitsItsFilesAndNothingElse(t *testing.T) {
 }
 
 func TestSetupIsHeldBackInAWorktreeAndOnAnotherBranch(t *testing.T) {
-	// bead-bb-25p: setup changes a repository only from its main folder, on
+	// bead-alia-25p: setup changes a repository only from its main folder, on
 	// the main branch.
 	newOnly(t)
 	repo := bare(t)
@@ -650,7 +650,7 @@ func TestSetupIsHeldBackInAWorktreeAndOnAnotherBranch(t *testing.T) {
 }
 
 func TestAWorktreeSaysToCommitTheMainFoldersInstructions(t *testing.T) {
-	// The minisaba case (bead-bb-25p): the main folder has Airbender's rules
+	// The minisaba case (bead-alia-25p): the main folder has Airbender's rules
 	// but has not committed them; a worktree points there.
 	newOnly(t)
 	repo := bare(t)
@@ -669,7 +669,7 @@ func TestAWorktreeSaysToCommitTheMainFoldersInstructions(t *testing.T) {
 }
 
 func TestAnIssuesOwnEditsAreNotSetupsToCommit(t *testing.T) {
-	// bead-bb-25p, from review: agents edit AGENTS.md and FACTS.md while
+	// bead-alia-25p, from review: agents edit AGENTS.md and FACTS.md while
 	// working issues; only what setup wrote is its to commit.
 	newOnly(t)
 	repo := bare(t)
@@ -694,7 +694,7 @@ func TestAnIssuesOwnEditsAreNotSetupsToCommit(t *testing.T) {
 }
 
 func TestAWorktreeMadeBeforeSetupIsToldToCatchUp(t *testing.T) {
-	// bead-bb-25p: a branch made before Airbender was set up and committed
+	// bead-alia-25p: a branch made before Airbender was set up and committed
 	// on main needs only to be brought up to date.
 	newOnly(t)
 	repo := bare(t)
@@ -710,7 +710,7 @@ func TestAWorktreeMadeBeforeSetupIsToldToCatchUp(t *testing.T) {
 }
 
 func TestSetupLeavesNothingForGit(t *testing.T) {
-	// bead-bb-cnv: a new repository set up and published shows nothing of
+	// bead-alia-cnv: a new repository set up and published shows nothing of
 	// Airbender's or beads' to git, and its sync changes no tracked file.
 	newOnly(t)
 	origin := bare(t)
@@ -730,7 +730,7 @@ func TestSetupLeavesNothingForGit(t *testing.T) {
 }
 
 func TestBeadsAgentSetupIsRemovedWithWhatItLeaves(t *testing.T) {
-	// bead-bb-cnv: beads' Codex and Claude Code setup, and an older beads'
+	// bead-alia-cnv: beads' Codex and Claude Code setup, and an older beads'
 	// Codex hook, go entirely; a file of the owner's is kept.
 	newOnly(t)
 	repo := bare(t)

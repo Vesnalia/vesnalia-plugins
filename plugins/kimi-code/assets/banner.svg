@@ -30,8 +30,8 @@
   </g>
 
   <!-- header -->
-  <text x="188" y="106" xml:space="preserve" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="58" font-weight="700" fill="#F5F7FB" letter-spacing="-1">Kimi Code<tspan fill="#3B5BFB"> for bb</tspan></text>
-  <text x="190" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" fill="#98A1B3">Run Kimi Code CLI threads from bb's provider picker — locally and on enrolled remote hosts</text>
+  <text x="188" y="106" xml:space="preserve" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="58" font-weight="700" fill="#F5F7FB" letter-spacing="-1">Kimi Code<tspan fill="#3B5BFB"> for alia</tspan></text>
+  <text x="190" y="146" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" fill="#98A1B3">Run Kimi Code CLI threads from alia's provider picker — locally and on enrolled remote hosts</text>
 
   <!-- badges -->
   <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">
@@ -58,8 +58,8 @@
     <text x="64" y="272" font-size="14" font-weight="700" fill="#3B5BFB" letter-spacing="3.5">USE IT</text>
     <g font-size="16.5" fill="#C7CDD9">
       <text x="64" y="308"><tspan fill="#3B5BFB">•</tspan>  Install the Kimi Code CLI, then <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#8FB0FF">kimi login</tspan></text>
-      <text x="64" y="342"><tspan fill="#3B5BFB">•</tspan>  Add the marketplace to bb:</text>
-      <text x="84" y="370" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8FB0FF">bb marketplace add \</text>
+      <text x="64" y="342"><tspan fill="#3B5BFB">•</tspan>  Add the marketplace to alia:</text>
+      <text x="84" y="370" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8FB0FF">alia marketplace add \</text>
       <text x="84" y="392" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8FB0FF">  git:github.com/dpolishuk/bb-kimi-code@main</text>
       <text x="64" y="426"><tspan fill="#3B5BFB">•</tspan>  Settings → Plugins → install «Kimi Code»</text>
       <text x="64" y="460"><tspan fill="#3B5BFB">•</tspan>  Pick Kimi Code in the composer: K3, K3-256k,</text>
@@ -71,15 +71,15 @@
     <!-- HOW IT WORKS -->
     <text x="484" y="272" font-size="14" font-weight="700" fill="#3B5BFB" letter-spacing="3.5">HOW IT WORKS</text>
     <g font-size="16.5" fill="#C7CDD9">
-      <text x="484" y="308"><tspan fill="#3B5BFB">•</tspan>  bb server registers the provider declaration:</text>
+      <text x="484" y="308"><tspan fill="#3B5BFB">•</tspan>  alia server registers the provider declaration:</text>
       <text x="504" y="332">capabilities, model catalog, skill roots</text>
-      <text x="484" y="366"><tspan fill="#3B5BFB">•</tspan>  The host artifact is bb's own ACP bridge,</text>
+      <text x="484" y="366"><tspan fill="#3B5BFB">•</tspan>  The host artifact is alia's own ACP bridge,</text>
       <text x="504" y="390">digest-verified and delivered per host</text>
       <text x="484" y="424"><tspan fill="#3B5BFB">•</tspan>  The daemon spawns <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#8FB0FF">kimi acp</tspan> and talks</text>
       <text x="504" y="448">ACP over stdio JSON-RPC</text>
       <text x="484" y="482"><tspan fill="#3B5BFB">•</tspan>  Models, thinking levels and modes are probed</text>
       <text x="504" y="506">live from the agent's configOptions</text>
-      <text x="484" y="540"><tspan fill="#3B5BFB">•</tspan>  Approvals are gated by bb permission modes</text>
+      <text x="484" y="540"><tspan fill="#3B5BFB">•</tspan>  Approvals are gated by alia permission modes</text>
       <text x="504" y="564">(accept-edits · full)</text>
     </g>
 
@@ -90,7 +90,7 @@
       <text x="924" y="332">protocol code of our own to maintain</text>
       <text x="904" y="366"><tspan fill="#3B5BFB">•</tspan>  Declare only what the bridge honors:</text>
       <text x="924" y="390">fork: none (kimi ≥ 2.3.0 session lock),</text>
-      <text x="924" y="414">no bb «auto» mode (ACP can't enforce it)</text>
+      <text x="924" y="414">no alia «auto» mode (ACP can't enforce it)</text>
       <text x="904" y="448"><tspan fill="#3B5BFB">•</tspan>  Nothing hardcoded — kimi-side renames</text>
       <text x="924" y="472">like «K2.8 Preview» just show up</text>
       <text x="904" y="506"><tspan fill="#3B5BFB">•</tspan>  A kimi dialect object owns maintenance:</text>

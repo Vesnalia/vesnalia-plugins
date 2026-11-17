@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `bb-plugin-stelow`.
+All notable changes to `alia-plugin-stelow`.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to a single-version-per-release tag format
@@ -173,7 +173,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Features
 
-* bb stelow next, the host verb the skills already name ([#457](https://github.com/calionauta/bb-plugin-stelow/issues/457)) ([96d863a](https://github.com/calionauta/bb-plugin-stelow/commit/96d863a8697651c636ed7346456e9e7db60e1d26))
+* VesnALIA stelow next, the host verb the skills already name ([#457](https://github.com/calionauta/bb-plugin-stelow/issues/457)) ([96d863a](https://github.com/calionauta/bb-plugin-stelow/commit/96d863a8697651c636ed7346456e9e7db60e1d26))
 
 ## [0.95.1](https://github.com/calionauta/bb-plugin-stelow/compare/v0.95.0...v0.95.1) (2026-10-27)
 
@@ -276,7 +276,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Bug Fixes
 
-* one owner for the gap schema and the artifact count ([#420](https://github.com/calionauta/bb-plugin-stelow/issues/420)) ([bbd6d49](https://github.com/calionauta/bb-plugin-stelow/commit/bbd6d497bec3f3daeff7d4a0199c6963c8127e56))
+* one owner for the gap schema and the artifact count ([#420](https://github.com/calionauta/bb-plugin-stelow/issues/420)) ([aliad6d49](https://github.com/calionauta/bb-plugin-stelow/commit/bbd6d497bec3f3daeff7d4a0199c6963c8127e56))
 
 ## [0.89.0](https://github.com/calionauta/bb-plugin-stelow/compare/v0.88.0...v0.89.0) (2026-10-24)
 
@@ -400,7 +400,7 @@ and this project adheres to a single-version-per-release tag format
 ### Bug Fixes
 
 * give the gate receipt one writer ([#368](https://github.com/calionauta/bb-plugin-stelow/issues/368)) ([00c09ae](https://github.com/calionauta/bb-plugin-stelow/commit/00c09aeedf7882516b7a9fa7d093f49f5b1a95d6))
-* no-argument RPCs accept a caller that sends nothing, so `bb plugin list` stops reporting a failed `listNotifications` ([#366](https://github.com/calionauta/bb-plugin-stelow/issues/366)) ([769ca07](https://github.com/calionauta/bb-plugin-stelow/commit/769ca075dafdf371f16478c9339af75a7a3b6411))
+* no-argument RPCs accept a caller that sends nothing, so `alia plugin list` stops reporting a failed `listNotifications` ([#366](https://github.com/calionauta/bb-plugin-stelow/issues/366)) ([769ca07](https://github.com/calionauta/bb-plugin-stelow/commit/769ca075dafdf371f16478c9339af75a7a3b6411))
 * the reconcile sweep records a standing observation once, not once per tick ([#366](https://github.com/calionauta/bb-plugin-stelow/issues/366)) ([769ca07](https://github.com/calionauta/bb-plugin-stelow/commit/769ca075dafdf371f16478c9339af75a7a3b6411))
 * the silent-stop sentence is written once per park, not once per trigger ([#366](https://github.com/calionauta/bb-plugin-stelow/issues/366)) ([769ca07](https://github.com/calionauta/bb-plugin-stelow/commit/769ca075dafdf371f16478c9339af75a7a3b6411))
 * the resume rule measures new output against the last idle edge, so reading a card no longer decides whether its worker resumes ([#366](https://github.com/calionauta/bb-plugin-stelow/issues/366)) ([769ca07](https://github.com/calionauta/bb-plugin-stelow/commit/769ca075dafdf371f16478c9339af75a7a3b6411))
@@ -478,7 +478,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Features
 
-* **A worker's orientation cost is measured and shown on the card.** A skill load is a `toolCall` naming a `SKILL.md`, so reads before the first `bb stelow advance` are orientation spent before work. Violations are reported, never blocked. Measured: one skill read across ten workers.
+* **A worker's orientation cost is measured and shown on the card.** A skill load is a `toolCall` naming a `SKILL.md`, so reads before the first `alia stelow advance` are orientation spent before work. Violations are reported, never blocked. Measured: one skill read across ten workers.
 * **A worker's token figure is shown for nearly every worker, and says what it is.** The plugin read one usage event family; `acp-opencode` — which 8 of 10 workers run on — emits none of it and reports a context-window reading instead. Both families are read now, and an estimate is labelled `(est.)` rather than presented as a measurement. 1 of 10 workers reporting a figure before, 10 of 10 after.
 * **A refused retry records why and names an exit.** Five real runs hit the auto-retry's stage guard with the card already advanced and every one parked silently, which is why `auto_retry_count` read 0 across the fleet.
 
@@ -491,7 +491,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Bug Fixes
 
-* **Every prompt resolves its reading list from `bb stelow playbook`.** All six spawn paths told the worker to load the `stelow-workflow-*` glob — seventeen skills, 215,756 bytes of entry documents — while the `CLI_EQUIVALENTS` clause in the same prompt said to run the playbook and never discover skills that way.
+* **Every prompt resolves its reading list from `alia stelow playbook`.** All six spawn paths told the worker to load the `stelow-workflow-*` glob — seventeen skills, 215,756 bytes of entry documents — while the `CLI_EQUIVALENTS` clause in the same prompt said to run the playbook and never discover skills that way.
 * **One ask contract, rendered by every spawn path.** The structured-ask block was pasted into five builders and had already drifted: two lacked the "never write waiting text" guard and the restart path lacked the timeout rule.
 * **A provider rate limit and an unowned card no longer advise "Answering below resumes the worker".** False for both — nothing is pending, and the reader was pointed at a box whose answer goes nowhere. A rate limit is matched on the status code, never the word "limit".
 * **No RPC result carries a key holding `undefined`.** The board failed outright with `rpc result at $result.redFirst is not a JSON value (undefined)` on any board whose stored defaults predate red-first.
@@ -1011,12 +1011,12 @@ and this project adheres to a single-version-per-release tag format
   agent CLI, and a vendor installer writes only the configs that exist when it
   runs. A CLI installed afterwards is permanently unregistered, and that is
   invisible from inside a worker turn. The About panel and the Build/Explore
-  onboarding re-read on every open and name the exact CLIs bb can run that lack
+  onboarding re-read on every open and name the exact CLIs VesnALIA can run that lack
   it.
 
-  The client list maps to bb's own provider registry rather than a hardcoded set,
-  so `acp-opencode` and `acp-cursor` resolve to their CLIs, an installed CLI bb
-  does not offer is not reported as a gap, and a bb provider with no known
+  The client list maps to VesnALIA's own provider registry rather than a hardcoded set,
+  so `acp-opencode` and `acp-cursor` resolve to their CLIs, an installed CLI VesnALIA
+  does not offer is not reported as a gap, and a VesnALIA provider with no known
   config path surfaces as a declared blind spot. Registration is explicit-click
   only, matching the doctrine already stated for the sibling host dependency: a
   plugin install changes the host, not this card. "Registered" claims config
@@ -1122,7 +1122,7 @@ and this project adheres to a single-version-per-release tag format
 ### Features
 
 * add the host door that approves a scope map ([cfac273](https://github.com/calionauta/bb-plugin-stelow/commit/cfac273d2ed0fad7cf75ff1d47b787f651606f6f))
-* add the host door that approves a scope map ([bba649e](https://github.com/calionauta/bb-plugin-stelow/commit/bba649e9f76589a3c2a2303e4826bcc7e7e87faf))
+* add the host door that approves a scope map ([aliaa649e](https://github.com/calionauta/bb-plugin-stelow/commit/bba649e9f76589a3c2a2303e4826bcc7e7e87faf))
 * add the host door that approves a scope map ([#151](https://github.com/calionauta/bb-plugin-stelow/issues/151)) ([cfac273](https://github.com/calionauta/bb-plugin-stelow/commit/cfac273d2ed0fad7cf75ff1d47b787f651606f6f))
 
 
@@ -1316,7 +1316,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Features
 
-* surface BB Workflows setup status ([#87](https://github.com/calionauta/bb-plugin-stelow/issues/87)) ([7e5d621](https://github.com/calionauta/bb-plugin-stelow/commit/7e5d6214024d0e5b4a52c605cd7de436d1171153))
+* surface VesnALIA Workflows setup status ([#87](https://github.com/calionauta/bb-plugin-stelow/issues/87)) ([7e5d621](https://github.com/calionauta/bb-plugin-stelow/commit/7e5d6214024d0e5b4a52c605cd7de436d1171153))
 
 ## [0.49.1](https://github.com/calionauta/bb-plugin-stelow/compare/v0.49.0...v0.49.1) (2026-09-24)
 
@@ -1390,10 +1390,10 @@ and this project adheres to a single-version-per-release tag format
 
 ### Features
 
-* bb stelow scope start|done wrapper for workers ([e5322fa](https://github.com/calionauta/bb-plugin-stelow/commit/e5322fa17054ae67b8fbeb509d7992748385dd27))
+* VesnALIA stelow scope start|done wrapper for workers ([e5322fa](https://github.com/calionauta/bb-plugin-stelow/commit/e5322fa17054ae67b8fbeb509d7992748385dd27))
 * central trackable machine for every pendency kind ([c05585e](https://github.com/calionauta/bb-plugin-stelow/commit/c05585e10a23b717c03559032500b56707677297))
 * fail-closed scope-sync guard for invisible scopes ([4e02147](https://github.com/calionauta/bb-plugin-stelow/commit/4e021474e72c6b43fd7edf01a80467ecb03d91e0))
-* forward seed-tasks and start-sha through bb stelow scope ([0d5e8c3](https://github.com/calionauta/bb-plugin-stelow/commit/0d5e8c3441a4f3b123b6945eda74396c6f32e0f0))
+* forward seed-tasks and start-sha through VesnALIA stelow scope ([0d5e8c3](https://github.com/calionauta/bb-plugin-stelow/commit/0d5e8c3441a4f3b123b6945eda74396c6f32e0f0))
 * name unstartable ordering on execution entry ([e71b234](https://github.com/calionauta/bb-plugin-stelow/commit/e71b234fcc428352ab813ba2e57880a2593b8393))
 * realtime refresh on lock and rework-scope writes ([9c585a6](https://github.com/calionauta/bb-plugin-stelow/commit/9c585a629ee7815a875415ed2920da3ac9dff867))
 * refusal lines plus spec content into done gates ([bf76449](https://github.com/calionauta/bb-plugin-stelow/commit/bf76449642172beaefdafaba3e88d5dd7f176aa1))
@@ -1574,7 +1574,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Features
 
-* adopt BB 0.43 capabilities where they pay off ([6981bfe](https://github.com/calionauta/bb-plugin-stelow/commit/6981bfe88704876c76ed47764130467d71e1a0d6))
+* adopt VesnALIA 0.43 capabilities where they pay off ([6981bfe](https://github.com/calionauta/bb-plugin-stelow/commit/6981bfe88704876c76ed47764130467d71e1a0d6))
 
 ## [0.34.0](https://github.com/calionauta/bb-plugin-stelow/compare/v0.33.0...v0.34.0) (2026-09-20)
 
@@ -1672,8 +1672,8 @@ and this project adheres to a single-version-per-release tag format
 ### Features
 
 * automation dialog names GitHub setup and 5-minute cadence ([18bfb8e](https://github.com/calionauta/bb-plugin-stelow/commit/18bfb8e0830dcd5caf2390570eecc48c4337b288))
-* automation rules manage any BB project via picker ([0e43e8e](https://github.com/calionauta/bb-plugin-stelow/commit/0e43e8ec282482e1fdef39f2bdd2da96316f643d))
-* manage automation rules for any BB project ([b3d5630](https://github.com/calionauta/bb-plugin-stelow/commit/b3d563069db6131fcfb381d8ff4e94f1e9c5cfa3))
+* automation rules manage any VesnALIA project via picker ([0e43e8e](https://github.com/calionauta/bb-plugin-stelow/commit/0e43e8ec282482e1fdef39f2bdd2da96316f643d))
+* manage automation rules for any VesnALIA project ([b3d5630](https://github.com/calionauta/bb-plugin-stelow/commit/b3d563069db6131fcfb381d8ff4e94f1e9c5cfa3))
 
 ## [0.27.0](https://github.com/calionauta/bb-plugin-stelow/compare/v0.26.0...v0.27.0) (2026-09-19)
 
@@ -1821,13 +1821,13 @@ and this project adheres to a single-version-per-release tag format
 
 ### Changed
 
-- **Native plugin updates.** Stelow now asks BB for the installed plugin's
+- **Native plugin updates.** Stelow now asks VesnALIA for the installed plugin's
   compatible update status and applies an available update only after explicit
   confirmation in About; the sidebar shows a separate update indicator.
 
 ### Fixed
 
-- **Fresh update status.** About and the sidebar now await BB's update check
+- **Fresh update status.** About and the sidebar now await VesnALIA's update check
   for their initial read, so a fast panel mount cannot remain on a stale
   "checking" value.
 
@@ -1901,7 +1901,7 @@ and this project adheres to a single-version-per-release tag format
 
 - **Portable deterministic audit receipt.** Build completion now invokes the
   vendored Stelow helper's `audit-trail build` and `audit-trail check` after
-  bb's checkout-bound `audit.md` gate. The generated receipt is the same
+  VesnALIA's checkout-bound `audit.md` gate. The generated receipt is the same
   cross-host contract, not a plugin-specific audit format.
 
 ### Changed
@@ -2002,7 +2002,7 @@ and this project adheres to a single-version-per-release tag format
   creates one idempotent recovery-audit card in its registered project. The
   original exploratory card remains an immutable mismatch record; the audit
   card has the normal workspace, test, commit, and pull-request flow.
-- **Build completion has host-recorded test evidence.** `bb stelow verify
+- **Build completion has host-recorded test evidence.** `alia stelow verify
   --tests` selects only a safe conventional project test command, runs it
   without a shell, and records its command, result digest, Git root, and
   HEAD. `done` refuses a stale, failed, or merely claimed test result.
@@ -2032,7 +2032,7 @@ and this project adheres to a single-version-per-release tag format
   that the card needs the user's attention.
 - **Recovered-card artifacts no longer target a stale worker environment.**
   When a user-confirmed recovery checkout exists, file links use the readable
-  host target rather than a retired BB workspace that can return a 404.
+  host target rather than a retired VesnALIA workspace that can return a 404.
 
 ## [0.18.36] - 2026-09-15
 
@@ -2299,7 +2299,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **Preset dialogs use BB's own provider/model pickers.** The New/Edit
+- **Preset dialogs use VesnALIA's own provider/model pickers.** The New/Edit
   preset form and the card override custom row dropped their hand-rolled
   provider/model selects for the host pickers (live catalog with search,
   same as the new-card composer) through one shared block. The Manage
@@ -2526,7 +2526,7 @@ and this project adheres to a single-version-per-release tag format
   parent, and “Keep as one card” vetoes the split. Their choice controls use
   high-contrast boxes.
 - **Settings and asks are more resilient.** New-card Settings starts closed
-  and visually contains its vertical workflow preferences. `bb stelow ask`
+  and visually contains its vertical workflow preferences. `alia stelow ask`
   accepts `--multiple` before its first `--question`, including after
   `--tag split`.
 - **Inbox labels and counts agree.** The primary list is now **Needs
@@ -2586,7 +2586,7 @@ and this project adheres to a single-version-per-release tag format
 - **Copy that actually copies.** The Clipboard API alone fails in some
   panel contexts; copy now falls back to the legacy path, and the final
   error carries the value so it stays copyable. Copy terminal ID names
-  where the ID is used (BB's sidebar terminal panel).
+  where the ID is used (VesnALIA's sidebar terminal panel).
 
 ## [0.16.4] - 2026-09-14
 
@@ -2608,7 +2608,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **Push now runs itself.** "Open push terminal" promised a reveal BB never
+- **Push now runs itself.** "Open push terminal" promised a reveal VesnALIA never
   performs, and typed-but-unsent output read as executed. The confirmed
   action now runs `git push` in the card's checkout (exit marker
   `STELOW_PUSH_EXIT`) and streams the named outcome into Push shells —
@@ -2619,7 +2619,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **Push shells stay visible.** BB never auto-reveals a new shell, so the
+- **Push shells stay visible.** VesnALIA never auto-reveals a new shell, so the
   toast alone left users hunting the sidebar scope filter — and a swallowed
   typing failure reported success with an empty shell. The panel now tracks
   push shells with live output and a Check result refresh
@@ -2645,7 +2645,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Added
 
-- **Push in a visible terminal.** BB exposes no push action, so instead of
+- **Push in a visible terminal.** VesnALIA exposes no push action, so instead of
   pushing silently the panel opens a terminal in the card's own worker
   environment running `git push`, with the output watched live. The action
   is confirmed first and recorded in publication history.
@@ -2656,7 +2656,7 @@ and this project adheres to a single-version-per-release tag format
 
 - **Generic post-commit steps.** The "what remains" guidance no longer
   assumes the card's project is this plugin itself: push, then pull
-  request via the provider or BB's native flow.
+  request via the provider or VesnALIA's native flow.
 
 ## [0.15.0] - 2026-09-14
 
@@ -2695,7 +2695,7 @@ and this project adheres to a single-version-per-release tag format
 - **Gap audit of 0.13.0/0.13.1.** The W shortcut now also works from
   list-view rows, not only board cards. Commit-diff patch failures are
   logged server-side for diagnosis instead of swallowed. The truncation
-  notice no longer blames BB's safety limit when the plugin's own fetch
+  notice no longer blames VesnALIA's safety limit when the plugin's own fetch
   cap applies.
 
 ## [0.13.1] - 2026-09-14
@@ -2703,10 +2703,10 @@ and this project adheres to a single-version-per-release tag format
 ### Fixed
 
 - **Commit viewer actually shows patches.** Commit targets carry no inline
-  patches from BB even with `loadMode: auto`, so the viewer fetched nothing
+  patches from VesnALIA even with `loadMode: auto`, so the viewer fetched nothing
   and every file read as unavailable. It now fetches every missing file
   patch via `environments.diffPatch` (bounded, fail-soft) and renders them
-  in BB's native diff viewer.
+  in VesnALIA's native diff viewer.
 
 ## [0.13.0] - 2026-09-14
 
@@ -2715,7 +2715,7 @@ and this project adheres to a single-version-per-release tag format
 - **Card keyboard shortcut.** W on a focused card opens its worker thread;
   Enter/Space still opens the card detail. Bound to the card surface only,
   so typing in nested controls never navigates.
-- **Complete CLI reference.** The README now documents all 16 `bb stelow`
+- **Complete CLI reference.** The README now documents all 16 `alia stelow`
   subcommands, including `done`, `verify`, `doctor`, `split`, `preview`,
   `playbook`, `fan-out`, and `seed`.
 
@@ -2742,8 +2742,8 @@ and this project adheres to a single-version-per-release tag format
   original spacing and their rerun/advance meaning. Skill ownership moved
   into pill tooltips and a richer Workflow map disclosure that works on
   desktop and mobile.
-- **Commit viewer patches.** Files BB marks `on_demand` are now fetched via
-  `environments.diffPatch` and rendered in BB's diff viewer instead of
+- **Commit viewer patches.** Files VesnALIA marks `on_demand` are now fetched via
+  `environments.diffPatch` and rendered in VesnALIA's diff viewer instead of
   showing as unavailable. Only genuinely `too_large` files keep an honest
   unrenderable message.
 
@@ -2779,7 +2779,7 @@ and this project adheres to a single-version-per-release tag format
 ### Added
 
 - **Native local-commit review.** Done cards now expose an explicit saved
-  state, copyable SHA, and read-only commit-diff viewer powered by BB's
+  state, copyable SHA, and read-only commit-diff viewer powered by VesnALIA's
   environment API. It works before a push and permits only commits recorded
   in that card's publication history.
 - **Workflow map.** The progress disclosure now explains the relationship
@@ -2805,7 +2805,7 @@ and this project adheres to a single-version-per-release tag format
   completion record, while Done-card copy and list rows describe it as
   completed verification rather than active audit work.
 - **Verified Done invariant.** Dragging a Build card to Done and manually
-  advancing it to Audit can no longer bypass `bb stelow done`; only the
+  advancing it to Audit can no longer bypass `alia stelow done`; only the
   verified completion command records a Build card as complete.
 
 ## [0.9.6] - 2026-09-14
@@ -2821,13 +2821,13 @@ and this project adheres to a single-version-per-release tag format
 ### Fixed
 
 - **Honest Git-change controls.** Done cards now call a default-branch action
-  “Save local commit” and state that BB cannot fetch, merge incoming remote
+  “Save local commit” and state that VesnALIA cannot fetch, merge incoming remote
   changes, push, or create a pull request from that panel. Squash integration
   is hidden behind an explained Advanced Git operations disclosure and is not
   offered for a checkout already on the default branch.
 - **Private workflow recovery.** Automatic audit and continuation instructions
   are now agent-only. They continue to recover a worker that stopped before
-  `bb stelow done`, without appearing as an unexplained message in the card
+  `alia stelow done`, without appearing as an unexplained message in the card
   conversation.
 
 ## [0.9.4] - 2026-09-14
@@ -2835,16 +2835,16 @@ and this project adheres to a single-version-per-release tag format
 ### Fixed
 
 - **Accurate default-branch wording.** Done-card confirmation now describes
-  exactly what BB's API guarantees: a host-side commit. It does not imply a
+  exactly what VesnALIA's API guarantees: a host-side commit. It does not imply a
   push where the repository's configured Git policy has not done one.
 
 ## [0.9.3] - 2026-09-14
 
 ### Fixed
 
-- **BB checkout choice and default-branch publishing.** New cards now retain
-  the environment and branch selected in BB's composer across worker handoffs.
-  A completed card using that selected default checkout can commit through BB
+- **VesnALIA checkout choice and default-branch publishing.** New cards now retain
+  the environment and branch selected in VesnALIA's composer across worker handoffs.
+  A completed card using that selected default checkout can commit through VesnALIA
   after an explicit direct-commit confirmation; PR controls remain restricted
   to feature branches.
 
@@ -2863,8 +2863,8 @@ and this project adheres to a single-version-per-release tag format
 - **Publication action safety.** Done-card pull-request controls now respect
   the same checked-out feature-branch policy as commits and local merges, and
   only offer the state transition that applies to the current PR. A local
-  squash attempt is recorded in publication history only after BB confirms it
-  merged. Confirmation dialogs also lock while BB handles a request, avoiding
+  squash attempt is recorded in publication history only after VesnALIA confirms it
+  merged. Confirmation dialogs also lock while VesnALIA handles a request, avoiding
   accidental duplicate writes.
 
 ## [0.9.0] - 2026-09-13
@@ -2872,8 +2872,8 @@ and this project adheres to a single-version-per-release tag format
 ### Added
 
 - **Done-card publication controls.** Completed cards now inspect the exact
-  BB worker checkout before offering manual publication actions. The panel
-  can commit through BB, show and transition an existing pull request, request
+  VesnALIA worker checkout before offering manual publication actions. The panel
+  can commit through VesnALIA, show and transition an existing pull request, request
   a guarded PR merge, or explicitly squash merge locally. Default branches,
   detached checkouts, non-Git folders, unavailable hosts, missing approvals,
   failing checks, and non-mergeable PRs fail closed with actionable guidance.
@@ -2975,11 +2975,11 @@ and this project adheres to a single-version-per-release tag format
 
 ### Added
 
-- **Explicit completion (`bb stelow done`).** Done-ness was inferred from
+- **Explicit completion (`alia stelow done`).** Done-ness was inferred from
   `audit` + idle. The worker commits; the host verifies in code (build
   only at `audit`, research/explore only with a passing `verify` and no
   pending question). Every refusal names the fix.
-- **Host-served playbook (`bb stelow playbook`).** Exact state,
+- **Host-served playbook (`alia stelow playbook`).** Exact state,
   transitions, and stage-playbook paths per card — no more
   `skill list | awk` discovery pipelines. Missing files fail loud.
 
@@ -3009,7 +3009,7 @@ and this project adheres to a single-version-per-release tag format
 ### Fixed
 
 - **Silent turns that advanced the stage resume too.** Text-only progress
-  missed tool-only turns: a worker could run `bb stelow advance` to
+  missed tool-only turns: a worker could run `alia stelow advance` to
   completion and idle without narrating, leaving the chat text unchanged
   and the watchdog quiet. The idle branch now scans the finished turn's
   events for a completed advance (scoped to the last turn boundary;
@@ -3021,7 +3021,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **A card worker can no longer seed an orphan workflow.** `bb stelow seed`
+- **A card worker can no longer seed an orphan workflow.** `alia stelow seed`
   from inside a card thread minted a name-derived owner at the project root
   that no card resolves back. The seed CLI now refuses card workers with
   the card's own state dir as the redirect (`lib/card-seed-guard.mjs`),
@@ -3065,7 +3065,7 @@ and this project adheres to a single-version-per-release tag format
   forbids and what made the old wiring test grep the source for strings. Every
   effect (read, spawn, connect) is injected, so the whole lifecycle runs in
   tests against a fake process and `server.ts` only supplies the effects.
-- **One Connect client.** Three hand-rolled `bb connect … --json` calls, each
+- **One Connect client.** Three hand-rolled `alia connect … --json` calls, each
   with its own copy of the same brace-matching JSON extraction, are now one.
 - **One definition of loopback.** `preview-detect` re-implemented the
   bind-address-to-browse-address mapping; it now uses the canonical helper in
@@ -3109,11 +3109,11 @@ and this project adheres to a single-version-per-release tag format
   Detection is convention over configuration: nothing to configure, and
   `.stelow/preview.json` (`command`, `port`, `url`) is the only override.
 - **A reachable address, without Tailscale or a port hand-off.** The address
-  ladder is the project's declared `url`, then a **bb connect share URL** (bb's
-  own sanctioned remote route — `bb connect expose`, unexposed when the server
+  ladder is the project's declared `url`, then a **VesnALIA connect share URL** (VesnALIA's
+  own sanctioned remote route — `alia connect expose`, unexposed when the server
   stops), then loopback. An unpaired server keeps working at localhost and the
   panel says exactly that, instead of failing. A same-origin proxy was evaluated
-  and rejected: `bb.http.route` is exact-match, so arbitrary dev-server asset
+  and rejected: `alia.http.route` is exact-match, so arbitrary dev-server asset
   paths cannot be forwarded.
 - **Transparency for everything that runs.** The panel always shows the exact
   command, the port, the checkout, and which checkout it is — the **worker's own
@@ -3125,7 +3125,7 @@ and this project adheres to a single-version-per-release tag format
   same port. A restart reuses the same port, so a bookmarked address stays
   valid, and at most three run at once so a machine cannot accumulate servers
   nobody is watching.
-- **`bb stelow preview [status|start|stop] [--card <id>] [--json]`**, sharing the
+- **`alia stelow preview [status|start|stop] [--card <id>] [--json]`**, sharing the
   same view the panel renders, so the CLI and the UI can never describe a run
   differently.
 
@@ -3174,10 +3174,10 @@ and this project adheres to a single-version-per-release tag format
 
 ### Changed
 
-- **Seeding by name is idempotent.** `bb stelow seed --name X` derives the
+- **Seeding by name is idempotent.** `alia stelow seed --name X` derives the
   workflow's owner from the name, so seeding the same workflow again returns
   its own paths instead of adding a look-alike row and a second state
-  directory. Workers are told to seed through `bb stelow seed`, which binds the
+  directory. Workers are told to seed through `alia stelow seed`, which binds the
   owner the raw script cannot.
 
 ### Fixed
@@ -3207,7 +3207,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **Config reads follow the card.** `bb stelow config get` returned the values
+- **Config reads follow the card.** `alia stelow config get` returned the values
   of whichever workflow came first in the project index, so a worker read
   another card's appetite and review mode — and the review gates that follow
   from them. The vendored helper now resolves this card's own workflow entry by
@@ -3324,8 +3324,8 @@ and this project adheres to a single-version-per-release tag format
 
 ### Changed
 
-- **About lists only tools bb honors.** plannotator never runs inside
-  bb (gates resolve in the plugin review UI), so its row, probe, and
+- **About lists only tools VesnALIA honors.** plannotator never runs inside
+  VesnALIA (gates resolve in the plugin review UI), so its row, probe, and
   installer are gone; the upstream reference stays linked. Intro copy
   drops the sem/cymbal name-drop (already per-row) and "Install guide"
   becomes the honest "Learn more".
@@ -3409,7 +3409,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **The About logo now actually renders on managed installs.** bb's builder
+- **The About logo now actually renders on managed installs.** VesnALIA's builder
   has no image loader and serves only the built `app.js`/`app.css`, so the
   previous runtime `./assets/*.png` URL always 404'd outside a local
   checkout. The mark is now a 512 px asset served lazily as a data URI over
@@ -3525,7 +3525,7 @@ and this project adheres to a single-version-per-release tag format
 ### Changed
 
 - **About refinements.** Optional-tools rows sorted alphabetically
-  with per-tool repository link; plannotator marked as unused in bb
+  with per-tool repository link; plannotator marked as unused in VesnALIA
   (gates resolve in the plugin review UI — no install offered);
   section headers bumped to readable size; repo buttons carry the
   GitHub icon.
@@ -3606,7 +3606,7 @@ and this project adheres to a single-version-per-release tag format
 ### Added
 
 - **Diff section on cards.** Working tree vs HEAD per file, rendered
-  with bb's own diff viewer (plain-text fallback when the host lacks
+  with VesnALIA's own diff viewer (plain-text fallback when the host lacks
   it) — visible at the diff-gate and audit stages, fetched lazily on
   open. Untracked files open in the viewer; clean trees and non-repos
   say so. Read-only throughout.
@@ -3871,7 +3871,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Added
 
-- **`bb stelow verify` worker self-check.** The deterministic complement
+- **`alia stelow verify` worker self-check.** The deterministic complement
   to prompting: the worker runs the same predicates the sync gate
   enforces before finishing (`PASS` per round, `FAIL` naming the fix,
   `--json` for machines). Research and explore prompts require it;
@@ -3916,7 +3916,7 @@ and this project adheres to a single-version-per-release tag format
 ### Changed
 
 - **Sidebar label now reads "Stelow — Product Workflow"** so the panel's
-  purpose is explicit in bb's navigation: it is an opinionated product
+  purpose is explicit in VesnALIA's navigation: it is an opinionated product
   workflow (Shape Up, gates, scopes), not a generic task runner.
 
 ### Fixed
@@ -4008,7 +4008,7 @@ and this project adheres to a single-version-per-release tag format
   reviewer as build cards (read, quote a passage, comment to the agent).
 - **Artifact chips in the thread.** The research worker's final message
   emits `::stelow-artifact` directives per produced file (index + round +
-  sub-steps), rendered by bb as clickable chips that open the file in the
+  sub-steps), rendered by VesnALIA as clickable chips that open the file in the
   workspace viewer. Directive syntax is stripped before the message is
   mirrored into card comments (plain Markdown there).
 
@@ -4064,25 +4064,25 @@ and this project adheres to a single-version-per-release tag format
   (Summary/Outputs/Opportunities) with native round files; output
   contracts (`single`/`variant`/`composite` + JTBD substeps) in the
   strategy registry; missing substeps surface on the card.
-- **`bb stelow fan-out`.** Opportunity-ID-only fan-out from workers
+- **`alia stelow fan-out`.** Opportunity-ID-only fan-out from workers
   (RPC re-validates); prompt discipline requires structured user
   confirmation first.
 - **Ask persist robustness.** Persist errors are logged with
   card/thread context; one retry on lock contention; regression tests;
   operator runbook in README.
-- **`bb stelow advance --dry-run/--json`, `bb stelow schema`.**
+- **`alia stelow advance --dry-run/--json`, `alia stelow schema`.**
   Exit codes pass through instead of collapsing.
 
 ## [0.2.0] - 2026-09-08
 
 ### Added
 
-- **`bb stelow sync-scopes/lock/config` wrappers.** Same workspace/card
+- **`alia stelow sync-scopes/lock/config` wrappers.** Same workspace/card
   resolution as `advance`/`doctor`; `lock` preserves helper exit codes
   (1 = conflict). Advancing into `execution` auto-syncs scopes
   best-effort, so the vendored Step 2e works without a `scripts/stelow`
   binary in the workspace.
-- **Worker prompt equivalents.** Spawn/reseed prompts point at the `bb
+- **Worker prompt equivalents.** Spawn/reseed prompts point at the `VesnALIA
   stelow` wrappers wherever vendored skills show `scripts/stelow`
   commands (single shared sentence).
 - **Vendored content sync.** Single-source cli-tools, `visual_review.md`
@@ -4091,7 +4091,7 @@ and this project adheres to a single-version-per-release tag format
 - **Upstream delegation for advance mechanics.** `data/stelow` is now a
   synced copy of upstream `scripts/stelow` (mode-skips, gate refusals
   and non-git roots ported there first); the transitions mirror and its
-  fallbacks retire in favor of the vendored copy. New `bb stelow doctor`
+  fallbacks retire in favor of the vendored copy. New `alia stelow doctor`
   passthrough; workflow contract tests pin template, board order and
   transitions to the same 17 stages.
 
@@ -4139,10 +4139,10 @@ and this project adheres to a single-version-per-release tag format
   strategy (or a failed create) used to resolve successfully from the
   composer's view, wiping what the user typed. Guards now throw so the
   draft is kept, per the composer contract — in both creation dialogs.
-- **Ask refuses unknown threads fast.** `bb stelow ask --thread` with an
+- **Ask refuses unknown threads fast.** `alia stelow ask --thread` with an
   id that owns no card (provider session id, dirHash) exited 1 blaming
   storage after showing the question nowhere; now it exits 2 naming the
-  fix ($BB_THREAD_ID). Prompts show the literal command, the storage
+  fix ($ALIA_THREAD_ID). Prompts show the literal command, the storage
   message carries the cancel reason, and the sync state file moved out
   of `skills/` (daemon log spam).
 - **Failed cards name their cause.** A worker that died before producing
@@ -4196,7 +4196,7 @@ and this project adheres to a single-version-per-release tag format
   per-investigation `presetId`.
 
 - **Batched question answering.** Workers batch independent questions into
-  one `bb stelow ask` call (repeat `--question` groups); the card, the
+  one `alia stelow ask` call (repeat `--question` groups); the card, the
   artifact viewer, and the thread form answer them in one sitting via a
   stepper with counter, direct jump tabs, radio/checkbox options, a
   free-text Other on every question, and explicit Skip. One atomic submit
@@ -4223,7 +4223,7 @@ and this project adheres to a single-version-per-release tag format
   Delivery surfaces (stages, gates, intent) refuse on research cards
   with named exits. Covered by brief-parser and strategy unit tests.
 - **Turn exploratory work into a project.** Exploratory cards gain a
-  "Turn into project…" action that creates a BB project from the card's
+  "Turn into project…" action that creates a VesnALIA project from the card's
   workspace. Files stay in place and the worker continues from the current
   stage; project cards never see the option. Covered by a naming and
   create/adopt/conflict unit test.
@@ -4285,7 +4285,7 @@ and this project adheres to a single-version-per-release tag format
 - **Artifact review surface.** Read-only viewer (Markdown/source render)
   with multi-excerpt draft comments sent to the agent in one organized
   batch, pending gate question inline, and workspace-kind links that open
-  in bb's official viewer. Review entry point from the decision hero.
+  in VesnALIA's official viewer. Review entry point from the decision hero.
 - **Advance refuses mode-skipped gates.** `plan-gate`/`diff-gate` in a
   review mode that skips them now fail with the redirect (to execution /
   audit) instead of parking the worker on a review nobody configured.
@@ -4359,7 +4359,7 @@ and this project adheres to a single-version-per-release tag format
   path are not recomputed) and sends the correction straight to the
   worker thread; a failed notify falls back to Retry guidance.
 - **Exploratory workspaces.** "Don't work in a project" now creates an
-  isolated workspace under `~/.bb/stelow/exploratory/<card-id/>` backed by a
+  isolated workspace under `~/.vesnalia/stelow/exploratory/<card-id/>` backed by a
   local "Stelow exploratory work" project, instead of failing on the Personal
   project. Advance, reseed, preset swap, details, artifacts and intent editing
   all resolve the exploratory workspace.
@@ -4372,7 +4372,7 @@ and this project adheres to a single-version-per-release tag format
 
 ### Fixed
 
-- **Exploratory `bb stelow advance`.** The `data/stelow` helper was Git-only;
+- **Exploratory `alia stelow advance`.** The `data/stelow` helper was Git-only;
   it now accepts `STELOW_STATEDIR`/`STELOW_STATE`, resolves the project root
   correctly, and honors `STELOW_TRANSITIONS` in pre-condition checks.
 - **Transitions parsing.** Comment markers (`(none — …)`) no longer leak
@@ -4420,7 +4420,7 @@ and this project adheres to a single-version-per-release tag format
   fetches the `calionauta/stelow` repo tree, compares git blob hashes against a
   `.sync-state.json`, and rewrites only the changed core skills
   (`stelow-*` + `stelow-workflow-*`) into the plugin's skills dir. Registered on
-  `bb.background.schedule` every 6h (`STELOW_SKILLS_SYNC_CRON` overrides;
+  `alia.background.schedule` every 6h (`STELOW_SKILLS_SYNC_CRON` overrides;
   default `33 */6 * * *`). Fail-soft: network/API errors just log and keep the
   current skills — the board never breaks.
 
@@ -4469,13 +4469,13 @@ and this project adheres to a single-version-per-release tag format
 - **No provisional preset editor values.** The preset modal waits for its
   preset data before opening; its new-preset form begins neutral while provider
   data is loading, then seeds from the actual configured default. The board
-  also states plainly that its Worker preset, not BB's general composer picker,
+  also states plainly that its Worker preset, not VesnALIA's general composer picker,
   controls execution.
 
 - **Authoritative worker-preset selector.** New-card creation now presents the
   configured Stelow presets directly. The selected preset, falling back to the
   built-in default, determines the worker's provider/model/reasoning/permission
-  independently of the general BB composer controls.
+  independently of the general VesnALIA composer controls.
 
 - **Preset editor derives real defaults.** Opening the new-preset form now
   seeds provider, model, reasoning, and permission mode from the configured
@@ -4656,21 +4656,21 @@ and this project adheres to a single-version-per-release tag format
   showed an awaiting-answer banner when `activity` was exactly
   `awaiting-answer`, and `listCards`/`cardDetail` only promoted to it when the
   thread was `running`. A card whose worker is `idle` with a pending
-  interaction (the normal state after `bb stelow ask` parks the workflow) hid
+  interaction (the normal state after `alia stelow ask` parks the workflow) hid
   the question entirely. Both now detect pending interactions regardless of the
   stored/thread activity, so an open question is always visible and answerable.
 - **Repair only shows on idle, unfinished cards** (not when there is an open
   question to answer or an active error — those already have a clear action).
-- **Comments render as Markdown** (bb's chat renderer) instead of raw text, so
+- **Comments render as Markdown** (VesnALIA's chat renderer) instead of raw text, so
   agent comments keep bold, lists, and clickable file references.
 - **Artifacts use repo-root-relative paths** so the review file opener resolves
   them under the project (absolute paths containing `/` were rejected by the
   workspace-safety check and 404'd).
 
-- **Realtime now works over Tailscale (port 8096).** The bb-tcp-proxy was a
+- **Realtime now works over Tailscale (port 8096).** The alia-tcp-proxy was a
   plain HTTP forwarder that never upgraded WebSocket, so the board, the
   sidebar count, and card state only refreshed on manual reload. Rewrote it as
-  a Node proxy in `~/bin/bb-tcp-proxy.js` with `upgrade` support — board
+  a Node proxy in `~/bin/alia-tcp-proxy.js` with `upgrade` support — board
   updates, drag-and-drop moves, and archives now reflect live without a
   refresh.
 - **Card stays in Triage until triage is done.** A freshly-created card was
@@ -4692,7 +4692,7 @@ and this project adheres to a single-version-per-release tag format
   already has a non-archived card, with a clear message to archive/pause it
   first — preventing two cards from fighting over the same state.
 - **Sidebar badge shows a number only.** The count pill now renders just the
-  number, matching bb's own sidebar accessory styling, instead of "N live".
+  number, matching VesnALIA's own sidebar accessory styling, instead of "N live".
 - **Board header counts live cards only.** "N cards" in the board header now
   uses the same live definition as the sidebar badge (in-progress / draft /
   planning / awaiting-answer), so archived, completed, and blocked cards are
@@ -4700,20 +4700,20 @@ and this project adheres to a single-version-per-release tag format
 
 ### Added
 
-- **Full bb composer on the board.** The new-card form now uses bb's own
+- **Full VesnALIA composer on the board.** The new-card form now uses VesnALIA's own
   `NewThreadComposer` (tiptap editor): type `@` for mentions, use the `+`
   action menu to attach files, skills, automations, or a plugin reference,
   and pick project/provider/model right in the form. Attached files are
   copied to the thread storage and listed as `Attached files:` in the card
-  prompt — same behavior as bb threads.
+  prompt — same behavior as VesnALIA threads.
 - **Bundled Stelow skills.** The plugin ships the 27 `stelow-*` skills in
-  `skills/` and declares them via `bb.skills`, so a fresh install no longer
+  `skills/` and declares them via `alia.skills`, so a fresh install no longer
   depends on `~/.claude/skills/stelow-*` symlinks or the
   `calionauta/stelow` repo being checked out. The agent prompt now reads the
   stage guides from the plugin's own skills directory.
 - **Workspace-file mention provider** (`@` + filename resolves to
   `Workspace file: <path>` when the route has a project context).
-- **Timed-out questions are answerable later.** If a `bb stelow ask` times
+- **Timed-out questions are answerable later.** If a `alia stelow ask` times
   out (user away), the question is persisted and the card **stays in Gate
   pending** — it does not look abandoned. The agent is told to STOP and wait
   (never guess, never re-ask); the card shows "Waiting for your answer — the
@@ -4756,8 +4756,8 @@ and this project adheres to a single-version-per-release tag format
   `awaiting-answer` when a structured question is pending (listing it under
   "Gate pending") and to `in-progress` when the agent resumes real work.
 - **Question form not rendering.** The worker prompt only said "call
-  `bb.ui.requestInput`" without being categorical. The prompt now states the
-  rule verbatim: any time the agent needs input it MUST call `bb stelow ask`
+  `alia.ui.requestInput`" without being categorical. The prompt now states the
+  rule verbatim: any time the agent needs input it MUST call `alia stelow ask`
   (the structured form wired to `stelow-question`), never just write text like
   "waiting for your choice". The card flips to Gate pending automatically while
   the form is pending.
@@ -4786,7 +4786,7 @@ and this project adheres to a single-version-per-release tag format
 - **Defensive "awaiting answer" banner:** the card detail renders an amber
   banner with a path to the pending question when `activity` is
   `awaiting-answer`, so the form is never unreachable.
-- **Agent presets** (schema mirrors the bb Tasks plugin):
+- **Agent presets** (schema mirrors the VesnALIA Tasks plugin):
   - New `presets` table: provider, model, reasoning level, permission mode,
     environment kind, base branch, machine, instructions, plus built-in and
     default flags. A read-only built-in `Default` preset ships and is used when
@@ -4798,13 +4798,13 @@ and this project adheres to a single-version-per-release tag format
     thread with the chosen preset, so swapping a preset and clicking Repair
     cleanly transfers the model + context.
   - New RPCs: `listPresets`, `upsertPreset`, `deletePreset`, `assignPreset`.
-  - New CLI: `bb stelow preset list|add|remove|assign`.
+  - New CLI: `alia stelow preset list|add|remove|assign`.
   - Card detail surfaces a preset dropdown.
 
 ### Internal
 
 - Added `awaiting-answer` to the `statusSchema` enum used by board/card types.
-- Server/`app` compile clean at SDK `0.4.8` / bb `0.39.0`; `dist/data` and
+- Server/`app` compile clean at SDK `0.4.8` / VesnALIA `0.39.0`; `dist/data` and
   `dist/references` are copied by `postbuild.mjs`.
 - Reconciled `package.json` version to `0.1.4` to match the published tag.
 

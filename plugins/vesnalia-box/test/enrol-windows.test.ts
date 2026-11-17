@@ -35,7 +35,7 @@ test("a failed run says how it ended, with its last lines", () => {
 });
 
 test("Windows boxes join VesnALIA unless the Proxmox QEMU backend's switch is set off (#539)", () => {
-  const fields = { url: "https://192.0.2.10:8006", "token-id": "bbbox@pve!plugin", "token-secret": "x", "tls-fingerprint": Array(32).fill("AB").join(":") };
+  const fields = { url: "https://192.0.2.10:8006", "token-id": "aliabox@pve!plugin", "token-secret": "x", "tls-fingerprint": Array(32).fill("AB").join(":") };
   const unset = parseQemuPart({ fields } as never);
   const on = parseQemuPart({ fields: { ...fields, "windows-enrol": true } } as never);
   const off = parseQemuPart({ fields: { ...fields, "windows-enrol": false } } as never);

@@ -3,7 +3,7 @@ import type { DragEvent } from "react";
 export type SplitLayout = { ids: string[]; active: string; sizes: Record<string, number> };
 export type SplitLayouts = Record<string, SplitLayout>;
 const storageKey = "alia-dashboard:split-layout:v1";
-export const threadDragType = "application/x-bbdesk-thread";
+export const threadDragType = "application/x-aliadesk-thread";
 
 export function startThreadDrag(event: DragEvent, projectId: string, threadId: string) {
   event.dataTransfer.effectAllowed = "copy";

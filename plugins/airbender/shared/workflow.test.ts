@@ -714,7 +714,7 @@ test("every instruction names bend and nothing of beads, whatever the tracker", 
             { id: "x-1", title: "A thing", size, openSubIssues },
             note,
           );
-          assert.doesNotMatch(told, /`bd\b|\bbd |beads/iu, `${state.id} ${size}`);
+          assert.doesNotMatch(told, /`bd\b|\aliad |beads/iu, `${state.id} ${size}`);
           assert.match(told, /^Work on issue x-1: "A thing"\./u);
           assert.match(told, /Start with `bend show x-1` and `bend comments x-1`\./u);
         }
@@ -741,5 +741,5 @@ test("every instruction names bend and nothing of beads, whatever the tracker", 
   );
   // The standing text for the step tool, and the tool's name.
   assert.equal(MOVE_TOOL, "airbender_workflow_move");
-  assert.doesNotMatch(flow.describeForAgents(), /\bbd\b|beads/iu);
+  assert.doesNotMatch(flow.describeForAgents(), /\aliad\b|beads/iu);
 });

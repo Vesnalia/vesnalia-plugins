@@ -36,7 +36,7 @@ const SUMMARY: OrientationSummary = {
 
 /**
  * The plugin over the fake host, with VesnALIA's SDK and its Git and PR Status plugins stubbed: a Claude Code
- * thread in `env_1` whose HEAD moves from `aaa` to `bbb` with one commit.
+ * thread in `env_1` whose HEAD moves from `aaa` to `aliab` with one commit.
  */
 async function setup(options: { providerCanFork?: boolean; threadListFails?: boolean; builderActiveDuringSpawn?: boolean } = {}) {
   const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
@@ -62,7 +62,7 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
     if (pluginId === "alia--github-pr-status") return {};
     if (pluginId !== "alia--git" || method !== "workspaceStatus") throw new Error(`unexpected ${pluginId}.${method}`);
     const mergeBase =
-      input.mergeBaseBranch === "aaa" ? { commits: [{ sha: "bbb", shortSha: "bbb", subject: "Add median" }], files: [{ path: "calc.py", status: "M" }] } : null;
+      input.mergeBaseBranch === "aaa" ? { commits: [{ sha: "aliab", shortSha: "aliab", subject: "Add median" }], files: [{ path: "calc.py", status: "M" }] } : null;
     return { outcome: "available", workspace: { checkout: { headSha: head }, mergeBase } };
   });
   stub("threads.fork", (request: { sourceThreadId: string; pluginMetadata: Record<string, unknown> }) => {
@@ -121,7 +121,7 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
   await new Promise((resolve) => setImmediate(resolve));
   const commitTurn = async () => {
     await harness.emitThreadEvent("thread.active", { thread: { ...threads.get(WORK)!, status: "active" } });
-    head = "bbb";
+    head = "aliab";
     await harness.emitThreadEvent("thread.idle", { thread: threads.get(WORK)!, lastAssistantText: "Done." });
   };
   /** The agent starts a turn in a thread: VesnALIA logs a `turn/started` row in that turn. */
@@ -214,7 +214,7 @@ describe("from a commit to an answered question", () => {
       sourceThreadId: WORK,
       title: "Learning: Add median",
       environment: { type: "reuse", environmentId: "env_1" },
-      input: [{ type: "text", text: 'Learning exercise on "Add median" (commit bbb).' }],
+      input: [{ type: "text", text: 'Learning exercise on "Add median" (commit aliab).' }],
     });
     const seed = (fork![0] as { agentContextSeed: { visibility: string; text: string }[] }).agentContextSeed;
     expect(seed).toHaveLength(1);

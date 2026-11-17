@@ -34,9 +34,9 @@ test("parseSettings: rejects bad values", () => {
 });
 
 test("buildCss: custom CSS comes after the theme so it wins", () => {
-  const css = buildCss("alia", "[data-bbium-root] { --bbium-bg: red; }");
-  assert.ok(css.indexOf("var(--primary") < css.indexOf("--bbium-bg: red"));
-  assert.match(css, /\.bbium-hint \.typed/);
+  const css = buildCss("alia", "[data-alium-root] { --alium-bg: red; }");
+  assert.ok(css.indexOf("var(--primary") < css.indexOf("--alium-bg: red"));
+  assert.match(css, /\.alium-hint \.typed/);
 });
 
 test("buildCss: composer insert ring only while vim keys are on", () => {

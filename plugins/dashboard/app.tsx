@@ -379,6 +379,6 @@ function DashboardViewport() {
   return <div ref={frame} className="db-viewport"><DashboardPage/></div>;
 }
 export default definePluginApp(app => {
-  app.slots.experimental_sidebarNavigation({ id: "launcher", title: "BBDesk", placement: "rail", component: LauncherNavigation });
-  app.slots.navPanel({ id: "dashboard", title: "BBDesk", icon: "dashboard/mark", path: "home", component: DashboardViewport });
+  app.slots.experimental_sidebarNavigation({ id: "launcher", title: "AliaDesk", placement: "rail", component: LauncherNavigation });
+  app.slots.navPanel({ id: "dashboard", title: "AliaDesk", icon: "dashboard/mark", path: "home", component: DashboardViewport });
 });

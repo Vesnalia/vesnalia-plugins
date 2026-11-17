@@ -73,7 +73,7 @@ function IssuePicker({
         placeholder="Search issues…"
         aria-label="Search issues"
       />
-      <div className="bbl-scroller max-h-64 overflow-y-auto">
+      <div className="alial-scroller max-h-64 overflow-y-auto">
         {searching ? (
           <p className="px-2 py-3 text-xs text-muted-foreground">Searching the local copy…</p>
         ) : issues.length === 0 ? (
@@ -85,7 +85,7 @@ function IssuePicker({
                 <button
                   type="button"
                   className={`${toneClass(issue.tone)} flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-state-hover`}
-                  style={issue.glyph.color === null ? undefined : ({ "--bbl": issue.glyph.color } as CSSProperties)}
+                  style={issue.glyph.color === null ? undefined : ({ "--alial": issue.glyph.color } as CSSProperties)}
                   onClick={() => onSelect(issue)}
                 >
                   <StateGlyph tone={issue.tone} glyph={issue.glyph} />

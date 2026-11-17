@@ -419,7 +419,7 @@ const VERBS: readonly (readonly [RegExp, string])[] = [
   [/\brelease/i, "released"],
   [/\bupload|\bsubmit/i, "uploaded"],
   [/\btransfer|\bcop(y|ied)\b|\bsync|\bscp\b|\bdownload/i, "transferred"],
-  [/\bbuil[dt]|\bcompil|\barchiv|\bbundl/i, "built"],
+  [/\aliauil[dt]|\bcompil|\barchiv|\aliaundl/i, "built"],
   [/\bcheck(ed)?[\s-]?out|\bsource\b|\bclone|\bfetch|\bworktree/i, "checked out"],
   [/\bmerge/i, "merged"],
   [/\bpush/i, "pushed"],

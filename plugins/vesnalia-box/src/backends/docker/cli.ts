@@ -39,30 +39,30 @@ export class DockerError extends Error {
 
 /** The alia-box labels on a box's container, from its first write. */
 export const LABELS = {
-  backend: "bbbox.backend",
-  install: "bbbox.install",
-  box: "bbbox.box",
-  thread: "bbbox.thread",
-  name: "bbbox.name",
-  kind: "bbbox.kind",
-  created: "bbbox.created",
+  backend: "aliabox.backend",
+  install: "aliabox.install",
+  box: "aliabox.box",
+  thread: "aliabox.thread",
+  name: "aliabox.name",
+  kind: "aliabox.kind",
+  created: "aliabox.created",
   /** The CDI device of a GPU desktop. */
-  gpu: "bbbox.gpu",
-  gpuCard: "bbbox.gpu-card",
-  gpuPart: "bbbox.gpu-part",
+  gpu: "aliabox.gpu",
+  gpuCard: "aliabox.gpu-card",
+  gpuPart: "aliabox.gpu-part",
   /** On an image setup/docker/build.sh made: its layout version, which its record's contract replaces (049). */
-  imageVersion: "bbbox.image-version",
+  imageVersion: "aliabox.image-version",
   /** On an image setup/docker/build.sh made: its record, /usr/share/alia-box/image.json, as JSON (049). */
-  imageRecord: "bbbox.image-record",
+  imageRecord: "aliabox.image-record",
   /** On an image setup/docker/build.sh made: the digest of VesnALIA's app in it, or empty for none. */
-  aliaApp: "bbbox.alia-app",
+  aliaApp: "aliabox.alia-app",
   /** On a desktop image whose start points Xorg at the GPU placed, so a GPU desktop may be privileged (#283). */
-  gpuBusId: "bbbox.gpu-bus-id",
+  gpuBusId: "aliabox.gpu-bus-id",
   /** On a container alia-box builds or tries an image in (049): the install's ID, so no sweep takes it. */
-  imageBox: "bbbox.image-box",
+  imageBox: "aliabox.image-box",
   /** On an image alia-box captured from an image box (049): the image's name. */
-  image: "bbbox.image",
-  fromSnapshot: "bbbox.from-snapshot",
+  image: "aliabox.image",
+  fromSnapshot: "aliabox.from-snapshot",
 } as const;
 
 export interface DockerInfo {

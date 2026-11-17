@@ -150,7 +150,7 @@ export function LivePanel({
 
       {meta !== null ? (
         <div className="flex items-center gap-2 border-t px-3 py-2">
-          {veil.tone === "live" ? <span className={`${TONE_CLASS.live} bbxs-dot`} aria-hidden /> : null}
+          {veil.tone === "live" ? <span className={`${TONE_CLASS.live} aliaxs-dot`} aria-hidden /> : null}
           <Tooltip>
             <TooltipTrigger asChild>
               {/* A bundle id is the most machine-shaped string on the machine
@@ -663,7 +663,7 @@ function LiveFrame({
   return (
     <div
       ref={frameRef}
-      className="bbxs-frame min-h-0 flex-1 overflow-hidden"
+      className="aliaxs-frame min-h-0 flex-1 overflow-hidden"
       tabIndex={0}
       role="region"
       aria-label={
@@ -682,12 +682,12 @@ function LiveFrame({
       onBlur={() => setCrosshair(null)}
     >
       {veil.skeleton ? (
-        <div className="bbxs-skeleton h-full w-full" aria-hidden />
+        <div className="aliaxs-skeleton h-full w-full" aria-hidden />
       ) : (
         <canvas
           ref={canvasRef}
           aria-hidden
-          className="bbxs-frame-img h-full w-full"
+          className="aliaxs-frame-img h-full w-full"
           style={aspect}
         />
       )}
@@ -701,7 +701,7 @@ function LiveFrame({
       ) : null}
 
       {veil.sentence !== null ? (
-        <div className={`bbxs-veil ${TONE_CLASS[veil.tone]}`}>
+        <div className={`aliaxs-veil ${TONE_CLASS[veil.tone]}`}>
           <p className="max-w-prose text-balance text-sm font-medium">{veil.sentence}</p>
           {veil.detail !== null ? (
             <p className="max-w-prose text-balance text-xs text-muted-foreground">{veil.detail}</p>

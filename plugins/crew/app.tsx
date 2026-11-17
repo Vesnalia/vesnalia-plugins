@@ -125,7 +125,7 @@ function useNeedsYou(): { count: number; errors: number; decisions: number; byPr
   return state;
 }
 
-/** BBP-95: errors and decisions counted apart — red for a real failure, amber for a decision waiting on you. */
+/** ALIAP-95: errors and decisions counted apart — red for a real failure, amber for a decision waiting on you. */
 export function NeedsYouBadge({ errors, decisions, onClick, title }: { errors: number; decisions: number; onClick?: () => void; title?: string }) {
   if (errors === 0 && decisions === 0) return null;
   return (
@@ -189,7 +189,7 @@ function Dot({ tone }: { tone: string }) {
   return <span className={cn("inline-block size-2 shrink-0 rounded-full", tone)} />;
 }
 
-/** A dot in a theme colour rather than a Tailwind class, for tones computed from the member's reasons (BBP-95). */
+/** A dot in a theme colour rather than a Tailwind class, for tones computed from the member's reasons (ALIAP-95). */
 function ToneDot({ color }: { color: string }) {
   return <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: color }} />;
 }
@@ -547,7 +547,7 @@ function TableAndFeed({ crew, members }: { crew: CrewDto; members: MemberDto[] }
 
 
 // ---------------------------------------------------------------------------
-// Project level of the Crews canvas (§3.9 "Oberfläche", §4.6, BBP-83)
+// Project level of the Crews canvas (§3.9 "Oberfläche", §4.6, ALIAP-83)
 
 /**
  * Under the canvas on level 1: the merges waiting for a decision and the
@@ -789,10 +789,10 @@ export function TopologyTab({
   members: MemberDto[];
   links: { from: string; to: string; kind: string }[];
   onChanged: () => void;
-  /** BBP-83: the agent level of the Crews canvas owns the selection when given. */
+  /** ALIAP-83: the agent level of the Crews canvas owns the selection when given. */
   selected?: string | null;
   onSelect?: (member: string) => void;
-  /** BBP-83: false where the Crews canvas already draws the members. */
+  /** ALIAP-83: false where the Crews canvas already draws the members. */
   canvas?: boolean;
 }) {
   const rpc = useRpc<typeof rpcContract>();
@@ -925,13 +925,13 @@ export function TopologyTab({
 }
 
 // ---------------------------------------------------------------------------
-// Crew thread panel (BBP-49): `::crew{crew="…"}` and the header/palette open
+// Crew thread panel (ALIAP-49): `::crew{crew="…"}` and the header/palette open
 // this in the thread's side panel, the exact pattern Graph Studio's
 // `::graph-run` uses for `threadPanelAction` — including its scroll wrapper
 // (GraphStudioPanel's outer two divs), so the two plugins' sidebar panels
 // read as the same product family, not a crew-only variant. TopologyTab
 // already draws the member graph on top and the crew log below, so the panel
-// is that tab, not a new layout. Styling here stays minimal; BBP-50
+// is that tab, not a new layout. Styling here stays minimal; ALIAP-50
 // redesigns the config panels, in both plugins.
 
 function crewRefFromParams(params: unknown): { crew: string; projectId: string } | null {
@@ -1290,7 +1290,7 @@ function CrewsPage() {
   const rpc = useRpcBridge();
   const navigate = useAliaNavigate();
   const [crews, setCrews] = useState<CrewDto[] | null>(null);
-  /** BBP-83: where on the zoom canvas you are — all projects, a project, a crew, an agent. */
+  /** ALIAP-83: where on the zoom canvas you are — all projects, a project, a crew, an agent. */
   const [path, setPath] = useState<ZoomPath>({});
   const level = zoomLevel(path);
   const [tab, setTab] = useState<Tab>("topology");
@@ -1310,7 +1310,7 @@ function CrewsPage() {
   const projectName = (id: string) => projects.find((project) => project.id === id)?.name ?? id;
   const crew = level >= 2 ? ((crews ?? []).find((entry) => entry.projectId === path.projectId && entry.name === path.crew) ?? null) : null;
 
-  // BBP-80: the fullscreen editor holds the crew file text it was opened with.
+  // ALIAP-80: the fullscreen editor holds the crew file text it was opened with.
   const [editYaml, setEditYaml] = useState<string | null>(null);
   const readCrewFile = async () => (crew ? ((await rpc.call("getCrewFile", { projectId: crew.projectId, name: crew.name })).yaml ?? "") : "");
 

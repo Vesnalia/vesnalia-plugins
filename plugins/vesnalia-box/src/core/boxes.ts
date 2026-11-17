@@ -414,10 +414,10 @@ interface UserspaceSteps {
 /**
  * The memory a Linux box uses that it cannot give back at once, in MiB: its
  * cgroup's use less the file cache it can drop, as a container's cgroup
- * shows it, or else MemTotal less MemAvailable, as in a VM. BBBOX_CGROUP,
+ * shows it, or else MemTotal less MemAvailable, as in a VM. ALIABOX_CGROUP,
  * which no box sets, lets a test give it a cgroup of its own.
  */
-const MEMORY_IN_USE = String.raw`f=${"$"}{BBBOX_CGROUP:-/sys/fs/cgroup}
+const MEMORY_IN_USE = String.raw`f=${"$"}{ALIABOX_CGROUP:-/sys/fs/cgroup}
 if [ -r $f/memory.current ] && [ -r $f/memory.stat ]; then
   c=$(cat $f/memory.current); i=$(awk '$1 == "inactive_file" { print $2 }' $f/memory.stat)
   echo $(( (c - ${"$"}{i:-0}) / 1048576 ))

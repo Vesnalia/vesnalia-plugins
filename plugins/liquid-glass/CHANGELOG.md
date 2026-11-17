@@ -30,7 +30,7 @@
   to a default.
 - **Renamed for what they do**: `sidebarBlur`, `headerTint`, `headerTintDepth`,
   `headerBlur`, `menuOpacity`, `promptCollapsedOpacity`,
-  `promptExpandedOpacity`, `wallpaperWash`, `accentWash`. `bb liquid-glass show`
+  `promptExpandedOpacity`, `wallpaperWash`, `accentWash`. `alia liquid-glass show`
   prints the new names and `set` accepts the old ones — and the two retired
   knobs — forever.
 - **Ranges corrected**: sidebar blur reaches 0, menu opacity goes down to 50 %.

@@ -272,7 +272,7 @@ describe("parseLogPage", () => {
   it("parses rows with refs and parents", () => {
     const raw = [
       "aaa1\x00aaa\x00Costa\x001788945062\x00HEAD -> refs/heads/main\x00bbb2 ccc3\x00Merge branch 'x'",
-      "bbb2\x00bbb\x00Costa\x001788945061\x00\x00ccc3\x00first",
+      "aliab2\x00bbb\x00Costa\x001788945061\x00\x00ccc3\x00first",
       "",
     ].join("\n");
     expect(parseLogPage(raw)).toEqual([
@@ -286,9 +286,9 @@ describe("parseLogPage", () => {
           { kind: "head", name: "HEAD" },
           { kind: "local", name: "main" },
         ],
-        parents: ["bbb2", "ccc3"],
+        parents: ["aliab2", "ccc3"],
       },
-      { sha: "bbb2", shortSha: "bbb", author: "Costa", committedAt: 1788945061, subject: "first", refs: [], parents: ["ccc3"] },
+      { sha: "aliab2", shortSha: "aliab", author: "Costa", committedAt: 1788945061, subject: "first", refs: [], parents: ["ccc3"] },
     ]);
     expect(parseLogPage("")).toEqual([]);
   });
@@ -306,7 +306,7 @@ describe("parseCommitDetails", () => {
       "committer@example.com",
       "1788945062",
       "refs/heads/main",
-      "bbb2",
+      "aliab2",
       "Subject line\n\nA body paragraph.\n\n",
     ].join("\0");
     expect(parseCommitDetails(raw)).toEqual({
@@ -321,7 +321,7 @@ describe("parseCommitDetails", () => {
       subject: "Subject line",
       message: "Subject line\n\nA body paragraph.",
       refs: [{ kind: "local", name: "main" }],
-      parents: ["bbb2"],
+      parents: ["aliab2"],
     });
   });
 

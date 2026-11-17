@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { chromium } from "playwright";
 
 const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "aliadata");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const side = process.env.LIVE_SIDE ?? "linux";

@@ -324,17 +324,17 @@ describe("the Terminals page", () => {
     const pill = (button: HTMLElement) => button.closest("[data-tab-pill]") as HTMLElement;
 
     // VesnALIA's "active" fill and full-strength text, against dimmer text on the others.
-    expect(pill(first).className).toMatch(/\bbg-state-active\b/);
+    expect(pill(first).className).toMatch(/\aliag-state-active\b/);
     expect(pill(first).className).toMatch(/\btext-foreground\b/);
-    expect(pill(second).className).not.toMatch(/\bbg-state-active\b/);
+    expect(pill(second).className).not.toMatch(/\aliag-state-active\b/);
     expect(pill(second).className).toMatch(/\btext-muted-foreground\b/);
     expect([first.getAttribute("aria-pressed"), second.getAttribute("aria-pressed")]).toEqual(["true", "false"]);
 
     fireEvent.click(second);
     await waitFor(() => expect(second.getAttribute("aria-pressed")).toBe("true"));
     expect(first.getAttribute("aria-pressed")).toBe("false");
-    expect(pill(second).className).toMatch(/\bbg-state-active\b/);
-    expect(pill(first).className).not.toMatch(/\bbg-state-active\b/);
+    expect(pill(second).className).toMatch(/\aliag-state-active\b/);
+    expect(pill(first).className).not.toMatch(/\aliag-state-active\b/);
   });
 
   it.each(["opening", "starting"] as const)("waits for a shell that is %s before attaching to it", async (status) => {

@@ -51,9 +51,9 @@ MUTANTES = [
      "  for (const [name, s] of fromKv ?? []) keep(name, s);",
      "  if (historial === null) for (const [name, s] of fromKv ?? []) keep(name, s);"),
     ("M14 sin borrar kv no se lee la base (Codex ASIENTOS-002)", "server.ts",
-     "          await bb.storage.kv.delete(KV_SEATS);\n        } catch (error) {",
-     "          await bb.storage.kv.delete(KV_SEATS);\n        } catch (error) {\n          historial = null;"),
-    ("M15 las retenciones de fuera se guardan sumadas a las de bb (Codex ASIENTOS-003)", "server.ts",
+     "          await alia.storage.kv.delete(KV_SEATS);\n        } catch (error) {",
+     "          await alia.storage.kv.delete(KV_SEATS);\n        } catch (error) {\n          historial = null;"),
+    ("M15 las retenciones de fuera se guardan sumadas a las de alia (Codex ASIENTOS-003)", "server.ts",
      "        reserved: taken.reserved,\n        external:",
      "        reserved: taken.reserved + (taken.external?.length ?? 0),\n        external:"),
     ("M16 una plaza abandonada al fallar un movimiento no despierta la cola (Codex ASIENTOS-R2-001)", "server.ts",
@@ -75,8 +75,8 @@ MUTANTES = [
      "    if (decision.account !== fromName && seatMoving.has(projectId)) {",
      "    if (decision.account !== fromName && decision.why === \"current-full\" && seatMoving.has(projectId)) {"),
     ("M21 el turno retenido por un movimiento no se vuelve a preguntar al acabar (Astra ASIENTOS-R4-002)", "server.ts",
-     "    if (!heldForMove.delete(projectId)) return;\n    void bb",
-     "    if (heldForMove.delete(projectId)) return;\n    void bb"),
+     "    if (!heldForMove.delete(projectId)) return;\n    void alia",
+     "    if (heldForMove.delete(projectId)) return;\n    void alia"),
 ]
 
 

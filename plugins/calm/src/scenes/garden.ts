@@ -45,7 +45,7 @@ const GARDENER = {
     "..jjj...",
     "..jj....",
     "..j.j...",
-    "..bbb...",
+    "..aliab...",
   ],
   /** Watering: the can tipped forward. */
   water: [

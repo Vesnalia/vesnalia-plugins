@@ -85,7 +85,7 @@ const CART_PATCH = [
 
 const INVENTORY_PATCH = [
   "diff --git a/src/inventory.ts b/src/inventory.ts",
-  "index bbbbbbb..ccccccc 100644",
+  "index aliabbbbb..ccccccc 100644",
   "--- a/src/inventory.ts",
   "+++ b/src/inventory.ts",
   "@@ -4,5 +4,11 @@ export interface Stock {",

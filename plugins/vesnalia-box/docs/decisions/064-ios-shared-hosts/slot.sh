@@ -1,5 +1,5 @@
 #!/bin/sh
-g=${1:?generation}; user=bbd-$g; uid=$((80000 + g))
+g=${1:?generation}; user=aliad-$g; uid=$((80000 + g))
 now() { python3 -c 'import time; print(f"{time.time():.3f}")'; }
 t0=$(now)
 pw=$(openssl rand -hex 16)

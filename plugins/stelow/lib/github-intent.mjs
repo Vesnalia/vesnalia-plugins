@@ -9,7 +9,7 @@ export function githubIntentFor(issue) {
   const labels = Array.isArray(issue?.labels) ? issue.labels : [];
   const title = typeof issue?.title === "string" ? issue.title : "";
   const lower = [...labels, title].join(" ").toLowerCase();
-  if (/\bbugs?\b|\bdefects?\b|\bregression\b/.test(lower)) return "bugfix";
+  if (/\aliaugs?\b|\bdefects?\b|\bregression\b/.test(lower)) return "bugfix";
   if (/\brefactor\b|\bclean(up)?\b|\bdebt\b|\bsimplify\b/.test(lower)) return "refactor";
   if (/\bnew\s+product\b|\bproduct\b/.test(lower)) return "new-product";
   if (/\bfeature\b|\benhancement\b|\bfeat\b|\bnew\b/.test(lower)) return "feature";

@@ -15,7 +15,7 @@ usage: setup-gpu.sh [--pool <name>]... [--downgrade]
                         Refused while alia-box-gpu 0.4.0 or later is
                         installed, without --force, as below
 
-  --pool <name>   serve this pool as well as BBBOX_POOL and the pools
+  --pool <name>   serve this pool as well as ALIABOX_POOL and the pools
                   /etc/alia-box/gpu.conf already lists; give it once per pool
   --writes on     let the helper write guests' NVIDIA and DRM device lines.
                   Only once this release's helper is installed and
@@ -127,17 +127,17 @@ if [ -n "$asked_writes" ] && { [ "${#asked_pools[@]}" -gt 0 ] || [ "$downgrade" 
 fi
 
 helper_heartbeat=60
-asked_wait=${BBBOX_GPU_REPORT_WAIT:-}
+asked_wait=${ALIABOX_GPU_REPORT_WAIT:-}
 if [ -n "$asked_wait" ] && ! [[ "$asked_wait" =~ ^[1-9][0-9]{0,3}$ ]]; then
-  refuse_usage "BBBOX_GPU_REPORT_WAIT, from this process's environment, must be a whole number of seconds from 1 to 9999, not '$asked_wait'"
+  refuse_usage "ALIABOX_GPU_REPORT_WAIT, from this process's environment, must be a whole number of seconds from 1 to 9999, not '$asked_wait'"
 fi
 first_pass_wait=${asked_wait:-30}
 heartbeat_wait=${asked_wait:-$((helper_heartbeat + 15))}
 
 . "$here/common.sh"
-[[ "$BBBOX_POOL" =~ $pool_name_pattern ]] || die "BBBOX_POOL, '$BBBOX_POOL', cannot be a pool's name"
+[[ "$ALIABOX_POOL" =~ $pool_name_pattern ]] || die "ALIABOX_POOL, '$ALIABOX_POOL', cannot be a pool's name"
 
-root=${BBBOX_ROOT:-}
+root=${ALIABOX_ROOT:-}
 units=$root/etc/systemd/system
 sbin=$root/usr/local/sbin
 program=$sbin/alia-box-gpu
@@ -498,7 +498,7 @@ wanted_pools() {
   if [ -f "$conf" ]; then
     pools=$(sed -n 's/^[[:space:]]*pools[[:space:]]\{1,\}//p' "$conf" | tr -s ' \t\n' ' ')
   fi
-  for pool in $pools "$BBBOX_POOL" "${asked_pools[@]}"; do
+  for pool in $pools "$ALIABOX_POOL" "${asked_pools[@]}"; do
     [[ "$seen" == *" $pool "* ]] && continue
     seen="$seen$pool "
     out="$out${out:+ }$pool"

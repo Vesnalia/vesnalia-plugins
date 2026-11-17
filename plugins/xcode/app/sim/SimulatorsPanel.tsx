@@ -45,7 +45,7 @@ export function SimulatorsPanel({ subPath }: { subPath: string }) {
 
   if (subPath === "doctor") {
     return (
-      <div className="bbxs-scroll h-full">
+      <div className="aliaxs-scroll h-full">
         <Doctor />
       </div>
     );

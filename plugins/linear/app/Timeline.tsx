@@ -79,16 +79,16 @@ export function Timeline({
       if (target === undefined) return;
       targetElement = target;
       target.scrollIntoView({ block: "center" });
-      target.classList.add("bbl-comment-highlight");
+      target.classList.add("alial-comment-highlight");
       highlightTimer = window.setTimeout(
-        () => target.classList.remove("bbl-comment-highlight"),
+        () => target.classList.remove("alial-comment-highlight"),
         2_000,
       );
     }, 0);
     return () => {
       window.clearTimeout(scrollTimer);
       if (highlightTimer !== undefined) window.clearTimeout(highlightTimer);
-      targetElement?.classList.remove("bbl-comment-highlight");
+      targetElement?.classList.remove("alial-comment-highlight");
     };
   }, [targetCommentId, targetAvailable]);
 
@@ -295,7 +295,7 @@ function CommentThread({
             onReload={onReload}
           />
           {comment.replies.length > 0 ? (
-            <ol className="bbl-rail ml-3 mt-3 space-y-3 pl-3">
+            <ol className="alial-rail ml-3 mt-3 space-y-3 pl-3">
               {comment.replies.map((reply) => (
                 <li
                   id={`c-${reply.id}`}

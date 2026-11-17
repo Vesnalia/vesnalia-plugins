@@ -5,11 +5,11 @@
 //
 // for example
 //
-//   build-1 bbbox-admin@192.0.2.21 linux
+//   build-1 aliabox-admin@192.0.2.21 linux
 //   build-2 192.0.2.22:2222 linux via=jump@bastion.example.com reset=machine labels=fast
-//   mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop
+//   mac-mini aliabox-admin@192.0.2.30 macos,macos-desktop
 //
-// The user is alia-box's admin user on the machine, bbbox-admin by default,
+// The user is alia-box's admin user on the machine, aliabox-admin by default,
 // which setup/ssh-pool/setup.sh makes. "via" is a jump host, reached with the
 // same key. "reset=machine" says the machine has a whole-machine reset, so
 // its boxes have Docker, which gives root (041). The pool's linux boxes have
@@ -30,7 +30,7 @@ export const SSH_POOL_KINDS = ["linux", "macos", "macos-desktop", "ios"] as cons
 export type SshPoolKind = (typeof SSH_POOL_KINDS)[number];
 export const SLOT_KIND = "ios";
 
-export const SSH_POOL_DEFAULTS = { adminUser: "bbbox-admin", port: 22 } as const;
+export const SSH_POOL_DEFAULTS = { adminUser: "aliabox-admin", port: 22 } as const;
 
 export const SSH_POOL_KEYS = {
   enabled: "ssh-pool-enabled",
@@ -200,7 +200,7 @@ export function hostKeysFor(lines: readonly string[], host: { readonly host: str
   return named.length ? named : lines.some((line) => lineNames(line) === null) ? [...lines] : [];
 }
 
-export const EXAMPLE = '"build-1 bbbox-admin@192.0.2.21 linux"';
+export const EXAMPLE = '"build-1 aliabox-admin@192.0.2.21 linux"';
 
 function parseMachine(line: string, lineNumber: number, problems: { push(message: string): void }): SshPoolMachine | null {
   const [name = "", target = "", kindList = "", ...options] = line.split(/\s+/);

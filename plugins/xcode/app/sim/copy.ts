@@ -261,8 +261,8 @@ export function liveVeil(
 }
 
 export const TONE_CLASS: Record<Tone, string> = {
-  neutral: "bbxs-tone",
-  live: "bbxs-tone bbxs-tone-live",
-  stalled: "bbxs-tone bbxs-tone-stalled",
-  dead: "bbxs-tone bbxs-tone-dead",
+  neutral: "aliaxs-tone",
+  live: "aliaxs-tone aliaxs-tone-live",
+  stalled: "aliaxs-tone aliaxs-tone-stalled",
+  dead: "aliaxs-tone aliaxs-tone-dead",
 };

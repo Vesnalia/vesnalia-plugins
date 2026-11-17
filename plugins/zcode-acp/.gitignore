@@ -1,6 +1,6 @@
 node_modules
 .DS_Store
-.bb/chats/
+.vesnalia/chats/
 *.pyc
 __pycache__/
 dist

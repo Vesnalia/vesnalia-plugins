@@ -297,7 +297,7 @@ test("acquire claims the VMID before it clones, then configures and starts the b
   const vm = proxmox.guests.get(9700)!;
   assert.equal(vm.type, "qemu");
   assert.equal(vm.status, "running");
-  assert.equal(vm.pool, "bbbox");
+  assert.equal(vm.pool, "aliabox");
   assert.equal(vm.name, box.name);
   assert.equal(vm.config.cores, "4");
   assert.equal(vm.config.memory, "8192");
@@ -665,8 +665,8 @@ test("release deletes the VM, and held lists this install's VMs with their owner
   const { backend, proxmox, make } = setup();
   const box = identity();
   const guest = await backend.acquire(box, null, hooks().value, signal());
-  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "theirs", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_y" } });
-  proxmox.guests.set(9706, { vmid: 9706, name: "a-container", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.test;box.box_z" } });
+  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "theirs", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_y" } });
+  proxmox.guests.set(9706, { vmid: 9706, name: "a-container", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.test;box.box_z" } });
   const held = await make().held();
   assert.deepEqual(
     held.map((one) => [one.ref, one.owner?.boxId, one.power, one.data?.template]),
@@ -764,7 +764,7 @@ test("doctor passes on a complete setup, and warns that a template from build.sh
       ["ssh.key", "SSH key", "warn"],
     ],
   );
-  assert.match(report.checks.at(-1)!.fix!, /^Paste BBBOX_SSH_KEY, the key build\.sh put in the template, here or in Proxmox LXC's settings\./);
+  assert.match(report.checks.at(-1)!.fix!, /^Paste ALIABOX_SSH_KEY, the key build\.sh put in the template, here or in Proxmox LXC's settings\./);
   const notes = report.notes.join("\n");
   assert.match(notes, /^This install's ID is test\. Its VMs carry the tag install\.test\.$/m);
   assert.match(notes, /C:\\ProgramData\\ssh\\administrators_authorized_keys: ssh-ed25519 \S+ alia-box$/m);
@@ -776,7 +776,7 @@ test("doctor passes on a complete setup, and warns that a template from build.sh
 test("doctor names the snapshot right a VM token lacks, and what Ceph RBD, ZFS and qcow2 files restore (070)", async () => {
   const { backend, proxmox } = setup({ "windows-templates": "9104 9105 9106" });
   proxmox.addVmTemplate(9106);
-  proxmox.privileges.set("/pool/bbbox", new Set(TOKEN_ROLE.filter((privilege) => privilege !== "VM.Snapshot.Rollback")));
+  proxmox.privileges.set("/pool/aliabox", new Set(TOKEN_ROLE.filter((privilege) => privilege !== "VM.Snapshot.Rollback")));
   for (const [name, type] of [["ceph", "rbd"], ["tank", "zfspool"], ["files", "nfs"]] as const) {
     proxmox.storage.set(name, { total: 900 * GiB, avail: 600 * GiB });
     proxmox.storageTypes.set(name, type);
@@ -788,7 +788,7 @@ test("doctor names the snapshot right a VM token lacks, and what Ceph RBD, ZFS a
   const snapshots = report.checks.find((check) => check.id === "proxmox.snapshots")!;
   assert.deepEqual([snapshots.status, snapshots.detail, snapshots.fix], [
     "warn",
-    "The token lacks VM.Snapshot.Rollback on /pool/bbbox, so VesnALIA Box cannot restore snapshots. " +
+    "The token lacks VM.Snapshot.Rollback on /pool/aliabox, so VesnALIA Box cannot restore snapshots. " +
       "ceph (Ceph RBD) restores any snapshot. tank (ZFS) restores only the newest snapshot. files (NFS, qcow2 files) restores any snapshot.",
     "Run host/setup-token.sh from the Proxmox LXC setup guide again, as root on pve. It keeps the token and its secret, and adds the missing rights to the token's role.",
   ]);
@@ -803,7 +803,7 @@ test("doctor says a VM's raw disk on directory storage takes no snapshots (070)"
   const snapshots = (await backend.doctor()).checks.find((check) => check.id === "proxmox.snapshots")!;
   assert.deepEqual([snapshots.status, snapshots.detail, snapshots.fix], [
     "warn",
-    "The token may take, delete and restore snapshots on /pool/bbbox. files (directory, raw files) takes no snapshots.",
+    "The token may take, delete and restore snapshots on /pool/aliabox. files (directory, raw files) takes no snapshots.",
     "For snapshots, put the templates on storage that takes them: LVM-thin, ZFS, Ceph RBD, BTRFS, or qcow2 disks on a directory.",
   ]);
 });
@@ -854,7 +854,7 @@ test("doctor says what is missing", async () => {
   const byId = Object.fromEntries(report.checks.map((check) => [check.id, check]));
   assert.equal(byId["template.9104"]!.status, "ok");
   assert.equal(byId["template.9105"]!.detail, "VM 9105 is not a template.");
-  assert.equal(byId["template.9106"]!.detail, "VM 9106 does not exist on pve, or is not in pool bbbox.");
+  assert.equal(byId["template.9106"]!.detail, "VM 9106 does not exist on pve, or is not in pool aliabox.");
   assert.match(byId["template.9106"]!.fix!, /setup\/proxmox-qemu\/build\.sh, or remove it from the Windows templates/);
   assert.match(byId["proxmox.bridge"]!.detail, /pve has no vmbr1/);
   assert.match(report.summary, /^Windows template 9105: /);
@@ -862,14 +862,14 @@ test("doctor says what is missing", async () => {
 
 test("a Windows box is from its template as built now only while the template has the build it was cloned from (#227)", async () => {
   const { backend, proxmox } = setup();
-  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "bbbox;windows;build.20260920-000000-aaaa";
+  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "aliabox;windows;build.20260920-000000-aaaa";
   const before = identity();
   const old = await backend.acquire(before, null, hooks().value, signal());
   assert.equal(old.data?.build, "20260920-000000-aaaa");
   assert.equal(await backend.asOffered(old, KIND, before.createdAt), true);
   const during = { ...identity(), createdAt: Date.UTC(2026, 8, 25, 0, 30) };
   const cloned = await backend.acquire(during, null, hooks().value, signal());
-  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "bbbox;windows;build.20260925-000000-bbbb";
+  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "aliabox;windows;build.20260925-000000-aliabb";
   assert.equal(await backend.asOffered(old, KIND, before.createdAt), false, "made before the replace");
   assert.equal(await backend.asOffered(cloned, KIND, during.createdAt), false, "made during the build, before the swap");
   const { build: _, ...data } = old.data!;
@@ -878,10 +878,10 @@ test("a Windows box is from its template as built now only while the template ha
 
 test("a Windows box comes from its template's current build until a refresh replaces it, and cannot tell with no build recorded (049)", async () => {
   const { backend, proxmox } = setup();
-  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "bbbox;windows;build.20260920-000000-aaaa";
+  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "aliabox;windows;build.20260920-000000-aaaa";
   const guest = await backend.acquire(identity(), null, hooks().value, signal());
   assert.equal(await backend.fromCurrentBuild(guest, KIND), true);
-  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "bbbox;windows;build.20260925-000000-bbbb";
+  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "aliabox;windows;build.20260925-000000-aliabb";
   assert.equal(await backend.fromCurrentBuild(guest, KIND), false);
   const { build: _, ...data } = guest.data!;
   assert.equal(await backend.fromCurrentBuild({ ...guest, data }, KIND), null, "no build recorded");
@@ -1051,7 +1051,7 @@ test("a warm VM that fails to resume is deleted", async () => {
 
 test("the pool deletes warm VMs beyond the count, from a replaced build or a template no longer listed, at another size, or running", async () => {
   const { backend, proxmox, warm, context } = warmSetup(2, { "windows-templates": "9104 9105" });
-  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "bbbox;windows;build.20260920-000000-aaaa";
+  for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "aliabox;windows;build.20260920-000000-aaaa";
   await backend.maintain(signal());
   assert.deepEqual(warmVms(proxmox), [9700, 9701]);
   assert.deepEqual(parseTags(proxmox.guests.get(9701)!.config.tags).slice(-3), ["template.9105", "build.20260920-000000-aaaa", "alia-box-starting"]);
@@ -1061,13 +1061,13 @@ test("the pool deletes warm VMs beyond the count, from a replaced build or a tem
   assert.deepEqual([deleted(proxmox), warmVms(proxmox)], [[9701], [9700]]);
 
   // build.sh --replace swaps the template: the warm VM is from the old build.
-  proxmox.guests.get(9104)!.config.tags = "bbbox;windows;build.20260925-000000-bbbb";
+  proxmox.guests.get(9104)!.config.tags = "aliabox;windows;build.20260925-000000-aliabb";
   const acquired = await backend.acquire(identity(), null, hooks().value, signal());
   assert.equal(acquired.ref, "9702", "a warm VM from the old build is not handed out");
   await backend.maintain(signal());
   assert.deepEqual(deleted(proxmox), [9701, 9700]);
   assert.deepEqual(warmVms(proxmox), [9703]);
-  assert.deepEqual(parseTags(proxmox.guests.get(9703)!.config.tags).slice(-3), ["template.9104", "build.20260925-000000-bbbb", "alia-box-starting"], "filled from the new build");
+  assert.deepEqual(parseTags(proxmox.guests.get(9703)!.config.tags).slice(-3), ["template.9104", "build.20260925-000000-aliabb", "alia-box-starting"], "filled from the new build");
 
   const changes = [
     (vm: { status: string; config: Record<string, string> }) => (vm.config.cores = "8"),
@@ -1098,8 +1098,8 @@ test("the pool deletes warm VMs beyond the count, from a replaced build or a tem
 
 test("warm VMs of another install, and a warm VM a fill was cut short making, are left for their owners and the registry", async () => {
   const { backend, proxmox } = warmSetup(0);
-  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "alia-box-warm", pool: "bbbox", status: "stopped", template: false, config: { tags: "alia-box;install.other;warm;template.9104", cores: "4", memory: "8192" } });
-  proxmox.guests.set(9706, { vmid: 9706, type: "qemu", name: "alia-box-warm", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.test;filling;template.9104", description: "alia-box warm windows-desktop\ninstall test", cores: "4", memory: "8192" } });
+  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "alia-box-warm", pool: "aliabox", status: "stopped", template: false, config: { tags: "alia-box;install.other;warm;template.9104", cores: "4", memory: "8192" } });
+  proxmox.guests.set(9706, { vmid: 9706, type: "qemu", name: "alia-box-warm", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.test;filling;template.9104", description: "alia-box warm windows-desktop\ninstall test", cores: "4", memory: "8192" } });
   await backend.maintain(signal());
   assert.deepEqual(deleted(proxmox), []);
   // The registry releases a guest that names no box.
@@ -1347,7 +1347,7 @@ test("image operations on a Linux template: its build box has no Windows steps, 
   proxmox.addVmTemplate(9120);
   const template = proxmox.guests.get(9120)!;
   template.name = template.config.name = "alia-box-linux";
-  template.config.tags = "bbbox;linux;build.20261011-090550-3ca0";
+  template.config.tags = "aliabox;linux;build.20261011-090550-3ca0";
   template.config.description = "alia-box linux vm template, built 2026-10-11 from Ubuntu 24.04's cloud image 20260926.";
   for (let last = 150; last <= 159; last++) {
     const host = `192.0.2.${last}`;
@@ -1393,7 +1393,7 @@ test("image operations: a box from the Windows template, its capture as a templa
   const { backend, proxmox, ssh } = imageSetup(record);
   const template = proxmox.guests.get(9104)!;
   template.name = template.config.name = "alia-box-windows";
-  template.config.tags = "bbbox;windows;build.20260901-020000-77aa";
+  template.config.tags = "aliabox;windows;build.20260901-020000-77aa";
   template.config.description = "alia-box windows template, built 2026-09-01 from win11.iso: Windows 11 Pro, PowerShell 7.6.6.";
   const images = backend.images;
   assert.equal(images.windows, true);
@@ -1443,7 +1443,7 @@ test("image operations: a box from the Windows template, its capture as a templa
   assert.equal(proxmox.guests.has(9700), false);
   const now = proxmox.guests.get(9104)!;
   assert.deepEqual([now.template, now.name, now.config.protection], [true, "alia-box-windows", "1"]);
-  assert.deepEqual(parseTags(now.config.tags), ["bbbox", "windows", "build.20261007-030000-5e1f"]);
+  assert.deepEqual(parseTags(now.config.tags), ["aliabox", "windows", "build.20261007-030000-5e1f"]);
   assert.match(now.config.description!, /^alia-box windows template, refreshed \d{4}-\d{2}-\d{2} from win11\.iso: Windows 11 Pro, PowerShell 7\.6\.6\.\n\{"contract":1,/);
   assert.deepEqual(
     proxmox.calls
@@ -1655,7 +1655,7 @@ test("an Android template with KVM off offers no kind, but its image is listed, 
   proxmox.addVmTemplate(9108);
   const template = proxmox.guests.get(9108)!;
   template.name = template.config.name = "alia-box-android";
-  template.config.tags = "bbbox;android;build.20261020-030000-77aa";
+  template.config.tags = "aliabox;android;build.20261020-030000-77aa";
   template.config.description = `alia-box android vm template, built 2026-10-20 from Ubuntu 24.04's cloud image 20260911.\n${JSON.stringify(record)}`;
   for (let last = 150; last <= 159; last++) {
     const host = `192.0.2.${last}`;
@@ -1726,7 +1726,7 @@ test("with an Android template and KVM on, android boxes are offered once its re
   const { backend, proxmox, ssh, context } = setup({ "android-templates": "9108", "linux-kvm": true });
   proxmox.addVmTemplate(9108);
   proxmox.guests.get(9108)!.config.description = `alia-box android vm template.\n${JSON.stringify(record)}`;
-  proxmox.guests.get(9108)!.config.tags = "bbbox;android;build.20261026-051500-1a2b";
+  proxmox.guests.get(9108)!.config.tags = "aliabox;android;build.20261026-051500-1a2b";
   const host = "192.0.2.150";
   rmSync(join(ssh.dir, "windows", host), { force: true });
   ssh.powershell(host, `case "$1" in\n  *"date -u -s"*) printf "%s" "$1" > "$HOME/clock";;\n  *) exec sh -c "$1";;\nesac\n`);

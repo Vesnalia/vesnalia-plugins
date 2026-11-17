@@ -1,14 +1,14 @@
 #!/bin/bash
 # Builds alia-box's images for the Docker backend on the Docker host the docker
-# CLI uses (DOCKER_HOST or its current context): bbbox/linux:1 for linux
-# boxes, bbbox/linux-desktop:1 for linux-desktop-cpu and linux-desktop boxes,
-# and bbbox/linux-desktop-wayland:1 for linux-desktop-wayland-cpu boxes (048).
+# CLI uses (DOCKER_HOST or its current context): aliabox/linux:1 for linux
+# boxes, aliabox/linux-desktop:1 for linux-desktop-cpu and linux-desktop boxes,
+# and aliabox/linux-desktop-wayland:1 for linux-desktop-wayland-cpu boxes (048).
 # See README.md.
 #
 # usage: build.sh [--alia-url <url>] [--tag <image>] [--arch x86_64|arm64] [linux|desktop|desktop-wayland]...
 # --tag names the one image it builds otherwise, as a refresh does (049) to
 # check a build before it takes the image's own name. --arch arm64 builds the
-# arm64 images, bbbox/linux:1-arm64 and bbbox/linux-desktop:1-arm64, for
+# arm64 images, aliabox/linux:1-arm64 and aliabox/linux-desktop:1-arm64, for
 # microsandbox on a Mac (053), on an arm64 Docker host: the guest scripts
 # install the arm64 pins, as for Tart's Linux images (040). Its desktop is on
 # the CPU, and there is no Wayland desktop for arm64 yet.
@@ -142,9 +142,9 @@ fi
 
 for target in "${targets[@]}"; do
   case $target in
-    linux) image=bbbox/linux:$version$suffix ;;
-    desktop) image=bbbox/linux-desktop:$version$suffix ;;
-    desktop-wayland) image=bbbox/linux-desktop-wayland:$version ;;
+    linux) image=aliabox/linux:$version$suffix ;;
+    desktop) image=aliabox/linux-desktop:$version$suffix ;;
+    desktop-wayland) image=aliabox/linux-desktop-wayland:$version ;;
   esac
   image=${tag:-$image}
   # The guest scripts install the tools built for the image's architecture.
@@ -159,6 +159,6 @@ for target in "${targets[@]}"; do
   record=$(cat "$record_dir/image.json") || { rm -rf "$record_dir"; exit 1; }
   rm -rf "$record_dir"
   [ "${record:0:1}" = "{" ] && [[ $record != *$'\n'* ]] || { echo "$image: /usr/share/alia-box/image.json is not one JSON object" >&2; exit 1; }
-  "${build[@]}" --quiet --label "bbbox.image-record=$record" "$here/.." >/dev/null
+  "${build[@]}" --quiet --label "aliabox.image-record=$record" "$here/.." >/dev/null
   echo "built $image"
 done

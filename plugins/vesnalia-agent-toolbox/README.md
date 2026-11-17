@@ -12,16 +12,16 @@ behaviour.
 
 ## Tools
 
-- **Threads** (`bbtools_threads_list` / `bbtools_thread_get` / `bbtools_thread_outline` / `bbtools_thread_send` / `bbtools_thread_spawn` / `bbtools_thread_wait` / `bbtools_thread_interactions_list` / `bbtools_thread_interaction_respond` / `bbtools_thread_retry` / `bbtools_thread_stop` / `bbtools_thread_archive` / `bbtools_thread_clear_context` / `bbtools_thread_compact` / `bbtools_thread_search`)
+- **Threads** (`aliatools_threads_list` / `aliatools_thread_get` / `aliatools_thread_outline` / `aliatools_thread_send` / `aliatools_thread_spawn` / `aliatools_thread_wait` / `aliatools_thread_interactions_list` / `aliatools_thread_interaction_respond` / `aliatools_thread_retry` / `aliatools_thread_stop` / `aliatools_thread_archive` / `aliatools_thread_clear_context` / `aliatools_thread_compact` / `aliatools_thread_search`)
   — inspect, message, create, wait for, retry, stop, archive, and read VesnALIA
   threads to coordinate, delegate, or hand off work between agents.
-  `bbtools_thread_send` accepts a future `sendAt` to schedule the message.
-  `bbtools_thread_get` and `bbtools_thread_interactions_list` surface what a
+  `aliatools_thread_send` accepts a future `sendAt` to schedule the message.
+  `aliatools_thread_get` and `aliatools_thread_interactions_list` surface what a
   thread waits for: permission approvals, user questions, plugin prompts.
-- **Projects & workspace** (`bbtools_projects_list` / `bbtools_workspace_list` / `bbtools_workspace_read` / `bbtools_workspace_write` / `bbtools_workspace_mkdir`)
+- **Projects & workspace** (`aliatools_projects_list` / `aliatools_workspace_list` / `aliatools_workspace_read` / `aliatools_workspace_write` / `aliatools_workspace_mkdir`)
   — orient across projects and read/write workspace files (confined to the
   thread's workspace root).
-- **Terminals** (`bbtools_terminals_list` / `bbtools_terminal_create` / `bbtools_terminal_output` / `bbtools_terminal_input` / `bbtools_terminal_close`)
+- **Terminals** (`aliatools_terminals_list` / `aliatools_terminal_create` / `aliatools_terminal_output` / `aliatools_terminal_input` / `aliatools_terminal_close`)
   — create, watch (read output), drive (type commands), and close VesnALIA terminal
   sessions the user can watch live in the VesnALIA UI.
 
@@ -50,7 +50,7 @@ alia alia-agent-toolbox status   # tool groups + enabled state (+ --json)
 
 ## Design notes
 
-- Names use a `bbtools_` prefix to avoid colliding with other plugins' agent
+- Names use a `aliatools_` prefix to avoid colliding with other plugins' agent
   tools (e.g. the built-in Memory plugin's `alia_memory_*`).
 - Workspace tools resolve the current thread's host and workspace root at
   call time and pass `rootPath` to confine reads/writes to the project.

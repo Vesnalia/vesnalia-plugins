@@ -42,7 +42,7 @@ npm run reference
   anyway in a VesnALIA Box box, whose `/usr/share/alia-box/image.json` is an image
   record of a contract and kind VesnALIA Box knows, that only root can change,
   or in a GitHub Actions run. To run them on such a machine anyway, at the
-  risk of changing it, set `BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1`. A test
+  risk of changing it, set `ALIABOX_TESTS_MAY_BREAK_THIS_MACHINE=1`. A test
   file, in any folder under `test`, starts with `import
   "./check-test-machine.mjs";`, by its own relative path, and a test fails
   while one does not.
@@ -266,9 +266,9 @@ Against real hosts:
   ([its guide](../setup/ssh-pool/README.md#testing-on-one-computer)):
 
   ```sh
-  sh setup/ssh-pool/test/rig.sh up /tmp/bbbox-rig
-  npm run conformance -- --backend ssh-pool --settings /tmp/bbbox-rig/settings.json
-  SSH_POOL_RIG=/tmp/bbbox-rig node --test --test-concurrency=1 test/ssh-pool-live.ts
+  sh setup/ssh-pool/test/rig.sh up /tmp/aliabox-rig
+  npm run conformance -- --backend ssh-pool --settings /tmp/aliabox-rig/settings.json
+  SSH_POOL_RIG=/tmp/aliabox-rig node --test --test-concurrency=1 test/ssh-pool-live.ts
   ```
 
 ## The documentation site

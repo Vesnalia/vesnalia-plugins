@@ -24,14 +24,14 @@ const ENGINE: Sprite = [
   "..kk.........",
   "..kk....RRRR.",
   ".kkkk...RwwR.",
-  "BBBBBBBBRRRRR",
-  "BBBBBBBBBBBBB",
+  "ALIABBBBBBRRRRR",
+  "ALIABBBBBBBBBBB",
   "BlBBBBBBBBBBB",
-  "BBBBBBBBBBBBB",
+  "ALIABBBBBBBBBBB",
   ".oo...o..o...",
 ];
 const ENGINE_W = 13;
-const TENDER: Sprite = [".......", "BBBBBBB", "BBBBBBB", ".o...o."];
+const TENDER: Sprite = [".......", "ALIABBBBB", "ALIABBBBB", ".o...o."];
 const CAR: Sprite = [
   "...........",
   "ccccccccccc",

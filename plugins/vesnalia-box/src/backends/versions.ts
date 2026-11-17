@@ -62,7 +62,7 @@ function dearmor(armored: string): Buffer {
 export function gpgvVerify(setup: string, signers: Readonly<Record<Signer, { readonly file: string; readonly fingerprint: string }>> = SIGNERS): Verify {
   return async (signer, signed, signature) => {
     const { file, fingerprint } = signers[signer];
-    const dir = await mkdtemp(join(tmpdir(), "bbbox-gpgv-"));
+    const dir = await mkdtemp(join(tmpdir(), "aliabox-gpgv-"));
     try {
       await writeFile(join(dir, "key.gpg"), dearmor(await readFile(join(setup, "keys", file), "utf8")));
       await writeFile(join(dir, "signed"), signed);

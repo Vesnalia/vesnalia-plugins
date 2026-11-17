@@ -90,11 +90,11 @@ export default async function plugin(alia: AliaPluginApi) {
     }
     if (flags.enableThreads && !flags.enableInteractionRespond) {
       lines.push(
-        "- bbtools_thread_interaction_respond is disabled by the enableInteractionRespond plugin setting; you can list other threads' pending interactions but not answer them.",
+        "- aliatools_thread_interaction_respond is disabled by the enableInteractionRespond plugin setting; you can list other threads' pending interactions but not answer them.",
       );
     }
     lines.push(
-      "After spawning or messaging another thread, prefer bbtools_thread_wait over repeated bbtools_thread_get polling.",
+      "After spawning or messaging another thread, prefer aliatools_thread_wait over repeated aliatools_thread_get polling.",
     );
     lines.push(
       "Prefer these over guessing when you need cross-thread state or VesnALIA project context.",

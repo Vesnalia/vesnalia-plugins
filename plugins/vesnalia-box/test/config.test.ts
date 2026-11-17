@@ -45,12 +45,12 @@ const SAVED: Record<string, PluginSettingValue> = {
   "enrol-boxes": false,
   "proxmox-lxc-enabled": true,
   "proxmox-lxc-url": "https://192.0.2.10:8006/api2/json",
-  "proxmox-lxc-token-id": "bbbox@pve!plugin",
+  "proxmox-lxc-token-id": "aliabox@pve!plugin",
   "proxmox-lxc-token-secret": TOKEN,
   "proxmox-lxc-tls-fingerprint": FINGERPRINT,
   "proxmox-lxc-ca-certificate": "",
   "proxmox-lxc-node": "pve-test",
-  "proxmox-lxc-pool": "bbbox",
+  "proxmox-lxc-pool": "aliabox",
   "proxmox-lxc-linux-templates": "9100",
   "proxmox-lxc-linux-warm": 1,
   "proxmox-lxc-desktop-templates": "9101 GPU-00000000-0000-0000-0000-000000000001\n9102 GPU-00000000-0000-0000-0000-000000000002",
@@ -243,7 +243,7 @@ test("Tart's Macs move in as hosts, each with its host keys, and parse to the co
   const keys = ["192.0.2.20 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOne", "[192.0.2.21]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITwo", "|1|abc=|def= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHashed"];
   const values = {
     "tart-enabled": true,
-    "tart-hosts": "mac1 bbbox-admin@192.0.2.20\nmac2 admin@192.0.2.21:2222",
+    "tart-hosts": "mac1 aliabox-admin@192.0.2.20\nmac2 admin@192.0.2.21:2222",
     "tart-host-keys": keys.join("\n"),
     "tart-ssh-private-key": KEY,
     "tart-vms-per-host": 1,
@@ -254,7 +254,7 @@ test("Tart's Macs move in as hosts, each with its host keys, and parse to the co
   assert.deepEqual(tart!.fields, { "vms-per-host": 1 });
   assert.deepEqual(secrets, { tart: { "ssh-private-key": KEY } });
   assert.deepEqual(tart!.hosts, [
-    { name: "mac1", enabled: true, fields: { address: "192.0.2.20", user: "bbbox-admin", "host-keys": `${keys[0]}\n${keys[2]}` } },
+    { name: "mac1", enabled: true, fields: { address: "192.0.2.20", user: "aliabox-admin", "host-keys": `${keys[0]}\n${keys[2]}` } },
     { name: "mac2", enabled: true, fields: { address: "192.0.2.21:2222", user: "admin", "host-keys": `${keys[1]}\n${keys[2]}` } },
   ]);
   const before = parseTartSettings(values);
@@ -276,7 +276,7 @@ test("the move does 028's size move first when that never ran, and only then", (
 });
 
 test("a new install moves to a document with no backends", () => {
-  const defaults = { "boxes-per-thread": 0, "enrol-boxes": true, "proxmox-lxc-enabled": true, "proxmox-lxc-pool": "bbbox", "ssh-pool-enabled": false };
+  const defaults = { "boxes-per-thread": 0, "enrol-boxes": true, "proxmox-lxc-enabled": true, "proxmox-lxc-pool": "aliabox", "ssh-pool-enabled": false };
   const { document, secrets } = fromSettings(defaults, DRIVERS, false);
   assert.deepEqual(document, { schema: 1, revision: 1, backends: [], kinds: {}, general: {} });
   assert.deepEqual(secrets, {});
@@ -398,7 +398,7 @@ test("a key a backend generated survives the move and the restarts unchanged, fo
   const settings = {
     ...SAVED,
     "tart-enabled": true,
-    "tart-hosts": "mac1 bbbox-admin@192.0.2.20",
+    "tart-hosts": "mac1 aliabox-admin@192.0.2.20",
     "tart-host-keys": "192.0.2.20 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMac",
     "tart-reserve-disk-gib": 80,
     "ssh-pool-enabled": true,
@@ -441,14 +441,14 @@ test("a warm count out of range moves into range and is noted, and a moved docum
 
 test("a Mac line with a mistake is left out of the move, and the copy says so (review F4)", () => {
   const { document, notes } = fromSettings(
-    { "tart-enabled": true, "tart-hosts": "mac1 bbbox-admin@192.0.2.20\nmac2 192.0.2.21", "tart-host-keys": "192.0.2.20 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMac" },
+    { "tart-enabled": true, "tart-hosts": "mac1 aliabox-admin@192.0.2.20\nmac2 192.0.2.21", "tart-host-keys": "192.0.2.20 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMac" },
     DRIVERS,
     true,
   );
   assert.deepEqual(document.backends[0]!.hosts!.map((host) => host.name), ["mac1"]);
   assert.deepEqual(notes, ["Tart: line 2 of the Macs is not a name, a space and user@address, so the Mac was left out; add it on the settings page."]);
   // Any other mistake keeps the Mac, and the note says to fix it.
-  const kept = fromSettings({ "tart-enabled": true, "tart-hosts": "mac1 bbbox-admin@192.0.2.20\nmac1 admin@192.0.2.21" }, DRIVERS, true);
+  const kept = fromSettings({ "tart-enabled": true, "tart-hosts": "mac1 aliabox-admin@192.0.2.20\nmac1 admin@192.0.2.21" }, DRIVERS, true);
   assert.deepEqual(kept.document.backends[0]!.hosts!.map((host) => host.name), ["mac1", "mac1"]);
   assert.ok(kept.notes.includes('Tart: Mac name "mac1" is listed twice. Fix it on the settings page.'));
   assert.ok(!kept.notes.some((note) => note.includes("left out")));
@@ -1191,7 +1191,7 @@ test("070 unit 11b review, Opus 1: a backend whose snapshots live on its provide
   const backend = world.backend! as unknown as Record<string, unknown>;
   let lists = 0;
   let held: unknown[] = [
-    { id: "snaaaaaaaaaaaa", ref: "earlier01-bxaaaaaaaaaaaa-snaaaaaaaaaaaa", box: "bxaaaaaaaaaaaa", owner: null, guest: { ref: "bbbox-bxaaaaaaaaaaaa", host: "provider", address: null, size: null, data: { box: "bxaaaaaaaaaaaa" } }, where: "current", state: "complete", words: null, holds: "disk", takenAt: null, keptUntil: Date.UTC(2026, 10, 30, 23, 59, 59, 999), storage: null },
+    { id: "snaaaaaaaaaaaa", ref: "earlier01-bxaaaaaaaaaaaa-snaaaaaaaaaaaa", box: "bxaaaaaaaaaaaa", owner: null, guest: { ref: "aliabox-bxaaaaaaaaaaaa", host: "provider", address: null, size: null, data: { box: "bxaaaaaaaaaaaa" } }, where: "current", state: "complete", words: null, holds: "disk", takenAt: null, keptUntil: Date.UTC(2026, 10, 30, 23, 59, 59, 999), storage: null },
   ];
   backend.snapshotting = () => ({ scope: "box", holds: ["disk"], whileRunning: "live", restore: "new-guest", fork: "copy", keepsPastRelease: "as-is", lives: "provider", price: { amount: 0.01, currency: "USD", per: "day", known: true }, excludes: null });
   backend.heldSnapshots = async () => {
@@ -1222,7 +1222,7 @@ test("a backend whose snapshots stay on its own engine at no charge, as Docker's
   const base = app().configuration.exported();
   const backend = world.backend! as unknown as Record<string, unknown>;
   let held: unknown[] | null = [
-    { id: "snaaaaaaaaaaaa", ref: "bbbox-snapshot/test/bxaaaaaaaaaaaa:snaaaaaaaaaaaa", box: "bxaaaaaaaaaaaa", owner: null, guest: { ref: "bbbox-bxaaaaaaaaaaaa", host: null, address: null, size: null, data: { box: "bxaaaaaaaaaaaa" } }, where: "current", state: "complete", words: null, holds: "disk", takenAt: null, keptUntil: Date.UTC(2026, 10, 30, 23, 59, 59, 999), storage: null },
+    { id: "snaaaaaaaaaaaa", ref: "aliabox-snapshot/test/bxaaaaaaaaaaaa:snaaaaaaaaaaaa", box: "bxaaaaaaaaaaaa", owner: null, guest: { ref: "aliabox-bxaaaaaaaaaaaa", host: null, address: null, size: null, data: { box: "bxaaaaaaaaaaaa" } }, where: "current", state: "complete", words: null, holds: "disk", takenAt: null, keptUntil: Date.UTC(2026, 10, 30, 23, 59, 59, 999), storage: null },
   ];
   backend.snapshotting = () => ({ scope: "box", holds: ["disk"], whileRunning: "pauses", restore: "new-guest", fork: "copy", keepsPastRelease: "as-is", lives: "provider", price: null, excludes: null });
   backend.heldSnapshots = async () => {
@@ -1235,7 +1235,7 @@ test("a backend whose snapshots stay on its own engine at no charge, as Docker's
   assert.ok(!removed.ok && removed.reason === "problems");
   assert.equal(
     removed.problems[0]!.message,
-    "Backend fake has 1 snapshot on its host, kept or not, which would stay and take its disk after it is removed, with nothing to delete it: bbbox-snapshot/test/bxaaaaaaaaaaaa:snaaaaaaaaaaaa, kept until 2026-11-30. Delete it first: VesnALIA box snapshot delete <box> <snapshot> deletes each one VesnALIA Box records, as VesnALIA box snapshot list --all names them; delete any other on the host itself.",
+    "Backend fake has 1 snapshot on its host, kept or not, which would stay and take its disk after it is removed, with nothing to delete it: aliabox-snapshot/test/bxaaaaaaaaaaaa:snaaaaaaaaaaaa, kept until 2026-11-30. Delete it first: VesnALIA box snapshot delete <box> <snapshot> deletes each one VesnALIA Box records, as VesnALIA box snapshot list --all names them; delete any other on the host itself.",
   );
 
   held = null;

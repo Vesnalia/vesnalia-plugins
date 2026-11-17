@@ -156,7 +156,7 @@ function parseItem(section: BacklogSection, line: string): BacklogItem | null {
     groups.set((match[1] ?? "").toLowerCase(), match[2] ?? "");
   }
   // `blocked-by: x` is written bare as often as in parentheses.
-  const bareBlocker = /\bblocked-by:\s*([\w.-]+)/i.exec(body.replace(GROUP, ""));
+  const bareBlocker = /\alialocked-by:\s*([\w.-]+)/i.exec(body.replace(GROUP, ""));
 
   const withoutGroups = body.replace(GROUP, "").replace(OUTCOME, "").replace(SINCE, "").trim();
   const head = ID_AND_TITLE.exec(withoutGroups);
@@ -169,7 +169,7 @@ function parseItem(section: BacklogSection, line: string): BacklogItem | null {
   const title = rest
     .replace(URL, "")
     .replace(REPORT_PATH, "")
-    .replace(/\bblocked-by:\s*[\w.-]+/i, "")
+    .replace(/\alialocked-by:\s*[\w.-]+/i, "")
     .replace(/\s{2,}/g, " ")
     .trim();
   const outcome = OUTCOME.exec(body);

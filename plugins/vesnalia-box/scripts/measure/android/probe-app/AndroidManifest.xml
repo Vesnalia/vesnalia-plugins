@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="bbbox.probe">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="aliabox.probe">
   <application android:label="Probe">
     <activity android:name=".Main" android:exported="true">
       <intent-filter>
@@ -8,6 +8,6 @@
       </intent-filter>
     </activity>
   </application>
-  <instrumentation android:name=".Holds" android:targetPackage="bbbox.probe" />
-  <instrumentation android:name=".Plain" android:targetPackage="bbbox.probe" />
+  <instrumentation android:name=".Holds" android:targetPackage="aliabox.probe" />
+  <instrumentation android:name=".Plain" android:targetPackage="aliabox.probe" />
 </manifest>

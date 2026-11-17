@@ -71,11 +71,11 @@ const historyBars = 28;
   };
 
   const menuSays: Record<string, (name: string) => string> = {
-    details: (name) => `In BB, this opens ${name}'s facts and snapshots.`,
-    desktop: (name) => `In BB, this opens ${name}'s desktop in a tab.`,
-    terminal: (name) => `In BB, this opens ${name}'s terminal in a tab.`,
-    files: (name) => `In BB, this opens ${name}'s files in a tab.`,
-    thread: () => "In BB, this opens the thread that is using the box.",
+    details: (name) => `In ALIA, this opens ${name}'s facts and snapshots.`,
+    desktop: (name) => `In ALIA, this opens ${name}'s desktop in a tab.`,
+    terminal: (name) => `In ALIA, this opens ${name}'s terminal in a tab.`,
+    files: (name) => `In ALIA, this opens ${name}'s files in a tab.`,
+    thread: () => "In ALIA, this opens the thread that is using the box.",
   };
 
   const wave = (seconds: number, seed: number) => Math.sin(seconds * 0.9 + seed) * 0.6 + Math.sin(seconds * 2.3 + seed * 1.7) * 0.4;

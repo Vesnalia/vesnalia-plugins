@@ -11,7 +11,7 @@
 ### Changed
 
 - Show relative times for thread activity.
-- Require BB 0.48.1 or later.
+- Require VesnALIA 0.48.1 or later.
 
 ### Fixed
 

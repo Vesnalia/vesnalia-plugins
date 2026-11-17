@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """release-guard — refuse a release whose version main already carried with another Claude Code bundle.
 
-What it does: in a checkout of synsdev/syns-bb-plugin at the commit to tag, fetches `origin` and reads every commit
+What it does: in a checkout of synsdev/syns-alia-plugin at the commit to tag, fetches `origin` and reads every commit
 `origin/main` reaches. Each commit stating the version asked for in `hosts/claude/.claude-plugin/plugin.json` with a
 `hosts/claude/bin/syns-pages.mjs` other than HEAD's (or none) is named, oldest first, and the guard fails with the
 next patch number main never carried. A commit carrying HEAD's own bundle under that version (HEAD itself on a
@@ -81,7 +81,7 @@ def next_patch(version, seen):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--version", required=True, help="the version to tag")
-    ap.add_argument("--code", default=".", help="checkout of synsdev/syns-bb-plugin at the commit to tag")
+    ap.add_argument("--code", default=".", help="checkout of synsdev/syns-alia-plugin at the commit to tag")
     ap.add_argument("--ref", default="origin/main", help="what Claude Code could have taken (default origin/main)")
     ap.add_argument("--no-fetch", action="store_true", help="read --ref as it is (tests)")
     a = ap.parse_args()

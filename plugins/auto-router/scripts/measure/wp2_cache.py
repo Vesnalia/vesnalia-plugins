@@ -6,7 +6,7 @@
 # low, high and medium effort. For the first request of each turn it prints the cache read and write.
 import datetime, json, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from paired import EPOCH, bb, completed_turns, session_ids, transcripts, wait_turn
+from paired import EPOCH, alia, completed_turns, session_ids, transcripts, wait_turn
 from prices import usd
 from sources import claude, when
 
@@ -20,8 +20,8 @@ QUESTIONS = [
 ]
 
 def turns_of(thread):
-    """Each turn's start and the reasoning level BB sent with it, from the thread log."""
-    log = json.loads(bb("thread", "log", thread, "--all", "--json"))
+    """Each turn's start and the reasoning level ALIA sent with it, from the thread log."""
+    log = json.loads(alia("thread", "log", thread, "--all", "--json"))
     levels = [e["data"]["execution"]["reasoningLevel"] for e in log if e["type"] == "client/turn/requested"]
     starts = [when(e["createdAt"]) for e in log if e["type"] == "turn/started"]
     return [{"effort": level, "startedAt": start} for level, start in zip(levels, starts)]
@@ -45,15 +45,15 @@ def main():
     if sys.argv[1] == "--thread":
         return analyze(sys.argv[2], sys.argv[3])
     project, environment, out = sys.argv[1:4]
-    thread = json.loads(bb("thread", "spawn", "--json", "--parent-self", "--project", project, "--environment", environment,
+    thread = json.loads(alia("thread", "spawn", "--json", "--parent-self", "--project", project, "--environment", environment,
                            "--provider", "claude-code", "--model", "claude-opus-5-5", "--reasoning-level", "medium",
                            "--title", "measure wp2 cache test", "--prompt-file", "-", stdin=FIRST))["id"]
     assert wait_turn(thread, 0) == "done"
     for effort, question in QUESTIONS:
         before = completed_turns(thread)
-        bb("thread", "tell", thread, "--reasoning-level", effort, "--message-file", "-", stdin=question, as_user=True)
+        alia("thread", "tell", thread, "--reasoning-level", effort, "--message-file", "-", stdin=question, as_user=True)
         assert wait_turn(thread, before) == "done"
-    bb("thread", "stop", thread)
+    alia("thread", "stop", thread)
     analyze(thread, out)
 
 if __name__ == "__main__":

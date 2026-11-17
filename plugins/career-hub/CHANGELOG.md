@@ -8,7 +8,7 @@
 
 ## 0.2.0 — 2026-11-10
 
-- Add an embedded BB assistant with revision-checked edits and retry deduplication.
+- Add an embedded VesnALIA assistant with revision-checked edits and retry deduplication.
 - Accept a pasted vacancy or chat message in a one-field Add job form.
 - Accept a reference CV for section order and classic or compact spacing.
 - Preserve PDF line breaks and saved CV layout snapshots.

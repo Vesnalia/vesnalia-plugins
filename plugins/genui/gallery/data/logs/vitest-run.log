@@ -1,5 +1,5 @@
 
-[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/dev/bb-plugin-genui[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/dev/alia-plugin-genui[39m
 
  [32m✓[39m core/test-results.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 8[2mms[22m[39m
  [32m✓[39m ui/components/json-logic.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 15[2mms[22m[39m

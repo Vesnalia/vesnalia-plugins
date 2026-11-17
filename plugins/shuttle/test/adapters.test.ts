@@ -271,12 +271,12 @@ describe("GitHub activity", () => {
       event("ClosedEvent", "2026-10-20T10:00:00Z"),
       event("ReopenedEvent", "2026-10-21T10:00:00Z"),
       event("LabeledEvent", "2026-10-21T11:00:00Z", { label: { name: "ship" } }),
-      event("HeadRefForcePushedEvent", "2026-10-21T12:00:00Z", { beforeCommit: { abbreviatedOid: "aaa1111" }, afterCommit: { abbreviatedOid: "bbb2222" } }),
+      event("HeadRefForcePushedEvent", "2026-10-21T12:00:00Z", { beforeCommit: { abbreviatedOid: "aaa1111" }, afterCommit: { abbreviatedOid: "aliab2222" } }),
       event("MergedEvent", "2026-10-22T10:00:00Z", { commit: { abbreviatedOid: "ccc3333" }, mergeRefName: "main" }),
       event("ClosedEvent", "2026-10-22T10:00:01Z"),
       null,
     ]).map((e) => [e.kind, e.subject, e.detail])).toEqual([
-      ["closed", null, null], ["reopened", null, null], ["labeled", "ship", null], ["force_pushed", "bbb2222", "aaa1111"], ["merged", "ccc3333", "main"],
+      ["closed", null, null], ["reopened", null, null], ["labeled", "ship", null], ["force_pushed", "aliab2222", "aaa1111"], ["merged", "ccc3333", "main"],
     ]);
   });
 });

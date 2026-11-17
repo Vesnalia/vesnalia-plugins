@@ -116,6 +116,6 @@ test("the tools have their names, and nothing an agent reads names an earlier on
     CURRENT_TOOL_INSTRUCTIONS,
     moveToolInstructions(standardWorkflow.describeForAgents()),
   ].join("\n");
-  assert.doesNotMatch(texts, /\bbd\b|beads_|beads issue/u);
+  assert.doesNotMatch(texts, /\aliad\b|beads_|beads issue/u);
   assert.match(texts, /`bend start`/u);
 });

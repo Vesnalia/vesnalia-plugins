@@ -17,6 +17,6 @@ All notable changes to Lego are documented here. The format follows
 - A live banner above the composer, a side-panel workbench with the model, bag trays, instruction pages and crew, and a Lego Build page that shelves every finished model.
 - Minifigure builders and Master Builder, brick-by-brick animation, and a celebration when a set is complete.
 - Failure handling: failed bags message the planning thread, and `lego_retry` and `lego_cancel_build` recover or stop a build.
-- `lego_bag_blocked`: a builder that cannot build its bag says why, and the bag fails rather than passing for built. A builder or Master Builder that stops short is asked once to report, then fails. Starting a worker is retried twice when BB is briefly unavailable.
+- `lego_bag_blocked`: a builder that cannot build its bag says why, and the bag fails rather than passing for built. A builder or Master Builder that stops short is asked once to report, then fails. Starting a worker is retried twice when VesnALIA is briefly unavailable.
 - Deleted threads are unlinked: a set whose planning thread was deleted stays on the shelf without a link, and a worker deleted mid-work fails its bag so a retry starts a fresh thread.
-- `bb lego` CLI: list, status, cancel, retry, demo, and reporting fallbacks for builder and Master Builder threads.
+- `alia lego` CLI: list, status, cancel, retry, demo, and reporting fallbacks for builder and Master Builder threads.

@@ -11,7 +11,7 @@ repository through `syns`.
 What it does:
   start    once per machine: a private Syns repository meant to stay (`syns-pages-cc-inhost-probe`, made here, not by
            `verify/scratch.py`, whose repositories are throwaway), checked out in --home; one plain `claude -p` there
-           in this machine's Claude Code config, with no BB_* variable (under bb, init answers SKIP), that runs only
+           in this machine's Claude Code config, with no ALIA_* variable (under alia, init answers SKIP), that runs only
            `unife-pages init` and ends; the session's id, page root and link kept in --home/state.json; and a waiting
            page written to the root. Prints the link the owner opens once and pins. Run again, it reuses what stands.
   (default) at every release, after `claude-code-check`: writes a new revision of the probe page into that root, with
@@ -40,7 +40,7 @@ When it pays: after every release of the plugin, right after `claude-code-check`
 When it does not: on a machine where nobody keeps the probe tab open (it says so and passes); to check another
 version than the installed one (the page sees what the daemon's contributor runs).
 
-How to run (python3, standard library; calls `syns`, and for `start` `claude`), from a clone of synsdev/syns-bb-plugin:
+How to run (python3, standard library; calls `syns`, and for `start` `claude`), from a clone of synsdev/syns-alia-plugin:
   python3 verify/claude-code-inhost start [--home DIR] [--model M]
   python3 verify/claude-code-inhost --version 0.11.1 [--code .] [--home DIR] [--wait-start 240] [--wait 900] [--json]
                                     [--known A27a]...             # a failing row an open item already names
@@ -321,9 +321,9 @@ def unife_cli():
 
 
 def plain_env():
-    """This machine's environment without bb's or a calling Claude Code session's variables: under bb, init answers
+    """This machine's environment without alia's or a calling Claude Code session's variables: under alia, init answers
     SKIP and the session is no page of its own."""
-    drop = ("BB_", "CLAUDE_CODE_", "CLAUDE_AGENT_")
+    drop = ("ALIA_", "CLAUDE_CODE_", "CLAUDE_AGENT_")
     return {k: v for k, v in os.environ.items() if not k.startswith(drop) and k not in ("CLAUDECODE", "CLAUDE_PID", "CLAUDE_EFFORT")}
 
 
@@ -334,7 +334,7 @@ def ensure_repo(home):
     os.makedirs(folder, exist_ok=True)
     open(os.path.join(folder, "README.md"), "w").write(
         "# syns-pages Claude Code in-host probe\n\nThe repository the probe page in the owner's pinned Claude Code tab "
-        "works on (`verify/claude-code-inhost` in synsdev/syns-bb-plugin). Keep it: each release's verdict lands in "
+        "works on (`verify/claude-code-inhost` in synsdev/syns-alia-plugin). Keep it: each release's verdict lands in "
         "`verdicts/`; `fixture/` and `probe/` are re-made at every run.\n")
     open(os.path.join(folder, ".synsignore"), "w").write(".DS_Store\n.claude/\n")
     rc, out, err = sh(["syns", "push", "-n", REPO_NAME, "--visibility", "private", "-m", "The in-host probe repository",
@@ -476,7 +476,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Claude Code in-host probe of syns-pages, read by the owner's own tab")
     ap.add_argument("command", nargs="?", choices=["start", "status"], help="start once; status; none: a release's read")
     ap.add_argument("--version", help="the release's version, e.g. 0.11.1")
-    ap.add_argument("--code", help="the release's checkout of synsdev/syns-bb-plugin, for the methods E1 expects")
+    ap.add_argument("--code", help="the release's checkout of synsdev/syns-alia-plugin, for the methods E1 expects")
     ap.add_argument("--home", help="the probe's state and repository folder (default ~/.syns-agents/claude-code-inhost)")
     ap.add_argument("--model", default="claude-opus-5-5[1m]", help="the model of the one init session (start)")
     ap.add_argument("--wait-start", type=int, default=240, help="seconds for the open tab to start the new revision")

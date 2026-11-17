@@ -210,7 +210,7 @@ describe("snapshot diffs", () => {
   it("emits push.base with the configured base branch when its SHA changes", () => {
     const events = diffRepoObservation(
       snapshot([], "aaa"),
-      { snapshot: snapshot([], "bbb"), prs: [] },
+      { snapshot: snapshot([], "aliab"), prs: [] },
       { repo: "acme/web", baseBranch: "develop" },
     );
     expect(events).toHaveLength(1);
@@ -218,10 +218,10 @@ describe("snapshot diffs", () => {
       kind: "push.base",
       repo: "acme/web",
       base: "develop",
-      sha: "bbb",
-      deliveryId: pollDeliveryId("acme/web", "push.base", "bbb"),
+      sha: "aliab",
+      deliveryId: pollDeliveryId("acme/web", "push.base", "aliab"),
     });
-    expect(events[0]?.payload).toMatchObject({ ref: "refs/heads/develop", after: "bbb" });
+    expect(events[0]?.payload).toMatchObject({ ref: "refs/heads/develop", after: "aliab" });
   });
 
   it("carries the PR title and repository into events", () => {

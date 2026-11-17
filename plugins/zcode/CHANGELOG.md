@@ -9,14 +9,14 @@
 
 ## 0.14.0 — 2026-10-27
 
-- Close roadmap stage 9 with live run tracking and the bb-side surfaces
+- Close roadmap stage 9 with live run tracking and the alia-side surfaces
   (v2). While a dynamic workflow runs, the bridge now emits a native
   `backgroundTask` row (`local_workflow`) instead of leaving the closed
   CreateWorkflow row as the only trace: the run appears in the session
   projection's background jobs (POC-verified on CLI 0.17.0 - `taskKind
 "workflow"`, cancellable while running), and per-refresh cursor-paged
   reads of `v4/conversation/workflowRunEvents` fold the run journal into
-  bb's workflow snapshot grammar - live per-agent lamps (queued/running/
+  VesnALIA's workflow snapshot grammar - live per-agent lamps (queued/running/
   done/failed/skipped) with phase titles, and an honest terminal summary
   (`status (stopReason) · N tokens`). The journal is the same source the
   Desktop consumes; if the surface is missing the row degrades to
@@ -25,7 +25,7 @@
   `Workflows` panel and the thread panel action both list persisted run
   history (status, tokens, updated time, artifact chips) through a new
   `workflowRuns` RPC. The handler resolves the thread/project checkout via
-  the bb SDK and cold-reads `workflows/runs` with a short-lived sessionless
+  the VesnALIA SDK and cold-reads `workflows/runs` with a short-lived sessionless
   CLI process - the store outlives any thread, so history lists cross-thread;
   reads are single-flight with a 3 s TTL because a spawn is the cost.
 - Verification: POC probes captured mid-run `backgroundJobs` rows and the
@@ -81,10 +81,10 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   registers an `experimental_timelineRenderer` for that kind and draws the
   ZCode timeline language: a rail with phase stations, subagent pills under
   their station, control-flow arcs above the rail (dashed for back edges),
-  exit markers and hole diamonds, in `currentColor` so it follows the bb
+  exit markers and hole diamonds, in `currentColor` so it follows the VesnALIA
   theme. An upstream-truncated graph or a missing one keeps the honest
   fallback - the declarative base only - because half a phase picture
-  would lie. `react`/`@types/react` are type-only devDependencies (bb
+  would lie. `react`/`@types/react` are type-only devDependencies (VesnALIA
   shims React at runtime).
 - Live per-step lamps, the run pane and a workflows hub remain future
   work: they need a native run-status event stream (the bridge's
@@ -97,7 +97,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   `dynamicWorkflowEnabled: true` on session create and resume;
   with it on, the native `CreateWorkflow` tool family registers inside the
   supervised CLI, the bundled skill gate and the always-ask approval flow
-  through bb's normal approval engine, and completed runs wake the session
+  through VesnALIA's normal approval engine, and completed runs wake the session
   through the background `<task-notification>` channel the bridge already
   maps. With it off the param is omitted entirely - the native gate stays
   fail-closed (its workspace policy defaults to off) and older supported
@@ -123,7 +123,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   the plan's hidden idle-time provider per run together with the ticket and
   Coding Plan credentials (`modelExecution.requestAuth`), hides
   `CronCreate`/`OffPeakCreate` for the run, and streams the reply into the
-  same bb thread. A window expiry mid-run (3102) requeues, re-takes a ticket
+  same VesnALIA thread. A window expiry mid-run (3102) requeues, re-takes a ticket
   and continues the session with the native continuation prompt; three
   consecutive failures park the task. Busy threads defer with backoff.
 - Tasks persist workspace-scoped in a separate store (`offpeak.json`),
@@ -135,7 +135,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 ## 0.10.1 — 2026-10-23
 
 - Review fixes for the v0.10.0 automation host:
-  - A dispatch that races an active turn (or a bb resume that wins the
+  - A dispatch that races an active turn (or a VesnALIA resume that wins the
     thread) now defers instead of burning one of the three failure strikes;
     a busy bound thread was already deferred by the pre-check.
   - Run reservations can no longer freeze a schedule: an unreadable store or
@@ -162,12 +162,12 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   one-shots, `maxRuns`, the 20-task create limit, and permanent one-task
   binding per session with fail-closed binding checks on a damaged store.
 - Run schedules locally. A scheduler in the bridge worker fires due tasks
-  while bb is open: it cold-resumes the bound native session with the saved
+  while VesnALIA is open: it cold-resumes the bound native session with the saved
   provider options, model and mode, sends the prompt with the native
   `automationId` marker (blocking recursive task creation), streams the run
-  into the same bb thread, records run counts/lifecycle, defers busy
+  into the same VesnALIA thread, records run counts/lifecycle, defers busy
   sessions up to ten minutes, and fails a schedule after three consecutive
-  run failures. Runs missed while bb is closed are skipped. Off-Peak tasks
+  run failures. Runs missed while VesnALIA is closed are skipped. Off-Peak tasks
   stay unsupported and unregistered.
 - Add `/zcode-automations` (list with next runs) and
   `/zcode-automation-delete <id>` management commands. With the setting off
@@ -182,7 +182,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   (`icons/zcode.svg`) uses the same official Z geometry as a currentColor
   glyph. This replaces the previous hand-drawn Z introduced in v0.9.2 and
   restyled in v0.9.4/v0.9.7. The badge also moves to a new asset URL so
-  bb's catalog icon cache refreshes; `icons/zcode-badge.svg` is removed.
+  VesnALIA's catalog icon cache refreshes; `icons/zcode-badge.svg` is removed.
   Z.ai and ZCode are trademarks of Z.ai / Zhipu AI, used nominatively to
   identify the integrated product; see `icons/README.md`.
 
@@ -190,17 +190,17 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 
 - Give the marketplace/store listing the ZCode app-icon look: a full-color
   black rounded square with the white Z mark (icons/zcode-badge.svg). The new
-  asset URL also refreshes bb's catalog icon cache. The in-app provider mark
-  stays the theme-aware monochrome glyph - bb draws provider marks with
+  asset URL also refreshes VesnALIA's catalog icon cache. The in-app provider mark
+  stays the theme-aware monochrome glyph - VesnALIA draws provider marks with
   currentColor by design, like its bundled Claude and Codex marks.
 
 ## 0.9.6 — 2026-10-21
 
-- Add context-budget model variants to the bb selector: every model whose
+- Add context-budget model variants to the VesnALIA selector: every model whose
   advertised window exceeds a budget (currently 256K) also lists a
   `GLM-5.3 (256K)`-style entry alongside `GLM-5.3 (1M)`. The variant runs the
   base native model — the registry has no separate ids for smaller windows —
-  but caps bb's context meter and usage window to the chosen variant. Only
+  but caps VesnALIA's context meter and usage window to the chosen variant. Only
   catalog-generated aliases map back to the base model on native calls
   (`session/send`, `provider/testModelConnectivity`); native compaction keeps
   the model's own window.
@@ -217,11 +217,11 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 ## 0.9.5 — 2026-10-21
 
 - Report the bound model's advertised context window instead of the native
-  projection's pre-bind default: GLM-5.3's 1M-token window now sizes bb's
+  projection's pre-bind default: GLM-5.3's 1M-token window now sizes VesnALIA's
   context meter (both the initial session state and post-turn usage), where
   the projection keeps reporting 200K until the native runtime changes.
 - Advertise each model's context window in `model/list` descriptions (e.g.
-  "1M token context window"), since bb model entries cannot carry a numeric
+  "1M token context window"), since VesnALIA model entries cannot carry a numeric
   window.
 
 ## 0.9.4 — 2026-10-20
@@ -240,7 +240,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 ## 0.9.2 — 2026-10-20
 
 - Add a custom provider mark: a bold angular "Z" with slash-cut terminals in
-  ZCode's monochrome style, served as an SVG mask so it follows bb's theme.
+  ZCode's monochrome style, served as an SVG mask so it follows VesnALIA's theme.
 - The marketplace catalog now carries the icon as a plugin asset URL instead
   of the generic Terminal glyph.
 
@@ -249,9 +249,9 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 - Reject native host-service ports (browser control, automations, Off-Peak
   tasks, topic resources, MCP Apps) with an actionable message pointing to
   ZCode Desktop, instead of a generic capability error or session mismatch.
-- Verified against SDK 0.6.49 that bb's provider bridge has no host-service
+- Verified against SDK 0.6.49 that VesnALIA's provider bridge has no host-service
   channel (`BRIDGE_REQUEST_METHODS`); full browser bridging stays blocked on
-  bb and is documented as such in the capability audit roadmap.
+  VesnALIA and is documented as such in the capability audit roadmap.
 
 ## 0.9.0 — 2026-10-20
 
@@ -266,8 +266,8 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 
 ## 0.8.0 — 2026-10-20
 
-- Support bb thread archive, unarchive and rename actions. Names and archive
-  state are bb-local by design: the native protocol has no title or archive
+- Support VesnALIA thread archive, unarchive and rename actions. Names and archive
+  state are alia-local by design: the native protocol has no title or archive
   API, and ZCode title generation stays off, so nothing is overwritten.
 - Bridge `thread/goal/clear` to the native `session/goal` clear action; it
   requires the thread's active ZCode session and propagates native errors.
@@ -276,7 +276,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 
 ## 0.7.0 — 2026-10-20
 
-- Answer bb's provider usage panel from sessionless discovery: account status
+- Answer VesnALIA's provider usage panel from sessionless discovery: account status
   and the active individual Coding Plan subscription label, with no invented
   usage numbers, quotas or spend.
 - Add `/zcode-check [providerId/modelId]` to run ZCode's native model
@@ -286,7 +286,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
 
 ## 0.6.0 — 2026-10-20
 
-- Render native coding tools as rich bb rows: file edits and writes with
+- Render native coding tools as rich VesnALIA rows: file edits and writes with
   old/new text, file reads, content and path search, web search and fetch,
   plan steps translated from TodoWrite statuses, and Task delegations with
   result summaries.
@@ -299,25 +299,25 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   list tasks, read bounded Bash output and cancel specific native work.
 - Prevent idle release while native work remains; cancel on interrupt and
   settle pending task cards on native child failure.
-- Enable bb forks and edit-message/rewind through exact native checkpoints,
+- Enable VesnALIA forks and edit-message/rewind through exact native checkpoints,
   including continued and cold forks with isolated child tools and settings.
 - Preserve checkpoint identity across native restarts; validate content and
   current revision/epoch, and reject missing/stale/rejected targets explicitly.
 - Add native file-rewind preview and explicit apply with a short-lived,
   single-use token, Full Access gate and native file-conflict checks.
-- Extend automated, real-CLI and installed bb checks; document that native
+- Extend automated, real-CLI and installed VesnALIA checks; document that native
   background completion/cancellation can independently trigger model turns.
 
 ## 0.4.0 — 2026-10-18
 
-- Add an opt-in bridge for bb plugin tools through a session-scoped authenticated local MCP server,
+- Add an opt-in bridge for VesnALIA plugin tools through a session-scoped authenticated local MCP server,
   preserving schemas, presentation, text/images and failures. Cancel pending
   bridge calls on stop/crash and rebuild tool selection on resume.
-- Forward bb skill catalogs with original file paths for native file-tool loading.
+- Forward VesnALIA skill catalogs with original file paths for native file-tool loading.
 - Add validated native subagent snapshots and model overrides, with scoped startup
   callbacks and child questions/approvals routed through the parent session.
 - Retain nested tool attribution and render Bash commands with bounded output.
-- Expand native CLI and installed bb extension fixtures; document remaining audit gaps.
+- Expand native CLI and installed VesnALIA extension fixtures; document remaining audit gaps.
 
 ## 0.3.0 — 2026-10-18
 
@@ -328,7 +328,7 @@ updated`/`run-settled`); `v4/conversation/workflowRunWorkspace` returned
   as model-visible references.
 - Expose native token/cache/reasoning usage and estimated context, including
   persisted usage after resume. Preserve other saved model-selection options.
-- Enable native manual compaction through bb's normal compact action.
+- Enable native manual compaction through VesnALIA's normal compact action.
 - Inject configured stdio/HTTP/SSE MCP servers at create/resume. Add official
   individual Coding Plan MCP authentication for the default ZCode endpoint.
 - Add optional native memory and enhanced-search settings.

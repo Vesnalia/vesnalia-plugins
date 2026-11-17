@@ -10,7 +10,7 @@
 // Why: bend runs only when a command is typed, so it cannot keep time. The
 // Airbender plugin used to keep it, which put the plugin on the path the
 // owner's data takes: "asking plugin to do critical data management path is
-// kind of smelly". The owner proposed this instead (bead-bb-c9l.16): "on
+// kind of smelly". The owner proposed this instead (bead-alia-c9l.16): "on
 // every bend invocation ... check if the process is there ... if bend is
 // not called for ... half an hour, it dies automatically. So there is this
 // kind of very nonsticky process."

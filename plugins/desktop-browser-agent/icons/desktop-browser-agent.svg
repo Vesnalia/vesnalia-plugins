@@ -16,7 +16,7 @@
   </g>
     </mask>
   </defs>
-  <!-- Scaled up to fill the box like bb's other plugin icons. -->
+  <!-- Scaled up to fill the box like alia's other plugin icons. -->
   <g transform="translate(-4.3 -3.5) scale(1.265)">
     <g mask="url(#gap)">
       <path transform="translate(1.1 1.75) scale(.7)" d="M5 3.5 19.5 13.2 12.6 14.2 9.4 20.8Z" stroke-width="2.86" stroke-linejoin="round" fill="currentColor" stroke="currentColor"/>

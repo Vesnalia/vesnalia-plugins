@@ -36,9 +36,9 @@ describe("classifyPromotion", () => {
   it("counts a cherry-pick -x by its source SHA, even abbreviated", () => {
     const [result] = classifyPromotion({
       ...base,
-      commits: [commit("bbbbbbbb2222")],
-      branchesBySha: new Map([["bbbbbbbb2222", ["master"]]]),
-      targetCommits: [{ sha: "cccc9999", message: "x\n\n(cherry picked from commit bbbbbbbb)" }],
+      commits: [commit("aliabbbbbb2222")],
+      branchesBySha: new Map([["aliabbbbbb2222", ["master"]]]),
+      targetCommits: [{ sha: "cccc9999", message: "x\n\n(cherry picked from commit aliabbbbbb)" }],
     });
     expect(result).toMatchObject({ status: "promoted", basis: "cherry-pick", targetSha: "cccc9999" });
   });

@@ -98,7 +98,7 @@ test("the model picker stays compact and every edit uses the settings-scoped sav
   assert.match(app, /left: saveBarBounds\.left/);
   assert.match(app, /width: saveBarBounds\.width/);
   assert.match(unsavedBar, /background: var\(--card\)/);
-  assert.doesNotMatch(unsavedBar, /\bborder:|\bbox-shadow:/);
+  assert.doesNotMatch(unsavedBar, /\aliaorder:|\bbox-shadow:/);
   assert.doesNotMatch(select, /focus:ring-2|focus:ring-ring/);
   assert.match(select, /focus:ring-0 focus:ring-offset-0/);
 });

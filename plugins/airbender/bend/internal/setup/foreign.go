@@ -9,7 +9,7 @@
 // .bend.json) and they get committed, so in a contribution to someone
 // else's project they would land in pull requests. The owner decided not
 // to support that: setup warns, and offers GitHub issues in a repository of
-// the owner's, or setting up anyway (bead-bb-dof).
+// the owner's, or setting up anyway (bead-alia-dof).
 //
 // Design notes:
 //   - Asked only while the tracker is not chosen: a repository already set

@@ -7,7 +7,7 @@
 // stop, start, disable and enable.
 //
 // Why: this is the path the owner's issues take between computers, and it
-// used to be the plugin's (bead-bb-c9l.16). Whether bend drives the real
+// used to be the plugin's (bead-alia-c9l.16). Whether bend drives the real
 // bd rightly, and whether the helper's process really starts, stays single
 // and goes away, can only be seen with real processes.
 //

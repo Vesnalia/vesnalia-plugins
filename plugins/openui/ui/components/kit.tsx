@@ -12,7 +12,7 @@ export function cx(...names: (string | false | null | undefined)[]): string {
 /** A skeleton in the rough shape of what is coming: `lines` bars, the last one shorter. */
 export function Skeleton({ lines = 3, height }: { lines?: number; height?: number }) {
   return (
-    <div className="bbui-skeleton" role="status" aria-label="Loading">
+    <div className="aliaui-skeleton" role="status" aria-label="Loading">
       {height !== undefined ? (
         <span style={{ height }} />
       ) : (
@@ -25,9 +25,9 @@ export function Skeleton({ lines = 3, height }: { lines?: number; height?: numbe
 /** What is empty and how to fill it. */
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="bbui-empty">
-      <span className="bbui-head">{title}</span>
-      {hint ? <span className="bbui-label">{hint}</span> : null}
+    <div className="aliaui-empty">
+      <span className="aliaui-head">{title}</span>
+      {hint ? <span className="aliaui-label">{hint}</span> : null}
     </div>
   );
 }
@@ -35,9 +35,9 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
 /** What broke and what to do. */
 export function ErrorState({ title, detail }: { title: string; detail?: string }) {
   return (
-    <div className="bbui-error" role="alert">
-      <span className="bbui-head">{title}</span>
-      {detail ? <span className="bbui-label">{detail}</span> : null}
+    <div className="aliaui-error" role="alert">
+      <span className="aliaui-head">{title}</span>
+      {detail ? <span className="aliaui-label">{detail}</span> : null}
     </div>
   );
 }
@@ -82,7 +82,7 @@ export function Button({
   type = "button",
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary"; state?: "loading" | "error" | "success" }) {
-  return <button type={type} className={cx("bbui-btn", className)} data-variant={variant} data-state={state} {...rest} />;
+  return <button type={type} className={cx("aliaui-btn", className)} data-variant={variant} data-state={state} {...rest} />;
 }
 
 /** Sends text to the agent as the user's next message (OpenUI's continue_conversation). */
@@ -117,11 +117,11 @@ export const clamp = (value: number, min: number, max: number) => Math.min(max, 
 
 /** Tone colours by meaning; never decorative. */
 export const TONES = {
-  neutral: "var(--bbui-muted)",
-  accent: "var(--bbui-accent)",
-  good: "var(--bbui-success)",
-  warn: "var(--bbui-warning)",
-  bad: "var(--bbui-danger)",
-  info: "var(--bbui-accent)",
+  neutral: "var(--aliaui-muted)",
+  accent: "var(--aliaui-accent)",
+  good: "var(--aliaui-success)",
+  warn: "var(--aliaui-warning)",
+  bad: "var(--aliaui-danger)",
+  info: "var(--aliaui-accent)",
 } as const;
 export type Tone = keyof typeof TONES;

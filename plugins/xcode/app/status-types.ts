@@ -107,15 +107,15 @@ export function statusClass(status: RunDto["status"]): string {
   switch (status) {
     case "running":
     case "finishing":
-      return "bbx-status-run";
+      return "aliax-status-run";
     // Warnings are a SUCCESS state: green verdict, yellow count chip. The
     // caution lives on the chip, never on the verdict itself.
     case "passed":
     case "warnings":
-      return "bbx-status-pass";
+      return "aliax-status-pass";
     case "failed":
-      return "bbx-status-fail";
+      return "aliax-status-fail";
     default:
-      return "bbx-status-muted";
+      return "aliax-status-muted";
   }
 }

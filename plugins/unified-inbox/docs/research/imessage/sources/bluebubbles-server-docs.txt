@@ -1471,7 +1471,7 @@ By default, your macOS deployment will *not* support iServices such as iMessage.
 ```config
 board-id = "AAA"
 hw.model.reflectHost = "FALSE"
-hw.model = "BBB"
+hw.model = "ALIAB"
 serialNumber.reflectHost = "FALSE"
 serialNumber = "CCC"
 smbios.reflectHost = "FALSE"
@@ -1484,7 +1484,7 @@ efi.nvram.var.MLB = "EEE"
 1. In Clover Configurator, click the `Generate New` button next to the `Serial Number` field to generate a new serial number.
 2. Copy & paste the following Clover Configurator SMBIOS fields into the configuration from above:
    * `AAA`: Replace with your `Board ID` (i.e. `Mac-XXXXXXXXXXXXXX`)
-   * `BBB`: Replace with your `Product Name` (i.e. `MacPro7,1`)
+   * `ALIAB`: Replace with your `Product Name` (i.e. `MacPro7,1`)
    * `CCC`: Replace with your generated `Serial Number`
 3. In Clover Configurator, click on the `Rt Variables` tab in the sidebar.
 4. Click on the `Generate` button next to the `ROM` text.

@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { Hetzner, HetznerError, selectorMatchingAll, type HetznerOptions } from "../src/backends/hetzner/api.ts";
 import { FAKE_HETZNER_TOKEN, FakeHetzner, selectorMatches, respond } from "./fake-hetzner.ts";
 
-const INSTALL = { "bbbox-install": "inst1" };
+const INSTALL = { "aliabox-install": "inst1" };
 
 function setup(options: Partial<HetznerOptions> = {}) {
   const api = new FakeHetzner();
@@ -20,7 +20,7 @@ function setup(options: Partial<HetznerOptions> = {}) {
   return { api, hetzner, sleeps };
 }
 
-const host = (name: string, labels: Record<string, string> = { ...INSTALL, "bbbox-role": "host" }) => ({
+const host = (name: string, labels: Record<string, string> = { ...INSTALL, "aliabox-role": "host" }) => ({
   name,
   serverType: "cpx42",
   location: "nbg1",
@@ -46,7 +46,7 @@ test("a create sends Hetzner's shape with the token only in the Authorization he
     server_type: "cpx42",
     location: "nbg1",
     image: "ubuntu-24.04",
-    labels: { "bbbox-install": "inst1", "bbbox-role": "host" },
+    labels: { "aliabox-install": "inst1", "aliabox-role": "host" },
     start_after_create: true,
     public_net: { enable_ipv4: true, enable_ipv6: false },
     ssh_keys: [String(key.id)],
@@ -142,15 +142,15 @@ test("lists follow Hetzner's pages, 50 at a time, and keep to the install's labe
   const { api, hetzner } = setup();
   api.projectServerLimit = 200;
   for (let i = 0; i < 120; i++) await hetzner.createServer(host(`alia-box-inst1-p${i}`));
-  await hetzner.createServer(host("alia-box-other-h1", { "bbbox-install": "other", "bbbox-role": "host" }));
+  await hetzner.createServer(host("alia-box-other-h1", { "aliabox-install": "other", "aliabox-role": "host" }));
   await hetzner.createServer(host("by-hand", {}));
   const before = api.calls.length;
   const all = await hetzner.servers(INSTALL);
   assert.equal(all.length, 120);
   const pages = api.calls.slice(before);
   assert.deepEqual(pages.map((call) => call.query.page), ["1", "2", "3"]);
-  assert.ok(pages.every((call) => call.query.per_page === "50" && call.query.label_selector === "bbbox-install=inst1"));
-  assert.ok(all.every((each) => each.labels["bbbox-install"] === "inst1"));
+  assert.ok(pages.every((call) => call.query.per_page === "50" && call.query.label_selector === "aliabox-install=inst1"));
+  assert.ok(all.every((each) => each.labels["aliabox-install"] === "inst1"));
 });
 
 test("a delete waits for its action, and a second finds the server gone", async () => {
@@ -219,11 +219,11 @@ test("the token shows in no error: a refused token, a failed fetch that names it
 test("a snapshot is taken, waited for, labelled, listed and deleted", async () => {
   const { hetzner } = setup();
   const { server } = await hetzner.createServer(host("alia-box-inst1-build"));
-  const made = await hetzner.createSnapshot(server.id, { description: "VesnALIA Box host b1", labels: { ...INSTALL, "bbbox-build": "b1" } });
+  const made = await hetzner.createSnapshot(server.id, { description: "VesnALIA Box host b1", labels: { ...INSTALL, "aliabox-build": "b1" } });
   assert.equal(made.status, "available");
   assert.equal(made.compressedSizeGB, 4.2);
   assert.deepEqual((await hetzner.snapshots(INSTALL)).map((each) => each.id), [made.id]);
-  assert.deepEqual(await hetzner.snapshots({ ...INSTALL, "bbbox-build": "b2" }), []);
+  assert.deepEqual(await hetzner.snapshots({ ...INSTALL, "aliabox-build": "b2" }), []);
   assert.equal(await hetzner.deleteImage(made.id), "deleted");
   assert.equal(await hetzner.deleteImage(made.id), "already gone");
 });
@@ -231,7 +231,7 @@ test("a snapshot is taken, waited for, labelled, listed and deleted", async () =
 test("SSH keys and firewalls are listed by label, and a firewall still applied is not deleted", async () => {
   const { hetzner } = setup();
   const key = await hetzner.createSshKey({ name: "alia-box-inst1", publicKey: "ssh-ed25519 AAAA", labels: INSTALL });
-  await hetzner.createSshKey({ name: "by-hand", publicKey: "ssh-ed25519 BBBB", labels: {} });
+  await hetzner.createSshKey({ name: "by-hand", publicKey: "ssh-ed25519 ALIABB", labels: {} });
   assert.deepEqual((await hetzner.sshKeys(INSTALL)).map((each) => each.name), ["alia-box-inst1"]);
   const firewall = await hetzner.createFirewall({ name: "alia-box-inst1", labels: INSTALL, rules: [] });
   const { server } = await hetzner.createServer({ ...host("alia-box-inst1-h12"), firewalls: [firewall.id] });
@@ -255,22 +255,22 @@ test("prices come before VAT, with a public IPv4's, and a server type gives its 
 test("labels change on a server, and the selector sees the change", async () => {
   const { hetzner } = setup();
   const { server } = await hetzner.createServer(host("alia-box-inst1-h13"));
-  await hetzner.setServerLabels(server.id, { ...INSTALL, "bbbox-role": "host", "bbbox-state": "deleting" });
-  assert.equal((await hetzner.servers({ ...INSTALL, "bbbox-state": "deleting" })).length, 1);
+  await hetzner.setServerLabels(server.id, { ...INSTALL, "aliabox-role": "host", "aliabox-state": "deleting" });
+  assert.equal((await hetzner.servers({ ...INSTALL, "aliabox-state": "deleting" })).length, 1);
 });
 
 test("label selectors: all terms match, with =, ==, !=, presence, absence, in and notin", () => {
-  const labels = { "bbbox-install": "inst1", "bbbox-role": "host" };
-  assert.equal(selectorMatchingAll({ "bbbox-install": "inst1", "bbbox-role": "host" }), "bbbox-install=inst1,bbbox-role=host");
-  assert.equal(selectorMatches(labels, "bbbox-install=inst1,bbbox-role=host"), true);
-  assert.equal(selectorMatches(labels, "bbbox-install==inst1"), true);
-  assert.equal(selectorMatches(labels, "bbbox-install=inst2"), false);
-  assert.equal(selectorMatches(labels, "bbbox-role!=build"), true);
-  assert.equal(selectorMatches(labels, "bbbox-role"), true);
-  assert.equal(selectorMatches(labels, "!bbbox-build"), true);
-  assert.equal(selectorMatches(labels, "bbbox-role in (host,build)"), true);
-  assert.equal(selectorMatches(labels, "bbbox-role notin (host,build),bbbox-install=inst1"), false);
-  assert.equal(selectorMatches({}, "bbbox-install=inst1"), false, "a server made by hand, with no labels, never matches");
+  const labels = { "aliabox-install": "inst1", "aliabox-role": "host" };
+  assert.equal(selectorMatchingAll({ "aliabox-install": "inst1", "aliabox-role": "host" }), "aliabox-install=inst1,aliabox-role=host");
+  assert.equal(selectorMatches(labels, "aliabox-install=inst1,aliabox-role=host"), true);
+  assert.equal(selectorMatches(labels, "aliabox-install==inst1"), true);
+  assert.equal(selectorMatches(labels, "aliabox-install=inst2"), false);
+  assert.equal(selectorMatches(labels, "aliabox-role!=build"), true);
+  assert.equal(selectorMatches(labels, "aliabox-role"), true);
+  assert.equal(selectorMatches(labels, "!aliabox-build"), true);
+  assert.equal(selectorMatches(labels, "aliabox-role in (host,build)"), true);
+  assert.equal(selectorMatches(labels, "aliabox-role notin (host,build),aliabox-install=inst1"), false);
+  assert.equal(selectorMatches({}, "aliabox-install=inst1"), false, "a server made by hand, with no labels, never matches");
 });
 
 test("a snapshot's wait polls every 15 s for up to an hour, within Hetzner's 3600 requests an hour", async () => {

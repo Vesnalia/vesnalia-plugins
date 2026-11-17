@@ -1,20 +1,20 @@
 # 0.1.0-beta.9
 
-- Open the MoA settings sheet through BB's `DialogTrigger` / `MobileTrigger`, the same path Agency uses: on a phone the keyboard is blurred on click, not mousedown, so the first tap is not lost in an empty chat.
+- Open the MoA settings sheet through VesnALIA's `DialogTrigger` / `MobileTrigger`, the same path Agency uses: on a phone the keyboard is blurred on click, not mousedown, so the first tap is not lost in an empty chat.
 - Keep the sheet open when a new chat receives its initial project ID.
-- Remove the BB `<0.44` and Plugin SDK `<0.5` compatibility ceilings while retaining the existing minimum versions; this configuration has run on BB 0.44.0.
+- Remove the VesnALIA `<0.44` and Plugin SDK `<0.5` compatibility ceilings while retaining the existing minimum versions; this configuration has run on VesnALIA 0.44.0.
 - Synchronize the package and lockfile release versions and include the updated source documentation.
 
 # 0.1.0-beta.8
 
-- Open MoA settings from the whole composer chip through the same overlay trigger as BB's model picker, so the first click is not swallowed by a nested button or a disabled loading state.
+- Open MoA settings from the whole composer chip through the same overlay trigger as VesnALIA's model picker, so the first click is not swallowed by a nested button or a disabled loading state.
 - Add English/Russian UI with Auto / English / Русский in plugin settings.
 
 # 0.1.0-beta.6
 
 - Allow advisors to inspect relevant local files and use the optional File Gateway for external reads.
 - Detect enabled/running File Gateway before each attempt, including reused sessions and fallback. Missing/disabled/unhealthy gateway keeps consultations in local-only mode.
-- Preserve native gateway file mentions via BB input blocks, keeping exact sources and paths without importing gateway internals.
+- Preserve native gateway file mentions via VesnALIA input blocks, keeping exact sources and paths without importing gateway internals.
 - Support native tools and the public CLI across providers. Keep write/copy/configuration and bypass operations prohibited.
 - Inherit the queued message's permission mode instead of forcing manual command approvals on advisors.
 - Record gateway availability per attempt; actual tool reads remain visible in the participant transcript.
@@ -43,7 +43,7 @@
 
 - Shared model/profile pair and wait-notice threshold across chats/projects; per-chat enabling and separate histories.
 - Hide the initial draft chip while preserving its structured routing metadata.
-- Observe native BB runtime/events and display long-wait progress; no hard timeout for working advisors, including silent reasoning.
+- Observe native VesnALIA runtime/events and display long-wait progress; no hard timeout for working advisors, including silent reasoning.
 - Preserve shared native profiles in first-message routing.
 
 

@@ -2,7 +2,7 @@
 # Downloads every artifact a template build needs into <dir> and checks each
 # against its pinned SHA-256. Files already there and correct are kept.
 #
-# With BBBOX_ARTIFACT_CACHE set to a directory (#96), a pinned file already
+# With ALIABOX_ARTIFACT_CACHE set to a directory (#96), a pinned file already
 # there is copied from it when its SHA-256 matches, and each download goes
 # there too. At the end, files there that no pin names go, so the cache
 # holds the current pins' files only. The Docker build keeps one on the
@@ -23,7 +23,7 @@ case "$arch" in x86_64 | arm64) ;; *) die "architecture must be x86_64 or arm64"
 [ "$kind" != desktop ] || [ "$arch" = x86_64 ] || die "a desktop on $arch is CPU-only: use desktop-cpu"
 [ "$kind" != linux-nvidia ] || [ "$arch" = x86_64 ] || die "NVIDIA's userspace is for x86_64 boxes only: use linux"
 mkdir -p "$art"
-cache=${BBBOX_ARTIFACT_CACHE:-}
+cache=${ALIABOX_ARTIFACT_CACHE:-}
 [ -z "$cache" ] || mkdir -p "$cache"
 
 # Every file the pins name, for either architecture: what the cache keeps.
@@ -46,8 +46,8 @@ trap 'prune_cache $?' EXIT
 
 connect_seconds=30
 stall_bytes_per_second=10240
-stall_seconds=${BBBOX_DOWNLOAD_STALL_SECONDS:-30}
-download_cap_seconds=${BBBOX_DOWNLOAD_CAP_SECONDS:-1800}
+stall_seconds=${ALIABOX_DOWNLOAD_STALL_SECONDS:-30}
+download_cap_seconds=${ALIABOX_DOWNLOAD_CAP_SECONDS:-1800}
 download_limits=(--connect-timeout "$connect_seconds" --speed-limit "$stall_bytes_per_second" --speed-time "$stall_seconds" --max-time "$download_cap_seconds")
 retried_download_limits=("${download_limits[@]}" --retry 3 --retry-max-time "$download_cap_seconds")
 
@@ -110,10 +110,10 @@ while IFS=$'\t' read -r url sha; do
 done < <(jq -er --arg arch "$arch" '.tools[] | select(.arch == $arch) | "\(.url)\t\(.sha256)"' "$here/pins.json")
 
 # ALIA's host daemon package, whatever build the server has now.
-if [ -n "$BBBOX_ALIA_URL" ]; then
+if [ -n "$ALIABOX_ALIA_URL" ]; then
   resolve=()
-  [ -z "$BBBOX_ALIA_RESOLVE" ] || resolve=(--resolve "$BBBOX_ALIA_RESOLVE")
-  curl -fsS "${download_limits[@]}" "${resolve[@]}" -D "$art/alia-app.headers.$$" -o "$art/alia-app.tgz.$$" "${BBBOX_ALIA_URL%/}/install/alia-app.tgz"
+  [ -z "$ALIABOX_ALIA_RESOLVE" ] || resolve=(--resolve "$ALIABOX_ALIA_RESOLVE")
+  curl -fsS "${download_limits[@]}" "${resolve[@]}" -D "$art/alia-app.headers.$$" -o "$art/alia-app.tgz.$$" "${ALIABOX_ALIA_URL%/}/install/alia-app.tgz"
   digest=$(sed -n 's/^x-alia-artifact-sha256: *\([a-f0-9]\{64\}\).*/\1/Ip' "$art/alia-app.headers.$$" | tr -d '\r' | tail -1)
   echo "$digest  $art/alia-app.tgz.$$" | sha256sum -c --quiet - || die "alia-app.tgz does not match the server's digest"
   mv "$art/alia-app.tgz.$$" "$art/alia-app.tgz"

@@ -620,7 +620,7 @@ if (section("reach")) {
 }
 
 function editConfig(change) {
-  const db = new DatabaseSync(join(home, "bbdata", "alia.db"), { timeout: 10_000 });
+  const db = new DatabaseSync(join(home, "aliadata", "alia.db"), { timeout: 10_000 });
   try {
     const read = (key) => db.prepare("SELECT value FROM plugin_kv WHERE plugin_id = 'alia-box' AND key = ?").get(key)?.value ?? null;
     const write = (key, value) => db.prepare("UPDATE plugin_kv SET value = ?, updated_at = ? WHERE plugin_id = 'alia-box' AND key = ?").run(value, Date.now(), key);

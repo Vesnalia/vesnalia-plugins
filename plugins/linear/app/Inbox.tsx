@@ -77,11 +77,11 @@ export function InboxSegment() {
 
   return (
     <div className="flex h-full flex-col">
-      <ul className="bbl-scroller w-full max-w-[56rem] flex-1 overflow-y-auto px-1 pb-3">
+      <ul className="alial-scroller w-full max-w-[56rem] flex-1 overflow-y-auto px-1 pb-3">
         {items.map((item) => (
           <li
             key={item.key}
-            className="bbl-row group flex items-center gap-2.5 rounded-md py-1.5 pl-2 pr-1 hover:bg-state-hover"
+            className="alial-row group flex items-center gap-2.5 rounded-md py-1.5 pl-2 pr-1 hover:bg-state-hover"
           >
             {/* Unseen rows carry a dot. The space is reserved either way, so
                 rows do not shift horizontally as they are read. */}
@@ -128,10 +128,10 @@ export function InboxSegment() {
             {/* The age and the dismiss button share one cell and crossfade,
                 so approaching a row never moves anything in it. */}
             <span className="grid shrink-0 place-items-center">
-              <span className="bbl-row-meta col-start-1 row-start-1 w-7 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+              <span className="alial-row-meta col-start-1 row-start-1 w-7 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
                 {item.age}
               </span>
-              <span className="bbl-row-actions col-start-1 row-start-1">
+              <span className="alial-row-actions col-start-1 row-start-1">
                 <Button
                   variant="ghost"
                   size="icon"

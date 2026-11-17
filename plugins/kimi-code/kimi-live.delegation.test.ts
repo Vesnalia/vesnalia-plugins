@@ -66,7 +66,7 @@ itLive("surfaces a kimi Agent tool call", async () => {
     harness.sendRequest(3, "turn/start", {
       threadId: "thr_live_delegation",
       providerThreadId,
-      clientRequestId: "creq_bbbbbbbbbb",
+      clientRequestId: "creq_aliabbbbbbbb",
       input: [
         {
           type: "text",

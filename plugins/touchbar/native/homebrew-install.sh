@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP="${1:?usage: homebrew-install.sh /path/to/BBTouchBar.app}"
-BIN="$APP/Contents/MacOS/BBTouchBar"
-SUPPORT="$HOME/Library/Application Support/BBTouchBar"
+APP="${1:?usage: homebrew-install.sh /path/to/AliaTouchBar.app}"
+BIN="$APP/Contents/MacOS/AliaTouchBar"
+SUPPORT="$HOME/Library/Application Support/AliaTouchBar"
 LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
 PLIST="$LAUNCH_AGENTS/app.getbb.touchbar.native.plist"
 DOMAIN="gui/$(id -u)"
@@ -36,6 +36,6 @@ plutil -insert ProcessType -string Interactive "$PLIST"
 plutil -lint "$PLIST" >/dev/null
 
 launchctl bootout "$DOMAIN/app.getbb.touchbar.native" 2>/dev/null || true
-pkill -TERM -x BBTouchBar 2>/dev/null || true
+pkill -TERM -x AliaTouchBar 2>/dev/null || true
 launchctl bootstrap "$DOMAIN" "$PLIST"
 printf 'configured %s for login startup\n' "$APP"

@@ -1,6 +1,6 @@
 // Time and planning: timelines, calendars, roadmaps, boards, status, plans to
 // approve, weighted decisions, three-point estimates and acceptance grids.
-// Styles: planning.css (bbui-planning-*). Pure logic: planning/logic.ts.
+// Styles: planning.css (aliaui-planning-*). Pure logic: planning/logic.ts.
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { defineComponent } from "@openuidev/react-lang";
 import { z } from "zod/v4";
@@ -23,7 +23,7 @@ function rows<T>(value: unknown): Partial<T>[] {
 }
 const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : []);
 const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
-const toneVar = (t: Tone | undefined) => ({ "--bbui-planning-tone": TONES[t ?? "neutral"] ?? TONES.neutral }) as CSSProperties;
+const toneVar = (t: Tone | undefined) => ({ "--aliaui-planning-tone": TONES[t ?? "neutral"] ?? TONES.neutral }) as CSSProperties;
 /** A yyyy-mm-dd as "Oct 5"; anything else as written. */
 const dateText = (text: string | undefined) => {
   const day = dayOf(text);
@@ -33,7 +33,7 @@ const dateText = (text: string | undefined) => {
 /** A state as icon + word; the colour only repeats what the word says. */
 function State({ icon: Icon, tone: t, children }: { icon: LucideIcon; tone: Tone; children: ReactNode }) {
   return (
-    <span className="bbui-planning-state" style={toneVar(t)}>
+    <span className="aliaui-planning-state" style={toneVar(t)}>
       <Icon size={14} strokeWidth={1.75} aria-hidden />
       {children}
     </span>
@@ -60,18 +60,18 @@ const Timeline = defineComponent({
     const items = rows<z.infer<typeof timelineItem>>(props.items);
     if (items.length === 0) return <EmptyState title="No events yet" hint="Add TimelineItem(time, title) entries." />;
     return (
-      <ol className="bbui bbui-planning-timeline">
+      <ol className="aliaui aliaui-planning-timeline">
         {items.map((it, i) => {
           const mark = it.tone ? TONE_ICON[it.tone] : undefined;
           const Icon = mark?.[0];
           return (
-            <li key={i} className="bbui-planning-event" style={toneVar(it.tone)}>
-              <span className={cx("bbui-planning-mark", Icon && "bbui-planning-mark-icon", it.tone === "accent" && "bbui-planning-mark-accent")}>
+            <li key={i} className="aliaui-planning-event" style={toneVar(it.tone)}>
+              <span className={cx("aliaui-planning-mark", Icon && "aliaui-planning-mark-icon", it.tone === "accent" && "aliaui-planning-mark-accent")}>
                 {Icon ? <Icon size={14} strokeWidth={1.75} role="img" aria-label={mark![1]} /> : null}
               </span>
-              <time className="bbui-label">{it.time}</time>
-              <span className="bbui-head">{it.title}</span>
-              {it.detail ? <p className="bbui-label bbui-planning-detail">{it.detail}</p> : null}
+              <time className="aliaui-label">{it.time}</time>
+              <span className="aliaui-head">{it.title}</span>
+              {it.detail ? <p className="aliaui-label aliaui-planning-detail">{it.detail}</p> : null}
             </li>
           );
         })}
@@ -106,15 +106,15 @@ const Calendar = defineComponent({
     const weeks = monthGrid(month);
     const days = weeks.flat().filter((d): d is number => d !== null && byDay.has(d));
     const chip = (e: (typeof events)[number], key: number) => (
-      <li key={key} className="bbui-planning-chip" style={toneVar(e.tone)} data-tone={e.tone ?? "neutral"} title={e.title}>
+      <li key={key} className="aliaui-planning-chip" style={toneVar(e.tone)} data-tone={e.tone ?? "neutral"} title={e.title}>
         {e.title}
       </li>
     );
     return (
-      <section className="bbui bbui-planning-calendar" aria-label={`Calendar, ${monthTitle(month)}`}>
-        <header className="bbui-planning-bar-head">
-          <h3 className="bbui-head" aria-live="polite">{monthTitle(month)}</h3>
-          <span className="bbui-planning-nav">
+      <section className="aliaui aliaui-planning-calendar" aria-label={`Calendar, ${monthTitle(month)}`}>
+        <header className="aliaui-planning-bar-head">
+          <h3 className="aliaui-head" aria-live="polite">{monthTitle(month)}</h3>
+          <span className="aliaui-planning-nav">
             <Button aria-label="Previous month" disabled={streaming} onClick={() => setOffset(offset - 1)}>
               <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
             </Button>
@@ -123,23 +123,23 @@ const Calendar = defineComponent({
             </Button>
           </span>
         </header>
-        <table className="bbui-planning-month">
+        <table className="aliaui-planning-month">
           <thead>
-            <tr>{WEEKDAYS.map((d) => <th key={d} scope="col" className="bbui-label">{d}</th>)}</tr>
+            <tr>{WEEKDAYS.map((d) => <th key={d} scope="col" className="aliaui-label">{d}</th>)}</tr>
           </thead>
           <tbody>
             {weeks.map((week, w) => (
               <tr key={w}>
                 {week.map((day, i) => {
-                  if (day === null) return <td key={i} className="bbui-planning-off" />;
+                  if (day === null) return <td key={i} className="aliaui-planning-off" />;
                   const list = byDay.get(day) ?? [];
                   return (
-                    <td key={i} aria-current={day === now ? "date" : undefined} className={cx(day === now && "bbui-planning-now")}>
-                      <span className="bbui-planning-daynum">{new Date(day * 86_400_000).getUTCDate()}</span>
+                    <td key={i} aria-current={day === now ? "date" : undefined} className={cx(day === now && "aliaui-planning-now")}>
+                      <span className="aliaui-planning-daynum">{new Date(day * 86_400_000).getUTCDate()}</span>
                       {list.length > 0 ? (
-                        <ul className="bbui-planning-chips">
+                        <ul className="aliaui-planning-chips">
                           {list.slice(0, CHIPS_PER_DAY).map(chip)}
-                          {list.length > CHIPS_PER_DAY ? <li className="bbui-label">{list.length - CHIPS_PER_DAY} more</li> : null}
+                          {list.length > CHIPS_PER_DAY ? <li className="aliaui-label">{list.length - CHIPS_PER_DAY} more</li> : null}
                         </ul>
                       ) : null}
                     </td>
@@ -149,12 +149,12 @@ const Calendar = defineComponent({
             ))}
           </tbody>
         </table>
-        <ol className="bbui-planning-agenda">
-          {days.length === 0 ? <li className="bbui-label">No events in {monthTitle(month)}</li> : null}
+        <ol className="aliaui-planning-agenda">
+          {days.length === 0 ? <li className="aliaui-label">No events in {monthTitle(month)}</li> : null}
           {days.map((day) => (
-            <li key={day} className={cx(day === now && "bbui-planning-now")}>
-              <span className="bbui-label">{shortDate(day)}{day === now ? ", today" : ""}</span>
-              <ul className="bbui-planning-chips">{byDay.get(day)!.map(chip)}</ul>
+            <li key={day} className={cx(day === now && "aliaui-planning-now")}>
+              <span className="aliaui-label">{shortDate(day)}{day === now ? ", today" : ""}</span>
+              <ul className="aliaui-planning-chips">{byDay.get(day)!.map(chip)}</ul>
             </li>
           ))}
         </ol>
@@ -220,12 +220,12 @@ const Roadmap = defineComponent({
     const lanes = ordered(items.map((i) => i.lane ?? ""));
     const label = `Roadmap from ${shortDate(from + 1)} to ${shortDate(to - 2)}, ${items.length} items in ${lanes.length} lane${lanes.length === 1 ? "" : "s"}`;
     return (
-      <figure className="bbui bbui-planning-gantt" aria-label={label}>
-        <div className="bbui-planning-axis" aria-hidden>
+      <figure className="aliaui aliaui-planning-gantt" aria-label={label}>
+        <div className="aliaui-planning-axis" aria-hidden>
           <span />
-          <span className="bbui-planning-track">
+          <span className="aliaui-planning-track">
             {(streaming ? [] : ticks(from, to)).map((d) => (
-              <span key={d} className="bbui-planning-tick" style={{ "--at": at(d) } as CSSProperties}>
+              <span key={d} className="aliaui-planning-tick" style={{ "--at": at(d) } as CSSProperties}>
                 {monthShort(d)} {new Date(d * 86_400_000).getUTCDate()}
               </span>
             ))}
@@ -233,25 +233,25 @@ const Roadmap = defineComponent({
         </div>
         {lanes.map((lane) => (
           <div key={lane} role="group" aria-label={lane || undefined}>
-            {lane ? <div className="bbui-planning-lane bbui-head">{lane}</div> : null}
+            {lane ? <div className="aliaui-planning-lane aliaui-head">{lane}</div> : null}
             {items
               .filter((i) => (i.lane ?? "") === lane)
               .map((it, n) => {
                 const status = it.status ?? "planned";
                 return (
-                  <div key={n} className="bbui-planning-row">
-                    <span className="bbui-planning-what">
+                  <div key={n} className="aliaui-planning-row">
+                    <span className="aliaui-planning-what">
                       <span>{it.title}</span>
-                      <span className="bbui-label">
+                      <span className="aliaui-label">
                         {it.milestone ? `Milestone, ${shortDate(it.start)}` : `${shortDate(it.start)} to ${shortDate(it.end)}, ${humanize(status)}`}
                       </span>
                     </span>
-                    <span className="bbui-planning-track" aria-hidden>
+                    <span className="aliaui-planning-track" aria-hidden>
                       {streaming ? null : it.milestone ? (
-                        <span className="bbui-planning-diamond" style={{ "--at": at(it.start + 0.5) } as CSSProperties} />
+                        <span className="aliaui-planning-diamond" style={{ "--at": at(it.start + 0.5) } as CSSProperties} />
                       ) : (
                         <span
-                          className="bbui-planning-span"
+                          className="aliaui-planning-span"
                           data-status={status}
                           style={{ "--at": at(it.start), "--len": (it.end - it.start + 1) / span } as CSSProperties}
                         />
@@ -263,8 +263,8 @@ const Roadmap = defineComponent({
           </div>
         ))}
         {!streaming && now > from && now < to ? (
-          <span className="bbui-planning-today" style={{ "--at": at(now + 0.5) } as CSSProperties}>
-            <span className="bbui-label">Today</span>
+          <span className="aliaui-planning-today" style={{ "--at": at(now + 0.5) } as CSSProperties}>
+            <span className="aliaui-label">Today</span>
           </span>
         ) : null}
       </figure>
@@ -294,25 +294,25 @@ const Board = defineComponent({
     const named = new Map([...strings(props.columns), ...items.map((i) => i.status ?? "")].reverse().map((s) => [key(s), s]));
     if (items.length === 0) return <EmptyState title="The board is empty" hint="Add BoardItem(title, status) cards." />;
     return (
-      <div className="bbui bbui-planning-board" role="list" aria-label="Board" tabIndex={0}>
+      <div className="aliaui aliaui-planning-board" role="list" aria-label="Board" tabIndex={0}>
         {columns.map((col) => {
           const cards = items.filter((i) => key(i.status ?? "") === col);
           return (
-            <section key={col} role="listitem" className="bbui-planning-column" aria-label={`${humanize(named.get(col) ?? col)}, ${cards.length}`}>
-              <h3 className="bbui-planning-colhead">
-                <span className="bbui-head">{humanize(named.get(col) ?? col)}</span>
-                <span className="bbui-label">{cards.length}</span>
+            <section key={col} role="listitem" className="aliaui-planning-column" aria-label={`${humanize(named.get(col) ?? col)}, ${cards.length}`}>
+              <h3 className="aliaui-planning-colhead">
+                <span className="aliaui-head">{humanize(named.get(col) ?? col)}</span>
+                <span className="aliaui-label">{cards.length}</span>
               </h3>
-              {cards.length === 0 ? <p className="bbui-label bbui-planning-none">Nothing here</p> : null}
-              <ul className="bbui-planning-cards">
+              {cards.length === 0 ? <p className="aliaui-label aliaui-planning-none">Nothing here</p> : null}
+              <ul className="aliaui-planning-cards">
                 {cards.map((c, i) => (
-                  <li key={i} className="bbui-well bbui-planning-card">
+                  <li key={i} className="aliaui-well aliaui-planning-card">
                     <span>{c.title}</span>
-                    {c.detail ? <span className="bbui-label">{c.detail}</span> : null}
+                    {c.detail ? <span className="aliaui-label">{c.detail}</span> : null}
                     {c.owner || strings(c.tags).length ? (
-                      <span className="bbui-planning-meta">
-                        {c.owner ? <span className="bbui-label">{c.owner}</span> : null}
-                        {strings(c.tags).map((t) => <span key={t} className="bbui-planning-tag">{t}</span>)}
+                      <span className="aliaui-planning-meta">
+                        {c.owner ? <span className="aliaui-label">{c.owner}</span> : null}
+                        {strings(c.tags).map((t) => <span key={t} className="aliaui-planning-tag">{t}</span>)}
                       </span>
                     ) : null}
                   </li>
@@ -358,21 +358,21 @@ const Status = defineComponent({
     const counts = ordered(items.map((i) => look(i.status)[2]))
       .map((word) => [items.filter((i) => look(i.status)[2] === word).length, word.toLowerCase()] as const);
     return (
-      <section className="bbui bbui-planning-status" aria-label="Workstream status">
-        <p className="bbui-label">{counts.map(([n, word]) => `${n} ${word}`).join(", ")}</p>
-        <ul className="bbui-planning-rows">
+      <section className="aliaui aliaui-planning-status" aria-label="Workstream status">
+        <p className="aliaui-label">{counts.map(([n, word]) => `${n} ${word}`).join(", ")}</p>
+        <ul className="aliaui-planning-rows">
           {items.map((it, i) => {
             const [icon, t, word] = look(it.status);
             const progress = num(it.progress);
             const meta = [it.owner, it.due ? `due ${dateText(it.due)}` : ""].filter(Boolean).join(", ");
             return (
-              <li key={i} className="bbui-planning-stream">
-                <span className="bbui-head">{it.name}</span>
+              <li key={i} className="aliaui-planning-stream">
+                <span className="aliaui-head">{it.name}</span>
                 <State icon={icon} tone={t}>{word}</State>
                 {progress !== undefined ? (
-                  <span className="bbui-planning-progress">
+                  <span className="aliaui-planning-progress">
                     <span
-                      className="bbui-planning-meter"
+                      className="aliaui-planning-meter"
                       role="progressbar"
                       aria-label={`${it.name} progress`}
                       aria-valuenow={Math.round(Math.min(100, Math.max(0, progress)))}
@@ -381,11 +381,11 @@ const Status = defineComponent({
                     >
                       <span style={{ "--at": Math.min(100, Math.max(0, progress)) / 100 } as CSSProperties} />
                     </span>
-                    <span className="bbui-label">{fmt(progress, { decimals: 0 })}%</span>
+                    <span className="aliaui-label">{fmt(progress, { decimals: 0 })}%</span>
                   </span>
                 ) : null}
-                {meta ? <span className="bbui-label bbui-planning-who">{meta}</span> : null}
-                {it.note ? <p className="bbui-planning-note">{it.note}</p> : null}
+                {meta ? <span className="aliaui-label aliaui-planning-who">{meta}</span> : null}
+                {it.note ? <p className="aliaui-planning-note">{it.note}</p> : null}
               </li>
             );
           })}
@@ -412,7 +412,7 @@ function Sendbar({ actions }: { actions: { label: string; text: string; primary?
   const ask = useAsk();
   const [sent, setSent] = useState<string | null>(null);
   return (
-    <div className="bbui-planning-actions">
+    <div className="aliaui-planning-actions">
       {actions.map((a) => (
         <Button
           key={a.label}
@@ -428,7 +428,7 @@ function Sendbar({ actions }: { actions: { label: string; text: string; primary?
           {a.label}
         </Button>
       ))}
-      {sent ? <span className="bbui-label" role="status">Sent</span> : null}
+      {sent ? <span className="aliaui-label" role="status">Sent</span> : null}
     </div>
   );
 }
@@ -442,26 +442,26 @@ const Plan = defineComponent({
     if (steps.length === 0) return <EmptyState title="No steps yet" hint="Add PlanStep(title) entries." />;
     const high = steps.filter((s) => s.risk === "high").length;
     return (
-      <section className="bbui bbui-planning-plan" aria-label="Plan">
-        <p className="bbui-label">
+      <section className="aliaui aliaui-planning-plan" aria-label="Plan">
+        <p className="aliaui-label">
           {steps.length} step{steps.length === 1 ? "" : "s"}
           {high ? `, ${high} high risk` : ""}
         </p>
-        <ol className="bbui-planning-steps">
+        <ol className="aliaui-planning-steps">
           {steps.map((s, i) => (
-            <li key={i} className="bbui-planning-step">
-              <span className="bbui-planning-num bbui-label" aria-hidden>{i + 1}</span>
-              <span className="bbui-head">{s.title}</span>
-              {s.detail ? <p className="bbui-label">{s.detail}</p> : null}
+            <li key={i} className="aliaui-planning-step">
+              <span className="aliaui-planning-num aliaui-label" aria-hidden>{i + 1}</span>
+              <span className="aliaui-head">{s.title}</span>
+              {s.detail ? <p className="aliaui-label">{s.detail}</p> : null}
               {strings(s.files).length ? (
-                <ul className="bbui-planning-files">
-                  {strings(s.files).map((f) => <li key={f} className="bbui-mono">{f}</li>)}
+                <ul className="aliaui-planning-files">
+                  {strings(s.files).map((f) => <li key={f} className="aliaui-mono">{f}</li>)}
                 </ul>
               ) : null}
               {s.risk || s.estimate ? (
-                <span className="bbui-planning-meta">
-                  {s.risk === "high" ? <State icon={TriangleAlert} tone="warn">High risk</State> : s.risk ? <span className="bbui-label">{humanize(s.risk)} risk</span> : null}
-                  {s.estimate ? <span className="bbui-label">{s.estimate}</span> : null}
+                <span className="aliaui-planning-meta">
+                  {s.risk === "high" ? <State icon={TriangleAlert} tone="warn">High risk</State> : s.risk ? <span className="aliaui-label">{humanize(s.risk)} risk</span> : null}
+                  {s.estimate ? <span className="aliaui-label">{s.estimate}</span> : null}
                 </span>
               ) : null}
             </li>
@@ -499,11 +499,11 @@ function DecisionView({ options, criteria, initial }: { options: z.infer<typeof 
   const leader = options[order[0]!]!;
   const setWeight = (i: number, w: number) => setTuned(weights.map((old, j) => (j === i ? Math.min(MAX_WEIGHT, Math.max(0, w)) : old)));
   return (
-    <section className="bbui bbui-planning-decision" aria-label="Decision">
-      <fieldset className="bbui-planning-weights" disabled={streaming}>
-        <legend className="bbui-label">Weights: how much each criterion matters, 0 to {MAX_WEIGHT}</legend>
+    <section className="aliaui aliaui-planning-decision" aria-label="Decision">
+      <fieldset className="aliaui-planning-weights" disabled={streaming}>
+        <legend className="aliaui-label">Weights: how much each criterion matters, 0 to {MAX_WEIGHT}</legend>
         {criteria.map((c, i) => (
-          <span key={c} className="bbui-planning-weight">
+          <span key={c} className="aliaui-planning-weight">
             <span>{c}</span>
             <Button aria-label={`Less weight on ${c}`} disabled={streaming || weights[i]! <= 0} onClick={() => setWeight(i, weights[i]! - 1)}>
               <Minus size={14} strokeWidth={1.75} aria-hidden />
@@ -515,13 +515,13 @@ function DecisionView({ options, criteria, initial }: { options: z.infer<typeof 
           </span>
         ))}
       </fieldset>
-      <div className="bbui-planning-scroll" role="region" aria-label="Scores" tabIndex={0}>
-        <table className="bbui-planning-table">
+      <div className="aliaui-planning-scroll" role="region" aria-label="Scores" tabIndex={0}>
+        <table className="aliaui-planning-table">
           <thead>
             <tr>
-              <th scope="col" className="bbui-label">Option</th>
-              {criteria.map((c, i) => <th key={c} scope="col" className="bbui-label bbui-planning-numcol">{c} <span>x{weights[i]}</span></th>)}
-              <th scope="col" className="bbui-label bbui-planning-numcol">Weighted</th>
+              <th scope="col" className="aliaui-label">Option</th>
+              {criteria.map((c, i) => <th key={c} scope="col" className="aliaui-label aliaui-planning-numcol">{c} <span>x{weights[i]}</span></th>)}
+              <th scope="col" className="aliaui-label aliaui-planning-numcol">Weighted</th>
             </tr>
           </thead>
           <tbody>
@@ -529,15 +529,15 @@ function DecisionView({ options, criteria, initial }: { options: z.infer<typeof 
               const o = options[oi]!;
               const score = weightedScore(o.scores, weights);
               return (
-                <tr key={o.name} className={cx(r === 0 && "bbui-planning-lead")}>
+                <tr key={o.name} className={cx(r === 0 && "aliaui-planning-lead")}>
                   <th scope="row">
                     {o.name}
-                    {r === 0 ? <span className="bbui-label"> leading</span> : null}
+                    {r === 0 ? <span className="aliaui-label"> leading</span> : null}
                   </th>
-                  {criteria.map((c, i) => <td key={c} className="bbui-planning-numcol">{num(o.scores[i]) ?? "-"}</td>)}
-                  <td className="bbui-planning-numcol">
-                    <span className="bbui-planning-score">
-                      <span className="bbui-planning-meter" aria-hidden><span style={{ "--at": score } as CSSProperties} /></span>
+                  {criteria.map((c, i) => <td key={c} className="aliaui-planning-numcol">{num(o.scores[i]) ?? "-"}</td>)}
+                  <td className="aliaui-planning-numcol">
+                    <span className="aliaui-planning-score">
+                      <span className="aliaui-planning-meter" aria-hidden><span style={{ "--at": score } as CSSProperties} /></span>
                       {fmt(score * 100, { decimals: 0 })}%
                     </span>
                   </td>
@@ -548,13 +548,13 @@ function DecisionView({ options, criteria, initial }: { options: z.infer<typeof 
         </table>
       </div>
       {options.some((o) => strings(o.pros).length || strings(o.cons).length) ? (
-        <dl className="bbui-planning-procon">
+        <dl className="aliaui-planning-procon">
           {order.map((oi) => {
             const o = options[oi]!;
             if (!strings(o.pros).length && !strings(o.cons).length) return null;
             return (
               <div key={o.name}>
-                <dt className="bbui-head">{o.name}</dt>
+                <dt className="aliaui-head">{o.name}</dt>
                 {strings(o.pros).map((p) => <dd key={`p${p}`}><State icon={Plus} tone="good">{p}</State></dd>)}
                 {strings(o.cons).map((p) => <dd key={`c${p}`}><State icon={Minus} tone="bad">{p}</State></dd>)}
               </div>
@@ -562,7 +562,7 @@ function DecisionView({ options, criteria, initial }: { options: z.infer<typeof 
           })}
         </dl>
       ) : null}
-      <div className="bbui-planning-actions">
+      <div className="aliaui-planning-actions">
         <Button
           variant="primary"
           state={sent ? "success" : undefined}
@@ -574,7 +574,7 @@ function DecisionView({ options, criteria, initial }: { options: z.infer<typeof 
         >
           Go with {leader.name}
         </Button>
-        {sent ? <span className="bbui-label" role="status">Sent</span> : null}
+        {sent ? <span className="aliaui-label" role="status">Sent</span> : null}
       </div>
     </section>
   );
@@ -613,11 +613,11 @@ const ChoiceOption = defineComponent({
 function ChoiceImage({ src, alt }: { src: string; alt: string }) {
   const url = /^https?:\/\//i.test(src);
   const file = useThreadFile(url ? null : src, { media: true });
-  if (url) return <img className="bbui-planning-choice-img" src={src} alt={alt} />;
-  if (file.state === "ready") return <img className="bbui-planning-choice-img" src={file.value} alt={alt} />;
+  if (url) return <img className="aliaui-planning-choice-img" src={src} alt={alt} />;
+  if (file.state === "ready") return <img className="aliaui-planning-choice-img" src={file.value} alt={alt} />;
   return (
-    <div className="bbui-planning-choice-img" role={file.state === "error" ? "img" : "status"} aria-label={file.state === "error" ? `${alt}: preview unavailable` : "Loading preview"}>
-      {file.state === "error" ? <span className="bbui-label">Preview unavailable</span> : null}
+    <div className="aliaui-planning-choice-img" role={file.state === "error" ? "img" : "status"} aria-label={file.state === "error" ? `${alt}: preview unavailable` : "Loading preview"}>
+      {file.state === "error" ? <span className="aliaui-label">Preview unavailable</span> : null}
     </div>
   );
 }
@@ -649,49 +649,49 @@ function ChoiceView({ options, question, other }: { options: z.infer<typeof choi
   };
   const many = options.length > 1;
   return (
-    <section className="bbui bbui-planning-choice" aria-label={question || "Choose an option"} aria-roledescription="carousel">
-      <div className="bbui-planning-choice-top">
-        {question ? <p className="bbui-head">{question}</p> : <span />}
+    <section className="aliaui aliaui-planning-choice" aria-label={question || "Choose an option"} aria-roledescription="carousel">
+      <div className="aliaui-planning-choice-top">
+        {question ? <p className="aliaui-head">{question}</p> : <span />}
         {many ? (
-          <div className="bbui-planning-choice-nav">
-            <span className="bbui-label" aria-live="polite">{active + 1} / {options.length}</span>
-            <Button className="bbui-planning-choice-arrow" aria-label="Previous option" disabled={active === 0} onClick={() => go(active - 1)}>
+          <div className="aliaui-planning-choice-nav">
+            <span className="aliaui-label" aria-live="polite">{active + 1} / {options.length}</span>
+            <Button className="aliaui-planning-choice-arrow" aria-label="Previous option" disabled={active === 0} onClick={() => go(active - 1)}>
               <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
             </Button>
-            <Button className="bbui-planning-choice-arrow" aria-label="Next option" disabled={active === options.length - 1} onClick={() => go(active + 1)}>
+            <Button className="aliaui-planning-choice-arrow" aria-label="Next option" disabled={active === options.length - 1} onClick={() => go(active + 1)}>
               <ChevronRight size={16} strokeWidth={1.75} aria-hidden />
             </Button>
           </div>
         ) : null}
       </div>
-      <ul ref={track} className="bbui-planning-choices" data-many={many || undefined} onScroll={onScroll} tabIndex={0} aria-label="Options">
+      <ul ref={track} className="aliaui-planning-choices" data-many={many || undefined} onScroll={onScroll} tabIndex={0} aria-label="Options">
         {options.map((o, i) => (
           <li
             key={o.title}
-            className="bbui-planning-choice-card"
+            className="aliaui-planning-choice-card"
             aria-roledescription="slide"
             aria-label={`${i + 1} of ${options.length}: ${o.title}`}
             data-recommended={o.recommended || undefined}
             data-picked={picked === o.title || undefined}
           >
             {o.image ? <ChoiceImage src={o.image} alt={o.title} /> : null}
-            <div className="bbui-planning-choice-body">
-              <div className="bbui-planning-meta">
-                <h3 className="bbui-head">{o.title}</h3>
-                {o.recommended ? <span className="bbui-planning-choice-tag" data-tone="accent">Recommended</span> : null}
+            <div className="aliaui-planning-choice-body">
+              <div className="aliaui-planning-meta">
+                <h3 className="aliaui-head">{o.title}</h3>
+                {o.recommended ? <span className="aliaui-planning-choice-tag" data-tone="accent">Recommended</span> : null}
               </div>
               {strings(o.tags).length ? (
-                <div className="bbui-planning-meta">
-                  {strings(o.tags).map((t) => <span key={t} className="bbui-planning-choice-tag">{t}</span>)}
+                <div className="aliaui-planning-meta">
+                  {strings(o.tags).map((t) => <span key={t} className="aliaui-planning-choice-tag">{t}</span>)}
                 </div>
               ) : null}
               {strings(o.points).length ? (
-                <ul className="bbui-planning-choice-points">
+                <ul className="aliaui-planning-choice-points">
                   {strings(o.points).map((p) => <li key={p}>{p}</li>)}
                 </ul>
               ) : null}
             </div>
-            <div className="bbui-planning-actions bbui-planning-choice-foot">
+            <div className="aliaui-planning-actions aliaui-planning-choice-foot">
               <Button
                 variant={o.recommended ? "primary" : undefined}
                 state={picked === o.title ? "success" : undefined}
@@ -706,7 +706,7 @@ function ChoiceView({ options, question, other }: { options: z.infer<typeof choi
         ))}
       </ul>
       {many ? (
-        <div className="bbui-planning-choice-dots">
+        <div className="aliaui-planning-choice-dots">
           {options.map((o, i) => (
             <button key={o.title} type="button" aria-label={`Show ${o.title}`} aria-current={i === active || undefined} onClick={() => go(i)} />
           ))}
@@ -714,14 +714,14 @@ function ChoiceView({ options, question, other }: { options: z.infer<typeof choi
       ) : null}
       {other !== undefined ? (
         <form
-          className="bbui-planning-actions"
+          className="aliaui-planning-actions"
           onSubmit={(event) => {
             event.preventDefault();
             if (draft.trim()) send("", draft.trim());
           }}
         >
           <input
-            className="bbui-inputs-field bbui-planning-choice-other"
+            className="aliaui-inputs-field aliaui-planning-choice-other"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder={other || "Something else…"}
@@ -731,7 +731,7 @@ function ChoiceView({ options, question, other }: { options: z.infer<typeof choi
           <Button type="submit" disabled={done || !draft.trim()}>Send</Button>
         </form>
       ) : null}
-      {picked !== null ? <span className="bbui-label" role="status">Sent</span> : null}
+      {picked !== null ? <span className="aliaui-label" role="status">Sent</span> : null}
     </section>
   );
 }
@@ -770,48 +770,48 @@ const Estimate = defineComponent({
     const top = Math.max(...tasks.map((t) => t.high)) || 1;
     const pct = (v: number) => `${(Math.max(0, v) / top) * 100}%`;
     return (
-      <section className="bbui bbui-planning-estimate" aria-label="Estimate">
-        <dl className="bbui-planning-figures">
+      <section className="aliaui aliaui-planning-estimate" aria-label="Estimate">
+        <dl className="aliaui-planning-figures">
           <div>
-            <dt className="bbui-label">P50, even odds</dt>
-            <dd className="bbui-figure">{fmt(total.p50, { decimals: 1, unit })}</dd>
+            <dt className="aliaui-label">P50, even odds</dt>
+            <dd className="aliaui-figure">{fmt(total.p50, { decimals: 1, unit })}</dd>
           </div>
           <div>
-            <dt className="bbui-label">P90, safe to commit</dt>
-            <dd className="bbui-figure">{fmt(total.p90, { decimals: 1, unit })}</dd>
+            <dt className="aliaui-label">P90, safe to commit</dt>
+            <dd className="aliaui-figure">{fmt(total.p90, { decimals: 1, unit })}</dd>
           </div>
           <div>
-            <dt className="bbui-label">Best to worst case</dt>
-            <dd className="bbui-head">
+            <dt className="aliaui-label">Best to worst case</dt>
+            <dd className="aliaui-head">
               {fmt(tasks.reduce((s, t) => s + t.low, 0), { decimals: 1 })} to {fmt(tasks.reduce((s, t) => s + t.high, 0), { decimals: 1, unit })}
             </dd>
           </div>
         </dl>
-        <ul className="bbui-planning-tasks">
+        <ul className="aliaui-planning-tasks">
           {tasks.map((t, i) => {
             const p = pert(t.low, t.high, t.likely);
             const likely = t.likely ?? (t.low + t.high) / 2;
             return (
-              <li key={i} className="bbui-planning-task">
+              <li key={i} className="aliaui-planning-task">
                 <span>{t.title}</span>
-                <span className="bbui-label bbui-planning-numcol">
+                <span className="aliaui-label aliaui-planning-numcol">
                   {fmt(t.low)} to {fmt(t.high, { unit })}, mean {fmt(p.mean, { decimals: 1 })}
                 </span>
                 {streaming ? null : <svg
-                  className="bbui-planning-range"
+                  className="aliaui-planning-range"
                   width="100%"
                   height="12"
                   role="img"
                   aria-label={`${t.title}: low ${fmt(t.low)}, likely ${fmt(likely)}, high ${fmt(t.high, { unit })}`}
                 >
-                  <rect className="bbui-planning-range-band" x={pct(t.low)} width={pct(Math.max(t.high - t.low, top * 0.005))} y="3" height="6" rx="2" />
-                  <rect className="bbui-planning-range-mark" x={pct(likely)} width="2" y="0" height="12" />
+                  <rect className="aliaui-planning-range-band" x={pct(t.low)} width={pct(Math.max(t.high - t.low, top * 0.005))} y="3" height="6" rx="2" />
+                  <rect className="aliaui-planning-range-mark" x={pct(likely)} width="2" y="0" height="12" />
                 </svg>}
               </li>
             );
           })}
         </ul>
-        <p className="bbui-label">
+        <p className="aliaui-label">
           PERT mean per task; P50 and P90 assume the tasks are independent. A task without a likely value uses the middle of its range.
         </p>
       </section>
@@ -862,35 +862,35 @@ const Acceptance = defineComponent({
     const counts = (Object.keys(VERDICT) as Verdict[]).map((v) => [verdicts.filter((x) => x === v).length, v] as const).filter(([n]) => n > 0);
     const done = passed === criteria.length;
     return (
-      <section className="bbui bbui-planning-acceptance" aria-label="Acceptance">
-        <header className="bbui-planning-verdict">
+      <section className="aliaui aliaui-planning-acceptance" aria-label="Acceptance">
+        <header className="aliaui-planning-verdict">
           <State icon={done ? CircleCheck : CircleDashed} tone={done ? "good" : "neutral"}>
-            <span className="bbui-head">{done ? `Done: all ${criteria.length} criteria passed` : `Not done: ${passed} of ${criteria.length} criteria passed`}</span>
+            <span className="aliaui-head">{done ? `Done: all ${criteria.length} criteria passed` : `Not done: ${passed} of ${criteria.length} criteria passed`}</span>
           </State>
-          <span className="bbui-label">{counts.map(([n, v]) => `${n} ${v}`).join(", ")}</span>
+          <span className="aliaui-label">{counts.map(([n, v]) => `${n} ${v}`).join(", ")}</span>
         </header>
-        <div className="bbui-planning-scroll" role="region" aria-label="Criteria" tabIndex={0}>
-          <table className="bbui-planning-table">
+        <div className="aliaui-planning-scroll" role="region" aria-label="Criteria" tabIndex={0}>
+          <table className="aliaui-planning-table">
             <thead>
               <tr>
-                <th scope="col" className="bbui-label">Criterion</th>
-                {(columns.length ? columns : ["Status"]).map((c) => <th key={c} scope="col" className="bbui-label">{c}</th>)}
+                <th scope="col" className="aliaui-label">Criterion</th>
+                {(columns.length ? columns : ["Status"]).map((c) => <th key={c} scope="col" className="aliaui-label">{c}</th>)}
               </tr>
             </thead>
             <tbody>
               {criteria.map((c, i) => (
                 <tr key={i}>
                   <th scope="row">
-                    <span className="bbui-planning-crit">
+                    <span className="aliaui-planning-crit">
                       <span>{c.name}</span>
-                      {c.note ? <span className="bbui-label bbui-planning-cellnote">{c.note}</span> : null}
-                      {c.evidence ? <span className="bbui-mono bbui-planning-evidence">{c.evidence}</span> : null}
+                      {c.note ? <span className="aliaui-label aliaui-planning-cellnote">{c.note}</span> : null}
+                      {c.evidence ? <span className="aliaui-mono aliaui-planning-evidence">{c.evidence}</span> : null}
                     </span>
                   </th>
                   {columns.length ? (
                     columns.map((col, j) => {
                       const v = c.cells?.[j] ?? (j === columns.length - 1 && !c.cells?.length ? c.status : undefined);
-                      return <td key={col}>{isVerdict(v) ? <VerdictWord v={v} /> : <span className="bbui-label">-</span>}</td>;
+                      return <td key={col}>{isVerdict(v) ? <VerdictWord v={v} /> : <span className="aliaui-label">-</span>}</td>;
                     })
                   ) : (
                     <td><VerdictWord v={verdicts[i]!} /></td>

@@ -14,14 +14,14 @@ if [ -z "$touchbar_alia_bin" ] || [ ! -x "$touchbar_alia_bin" ]; then
   exit 1
 fi
 
-touchbar_target_dir="$HOME/Library/Application Support/BBTouchBar"
+touchbar_target_dir="$HOME/Library/Application Support/AliaTouchBar"
 touchbar_target="$touchbar_target_dir/alia-touchbar"
 touchbar_temp="$touchbar_target.tmp"
 touchbar_path_file="$touchbar_target_dir/alia-path"
 touchbar_path_temp="$touchbar_path_file.tmp"
 touchbar_btt_app="/Applications/BetterTouchTool.app"
 touchbar_btt_plugins="$HOME/Library/Application Support/BetterTouchTool/Plugins"
-touchbar_swift_target="$touchbar_btt_plugins/BBTouchBar.swift"
+touchbar_swift_target="$touchbar_btt_plugins/AliaTouchBar.swift"
 touchbar_swift_temp="$touchbar_swift_target.tmp"
 
 mkdir -p "$touchbar_target_dir"
@@ -40,7 +40,7 @@ if [ ! -d "$touchbar_btt_app" ]; then
 fi
 
 mkdir -p "$touchbar_btt_plugins"
-cp "$touchbar_script_dir/BBTouchBar.swift" "$touchbar_swift_temp"
+cp "$touchbar_script_dir/AliaTouchBar.swift" "$touchbar_swift_temp"
 chmod 600 "$touchbar_swift_temp"
 mv "$touchbar_swift_temp" "$touchbar_swift_target"
 

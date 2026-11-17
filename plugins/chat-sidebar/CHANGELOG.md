@@ -21,7 +21,7 @@
 
 ## 0.2.9
 
-- Fix live activity status on bb 0.49: use the current workflow, background
+- Fix live activity status on VesnALIA 0.49: use the current workflow, background
   agent, background command and plan-mode counters instead of retired goal
   fields. Build and type-check against plugin SDK 0.6.132.
 - Keep sub-agent rendering tests independent of Node's native localStorage.
@@ -59,21 +59,21 @@
 
 ## 0.2.6
 
-- Preserve the child thread's **Notify parent** setting in bb's thread menu
-  on bb 0.48.1. Older bb payloads keep the default Auto setting.
+- Preserve the child thread's **Notify parent** setting in VesnALIA's thread menu
+  on VesnALIA 0.48.1. Older VesnALIA payloads keep the default Auto setting.
 - Build and type-check against plugin SDK 0.6.104.
 
 ## 0.2.5
 
 - **The project's model in new chats.** Opening the new-thread composer or
   switching projects restores that project's saved provider, model and
-  reasoning instead of carrying over bb's client-wide model preference.
+  reasoning instead of carrying over VesnALIA's client-wide model preference.
   Manual picks after that are kept. Late responses from a previous project
   cannot replace the current choice; projects without saved defaults keep
-  bb's selection. Permissions and environment are not set by the plugin.
+  VesnALIA's selection. Permissions and environment are not set by the plugin.
 - Adds regression tests for project switching, manual choices, stale
   responses and loading failures. Built with plugin SDK 0.6.94; the minimum
-  supported bb and SDK versions remain unchanged.
+  supported VesnALIA and SDK versions remain unchanged.
 
 ## 0.2.4
 
@@ -83,7 +83,7 @@
   started it, with their status, unread dot and time; → and ← open and close
   them from the keyboard, and the list remembers which chats are open. While
   you are in a sub-agent, its row is the one highlighted.
-- **Sub-agents have the full thread menu.** Right-click one for bb's thread
+- **Sub-agents have the full thread menu.** Right-click one for VesnALIA's thread
   menu, hover for the row buttons, double-click to rename. **Make a separate
   chat** takes it out of the tree: it becomes its own chat, with its own
   sub-agents, and stops reporting to the old parent.
@@ -97,30 +97,30 @@
 
 ## 0.2.3
 
-- **Muted chats stay quiet.** A chat whose bb notifications are muted, by
+- **Muted chats stay quiet.** A chat whose VesnALIA notifications are muted, by
   itself or by a parent, counts in no folder badge and stays out of
   Attention, as in Telegram. It still shows in its other folders.
 - **Archive in search.** Archived chats the search finds are listed under the
   results, a few at first and the rest one click away, whether or not the
   archive has been opened.
-- **Folder layout on phones.** bb's navigation rail now sits beside the list
+- **Folder layout on phones.** VesnALIA's navigation rail now sits beside the list
   on phones too, so the folders show as tabs there by default. The new
   **Folder layout on phones** setting can follow **Folder layout** instead.
-- **Move to section** in bb's thread menus, while you have bb sections.
+- **Move to section** in VesnALIA's thread menus, while you have VesnALIA sections.
 
 ## 0.2.2
 
-Follows bb 0.46, which needs this version: 0.2.1 is the last one for bb 0.44–0.45.
+Follows VesnALIA 0.46, which needs this version: 0.2.1 is the last one for VesnALIA 0.44–0.45.
 
-- **bb's own thread menu.** Right-clicking a chat opens the same menu as bb's
-  rows and thread header, so it now has bb's per-thread notifications and
+- **VesnALIA's own thread menu.** Right-clicking a chat opens the same menu as VesnALIA's
+  rows and thread header, so it now has VesnALIA's per-thread notifications and
   whatever other plugins add, next to the list's own items (sub-agents,
   project colour, new chat in the project, reading a whole folded row).
   **Add to folder** shows in the thread header's menu too.
-- **Search inside messages.** From three letters, the search also asks bb's
+- **Search inside messages.** From three letters, the search also asks VesnALIA's
   thread search, so a chat that only its messages mention shows up, with the
   matching words under its title.
-- **Muted chats.** A chat whose bb notifications are muted shows a muted bell,
+- **Muted chats.** A chat whose VesnALIA notifications are muted shows a muted bell,
   and its unread dot turns grey.
 - **Row buttons.** Pick up to three actions from the menu (right-click a chat →
   Row buttons…) to show at the right of a chat on hover. None are picked to
@@ -131,7 +131,7 @@ Follows bb 0.46, which needs this version: 0.2.1 is the last one for bb 0.44–0
 - Folder names on the rail no longer stay dim until the pointer is over the
   sidebar.
 - Built with plugin SDK 0.6.37. Opening chats and starting new ones go
-  through `useBbNavigate`, renaming through `threads.update`, marking read
+  through `useAliaNavigate`, renaming through `threads.update`, marking read
   through `threads.markRead`.
 
 ## 0.2.1
@@ -152,7 +152,7 @@ Follows bb 0.46, which needs this version: 0.2.1 is the last one for bb 0.44–0
   each an icon (over 130 to choose from) and a colour. It opens from
   **Folders** at the foot of the rail, the sliders at the end of the tabs, or
   a folder's menu, and is a bottom sheet on phones.
-- **Drag to reorder like bb's own sidebar**: neighbours make room as you
+- **Drag to reorder like VesnALIA's own sidebar**: neighbours make room as you
   drag, folders move in the rail, the tabs and the editor, a folder per
   project moves as one block, and the keyboard works too (Space, then the
   arrows). On a touch screen, hold a folder or a pinned chat to pick it up;
@@ -172,13 +172,13 @@ Follows bb 0.46, which needs this version: 0.2.1 is the last one for bb 0.44–0
 
 ## 0.1.2
 
-- Checked against bb 0.45 and built with its plugin SDK (0.6.15). bb no
+- Checked against VesnALIA 0.45 and built with its plugin SDK (0.6.15). VesnALIA no
   longer reports the "machine reconnecting" thread status, so the list drops
-  it too. Still works with bb 0.44.
+  it too. Still works with VesnALIA 0.44.
 
 ## 0.1.1
 
-- Project colours no longer fall back to automatic ones when bb mounts the
+- Project colours no longer fall back to automatic ones when VesnALIA mounts the
   list again or the backend answers late. The last colours seen are shown
   straight away, a failed load is retried, and colours are reloaded after the
   realtime connection comes back.
@@ -187,7 +187,7 @@ Follows bb 0.46, which needs this version: 0.2.1 is the last one for bb 0.44–0
 
 First release.
 
-- A messenger-style replacement for bb's sidebar thread list. Each task gets
+- A messenger-style replacement for VesnALIA's sidebar thread list. Each task gets
   one row, sub-agents and forks fold into their parent, and the row shows live
   status, drafts, and other plugins' row statuses.
 - Folders: All, Attention, projects, sections, and Archive, shown as tabs or

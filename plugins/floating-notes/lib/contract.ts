@@ -229,7 +229,7 @@ export const rpcContract = {
       ),
     }),
   },
-  /** Removes the BLOB and strips its bbnote:// refs from the note body. */
+  /** Removes the BLOB and strips its alianote:// refs from the note body. */
   deleteAttachment: {
     input: z.object({ id: z.string() }).strict(),
     output: z.object({ note: noteSchema.nullable() }),

@@ -58,20 +58,20 @@ async function swept(host: FakeDeviceHost): Promise<void> {
 test("machine slot keep-app copies VesnALIA's app from the home of the user who runs it through sudo, whatever from= it is given (F-8)", () => {
   const host = poolMac();
   const digest = "c".repeat(64);
-  const npm = join(host.root, "Users/bbbox-admin/.alia-machines/alia.example.com/npm");
+  const npm = join(host.root, "Users/aliabox-admin/.alia-machines/alia.example.com/npm");
   mkdirSync(join(npm, "lib/node_modules/alia-app"), { recursive: true, mode: 0o755 });
   writeFileSync(join(npm, "lib/node_modules/alia-app/package.json"), '{"name":"alia-app"}\n', { mode: 0o644 });
   writeFileSync(join(npm, "../host-artifact.sha256"), `${digest}\n`, { mode: 0o600 });
-  host.own("/Users/bbbox-admin", 502);
-  host.own("/Users/bbbox-admin/.alia-machines/alia.example.com/npm", 502);
-  mkdirSync(join(host.state, "users/bbbox-admin"), { recursive: true });
-  writeFileSync(join(host.state, "users/bbbox-admin/NFSHomeDirectory"), "/Users/bbbox-admin\n");
+  host.own("/Users/aliabox-admin", 502);
+  host.own("/Users/aliabox-admin/.alia-machines/alia.example.com/npm", 502);
+  mkdirSync(join(host.state, "users/aliabox-admin"), { recursive: true });
+  writeFileSync(join(host.state, "users/aliabox-admin/NFSHomeDirectory"), "/Users/aliabox-admin\n");
   const keep = (sudoUser: string | null) =>
     spawnSync("/bin/sh", [host.machineHelper, "slot", "keep-app"], { input: `server=alia.example.com\ndigest=${digest}\nfrom=/Users/person\n`, encoding: "utf8", env: { ...host.env, ...(sudoUser ? { SUDO_USER: sudoUser } : {}) } });
   const unknown = keep(null);
   assert.equal(unknown.status, 2);
   assert.match(unknown.stderr, /copies ALIA's app from the home of the user who runs it through sudo/);
-  const kept = keep("bbbox-admin");
+  const kept = keep("aliabox-admin");
   assert.equal(kept.status, 0, kept.stderr);
   assert.match(kept.stdout, /^kept=yes\n$/);
   assert.equal(host.file("/usr/local/share/alia-box/slot-home/.alia-machines/alia.example.com/host-artifact.sha256"), `${digest}\n`);
@@ -140,7 +140,7 @@ test("close refuses while a slot is held or a box waits, and otherwise removes t
   assert.equal(host.run(["unpromise"], BOX("box_p")).status, 0);
 
   const spare = made(host);
-  const user = `bbd-${spare}`;
+  const user = `aliad-${spare}`;
   assert.ok(host.user(user));
   const close = host.run(["close"], "install=inst_a\n");
   assert.deepEqual(close, { status: 0, stdout: `closed=yes\nremoved=${spare}\n`, stderr: "" });
@@ -167,7 +167,7 @@ test("a spare being made when the host closes is removed once its step ends", as
   assert.equal(host.run(["close"], "install=inst_a\n").status, 0, "a spare being made keeps no box");
   const carried = host.run(["continue", "7"]);
   assert.equal(carried.status, 0, carried.stderr);
-  assert.equal(host.user("bbd-7"), null);
+  assert.equal(host.user("aliad-7"), null);
   assert.match(host.file(`${HOST}/slots/7/state`) ?? "is=gone\n", /^is=(resetting|gone)/);
   await swept(host);
 });
@@ -203,10 +203,10 @@ test("the Mac's helper lends slots only while it is not lent whole, and a whole 
 test("a whole claim removes the Mac's ready spare first, and the slot commands need the slots set up and a slot's number", async () => {
   const host = poolMac();
   const spare = made(host, "machine");
-  assert.ok(host.user(`bbd-${spare}`));
+  assert.ok(host.user(`aliad-${spare}`));
   const whole = host.machine(["claim", "0"], WHOLE_CLAIM());
   assert.equal(whole.status, 0, whole.stderr);
-  assert.equal(host.user(`bbd-${spare}`), null);
+  assert.equal(host.user(`aliad-${spare}`), null);
   for (const args of [["slot", "claim"], ["slot", "release", "a"], ["slot", "daemon", "1", "2"], ["slot", "bogus"], ["slot", "status", "x"]]) {
     assert.equal(host.machine(args, "").status, 2, args.join(" "));
   }
@@ -232,15 +232,15 @@ function iosSetup(host: FakeDeviceHost, options: { list?: boolean } = {}): strin
   const work = tempDir("idb");
   writeFileSync(join(work, "idb_companion"), "#!/bin/sh\n", { mode: 0o755 });
   assert.equal(spawnSync("tar", ["-czf", join(host.state, "flags", "idb-companion.macos-arm64.tar.gz"), "-C", work, "idb_companion"]).status, 0);
-  mkdirSync(join(host.state, "users", "bbbox-admin"), { recursive: true });
-  writeFileSync(join(host.state, "users", "bbbox-admin", "UniqueID"), "499\n");
+  mkdirSync(join(host.state, "users", "aliabox-admin"), { recursive: true });
+  writeFileSync(join(host.state, "users", "aliabox-admin", "UniqueID"), "499\n");
   return join(dir, "pool");
 }
 
 test("mac-ios.sh installs idb_companion from its pin, the slots' helper and home, and a seed it makes by slimming a device as VesnALIA Box's admin user", () => {
   const host = fakeDeviceHost({ slim: false, template: false });
   const pool = iosSetup(host);
-  const run = () => spawnSync("/bin/sh", [join(pool, "mac-ios.sh"), pool, "bbbox-admin"], { encoding: "utf8", env: { ...host.env } });
+  const run = () => spawnSync("/bin/sh", [join(pool, "mac-ios.sh"), pool, "aliabox-admin"], { encoding: "utf8", env: { ...host.env } });
   const result = run();
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, `ios=27.0 24A434 ${LIST} companion=1.7.7\n`);
@@ -251,22 +251,22 @@ test("mac-ios.sh installs idb_companion from its pin, the slots' helper and home
   const seed = host.file(`/usr/local/share/alia-box/ios/${LIST}.disabled.plist`)!;
   assert.equal((seed.match(/<true\/>/g) ?? []).length, list.length, "every label of the list off");
   assert.match(host.file("/usr/local/share/alia-box/slot-home/.zshenv")!, /path_helper/);
-  assert.deepEqual(host.devices("bbbox-admin"), {}, "the admin user's devices are deleted once the seed is kept");
+  assert.deepEqual(host.devices("aliabox-admin"), {}, "the admin user's devices are deleted once the seed is kept");
   assert.equal(host.file(`${HOST}/kept`), "", "set up as a kept host");
   assert.match(host.file(`${HOST}/closed`)!, /^since=/, "closed until VesnALIA Box opens it");
   assert.match(host.file(`${HOST}/settings`)!, /^most=12\nahead=1\nresetting-most=4\ndisk-reserve-gib=40\n/);
 
   assert.ok(!result.stdout.includes("warning="), "no sshd on the fake Mac, so nothing to warn of");
-  assert.match(result.stderr, /mac-ios\.sh: bbbox-admin set and read its device's clipboard, UTF-8 intact, in its own session, user\/499, with macOS's pasteboard server loaded there, in [\d.]+ s\n/);
+  assert.match(result.stderr, /mac-ios\.sh: aliabox-admin set and read its device's clipboard, UTF-8 intact, in its own session, user\/499, with macOS's pasteboard server loaded there, in [\d.]+ s\n/);
   assert.deepEqual(readdirSync(join(host.state, "agents", "user-499")), [], "the pasteboard server and every job booted out after");
 
   const sshd = join(host.root, "../bin/sshd");
-  writeFileSync(sshd, "#!/bin/sh\nprintf 'port 22\\nallowusers operator@192.0.2.9\\nallowusers bbbox-admin\\nallowusers bbx-*\\n'\n", { mode: 0o755 });
+  writeFileSync(sshd, "#!/bin/sh\nprintf 'port 22\\nallowusers operator@192.0.2.9\\nallowusers aliabox-admin\\nallowusers aliax-*\\n'\n", { mode: 0o755 });
   const again = run();
   assert.equal(again.status, 0, again.stderr);
-  assert.match(again.stdout, /\nwarning=sshd lets only some users log in, with AllowUsers or AllowGroups, and no slot user, bbd-\*, so no ios box can reach its slot\. Add bbd-\* beside bbx-\* to AllowUsers/);
-  writeFileSync(sshd, "#!/bin/sh\nprintf 'allowusers bbbox-admin\\nallowusers bbx-*\\nallowusers bbd-*\\n'\n", { mode: 0o755 });
-  assert.ok(!run().stdout.includes("warning="), "bbd-* allowed");
+  assert.match(again.stdout, /\nwarning=sshd lets only some users log in, with AllowUsers or AllowGroups, and no slot user, aliad-\*, so no ios box can reach its slot\. Add aliad-\* beside aliax-\* to AllowUsers/);
+  writeFileSync(sshd, "#!/bin/sh\nprintf 'allowusers aliabox-admin\\nallowusers aliax-*\\nallowusers aliad-*\\n'\n", { mode: 0o755 });
+  assert.ok(!run().stdout.includes("warning="), "aliad-* allowed");
   writeFileSync(sshd, "#!/bin/sh\nprintf 'allowgroups com.apple.access_ssh\\n'\n", { mode: 0o755 });
   assert.ok(!run().stdout.includes("warning="), "slot users join com.apple.access_ssh");
   assert.match(again.stderr, /kept ios-27\.0-24A434's seed, which has every label off/);
@@ -275,13 +275,13 @@ test("mac-ios.sh installs idb_companion from its pin, the slots' helper and home
   const short = fakeDeviceHost({ slim: false, template: false });
   const shortPool = iosSetup(short);
   short.flag("spawn-skips");
-  const failed = spawnSync("/bin/sh", [join(shortPool, "mac-ios.sh"), shortPool, "bbbox-admin"], { encoding: "utf8", env: { ...short.env } });
+  const failed = spawnSync("/bin/sh", [join(shortPool, "mac-ios.sh"), shortPool, "aliabox-admin"], { encoding: "utf8", env: { ...short.env } });
   assert.equal(failed.status, 1);
   assert.match(failed.stderr, /the seed for ios-27\.0-24A434 did not get all of its 112 labels off/);
 
   const unlisted = fakeDeviceHost({ slim: false, template: false });
   const unlistedPool = iosSetup(unlisted, { list: false });
-  const missing = spawnSync("/bin/sh", [join(unlistedPool, "mac-ios.sh"), unlistedPool, "bbbox-admin"], { encoding: "utf8", env: { ...unlisted.env } });
+  const missing = spawnSync("/bin/sh", [join(unlistedPool, "mac-ios.sh"), unlistedPool, "aliabox-admin"], { encoding: "utf8", env: { ...unlisted.env } });
   assert.equal(missing.status, 1);
   assert.match(missing.stderr, /alia-box has no slimming list for iOS 27\.0 \(24A434\), so it lends no iOS slot on this Mac/);
 });
@@ -290,7 +290,7 @@ test("mac-ios.sh lends only the models the Mac's Xcode can make, and sets up a h
   const host = fakeDeviceHost({ slim: false, template: false });
   const pool = iosSetup(host);
   host.flag("no-iphone-18-pro");
-  const result = spawnSync("/bin/sh", [join(pool, "mac-ios.sh"), pool, "bbbox-admin"], { encoding: "utf8", env: { ...host.env, HOST_SETTINGS: "most=4\nahead=1\nresetting-most=2\ndisk-reserve-gib=20" } });
+  const result = spawnSync("/bin/sh", [join(pool, "mac-ios.sh"), pool, "aliabox-admin"], { encoding: "utf8", env: { ...host.env, HOST_SETTINGS: "most=4\nahead=1\nresetting-most=2\ndisk-reserve-gib=20" } });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(host.file("/usr/local/share/alia-box/ios/devices.tsv")!.split("\n").filter(Boolean).map((line) => line.split("\t")[0]), ["iPhone 17", "iPad Pro 13-inch (M5)"]);
   assert.match(result.stderr, /setting it up as a host alia-box deletes after its last box/);
@@ -303,30 +303,30 @@ test("mac-ios.sh warns when a user with no desktop session cannot set and read a
   const host = fakeDeviceHost({ slim: false, template: false });
   const pool = iosSetup(host);
   host.flag("session-bootstrap-fails");
-  const result = spawnSync("/bin/sh", [join(pool, "mac-ios.sh"), pool, "bbbox-admin"], { encoding: "utf8", env: { ...host.env } });
+  const result = spawnSync("/bin/sh", [join(pool, "mac-ios.sh"), pool, "aliabox-admin"], { encoding: "utf8", env: { ...host.env } });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^warning=A slot cannot set or read its device's clipboard, so pasting into an ios box and copying from it fail: launchd did not load macOS's pasteboard server in user\/499: Bootstrap failed: 5: Input\/output error$/m);
-  assert.deepEqual(host.devices("bbbox-admin"), {}, "the device made for the check is deleted");
+  assert.deepEqual(host.devices("aliabox-admin"), {}, "the device made for the check is deleted");
 
   const desktop = fakeDeviceHost({ slim: false, template: false });
   const script = join(iosSetup(desktop), "..", "tart", "ios", "slot-clipboard.sh");
-  const as = (args: readonly string[], input = "") => spawnSync(join(desktop.env.FAKE_MAC_BIN, "sudo"), ["-n", "-u", "bbbox-admin", "--", ...args], { input, encoding: "utf8", env: { ...desktop.env } });
+  const as = (args: readonly string[], input = "") => spawnSync(join(desktop.env.FAKE_MAC_BIN, "sudo"), ["-n", "-u", "aliabox-admin", "--", ...args], { input, encoding: "utf8", env: { ...desktop.env } });
   const udid = as(["xcrun", "simctl", "create", "check", "com.apple.CoreSimulator.SimDeviceType.iPhone-17", RUNTIME]).stdout.trim();
   assert.equal(as(["xcrun", "simctl", "boot", udid]).status, 0);
   assert.equal(as(["xcrun", "simctl", "pbcopy", udid], "x").status, 139, "outside a session with a pasteboard server, simctl crashes, as on a Mac");
   desktop.flag("gui-499");
-  const run = spawnSync("/bin/sh", [script, "bbbox-admin", udid], { encoding: "utf8", env: { ...desktop.env } });
+  const run = spawnSync("/bin/sh", [script, "aliabox-admin", udid], { encoding: "utf8", env: { ...desktop.env } });
   assert.equal(run.status, 0, run.stdout + run.stderr);
-  assert.match(run.stdout, /^bbbox-admin set and read its device's clipboard, UTF-8 intact, in its desktop session, gui\/499, in [\d.]+ s\n$/);
+  assert.match(run.stdout, /^aliabox-admin set and read its device's clipboard, UTF-8 intact, in its desktop session, gui\/499, in [\d.]+ s\n$/);
   assert.ok(!existsSync(join(desktop.state, "agents", "gui-499", "app.alia-box.pboard")), "no pasteboard server of its own beside macOS's");
-  assert.equal(readFileSync(join(desktop.state, "sims", "bbbox-admin", `${udid}.pasteboard`), "utf8"), "", "the device's clipboard is left empty");
+  assert.equal(readFileSync(join(desktop.state, "sims", "aliabox-admin", `${udid}.pasteboard`), "utf8"), "", "the device's clipboard is left empty");
 
   desktop.flag("pasteboard-times-out", true, "2\n");
-  const late = spawnSync("/bin/sh", [script, "bbbox-admin", udid], { encoding: "utf8", env: { ...desktop.env, SLOT_CLIPBOARD_GAP_S: "0" } });
+  const late = spawnSync("/bin/sh", [script, "aliabox-admin", udid], { encoding: "utf8", env: { ...desktop.env, SLOT_CLIPBOARD_GAP_S: "0" } });
   assert.equal(late.status, 0, late.stdout + late.stderr);
   assert.match(late.stdout, /in its desktop session, gui\/499, once the device's pasteboard answered, at try 3 of 12, in [\d.]+ s\n$/, "a device's pasteboard answers some seconds after it boots");
   desktop.flag("pasteboard-times-out", true, "12\n");
-  const never = spawnSync("/bin/sh", [script, "bbbox-admin", udid], { encoding: "utf8", env: { ...desktop.env, SLOT_CLIPBOARD_GAP_S: "0" } });
+  const never = spawnSync("/bin/sh", [script, "aliabox-admin", udid], { encoding: "utf8", env: { ...desktop.env, SLOT_CLIPBOARD_GAP_S: "0" } });
   assert.equal(never.status, 1);
   assert.deepEqual([never.stdout, never.stderr], ["", "simctl pbcopy exited with 60 in gui/499: The operation couldn't be completed. Operation timed out \n"], "its words on standard error, which its callers keep");
 });

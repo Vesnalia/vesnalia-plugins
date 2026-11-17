@@ -10,7 +10,7 @@ export const settingsUrl = `${base}/settings/plugins/alia-box`;
 export const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function alia(args) {
-  return execFileSync(join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  return execFileSync(join(home, "aliac"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
 export function aliaMay(args) {
@@ -77,7 +77,7 @@ export async function agent(thread, tool, args = {}) {
 }
 
 export function events(boxId) {
-  const db = new DatabaseSync(join(home, "bbdata", "plugins", "alia-box", "box-log.db"), { readOnly: true });
+  const db = new DatabaseSync(join(home, "aliadata", "plugins", "alia-box", "box-log.db"), { readOnly: true });
   try {
     return db.prepare("SELECT seq, at, kind, who, agent, words FROM box_events WHERE box = ? ORDER BY seq").all(boxId);
   } finally {

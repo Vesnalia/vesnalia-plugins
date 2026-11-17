@@ -23,7 +23,7 @@
 # Options: --keep     stop before finalizing and leave the build CT running.
 #          --replace  <vmid> may be a alia-box template of the same kind
 #                     already. The new one is built and checked (or copied)
-#                     in another CT (BBBOX_BUILD_VMID, or the next free VMID)
+#                     in another CT (ALIABOX_BUILD_VMID, or the next free VMID)
 #                     and only then takes the old one's place. Boxes cloned
 #                     from the old one keep running on LVM-thin; on storage
 #                     where they need it, it refuses until they are released.
@@ -81,7 +81,7 @@ in_use() { pct config "$1" >/dev/null 2>&1 || qm config "$1" >/dev/null 2>&1; }
 # affecting snapshots that reference it" (lvmthin(7)). Elsewhere, on ZFS or
 # Ceph RBD for example, a linked clone needs its template's base volume.
 thin=
-[ "$(pvesh get "/storage/$BBBOX_STORAGE" --output-format json 2>/dev/null | jq -r .type)" != lvmthin ] || thin=1
+[ "$(pvesh get "/storage/$ALIABOX_STORAGE" --output-format json 2>/dev/null | jq -r .type)" != lvmthin ] || thin=1
 # Guests whose disks need a template's base volume: storages other than
 # LVM-thin name a linked clone's volume base-<vmid>-disk-<n>/<volume>.
 linked_clones() { # vmid
@@ -93,9 +93,9 @@ linked_clones() { # vmid
 # otherwise a full copy.
 copy_ct() { # from to hostname
   if [ -n "$thin" ]; then
-    pct clone "$1" "$2" --pool "$BBBOX_POOL" --hostname "$3"
+    pct clone "$1" "$2" --pool "$ALIABOX_POOL" --hostname "$3"
   else
-    pct clone "$1" "$2" --full --pool "$BBBOX_POOL" --hostname "$3" --storage "$BBBOX_STORAGE"
+    pct clone "$1" "$2" --full --pool "$ALIABOX_POOL" --hostname "$3" --storage "$ALIABOX_STORAGE"
   fi
 }
 
@@ -122,10 +122,10 @@ if in_use "$vmid"; then
   fi
   clones=$(linked_clones "$vmid")
   [ -z "$clones" ] || die "boxes are linked clones of template $vmid and need it ($clones); release them first"
-  ct=${BBBOX_BUILD_VMID:-$(pvesh get /cluster/nextid)}
+  ct=${ALIABOX_BUILD_VMID:-$(pvesh get /cluster/nextid)}
   [[ "$ct" =~ ^[0-9]+$ ]] && [ "$ct" != "$vmid" ] && [ "$ct" != "$from" ] ||
-    die "BBBOX_BUILD_VMID must be a VMID other than $vmid${from:+ and $from}"
-  ! in_use "$ct" || die "VMID $ct for the build is already in use; set BBBOX_BUILD_VMID to a free one"
+    die "ALIABOX_BUILD_VMID must be a VMID other than $vmid${from:+ and $from}"
+  ! in_use "$ct" || die "VMID $ct for the build is already in use; set ALIABOX_BUILD_VMID to a free one"
 fi
 
 cache=/var/cache/alia-box/artifacts
@@ -200,14 +200,14 @@ replace_with() { # ct vmid hostname description
 
 if [ "$kind" = copy-desktop ]; then
   pct config "$from" | grep -q '^template: 1' || die "$from is not a template"
-  pvesh get "/nodes/$BBBOX_NODE/lxc/$from/config" --output-format json | jq -r '.description // ""' | grep '^{' | tail -1 |
+  pvesh get "/nodes/$ALIABOX_NODE/lxc/$from/config" --output-format json | jq -r '.description // ""' | grep '^{' | tail -1 |
     jq -e '.nvidia != null and .kind == "linux-desktop"' >/dev/null 2>&1 ||
     pct config "$from" | grep -q '^dev[0-9]*: /dev/nvidia' ||
     die "$from is not a GPU desktop template; copy a GPU desktop template to another GPU, or build a new desktop with build.sh desktop"
   lines=$(gpu_lines "$gpu")
   note=$(grep '^#' <<<"$lines" | cut -c3-)
   # The copy has its source's image record (049), from the description's second line.
-  record=$(pvesh get "/nodes/$BBBOX_NODE/lxc/$from/config" --output-format json | jq -r '.description // ""' | grep '^{' | tail -1 || true)
+  record=$(pvesh get "/nodes/$ALIABOX_NODE/lxc/$from/config" --output-format json | jq -r '.description // ""' | grep '^{' | tail -1 || true)
   description="alia-box desktop template ($note), copied from $from on $(date -u +%F).${record:+
 $record}"
   copy_ct "$from" "$ct" "alia-box-desktop-$vmid"
@@ -228,10 +228,10 @@ fi
 
 # Stage the build directory: scripts, pins, settings, the plugin's public key
 # and the artifacts.
-[ -f "$BBBOX_SSH_KEY" ] || {
-  install -d -m 0700 "$(dirname "$BBBOX_SSH_KEY")"
-  ssh-keygen -q -t ed25519 -N '' -C "alia-box plugin" -f "$BBBOX_SSH_KEY"
-  echo "created the plugin's SSH key $BBBOX_SSH_KEY"
+[ -f "$ALIABOX_SSH_KEY" ] || {
+  install -d -m 0700 "$(dirname "$ALIABOX_SSH_KEY")"
+  ssh-keygen -q -t ed25519 -N '' -C "alia-box plugin" -f "$ALIABOX_SSH_KEY"
+  echo "created the plugin's SSH key $ALIABOX_SSH_KEY"
 }
 artifacts=$kind
 [ "$kind" != linux ] || [ -n "$cpu" ] || artifacts=linux-nvidia
@@ -241,15 +241,15 @@ bash "$here/fetch-artifacts.sh" "$cache" "$artifacts"
 rm -rf "$stage"
 install -d -m 0700 "$stage" "$stage/artifacts"
 cp -r "$here/guest" "$here/pins.json" "$here/desktop-pins.tsv" "$here/baseline-packages.txt" "$here/apt-snapshot" "$stage/"
-cp "$BBBOX_SSH_KEY.pub" "$stage/plugin-key.pub"
+cp "$ALIABOX_SSH_KEY.pub" "$stage/plugin-key.pub"
 desktop_gpu=nvidia
 [ -z "$cpu" ] || desktop_gpu=none
 linux_gpu=none
 [ "$kind" != linux ] || [ -n "$cpu" ] || linux_gpu=nvidia
 cat >"$stage/build.env" <<EOF
 BOX_USER=box
-BOX_DNS="$BBBOX_DNS"
-ALIA_URL="$BBBOX_ALIA_URL"
+BOX_DNS="$ALIABOX_DNS"
+ALIA_URL="$ALIABOX_ALIA_URL"
 DESKTOP_GPU=$desktop_gpu
 LINUX_GPU=$linux_gpu
 DESKTOP_SESSION=${wayland:+wayland}
@@ -268,8 +268,8 @@ done
 
 # The OS template: Ubuntu 26.04 for the Wayland desktop, whose Sway and
 # wayvnc carry the box's own pointer shapes; 24.04 for the rest.
-os_template=$BBBOX_OS_TEMPLATE
-[ -z "$wayland" ] || os_template=$BBBOX_OS_TEMPLATE_WAYLAND
+os_template=$ALIABOX_OS_TEMPLATE
+[ -z "$wayland" ] || os_template=$ALIABOX_OS_TEMPLATE_WAYLAND
 os=${os_template#*:vztmpl/}
 if ! pveam list "${os_template%%:*}" | grep -q "$os"; then
   pveam update >/dev/null
@@ -287,10 +287,10 @@ if [ "$kind" = desktop ] && [ -z "$cpu" ]; then
 fi
 [ -z "$cpu" ] || [ "$kind" != desktop ] || lines="# cpu only"
 [ -z "$wayland" ] || lines="# Wayland, cpu only"
-pct create "$ct" "$os_template" --hostname "alia-box-$kind" --pool "$BBBOX_POOL" --unprivileged 1 \
-  --features nesting=1 --cores 16 --memory 16384 --swap 1024 --rootfs "$BBBOX_STORAGE:$size" --tags "$build" \
-  --net0 "name=eth0,bridge=$BBBOX_BRIDGE,ip=$BBBOX_BUILD_ADDRESS/$BBBOX_PREFIX,gw=$BBBOX_GATEWAY,type=veth" \
-  --nameserver "$BBBOX_DNS" --ostype ubuntu --onboot 0
+pct create "$ct" "$os_template" --hostname "alia-box-$kind" --pool "$ALIABOX_POOL" --unprivileged 1 \
+  --features nesting=1 --cores 16 --memory 16384 --swap 1024 --rootfs "$ALIABOX_STORAGE:$size" --tags "$build" \
+  --net0 "name=eth0,bridge=$ALIABOX_BRIDGE,ip=$ALIABOX_BUILD_ADDRESS/$ALIABOX_PREFIX,gw=$ALIABOX_GATEWAY,type=veth" \
+  --nameserver "$ALIABOX_DNS" --ostype ubuntu --onboot 0
 mapfile -t devices < <(devices_of "$lines")
 [ "${#devices[@]}" -eq 0 ] || add_devices "$ct" "${devices[@]}"
 add_tun "$ct"
@@ -332,7 +332,7 @@ record=$(pct exec "$ct" -- cat /usr/share/alia-box/image.json | jq -c .) || die 
 pct fstrim "$ct" || echo "pct fstrim $ct failed: the template keeps the blocks its build deleted"
 pct shutdown "$ct" --timeout 60
 # Clones get their address from the plugin; without one they have none.
-pct set "$ct" --net0 "name=eth0,bridge=$BBBOX_BRIDGE,ip=manual,type=veth" --delete nameserver \
+pct set "$ct" --net0 "name=eth0,bridge=$ALIABOX_BRIDGE,ip=manual,type=veth" --delete nameserver \
   --cores "$cores" --memory "$memory" --swap 512
 note=$(grep '^#' <<<"$lines" | cut -c3- || true)
 description="alia-box $kind template${note:+ ($note)}, built $(date -u +%F). See /usr/share/alia-box/template-release inside.

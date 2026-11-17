@@ -39,7 +39,7 @@ export function fakePoolMac(options: { kinds?: string; probe?: Parameters<typeof
     backend(settings = {}, storage = new MemoryStorage(), more = {}) {
       const parsed = parseSshPoolSettings({
         "ssh-pool-enabled": true,
-        "ssh-pool-machines": `mac-1 bbbox-admin@${POOL_MAC} ${options.kinds ?? "macos,macos-desktop,ios"}`,
+        "ssh-pool-machines": `mac-1 aliabox-admin@${POOL_MAC} ${options.kinds ?? "macos,macos-desktop,ios"}`,
         "ssh-pool-known-hosts": `${POOL_MAC} ${HOST_KEY}`,
         "ssh-pool-ios-hosts-ahead": 0,
         ...settings,

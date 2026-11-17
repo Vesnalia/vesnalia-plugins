@@ -71,7 +71,7 @@
         "src/drag-reorder-geometry.ts",
         "src/drag-auto-scroll.ts",
         "src/settled-port-prompt.ts",
-        "src/bb-sdk.ts"
+        "src/alia-sdk.ts"
       ],
       "linter": {
         "rules": {

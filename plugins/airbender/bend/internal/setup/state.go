@@ -8,9 +8,9 @@
 // repository's remote.
 //
 // Why: the owner wants a repository to work in a plain terminal without the
-// Airbender plugin (bead-bb-c9l.7), so setting it up cannot live in the
+// Airbender plugin (bead-alia-c9l.7), so setting it up cannot live in the
 // plugin. The plugin's setup card draws this state and runs these steps
-// (bead-bb-c9l.9), so a terminal and the tab never disagree.
+// (bead-alia-c9l.9), so a terminal and the tab never disagree.
 //
 // Design notes:
 //   - Reading and changing are apart, the owner's rule: Read changes nothing;
@@ -25,7 +25,7 @@
 //     the folder itself outside git). Beads' hooks are looked for in the
 //     repository's main folder, not a work tree: Claude Code's hooks are in
 //     a file git does not track, so a work tree never has them
-//     (bead-bb-ak0).
+//     (bead-alia-ak0).
 //
 // Gotchas:
 //   - Read may take a second or two: it asks beads up to three things, and
@@ -147,7 +147,7 @@ type InstructionsState struct {
 	// this repository, by name.
 	BeadsHooks []string `json:"beadsHooks"`
 	// BeadsFiles are the files beads' agent setup left that hold nothing of
-	// the owner's, to be deleted (bead-bb-cnv).
+	// the owner's, to be deleted (bead-alia-cnv).
 	BeadsFiles []string `json:"beadsFiles"`
 	// MachineWide are the agents beads' hooks are installed for under the
 	// owner's home folder: not the repository's, so only named.
@@ -187,7 +187,7 @@ type State struct {
 	Elsewhere bool `json:"elsewhere"`
 	// NotHere says why setup may not change the repository from this
 	// folder (a worktree, or a branch other than main); "" where it may
-	// (bead-bb-25p). Steps it holds back are blocked with these words.
+	// (bead-alia-25p). Steps it holds back are blocked with these words.
 	NotHere string `json:"notHere"`
 
 	// What the steps need and a caller does not: the beads program found,
@@ -263,14 +263,14 @@ type agent struct {
 // by. The same places under the owner's home folder are where beads
 // installs them for the whole computer (`bd setup <agent> --global`).
 var agents = []agent{
-	{"claude", "Claude Code", []string{".claude/settings.json", ".claude/settings.local.json"}, regexp.MustCompile(`\bbd prime\b`)},
+	{"claude", "Claude Code", []string{".claude/settings.json", ".claude/settings.local.json"}, regexp.MustCompile(`\aliad prime\b`)},
 	// Both forms: `bd codex-hook` (beads 1.3) and `bd prime --hook-json`, an
-	// older beads' (found in minisaba, bead-bb-cnv).
-	{"codex", "Codex", []string{".codex/hooks.json"}, regexp.MustCompile(`\bbd (codex-hook|prime)\b`)},
+	// older beads' (found in minisaba, bead-alia-cnv).
+	{"codex", "Codex", []string{".codex/hooks.json"}, regexp.MustCompile(`\aliad (codex-hook|prime)\b`)},
 }
 
 // beadsHooksIn gives the coding agents beads' own hooks are installed for
-// under a folder, or whose setup by beads left files behind (bead-bb-cnv).
+// under a folder, or whose setup by beads left files behind (bead-alia-cnv).
 //
 // Side effects: reads a few small files.
 func beadsHooksIn(home string) []agent {
@@ -432,7 +432,7 @@ func Read(dir string, options Options) (*State, error) {
 	state.Steps = append(state.Steps, state.publishStep(chosen, issuesReady))
 
 	// Only from the main folder, on the main branch, does setup change the
-	// repository (bead-bb-25p): elsewhere a step still to do is held back,
+	// repository (bead-alia-25p): elsewhere a step still to do is held back,
 	// saying where to go.
 	if state.NotHere = state.notHere(); state.NotHere != "" {
 		for index := range state.Steps {
@@ -561,7 +561,7 @@ func (state *State) issuesStep(chosen, repository string, options Options) Step 
 
 // initArgs are what `bd init` is given. --non-interactive: beads asks
 // nothing in the terminal, whether or not anyone is at the keyboard (the
-// owner's rule, bead-bb-dof); as the maintainer, since Airbender is for
+// owner's rule, bead-alia-dof); as the maintainer, since Airbender is for
 // repositories of one's own. --skip-agents: Airbender writes the
 // instructions for agents itself.
 var initArgs = []string{"init", "--skip-agents", "--non-interactive", "--role", "maintainer"}
@@ -607,7 +607,7 @@ func (state *State) instructionsStep(chosen string, issuesReady bool) Step {
 	step := Step{Name: StepInstructions, Title: "Add Airbender's instructions for agents", Explain: []string{}}
 	if state.Elsewhere {
 		// Someone else's project: its files are not Airbender's to change
-		// (bead-bb-dof).
+		// (bead-alia-dof).
 		step.State, step.Why = NotNeeded, "This is someone else's project, so Airbender's instructions are not added to it."
 		return step
 	}
@@ -675,7 +675,7 @@ func (state *State) instructionsStep(chosen string, issuesReady bool) Step {
 		if replaces {
 			step.Why = "Beads wrote instructions of its own into this folder. They tell agents to close issues themselves, which is the opposite of how the workflow goes. This takes them out and leaves Airbender's."
 			// Only files beads' agent setup left, doing nothing now
-			// (bead-bb-cnv): said as such, not as instructions that steer.
+			// (bead-alia-cnv): said as such, not as instructions that steer.
 			if len(found.BeadsBlocks) == 0 && len(found.BeadsHooks) == 0 {
 				step.Title = "Remove what beads' agent setup left"
 				step.Why = "Beads' setup for the coding agents left files here that do nothing now. Airbender's instructions replace that setup, so they go."
@@ -688,7 +688,7 @@ func (state *State) instructionsStep(chosen string, issuesReady bool) Step {
 			// Said as what it is, an update: the repository was set up
 			// rightly, and the rules have changed since. Worded as "set
 			// this up" it read as if something had been lost
-			// (bead-bb-c9l.10, the owner: "It gives impressions that
+			// (bead-alia-c9l.10, the owner: "It gives impressions that
 			// something is unreliable").
 			if !replaces {
 				from := "an earlier version"
@@ -747,7 +747,7 @@ func (state *State) instructionsStep(chosen string, issuesReady bool) Step {
 		case claudeIsFile:
 			if claudeOpen {
 				// A file of its own beside AGENTS.md: the owner says what
-				// it is to be (bead-bb-c9l.12).
+				// it is to be (bead-alia-c9l.12).
 				choice := "This repository has a `CLAUDE.md` of its own beside `AGENTS.md`, where Airbender's rules are. Choose what it is to be: a link to `AGENTS.md`, so that there is one file of rules for every agent, or a file that holds the same rules."
 				if settled && !replaces {
 					step.Title, step.Why = "Decide what `CLAUDE.md` is here", choice
@@ -803,7 +803,7 @@ const (
 // Why: a read of CLAUDE.md follows a link and gives the text of whatever it
 // points at, and a write goes there too. Setup once took a linked CLAUDE.md
 // for a file of the owner's and wrote import lines "into it", which landed
-// in AGENTS.md itself (bead-bb-c9l.12).
+// in AGENTS.md itself (bead-alia-c9l.12).
 //
 // "Linked" means the two names give one and the same file: CLAUDE.md is a
 // link to AGENTS.md (relative, absolute, or through another link), or
@@ -812,7 +812,7 @@ const (
 // everything else that is not a plain file of its own: a link to another
 // file, or to an AGENTS.md of another folder, and a CLAUDE.md that is a
 // folder. Taking AGENTS.md -> CLAUDE.md for a file of its own once ended
-// with the two as links to each other (found in review, bead-bb-c9l.12).
+// with the two as links to each other (found in review, bead-alia-c9l.12).
 func claudeFileOf(root string) string {
 	path := filepath.Join(root, instructions.ClaudeFile)
 	agents := filepath.Join(root, instructions.AgentsFile)

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 function askedWords(boxId) {
-  const db = new DatabaseSync(join(process.env.HOME, "bbdata", "plugins", "alia-box", "box-log.db"), { readOnly: true });
+  const db = new DatabaseSync(join(process.env.HOME, "aliadata", "plugins", "alia-box", "box-log.db"), { readOnly: true });
   try {
     return db.prepare("SELECT words FROM box_events WHERE box = ? AND kind = 'restore-asked' ORDER BY seq DESC LIMIT 1").get(boxId)?.words ?? "none";
   } finally {

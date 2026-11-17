@@ -6,8 +6,8 @@ import { IMAGE_CONTRACT, recordFromJson } from "../src/backends/images.ts";
 import { KIND_INFO, currentKindId } from "../src/backends/kinds.ts";
 import { GUARD_FOLDER_PREFIX, SYSTEM_PATH, firstOnPath } from "./host-stubs.mjs";
 
-export const MAY_BREAK_THIS_MACHINE = "BBBOX_TESTS_MAY_BREAK_THIS_MACHINE";
-export const MACHINE_CHECK = "BBBOX_TEST_MACHINE_CHECK";
+export const MAY_BREAK_THIS_MACHINE = "ALIABOX_TESTS_MAY_BREAK_THIS_MACHINE";
+export const MACHINE_CHECK = "ALIABOX_TEST_MACHINE_CHECK";
 export const NO_EXEMPTIONS = "strict";
 export const BOX_MARKER = "/usr/share/alia-box/image.json";
 

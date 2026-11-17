@@ -107,7 +107,7 @@
   transition: color 1ms;
 }
 .minimap-ink[data-kind="user"] {
-  color: light-dark(#aaa, #bbb);
+  color: light-dark(#aaa, #aliab);
 }
 .minimap-ink[data-kind="reply"] {
   color: color-mix(in oklab, var(--foreground) 22%, var(--background));

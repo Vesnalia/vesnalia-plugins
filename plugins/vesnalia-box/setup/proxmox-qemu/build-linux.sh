@@ -24,13 +24,13 @@
 #
 # Options: --replace  <vmid> may be a alia-box Linux VM template of the same
 #                     kind already. The new one is built and checked in
-#                     another VM (BBBOX_BUILD_VMID, or the next free VMID)
+#                     another VM (ALIABOX_BUILD_VMID, or the next free VMID)
 #                     and only then takes its place.
 #          --keep     leave the build VM when the build fails, to look at it.
 # Settings: /etc/alia-box/alia-box.env (see
-# ../proxmox-lxc/host/alia-box.env.example), BBBOX_CHECK_VMID, the clone
+# ../proxmox-lxc/host/alia-box.env.example), ALIABOX_CHECK_VMID, the clone
 # the check runs in (the next free VMID), and for android
-# BBBOX_ANDROID_LICENCE, the acceptance (/etc/alia-box/android-sdk-license).
+# ALIABOX_ANDROID_LICENCE, the acceptance (/etc/alia-box/android-sdk-license).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=../proxmox-lxc/host/common.sh
@@ -72,7 +72,7 @@ fi
 name=alia-box-$kind
 
 for tool in curl jq ssh sha256sum; do command -v "$tool" >/dev/null || die "$tool is required"; done
-licence=${BBBOX_ANDROID_LICENCE:-/etc/alia-box/android-sdk-license}
+licence=${ALIABOX_ANDROID_LICENCE:-/etc/alia-box/android-sdk-license}
 if [ "$kind" = android ]; then
   accepted=$(jq -r .license.accepted "$here/../android/pins.json")
   grep -qx "$accepted" "$licence" 2>/dev/null ||
@@ -91,7 +91,7 @@ in_use() { qm config "$1" >/dev/null 2>&1 || pct config "$1" >/dev/null 2>&1; }
 # On LVM-thin a linked clone is a thin snapshot that needs nothing of its
 # template's volume once made; elsewhere it needs the template's base volume.
 thin=
-[ "$(pvesh get "/storage/$BBBOX_STORAGE" --output-format json 2>/dev/null | jq -r .type)" != lvmthin ] || thin=1
+[ "$(pvesh get "/storage/$ALIABOX_STORAGE" --output-format json 2>/dev/null | jq -r .type)" != lvmthin ] || thin=1
 linked_clones() { # vmid
   { grep -lE ":base-$1-disk-[0-9]+/" /etc/pve/nodes/*/lxc/*.conf /etc/pve/nodes/*/qemu-server/*.conf 2>/dev/null ||
     true; } | sed 's|.*/||; s|\.conf$||' | sort -n | paste -sd ' ' -
@@ -118,16 +118,16 @@ if in_use "$vmid"; then
     die "$vmid is not a alia-box $kind VM template; --replace replaces only those"
   clones=$(linked_clones "$vmid")
   [ -z "$clones" ] || die "boxes are linked clones of template $vmid and need it ($clones); release them first"
-  vm=${BBBOX_BUILD_VMID:-$(pvesh get /cluster/nextid)}
-  [[ "$vm" =~ ^[0-9]+$ ]] && [ "$vm" != "$vmid" ] || die "BBBOX_BUILD_VMID must be a VMID other than $vmid"
-  ! in_use "$vm" || die "VMID $vm for the build is already in use; set BBBOX_BUILD_VMID to a free one"
+  vm=${ALIABOX_BUILD_VMID:-$(pvesh get /cluster/nextid)}
+  [[ "$vm" =~ ^[0-9]+$ ]] && [ "$vm" != "$vmid" ] || die "ALIABOX_BUILD_VMID must be a VMID other than $vmid"
+  ! in_use "$vm" || die "VMID $vm for the build is already in use; set ALIABOX_BUILD_VMID to a free one"
 fi
 
 # The plugin's key, as the LXC template build makes it.
-[ -f "$BBBOX_SSH_KEY" ] || {
-  install -d -m 0700 "$(dirname "$BBBOX_SSH_KEY")"
-  ssh-keygen -q -t ed25519 -N '' -C "alia-box plugin" -f "$BBBOX_SSH_KEY"
-  echo "created the plugin's SSH key $BBBOX_SSH_KEY"
+[ -f "$ALIABOX_SSH_KEY" ] || {
+  install -d -m 0700 "$(dirname "$ALIABOX_SSH_KEY")"
+  ssh-keygen -q -t ed25519 -N '' -C "alia-box plugin" -f "$ALIABOX_SSH_KEY"
+  echo "created the plugin's SSH key $ALIABOX_SSH_KEY"
 }
 
 # The cloud image, downloaded once and checked each time.
@@ -148,13 +148,13 @@ in_vm=/var/tmp/alia-box-build
 bash "$template/fetch-artifacts.sh" "$cache" "$artifacts"
 install -d -m 0700 "$stage/artifacts"
 cp -r "$template/guest" "$template/pins.json" "$template/desktop-pins.tsv" "$template/baseline-packages.txt" "$template/apt-snapshot" "$here/linux" "$stage/"
-cp "$BBBOX_SSH_KEY.pub" "$stage/plugin-key.pub"
+cp "$ALIABOX_SSH_KEY.pub" "$stage/plugin-key.pub"
 [ "$kind" != android ] || { cp -r "$here/../android" "$stage/"; cp "$licence" "$stage/android-sdk-license"; }
 cat >"$stage/build.env" <<EOF
 BOX_USER=box
 BOX_RUNTIME=vm
-BOX_DNS="$BBBOX_DNS"
-ALIA_URL="$BBBOX_ALIA_URL"
+BOX_DNS="$ALIABOX_DNS"
+ALIA_URL="$ALIABOX_ALIA_URL"
 DESKTOP_GPU=none
 BUILD_ID=$build
 ANDROID_X264=$x264
@@ -191,25 +191,25 @@ trap 'exit 1' INT TERM
 # The SMBIOS serial a clone's boot script reads: the address with its
 # prefix, then the gateway. The build VM has it too, for its boots after
 # cloud-init's.
-serial=$(printf '%s/%s %s' "$BBBOX_BUILD_ADDRESS" "$BBBOX_PREFIX" "$BBBOX_GATEWAY" | base64 -w0)
+serial=$(printf '%s/%s %s' "$ALIABOX_BUILD_ADDRESS" "$ALIABOX_PREFIX" "$ALIABOX_GATEWAY" | base64 -w0)
 # Cloud-init gives the first boot its address, the key and the box user,
 # and nothing from apt: --ciupgrade 0, as Proxmox's default upgrades every
 # package from the live archive at first boot, past the apt snapshot the
 # guest scripts install from, whose -dev packages then cannot match.
 log "creating build VM $vm from the cloud image"
 created=1
-qm create "$vm" --name "$name-build" --pool "$BBBOX_POOL" --ostype l26 --machine q35 --cpu host \
+qm create "$vm" --name "$name-build" --pool "$ALIABOX_POOL" --ostype l26 --machine q35 --cpu host \
   --cores 16 --memory 16384 --balloon 0 --scsihw virtio-scsi-single --agent enabled=1 \
-  --scsi0 "$BBBOX_STORAGE:0,import-from=$image,discard=on,iothread=1,ssd=1" --boot order=scsi0 \
-  --ide2 "$BBBOX_STORAGE:cloudinit" --serial0 socket --net0 "virtio,bridge=$BBBOX_BRIDGE" \
+  --scsi0 "$ALIABOX_STORAGE:0,import-from=$image,discard=on,iothread=1,ssd=1" --boot order=scsi0 \
+  --ide2 "$ALIABOX_STORAGE:cloudinit" --serial0 socket --net0 "virtio,bridge=$ALIABOX_BRIDGE" \
   --smbios1 "base64=1,uuid=$(cat /proc/sys/kernel/random/uuid),serial=$serial" --tags "$build" \
-  --ciuser box --ciupgrade 0 --sshkeys "$BBBOX_SSH_KEY.pub" --ipconfig0 "ip=$BBBOX_BUILD_ADDRESS/$BBBOX_PREFIX,gw=$BBBOX_GATEWAY" \
-  --nameserver "$BBBOX_DNS" --onboot 0 >/dev/null
+  --ciuser box --ciupgrade 0 --sshkeys "$ALIABOX_SSH_KEY.pub" --ipconfig0 "ip=$ALIABOX_BUILD_ADDRESS/$ALIABOX_PREFIX,gw=$ALIABOX_GATEWAY" \
+  --nameserver "$ALIABOX_DNS" --onboot 0 >/dev/null
 qm resize "$vm" scsi0 "${disk}G" >/dev/null
 qm start "$vm"
 
-ssh_box() { ssh -i "$BBBOX_SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=3 "box@$BBBOX_BUILD_ADDRESS" "$@"; }
-wait_for "the build VM answers SSH" 300 2 ssh_box exit || die "the build VM did not answer SSH at $BBBOX_BUILD_ADDRESS"
+ssh_box() { ssh -i "$ALIABOX_SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=3 "box@$ALIABOX_BUILD_ADDRESS" "$@"; }
+wait_for "the build VM answers SSH" 300 2 ssh_box exit || die "the build VM did not answer SSH at $ALIABOX_BUILD_ADDRESS"
 ssh_box 'cloud-init status --wait' >/dev/null || true
 push() { tar -C "$stage" -cf - . | ssh_box "sudo sh -c 'rm -rf $in_vm && mkdir -p $in_vm && tar -xf - -C $in_vm --no-same-owner'"; }
 push
@@ -267,14 +267,14 @@ log "VM $vm is a template; checking a linked clone of it"
 
 # The check: a linked clone with the build address in its serial and a bigger
 # disk, reached over SSH as the backend reaches a box.
-check_vm=${BBBOX_CHECK_VMID:-$(pvesh get /cluster/nextid)}
-if in_use "$check_vm"; then taken=$check_vm check_vm=; die "VMID $taken for the check is already in use; set BBBOX_CHECK_VMID to a free one"; fi
-qm clone "$vm" "$check_vm" --name "$name-check" --pool "$BBBOX_POOL" >/dev/null
+check_vm=${ALIABOX_CHECK_VMID:-$(pvesh get /cluster/nextid)}
+if in_use "$check_vm"; then taken=$check_vm check_vm=; die "VMID $taken for the check is already in use; set ALIABOX_CHECK_VMID to a free one"; fi
+qm clone "$vm" "$check_vm" --name "$name-check" --pool "$ALIABOX_POOL" >/dev/null
 qm set "$check_vm" --smbios1 "base64=1,uuid=$(cat /proc/sys/kernel/random/uuid),serial=$serial" >/dev/null
 qm resize "$check_vm" scsi0 "$((disk + 4))G" >/dev/null
 start=$(date +%s%N)
 qm start "$check_vm"
-wait_for "a clone answers SSH" 300 1 ssh_box exit || die "a clone of the template did not answer SSH at $BBBOX_BUILD_ADDRESS"
+wait_for "a clone answers SSH" 300 1 ssh_box exit || die "a clone of the template did not answer SSH at $ALIABOX_BUILD_ADDRESS"
 log "a clone answered SSH $((($(date +%s%N) - start) / 1000000)) ms after qm start"
 checked=0
 root_size() { ssh_box 'df -BG --output=size / | tail -1' </dev/null | tr -dc 0-9; }
@@ -317,7 +317,7 @@ $record"
 # it from deleting templates. Clones inherit the flag, so the plugin clears it
 # on each box (delete=protection) when it configures the box.
 if [ "$vm" = "$vmid" ]; then
-  qm set "$vmid" --name "$name" --description "$description" --tags "bbbox;$kind;$build" --protection 1 >/dev/null
+  qm set "$vmid" --name "$name" --description "$description" --tags "aliabox;$kind;$build" --protection 1 >/dev/null
 else
   # Puts the checked template in <vmid>'s place. On LVM-thin the new one is a
   # linked clone of the build, which takes seconds; elsewhere a full copy.
@@ -326,13 +326,13 @@ else
   start=$(date +%s%N)
   qm destroy "$vmid" || { qm set "$vmid" --protection 1 >/dev/null; die "could not remove template $vmid"; }
   if [ -n "$thin" ]; then
-    qm clone "$vm" "$vmid" --name "$name" --pool "$BBBOX_POOL" >/dev/null
+    qm clone "$vm" "$vmid" --name "$name" --pool "$ALIABOX_POOL" >/dev/null
   else
-    qm clone "$vm" "$vmid" --name "$name" --pool "$BBBOX_POOL" --full 1 --storage "$BBBOX_STORAGE" >/dev/null
+    qm clone "$vm" "$vmid" --name "$name" --pool "$ALIABOX_POOL" --full 1 --storage "$ALIABOX_STORAGE" >/dev/null
   fi
   qm template "$vmid"
   echo "template $vmid was missing for $((($(date +%s%N) - start) / 1000000)) ms"
-  qm set "$vmid" --description "$description" --tags "bbbox;$kind;$build" --protection 1 >/dev/null
+  qm set "$vmid" --description "$description" --tags "aliabox;$kind;$build" --protection 1 >/dev/null
   qm destroy "$vm" --purge 1 >/dev/null
 fi
 done_ok=1

@@ -3,7 +3,7 @@
  *
  * GENERATED — see fonts/README.md to rebuild. Do not hand-edit.
  *
- * bb serves a plugin's app.js and app.css and nothing else, so a font file has
+ * alia serves a plugin's app.js and app.css and nothing else, so a font file has
  * no URL to be fetched from; it has to travel inside the stylesheet. Listed
  * last in the terminal's font stack and restricted by unicode-range, so a
  * machine with a real Nerd Font installed keeps its own glyphs and this is only
@@ -11,7 +11,7 @@
  * Font can be installed, is all of them.
  */
 @font-face {
-  font-family: "BB FT Nerd Symbols";
+  font-family: "ALIA FT Nerd Symbols";
   font-style: normal;
   font-weight: 400;
   font-display: block;

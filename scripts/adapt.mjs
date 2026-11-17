@@ -37,9 +37,9 @@ export const ALIA_PLUGIN_SDK_VERSION = "0.6.143";
 const SDK = "@vesnalia/plugin-sdk";
 const BRAND = "VesnALIA";
 
-const SKIP_DIRS = new Set(["node_modules", ".git", ".turbo", ".bundled-runtime"]);
+export const SKIP_DIRS = new Set(["node_modules", ".git", ".turbo", ".bundled-runtime"]);
 const SKIP_FILES = /^(licen[cs]e|copying|notice)(\.[a-z]+)?$|^changelog|^package-lock\.json$|^pnpm-lock\.yaml$|^yarn\.lock$|^bun\.lockb?$/i;
-const CODE_EXT = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
+export const CODE_EXT = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
 const TEXT_EXT = new Set([".txt", ".html"]);
 const SCRIPT_EXT = new Set([".sh", ".bash", ".zsh", ".yaml", ".yml", ".toml", ".ps1"]);
 const CSS_EXT = new Set([".css", ".scss"]);
@@ -47,9 +47,9 @@ const MAX_FILE_BYTES = 1_500_000;
 
 // ---------- текстовые правила ----------
 
-const URL_RE = /\b(?:https?|wss?|git\+https?|ssh):\/\/[^\s"'`<>)\]]+|\b(?:www\.)?github\.com\/[^\s"'`<>)\]]+|\b[\w.-]*getbb\.app\b[^\s"'`<>)\]]*|\b[\w.+-]+@(?:[\w-]+\.)+(?:com|org|net|io|dev|app|local|ru|co|me|ai)\b/g;
+export const URL_RE = /\b(?:https?|wss?|git\+https?|ssh):\/\/[^\s"'`<>)\]]+|\b(?:www\.)?github\.com\/[^\s"'`<>)\]]+|\b[\w.-]*getbb\.app\b[^\s"'`<>)\]]*|\b[\w.+-]+@(?:[\w-]+\.)+(?:com|org|net|io|dev|app|local|ru|co|me|ai)\b/g;
 
-function protect(text, fn) {
+export function protect(text, fn) {
   const saved = [];
   const masked = text.replace(URL_RE, (m) => {
     saved.push(m);
@@ -66,7 +66,7 @@ function renamePackages(text) {
 }
 
 // bb как отдельный сегмент имени: bb-x, bb_x, bb.x, bbFoo, fooBb, BB_X, ~/.bb
-function renameSegments(text) {
+export function renameSegments(text) {
   return renamePackages(text)
     .replace(/(^|[~/\s"'`(=:,[])\.bb(?=$|[/\s"'`),\]])/g, "$1.vesnalia")
     .replace(/(?<![A-Za-z0-9])bb(?![a-z0-9])/g, "alia")
@@ -90,15 +90,15 @@ export function brandProse(text) {
   );
 }
 
-function renameCode(text) {
+export function renameCode(text) {
   return protect(text, renameSegments);
 }
 
-function isProse(text) {
+export function isProse(text) {
   return /[A-Za-z]{2,}\s+[A-Za-z]/.test(text);
 }
 
-function transformMarkdown(text) {
+export function transformMarkdown(text) {
   // Код (```...``` и `...`) - как код, остальное - как видимый текст.
   const parts = text.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`)/g);
   return parts
@@ -269,7 +269,7 @@ function transformJsonValue(value, key = null) {
 }
 
 // Строки JSON правим на месте, не переформатируя файл (и JSONC с комментариями).
-function transformJsonText(text) {
+export function transformJsonText(text) {
   return text.replace(/"((?:[^"\\\n]|\\.)*)"(\s*:)?/g, (match, body, colon) => {
     if (colon) return `"${renameCode(body)}"${colon}`;
     let next;

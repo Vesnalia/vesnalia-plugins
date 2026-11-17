@@ -1,7 +1,7 @@
 #!/bin/sh
 thread="$1"; tool="$2"; args="${3:-{\}}"
 before=$(wc -c < "$HOME/agent-trace.log")
-~/bbc thread tell "$thread" "CALL $tool $args" > /dev/null
+~/aliac thread tell "$thread" "CALL $tool $args" > /dev/null
 i=0
 while [ $i -lt 600 ]; do
   out=$(tail -c +$((before + 1)) "$HOME/agent-trace.log" | grep -m1 "result $tool:")

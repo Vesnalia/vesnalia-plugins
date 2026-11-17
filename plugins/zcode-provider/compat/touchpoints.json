@@ -99,13 +99,13 @@
       "uses": "Single registration with mutable settings delivered per command, not static bridge identity",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
           "text": "deriveProviderOptions",
           "strength": "strong",
           "reason": "Installed reference forwards settings per command; settings-change lifecycle requires tests."
         },
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/plugin-sdk-runtime.js.map",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/plugin-sdk-runtime.js.map",
           "text": "experimental_bridgeOptions",
           "strength": "strong",
           "reason": "Public declaration documents static launch facts; mutable settings must not change identity."
@@ -174,13 +174,13 @@
       "uses": "Embedded terminal provides bundled VesnALIA CLI for the local problem report; native tools receive VesnALIA's resolved thread/project/environment and CLI connection metadata after inherited-process sanitization.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia",
           "text": "ALIA_CLI",
           "strength": "weak",
           "reason": "Bundled entrypoint; embedded-terminal live execution is the behavioral proof."
         },
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/start-host-daemon.js.map",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/start-host-daemon.js.map",
           "text": "buildThreadShellEnvironment",
           "strength": "strong",
           "reason": "VesnALIA 0.49.0 shared agent runtime builds explicit VesnALIA project/thread/environment/storage entries after base shell state. Explicit request env must be merged after inherited sanitization, as in the built-in provider process environment. Reviewed 7 November 2026."
@@ -212,25 +212,25 @@
       "uses": "Git ref checkout, production dependency install, SDK engines validation and server/host bundling; plugin SDK subpaths bundle the plugin-locked zod (4.6.6 after M5.3a), independently of alia-owned zod M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "installGitDependencies",
           "strength": "strong",
           "reason": "Named native Git dependency install mechanism; behavioral install smoke required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "buildPluginServer",
           "strength": "strong",
           "reason": "Named native server build mechanism; behavioral install smoke required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "buildPluginHost",
           "strength": "strong",
           "reason": "Named native host build mechanism; behavioral install smoke required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "checkPluginSdkRange",
           "strength": "strong",
           "reason": "Native SDK compatibility gate; behavioral install smoke required."
@@ -366,7 +366,7 @@
       "uses": "Running bundle package/version",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/package.json",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/package.json",
           "text": "\"version\"",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -394,7 +394,7 @@
       "uses": "SDK carried by VesnALIA; exact SDK .79 CLI declarations and development public-SDK scanner, whose actual c/m-prefixed source extension coverage includes mjs verified explicitly in c-2.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "PLUGIN_SDK_VERSION",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -451,31 +451,31 @@
       "uses": "Public bridge framing/methods/protocol version",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "BRIDGE_PROTOCOL_VERSION",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "thread/start",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "thread/resume",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "turn/start",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "thread/stop",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -503,19 +503,19 @@
       "uses": "Public thread delta grammar; assembler behavior requires existing offline/live tests (export is bundled away)",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "threadDeltaSchema",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "item/delegation/progress",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "turn.boundary",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -546,13 +546,13 @@
       "uses": "Host entry and native roots contract",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "experimental_nativeRootsHostContract",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "experimental_defineHostEntry",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -582,19 +582,19 @@
       "uses": "Root command basename/namePrefix and skills configuration",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "namePrefix",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "configure",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "experimental_resolvesNativeRoots",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -626,25 +626,25 @@
       "uses": "Composer native roots RPC cache TTL",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "createProviderNativeRootsCache",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "PROVIDER_NATIVE_ROOTS_CACHE_TTL_MS",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "scanProviderNativeRoots",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "composerActions",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -671,19 +671,19 @@
       "uses": "Plugin build metadata/host registration M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "sdkVersion",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "server.meta.json",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "host.meta.json",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -712,19 +712,19 @@
       "uses": "Bridge/host dataDir and plugin identity M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "bridge-data",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "dataDir",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "pluginId",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -757,7 +757,7 @@
       "uses": "Protected settings secret root",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "secrets",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
@@ -783,31 +783,31 @@
       "uses": "Health/login hint and recovery transport",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "providerHealthResultSchema",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "loginCommand",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "statusMessage",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "providerRecoveryNotificationSchema",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "authRequired",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -837,13 +837,13 @@
       "uses": "Thread warning transport; M5.13 delivers qualified manual-claim guidance at fresh Desktop-auth thread startup from an already collected discovery snapshot, without a provider call.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "provider.warning",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "general",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -871,43 +871,43 @@
       "uses": "Settings and CLI registration; c-2 declarative root zcode-provider-report: SDK .79 defineCli/cliCommand, metadata/help/JSON errors and combined output limit, with explicitly server-local report scope. M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "settings",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "description",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "experimental_dataDir",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "cli",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "rendersHelp",
           "strength": "strong",
           "reason": "Installed CLI help/output contract; declarations define exact SDK signatures, focused CLI and embedded-terminal checks establish behavior."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "PLUGIN_CLI_OUTPUT_MAX_BYTES",
           "strength": "strong",
           "reason": "Installed CLI help/output contract; declarations define exact SDK signatures, focused CLI and embedded-terminal checks establish behavior."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "plugin_cli_output_too_large",
           "strength": "strong",
           "reason": "Installed CLI help/output contract; declarations define exact SDK signatures, focused CLI and embedded-terminal checks establish behavior."
@@ -940,19 +940,19 @@
       "uses": "Selected text mention offsets and command resources",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "mentions",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "argumentHint",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "localFile",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -981,19 +981,19 @@
       "uses": "Inject/turn steer expectedTurnId semantics",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "handleTurnSteer",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "expectedTurnId",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "turn/steer",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -1023,19 +1023,19 @@
       "uses": "Standalone compact and extension projection",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "thread/compact/start",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "thread/compacted",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "extension",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -1063,13 +1063,13 @@
       "uses": "Delegation schema and lifecycle assembly",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "delegation",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "item/delegation/progress",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -1094,13 +1094,13 @@
       "uses": "Subagent disabled provider option",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
           "text": "subagentsDisabled",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
           "text": "providerSubagentsEnabled",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -1127,13 +1127,13 @@
       "uses": "Reasoning enum/default model effort",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "reasoningLevelValues",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "reasoningLevelSchema",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -1160,13 +1160,13 @@
       "uses": "Native versus host retry ownership",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-retry/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-retry/dist/server.js",
           "text": "Provider overloaded",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-retry/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-retry/dist/server.js",
           "text": "decideRetry",
           "strength": "strong",
           "reason": "Protocol/config/export or descriptive native function string; textual presence only."
@@ -1191,13 +1191,13 @@
       "uses": "Host process shutdown/output gate and Stop",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "shutdown",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
           "text": "thread/stop",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
@@ -2649,7 +2649,7 @@
       "uses": "Bridge data lifetime for binding/current background/translator records; no legacy checkpoint v1 support",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "bridge-data",
           "strength": "weak",
           "reason": "Internal generic/minified or indirect textual evidence; manual semantic review required."
@@ -2825,7 +2825,7 @@
       "uses": "SDK .37 skills/configure roots, pending updates before first dispatch, frozen alia-only metadata after delivery",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "skillsConfigureParamsSchema",
           "strength": "strong",
           "reason": "SDK .37 configuration payload schema export in installed VesnALIA server; method independently inspected in built-in provider host."
@@ -2864,7 +2864,7 @@
       "code": [
         "src/bridge.ts",
         "src/mentions.ts",
-        "src/bb-skills.ts",
+        "src/alia-skills.ts",
         "src/native-roots.ts"
       ],
       "impact": "Duplicate skill metadata or wrong winning file in VesnALIA session.",
@@ -3189,19 +3189,19 @@
       "uses": "VesnALIA 0.48.1 maintenance does not call deriveProviderOptions. Explicit authMode needs contributed request env for the catalogue fingerprint and an own account-selection.json projection for health. M5.13 adds the independent checkStartPromotions boolean to that projection/fingerprint; missing or false disables promotion reads/notices. No plan field remains.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js.map",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/start-server.js.map",
           "text": "resolveCatalogLaunch",
           "strength": "strong",
           "reason": "Installed model catalog fingerprint includes contributed environment; source-map content reviewed 5 November 2026."
         },
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/start-host-daemon.js.map",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/start-host-daemon.js.map",
           "text": "cwdAndStaticProviderOptions",
           "strength": "strong",
           "reason": "Installed adapter sends envVars for model/list, but static options only for provider/health. Process environment is not the per-request env."
         },
         {
-          "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/plugin-sdk-runtime.js.map",
+          "file": "Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/plugin-sdk-runtime.js.map",
           "text": "experimental_contributeEnv",
           "strength": "strong",
           "reason": "Public SDK contribution resolver used without changing provider registration or native HOME/configuration."
@@ -3272,25 +3272,25 @@
       "uses": "M5.11 provider/usage response and native VesnALIA Usage surface: label, usedPercent, resetsAt, planLabel and expired status; token counts in label, no USD cost substitution. M5.12 explicitly tracks expiredHint consumers: Usage renders it for expired entitlement, whereas builtin providers define it for session expiry. Reinspect all consumers on VesnALIA updates; our health never returns expired.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
           "text": "usedPercent",
           "strength": "strong",
           "reason": "Installed VesnALIA 0.48.1 Usage window renderer and schema; actual amount/date readability requires stand UI verification."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
           "text": "Reset time not reported",
           "strength": "strong",
           "reason": "The native surface treats resetsAt as reset time; quota label must identify Start expiry explicitly."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
           "text": "expiredHint",
           "strength": "weak",
           "reason": "Directly reviewed 6 November 2026: expired status renders provider expiredHint; error renders measurement.message. Field presence does not prove consumer semantics or detect additional consumers; inspect usages on each VesnALIA update."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js.map",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js.map",
           "text": "provider.usage",
           "strength": "strong",
           "reason": "Installed demand-based maintenance usage call; inspected usage-limits.ts uses a 10-second successful-result cache."
@@ -3317,25 +3317,25 @@
       "uses": "VesnALIA 0.48.1 Usage discovers provider-usage.v1 resources. M5.14 lists two stable host/plan resources with null accountKey, avoiding account deduplication. Inventory reads metadata only; Start relays public sdk.system.usageLimits and Coding uses the owning host RPC. Error measurements are rejected by VesnALIA, which retains its last successful value and marks failed refresh; successful absence uses empty windows and explicit planLabel. Settings and compact collectors share underlying host reads.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-usage/dist/server.js",
           "text": "provider-usage.v1.listResources",
           "strength": "strong",
           "reason": "Actual installed Usage collection discovers this protocol; maintenance.usage alone produced no own resource in the first M5.11 live attempt."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/server.js",
           "text": "provider-usage.v1.getResource",
           "strength": "strong",
           "reason": "Builtin Codex reference inventories host-local resources and relays collection through sdk.system.usageLimits."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-usage/dist/server.js",
           "text": "Usage could not be refreshed.",
           "strength": "weak",
           "reason": "Inspected 6 November 2026: fetchResource throws on usage.status error before caching its value; inspect the condition and stale-value handling, not just this text anchor."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js.map",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js.map",
           "text": "discoverable RPC requires Standard JSON Schema export support",
           "strength": "strong",
           "reason": "Public Standard Schema RPC input/output must also export JSON Schema for discovery; no extra schema dependency is installed."
@@ -3411,13 +3411,13 @@
       "uses": "Public owning-plugin host client routes Coding collection to persistent plugin-scoped host-data, independent of Start maintenance. Existing host-data/bridge-data sibling layout resolves the same plugin secrets/backupKey as the bridge and its inert own-stand observer. No remote account identity is inferred. Standard Schema exports validate both ends.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "experimental_client",
           "strength": "weak",
           "reason": "Public SDK host API; presence alone does not prove contract/client routing. M5.14 real getResource traversed it."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
           "text": "host-data",
           "strength": "weak",
           "reason": "Host-owned plugin data path convention, as used by the existing bridge secrets lookup. Reinspect layout on host/runtime changes."
@@ -3441,15 +3441,15 @@
       "uses": "M5.11 shared-catalogue expiry depends on VesnALIA catalogue refresh and composer recovery when a previously selected Start model disappears; plugin must not rewrite a directly requested unavailable ID.",
       "anchors": [
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js.map",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js.map",
           "text": "lacksRequiredModel",
           "strength": "strong",
           "reason": "Installed provider-model-catalog-store.ts has stale-while-refresh behavior and required-model validation; source presence alone is not an exact expiry guarantee."
         },
         {
-          "file": "Contents/Resources/app.asar/node_modules/bb-app/app/dist/assets/ExecutionControls-0oyK1j2B.js",
+          "file": "Contents/Resources/app.asar/node_modules/alia-app/app/dist/assets/ExecutionControls-0oyK1j2B.js",
           "alternativeFiles": [
-            "Contents/Resources/app.asar.unpacked/node_modules/bb-app/app/dist/assets/plugin-frontend-0dkOuthv.js"
+            "Contents/Resources/app.asar.unpacked/node_modules/alia-app/app/dist/assets/plugin-frontend-0dkOuthv.js"
           ],
           "text": "isUnavailableModelRecovery",
           "strength": "weak",

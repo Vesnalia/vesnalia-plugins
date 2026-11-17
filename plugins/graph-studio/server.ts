@@ -440,7 +440,7 @@ export default function graphStudio(alia: AliaPluginApi) {
   const stopping = new Set<string>();
 
   /**
-   * Per-run claim: exactly one driver continues a run (BBP-16).
+   * Per-run claim: exactly one driver continues a run (ALIAP-16).
    *
    * Each loaded instance of this plugin is its own driver. A plugin reload
    * does not end the promises of the previous instance, and a slow server
@@ -462,7 +462,7 @@ export default function graphStudio(alia: AliaPluginApi) {
   let disposed = false;
   /**
    * Workers a takeover found still alive, by run and node, oldest attempt
-   * first (BBP-20). The node's replay picks its entry up in `onNodeStart`
+   * first (ALIAP-20). The node's replay picks its entry up in `onNodeStart`
    * and awaits that thread instead of spawning a new one.
    */
   const reattach = new Map<string, Map<string, Array<{ nodeRunId: string; threadId: string }>>>();
@@ -1128,7 +1128,7 @@ export default function graphStudio(alia: AliaPluginApi) {
     const envId = environmentId;
 
     // One request per provider: without `providerId` VesnALIA answers with the
-    // default provider's catalogue only (BBP-21).
+    // default provider's catalogue only (ALIAP-21).
     const { problems, warnings } = await checkModels(wanted, (providerId) =>
       alia.sdk.providers.models({ environmentId: envId, providerId }),
     );
@@ -1179,7 +1179,7 @@ export default function graphStudio(alia: AliaPluginApi) {
    * An agent node is replayed by LangGraph on resume. Its worker may well
    * still be working, or be finished with an answer nobody collected — then
    * the replay re-attaches to it (see `reattach`) and the node runs once
-   * (BBP-20). Only a worker that is really lost — no thread id, thread gone,
+   * (ALIAP-20). Only a worker that is really lost — no thread id, thread gone,
    * archived, deleted, errored, being stopped, or idle without an answer —
    * gets its attempt closed and the node runs again with a fresh worker.
    * Member and dialogue nodes are left alone: they resume their open row and
@@ -1533,7 +1533,7 @@ export default function graphStudio(alia: AliaPluginApi) {
     // A rerun replays the graph and asks again if it reaches the node again.
     announced.delete(runId);
     // A new generation, so member nodes on the replayed path send anew
-    // instead of finding the earlier delivery in the ledger (BBP-15).
+    // instead of finding the earlier delivery in the ledger (ALIAP-15).
     store.bumpRerunGeneration(runId);
     store.updateRun(
       runId,
@@ -2342,7 +2342,7 @@ export default function graphStudio(alia: AliaPluginApi) {
 
   // On reload or disable the old instance's promises live on. Left alone,
   // they keep walking their runs next to the successor — the double resume
-  // of BBP-16. Give every claim back now, so the successor's sweep takes the
+  // of ALIAP-16. Give every claim back now, so the successor's sweep takes the
   // runs over at once instead of after the expiry.
   alia.onDispose(() => {
     disposed = true;

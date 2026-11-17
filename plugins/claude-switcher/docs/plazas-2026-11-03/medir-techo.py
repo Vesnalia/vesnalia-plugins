@@ -1,4 +1,4 @@
-"""Gasto por plaza y semana, de las muestras de `bb claude-switcher seats --json`.
+"""Gasto por plaza y semana, de las muestras de `alia claude-switcher seats --json`.
 
 Uso: python3 medir-techo.py seats-semana.json.gz
 Muestra: [t, running, reserved, session %, weekly %, session resets, weekly resets].

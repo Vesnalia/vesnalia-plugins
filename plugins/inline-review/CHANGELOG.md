@@ -6,7 +6,7 @@ All notable changes to Inline Review are documented here.
 
 ## [1.0.1] - 2026-09-30
 
-- Support BB 0.44 and later while retaining BB 0.43.1 compatibility.
+- Support VesnALIA 0.44 and later while retaining VesnALIA 0.43.1 compatibility.
 - Develop against Plugin SDK 0.5.29 while retaining the 0.4.87 runtime API floor.
 
 ## [1.0.0] - 2026-09-17

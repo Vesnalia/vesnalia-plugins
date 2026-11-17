@@ -16,7 +16,7 @@ export class BoatOwner extends LabelledOwner {
   }
 
   idempotencyKey(what: string): string {
-    return `bbbox-${this.scope}-${what}`;
+    return `aliabox-${this.scope}-${what}`;
   }
 
   get stagingMark(): string | null {

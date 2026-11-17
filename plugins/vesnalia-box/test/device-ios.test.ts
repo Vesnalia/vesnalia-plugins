@@ -1157,9 +1157,9 @@ describe("the iOS driver, against a fake simctl and a fake idb_companion", () =>
     simulator.clipboard = "the device's own";
     simulator.clipboardLagsReads = 3;
     simulator.calls.length = 0;
-    await driver.setClipboard("bbtest ✓ 日本");
+    await driver.setClipboard("aliatest ✓ 日本");
     assert.deepEqual(simulator.calls.map((call) => call.split(" ")[0]).filter((verb) => verb!.startsWith("pb")), ["pbcopy", "pbpaste", "pbpaste", "pbpaste", "pbpaste"], "read back until the device holds it");
-    assert.equal(await driver.clipboard(), "bbtest ✓ 日本");
+    assert.equal(await driver.clipboard(), "aliatest ✓ 日本");
     simulator.clipboardLagsReads = Number.POSITIVE_INFINITY;
     await assert.rejects(driver.setClipboard("never held"), /The iPhone 18 Pro's clipboard still held other text 0\.\d s and \d+ reads after simctl set it\./);
     driver.close();

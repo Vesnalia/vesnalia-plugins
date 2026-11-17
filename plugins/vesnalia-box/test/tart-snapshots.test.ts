@@ -561,7 +561,7 @@ test("a macOS box gets the identity reset installed at its first ready, only in 
   assert.match(script, /\/Library\/LaunchDaemons\/dev\.alia-box\.identity\.plist/);
   assert.match(script, /alia-box-identity enable/);
   assert.match(script, /\[ -e \/var\/run\/alia-box-identity\/boot \] \|\| \/usr\/local\/sbin\/alia-box-identity boot/);
-  assert.throws(() => identityInstallScript("BBBOX_IDENTITY_TOOL\n"), /ends its heredoc/);
+  assert.throws(() => identityInstallScript("ALIABOX_IDENTITY_TOOL\n"), /ends its heredoc/);
   assert.match(macosIdentityTool(), /^VERSION=4$/m);
   assert.match(macosIdentityTool(), /ioreg -r -c AppleVirtIONetwork/, "only the VM's VirtIO cards, never the USB NCM placeholders en1 and anpi0");
 });
@@ -569,7 +569,7 @@ test("a macOS box gets the identity reset installed at its first ready, only in 
 function tool(root: string, macs: string, ...args: string[]) {
   const ran = spawnSync("/bin/sh", [join(import.meta.dirname, "..", "setup", "tart", "guest", "alia-box-identity-macos.sh"), ...args], {
     encoding: "utf8",
-    env: { PATH: process.env.PATH!, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_MACS: macs, BBBOX_IDENTITY_NIC_WAIT_TENTHS: "0" },
+    env: { PATH: process.env.PATH!, ALIABOX_IDENTITY_ROOT: root, ALIABOX_IDENTITY_MACS: macs, ALIABOX_IDENTITY_NIC_WAIT_TENTHS: "0" },
   });
   return { code: ran.status, out: ran.stdout, err: ran.stderr };
 }
@@ -923,7 +923,7 @@ function throughGuestTool(backend: TartBackend, testRoot: { readonly root: strin
     const found = await transports(guest, kind);
     const command = found.command;
     if (!command) return found;
-    const run = (script: string, options?: Parameters<typeof command.run>[1]) => command.run(`sudo() { [ "$1" = -n ] && shift; "$@"; }\nexport BBBOX_IDENTITY_ROOT=${quote(testRoot.root)}\n${script.replaceAll(IDENTITY_TOOL, testRoot.tool)}`, options);
+    const run = (script: string, options?: Parameters<typeof command.run>[1]) => command.run(`sudo() { [ "$1" = -n ] && shift; "$@"; }\nexport ALIABOX_IDENTITY_ROOT=${quote(testRoot.root)}\n${script.replaceAll(IDENTITY_TOOL, testRoot.tool)}`, options);
     return { ...found, command: new Proxy(command, { get: (target, key) => (key === "run" ? run : typeof Reflect.get(target, key) === "function" ? Reflect.get(target, key).bind(target) : Reflect.get(target, key)) }) };
   };
 }

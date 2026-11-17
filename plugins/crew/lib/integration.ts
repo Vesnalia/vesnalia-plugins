@@ -143,7 +143,7 @@ export function createLocalGit(run: Run = runProcess): GitBackend {
   };
 }
 
-// Backend selection (BBP-14). Git runs where the worktree is: the local
+// Backend selection (ALIAP-14). Git runs where the worktree is: the local
 // backend shells out in the plugin server, which only reaches the VesnALIA server's
 // own machine. A worktree on any other host — or on a host VesnALIA does not name —
 // gets the remote backend. Until a host component exists (route: a `alia.host`
@@ -156,11 +156,11 @@ export type RemoteGitFactory = (hostId: string) => BackendChoice;
 
 export const unavailableLine = (hostId: string | null, why: string) => `integration unavailable on remote host ${hostId ?? "unknown"}: ${why}`;
 
-/** Stub until BBP-14 part 2: every remote host reports "not available". */
+/** Stub until ALIAP-14 part 2: every remote host reports "not available". */
 export const unavailableRemoteGit: RemoteGitFactory = (hostId) => ({
   ok: false,
   hostId,
-  reason: unavailableLine(hostId, "crew runs git in the VesnALIA server process and has no host component on that machine yet (BBP-14); merge, rebase and checks stay with the human"),
+  reason: unavailableLine(hostId, "crew runs git in the VesnALIA server process and has no host component on that machine yet (ALIAP-14); merge, rebase and checks stay with the human"),
 });
 
 export function selectBackend(args: { hostId: string | null; localHostId: string | null; local: GitBackend; remote: RemoteGitFactory }): BackendChoice {
@@ -487,7 +487,7 @@ export function createIntegration(deps: IntegrationDeps) {
     /**
      * Merge requests waiting on the human, with the ones whose branch is
      * already fully contained in `base` (merged outside this flow, e.g. the
-     * human merged the branch directly) closed as `merged` first (BBP-87):
+     * human merged the branch directly) closed as `merged` first (ALIAP-87):
      * they no longer belong on Needs you.
      */
     async awaitingHuman(crewId: string): Promise<MergeRequestRow[]> {

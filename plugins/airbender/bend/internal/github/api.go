@@ -725,7 +725,7 @@ func (client *realClient) HasIssues() (bool, error) {
 }
 
 // Standing is how a repository stands towards the signed-in account, for
-// telling someone else's project from one's own (bead-bb-dof).
+// telling someone else's project from one's own (bead-alia-dof).
 type Standing struct {
 	// Fork says the repository is a fork of another.
 	Fork bool `json:"fork"`

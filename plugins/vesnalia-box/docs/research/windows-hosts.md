@@ -213,7 +213,7 @@ model); WSL's first-run warning about nested virtualisation is harmless.
 1. Turn on OpenSSH Server, Hyper-V and the Virtual Machine Platform, with
    PowerShell as SSH's shell. From VesnALIA's server, log in with a key.
 2. WSL: install WSL without a distribution, then import an Ubuntu root file
-   system as `bbdocker`, with systemd, Docker Engine and sshd on 2222. Set
+   system as `aliadocker`, with systemd, Docker Engine and sshd on 2222. Set
    mirrored networking, both idle timeouts to -1, and the firewall rule.
    Time the import.
 3. From VesnALIA's server, `DOCKER_HOST=ssh://user@<vm>:2222 docker info`. Then
@@ -221,7 +221,7 @@ model); WSL's first-run warning about nested virtualisation is harmless.
    boxes, and check `box_run`, `box_copy`, the terminal, the desktop,
    computer use and enrolment. Time each acquire.
 4. Restart Windows with nobody logged in. Check that the scheduled task
-   brings `bbdocker` back, and that the sweep finds the boxes.
+   brings `aliadocker` back, and that the sweep finds the boxes.
 5. Hyper-V: make a Linux guest from a differencing disk on the Default
    Switch. Time it until SSH answers through the host, and time `Save-VM`
    then `Start-VM`. Read its address with `Get-VMNetworkAdapter`.

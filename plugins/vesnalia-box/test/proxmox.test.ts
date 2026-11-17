@@ -24,16 +24,16 @@ function setup(options: Partial<ProxmoxOptions> = {}) {
 
 test("a linked clone joins the pool without a storage parameter and waits for its task", async () => {
   const { api, proxmox, sleeps } = setup();
-  await proxmox.cloneLinked({ template: 9000, vmid: 7001, hostname: "quiet-heron", pool: "bbbox" });
+  await proxmox.cloneLinked({ template: 9000, vmid: 7001, hostname: "quiet-heron", pool: "aliabox" });
   const clone = api.calls.find((call) => call.path.endsWith("/clone"))!;
   assert.equal(clone.method, "POST");
   assert.equal(clone.path, "/nodes/pve/lxc/9000/clone");
-  assert.deepEqual(clone.params, { newid: "7001", hostname: "quiet-heron", full: "0", pool: "bbbox" });
+  assert.deepEqual(clone.params, { newid: "7001", hostname: "quiet-heron", full: "0", pool: "aliabox" });
   assert.equal(clone.auth, `PVEAPIToken=${FAKE_TOKEN.tokenId}=${FAKE_TOKEN.tokenSecret}`);
   assert.ok(api.calls.some((call) => call.path.includes("/tasks/")));
   assert.deepEqual(sleeps, [50], "tasks are polled every 50 ms");
   const guest = api.guests.get(7001)!;
-  assert.equal(guest.pool, "bbbox");
+  assert.equal(guest.pool, "aliabox");
   assert.equal(guest.config.features, "nesting=1", "features come from the template");
 });
 
@@ -48,7 +48,7 @@ test("a used VMID reports already exists", async () => {
 
 test("configure sets cores, memory, a static address and tags after the clone is in the pool", async () => {
   const { api, proxmox } = setup();
-  await proxmox.cloneLinked({ template: 9000, vmid: 7003, hostname: "calm-otter", pool: "bbbox" });
+  await proxmox.cloneLinked({ template: 9000, vmid: 7003, hostname: "calm-otter", pool: "aliabox" });
   await proxmox.configure(7003, {
     cores: 4,
     memory: 8192,
@@ -80,7 +80,7 @@ test("the root disk only grows", async () => {
 
 test("start, status, stop and destroy with purge; a missing CT counts as deleted", async () => {
   const { api, proxmox } = setup();
-  await proxmox.cloneLinked({ template: 9000, vmid: 7005, hostname: "kind-lark", pool: "bbbox" });
+  await proxmox.cloneLinked({ template: 9000, vmid: 7005, hostname: "kind-lark", pool: "aliabox" });
   await proxmox.start(7005);
   assert.equal((await proxmox.status(7005))?.status, "running");
   await proxmox.destroy(7005);
@@ -186,10 +186,10 @@ test("every change to a VM tries again while another task holds its lock, as qme
 
 test("listPool returns only the pool's guests with their tags", async () => {
   const { proxmox } = setup();
-  await proxmox.cloneLinked({ template: 9000, vmid: 7007, hostname: "wise-moss", pool: "bbbox" });
+  await proxmox.cloneLinked({ template: 9000, vmid: 7007, hostname: "wise-moss", pool: "aliabox" });
   await proxmox.configure(7007, { tags: ["alia-box", "thread.thr_1", "box.bx1"] });
   await proxmox.cloneLinked({ template: 9000, vmid: 7008, hostname: "other-pool" });
-  const guests = await proxmox.listPool("bbbox");
+  const guests = await proxmox.listPool("aliabox");
   assert.deepEqual(
     guests.map((guest) => [guest.vmid, guest.name, guest.tags]),
     [[7007, "wise-moss", ["alia-box", "thread.thr_1", "box.bx1"]]],
@@ -198,19 +198,19 @@ test("listPool returns only the pool's guests with their tags", async () => {
 
 test("listPool reads a guest's name, status and size from its node, as the cluster's list lags, and from that list when the node does not answer", async () => {
   const { api, proxmox } = setup();
-  await proxmox.cloneLinked({ template: 9000, vmid: 7007, hostname: "wise-moss", pool: "bbbox" });
+  await proxmox.cloneLinked({ template: 9000, vmid: 7007, hostname: "wise-moss", pool: "aliabox" });
   await proxmox.start(7007);
   const shown = (guest: { name: string; status: string; size: unknown } | undefined) => [guest?.name, guest?.status, guest?.size];
-  const [fresh] = await proxmox.listPool("bbbox");
+  const [fresh] = await proxmox.listPool("aliabox");
   assert.deepEqual(shown(fresh), ["wise-moss", "running", { cores: 2, memoryMiB: 4096, diskGiB: 7.8 }]);
 
   api.intercept = (call) =>
     call.path === `/nodes/${api.node}/lxc`
       ? { ok: false, status: 595, statusText: "No route to host", text: async () => JSON.stringify({ data: null }) }
       : undefined;
-  assert.deepEqual(shown((await proxmox.listPool("bbbox"))[0]), ["", "unknown", null], "as Proxmox lists a guest its status daemon has not read");
+  assert.deepEqual(shown((await proxmox.listPool("aliabox"))[0]), ["", "unknown", null], "as Proxmox lists a guest its status daemon has not read");
   api.statusPass();
-  assert.deepEqual(shown((await proxmox.listPool("bbbox"))[0]), shown(fresh));
+  assert.deepEqual(shown((await proxmox.listPool("aliabox"))[0]), shown(fresh));
 
   // A node that does not answer because the call was stopped stops the listing too.
   const stop = new AbortController();
@@ -219,7 +219,7 @@ test("listPool reads a guest's name, status and size from its node, as the clust
     stop.abort();
     return { ok: false, status: 595, statusText: "No route to host", text: async () => JSON.stringify({ data: null }) };
   };
-  await assert.rejects(proxmox.listPool("bbbox", stop.signal));
+  await assert.rejects(proxmox.listPool("aliabox", stop.signal));
 });
 
 test("a VM client clones, names, configures, runs and deletes VMs, and leaves containers alone", async () => {
@@ -227,10 +227,10 @@ test("a VM client clones, names, configures, runs and deletes VMs, and leaves co
   api.addTemplate(9000);
   api.addVmTemplate(9001);
   const proxmox = new Proxmox({ apiUrl: "https://pve.example.com:8006", ...FAKE_TOKEN, node: api.node, type: "qemu", fetch: api.fetch, sleep: async () => {} });
-  await proxmox.cloneLinked({ template: 9001, vmid: 7101, hostname: "calm-heron", pool: "bbbox", description: "alia-box calm-heron" });
+  await proxmox.cloneLinked({ template: 9001, vmid: 7101, hostname: "calm-heron", pool: "aliabox", description: "alia-box calm-heron" });
   const clone = api.calls.find((call) => call.path.endsWith("/clone"))!;
   assert.equal(clone.path, "/nodes/pve/qemu/9001/clone");
-  assert.deepEqual(clone.params, { newid: "7101", name: "calm-heron", full: "0", pool: "bbbox", description: "alia-box calm-heron" });
+  assert.deepEqual(clone.params, { newid: "7101", name: "calm-heron", full: "0", pool: "aliabox", description: "alia-box calm-heron" });
   await proxmox.configure(7101, { name: "bold-heron", cores: 8, memory: 16384, smbios1: "serial=MTkyLjAuMi41LzI0IDE5Mi4wLjIuMQ==,base64=1", delete: ["protection"] });
   const put = api.calls.find((call) => call.method === "PUT")!;
   assert.equal(put.path, "/nodes/pve/qemu/7101/config");
@@ -238,7 +238,7 @@ test("a VM client clones, names, configures, runs and deletes VMs, and leaves co
   assert.equal((await proxmox.config(7101)).name, "bold-heron");
   await proxmox.start(7101);
   assert.equal((await proxmox.status(7101))?.status, "running");
-  const [guest] = await proxmox.listPool("bbbox");
+  const [guest] = await proxmox.listPool("aliabox");
   assert.deepEqual([guest?.vmid, guest?.type, guest?.name], [7101, "qemu", "bold-heron"]);
   await proxmox.destroy(7101);
   assert.equal(api.guests.has(7101), false);

@@ -1,23 +1,23 @@
 #!/bin/bash
-# bb-box: points Xorg in a Docker GPU desktop at the GPU bb-box placed in it
+# alia-box: points Xorg in a Docker GPU desktop at the GPU alia-box placed in it
 # (#283). A GPU desktop with Docker is a privileged container, which sees
 # every GPU on the host, and Xorg would take the first. Run as root by
-# bb-box-start (start) at each start.
+# alia-box-start (start) at each start.
 #
 # usage: gpu-bus-id GPU [CONF]
 #
 # GPU is the placed GPU as nvidia-smi --id takes it: the part of its CDI name
 # after "=", a UUID or an index. Writes the GPU's BusID into CONF
-# (/etc/X11/bb-box-xorg.conf), in place of any BusID there, and prints the
+# (/etc/X11/alia-box-xorg.conf), in place of any BusID there, and prints the
 # GPU's PCI bus ID as nvidia-smi gives it, for the display to read that GPU's
 # free memory. When nvidia-smi cannot find the GPU, says why and exits 1,
 # leaving CONF as it was.
 #
-# Installed as /usr/local/libexec/bb-box/gpu-bus-id by
+# Installed as /usr/local/libexec/alia-box/gpu-bus-id by
 # setup/docker/Dockerfile.
 set -u
 gpu=${1:?usage: gpu-bus-id GPU [CONF]}
-conf=${2:-/etc/X11/bb-box-xorg.conf}
+conf=${2:-/etc/X11/alia-box-xorg.conf}
 fail() {
   echo "gpu-bus-id: $*" >&2
   exit 1

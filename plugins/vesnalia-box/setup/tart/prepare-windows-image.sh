@@ -371,7 +371,7 @@ pin() { printf '"%s": {"version": "%s", "sha256": "%s", "url": "%s"}' "$1" "$2" 
   printf ',\n  "record": "%s"' "$(json "$record")"
   printf '\n}\n'
 } >"$a/alia-box/build.json"
-hdiutil makehybrid -quiet -iso -joliet -default-volume-name BBBOXANSWER -o "$w/answer.iso" "$a"
+hdiutil makehybrid -quiet -iso -joliet -default-volume-name ALIABOXANSWER -o "$w/answer.iso" "$a"
 rm -rf "$a"
 
 # QEMU as the backend starts a box (src/backends/tart/qemu.ts), on the disk

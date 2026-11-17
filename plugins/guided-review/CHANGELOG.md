@@ -9,7 +9,7 @@
 
 ## 0.2.0 — 2026-09-09
 
-- Added setup readiness, installed-version reporting, manual update checks, release links, and optional automatic updates through BB. Automatic updates default off and wait until all review pages close and review work is idle. Saved data stays in BB.
+- Added setup readiness, installed-version reporting, manual update checks, release links, and optional automatic updates through VesnALIA. Automatic updates default off and wait until all review pages close and review work is idle. Saved data stays in VesnALIA.
 - Added configurable guide depth, guide and assistant instructions, default diff layout, and separate private reviewer notes with conflict recovery.
 - Refined the responsive workspace, collapsible tool rail, fullscreen menus, and detachable assistant.
 - Kept submitted verdicts visible and archived merged or closed PRs without deleting their guides, drafts, notes, or conversations.
@@ -19,7 +19,7 @@
 
 ## 0.1.0 — 2026-09-08
 
-First packaged team preview. Requires BB 0.41.0 and plugin SDK 0.4.34.
+First packaged team preview. Requires VesnALIA 0.41.0 and plugin SDK 0.4.34.
 
 - Added first-run guidance, clear account scope, recoverable loading errors, and full-width responsive review layouts.
 - Saved notes on blur and before submission, exposed save failures, prevented repeated submission, and preserved edits made while submission is in progress.

@@ -1,6 +1,6 @@
 #!/bin/bash
-state=$BBBOX_ROOT/run/fake-systemd
-units=$BBBOX_ROOT/etc/systemd/system
+state=$ALIABOX_ROOT/run/fake-systemd
+units=$ALIABOX_ROOT/etc/systemd/system
 mkdir -p "$state"
 echo "$*" >>"$state/calls"
 caller=$PPID
@@ -29,7 +29,7 @@ alive() {
   pid=$(pid_of "$1")
   [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
 }
-command_of() { sed -n 's/^ExecStart=//p' "$units/$1" | head -1 | sed "s#/usr/local/sbin/#$BBBOX_ROOT/usr/local/sbin/#"; }
+command_of() { sed -n 's/^ExecStart=//p' "$units/$1" | head -1 | sed "s#/usr/local/sbin/#$ALIABOX_ROOT/usr/local/sbin/#"; }
 
 stop_unit() {
   local unit=$1 pid

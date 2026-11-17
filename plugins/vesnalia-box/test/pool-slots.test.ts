@@ -46,7 +46,7 @@ describe("the SSH host pool's Mac lends iOS slots (064 unit 5)", { timeout: 300_
     assert.equal(await backend.power(guest, wait()), "running");
     assert.equal(pool.mac.status().slots.find((slot) => slot.box === box.boxId)?.is, "held");
     const transports = await backend.transports(guest, "ios");
-    assert.equal(transports.access?.ssh?.user, "bbd-1");
+    assert.equal(transports.access?.ssh?.user, "aliad-1");
     assert.equal(transports.displays.length, 0);
     assert.deepEqual(transports.daemonKeptByHost?.installerEnvironment, { ALIA_INSTALL_SKIP_SERVICE: "1" });
     assert.equal(transports.daemonKeptByHost?.daemonPort, 38900, "each slot's VesnALIA daemon has its own port, from its place on the Mac");

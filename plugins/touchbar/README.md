@@ -127,10 +127,10 @@ chmod +x native/*.sh
 
 The installer:
 
-1. builds `BBTouchBar.app` from the committed Swift source;
+1. builds `AliaTouchBar.app` from the committed Swift source;
 2. emits Intel and Apple-silicon slices when the local toolchain supports them;
 3. links the private Touch Bar framework and ad-hoc signs the real app bundle;
-4. installs it at `~/Applications/BBTouchBar.app`;
+4. installs it at `~/Applications/AliaTouchBar.app`;
 5. pins the current `alia` executable path in owner-only configuration;
 6. installs a user LaunchAgent for login startup;
 7. launches the app and waits for its readiness file.
@@ -236,7 +236,7 @@ On a Touch Bar Mac:
 
 ```sh
 ./plugins/touchbar/native/build.sh
-ALIA_TOUCHBAR_APP="$PWD/plugins/touchbar/native/build/BBTouchBar.app" \
+ALIA_TOUCHBAR_APP="$PWD/plugins/touchbar/native/build/AliaTouchBar.app" \
   ./plugins/touchbar/native/run.sh start
 ```
 
@@ -261,7 +261,7 @@ ALIA_TOUCHBAR_NOTARY_PROFILE="alia-touchbar" \
 `package.sh` prints the archive path and SHA-256. Put that exact SHA in
 [`Casks/alia-touch-bar.rb`](../../Casks/alia-touch-bar.rb), commit it, create the
 matching `touchbar/v0.1.2` tag, and attach the unchanged ZIP as
-`BBTouchBar-0.1.2-universal.zip`. Publishing the tag/release remains a separate
+`AliaTouchBar-0.1.2-universal.zip`. Publishing the tag/release remains a separate
 remote action.
 
 ## License

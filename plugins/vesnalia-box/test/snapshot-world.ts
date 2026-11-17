@@ -230,7 +230,7 @@ export function identityGuest(options: { readonly booted?: boolean; readonly on?
   mkdirSync(join(dir, "bin"));
   writeFileSync(join(dir, "bin/ip"), `#!/bin/sh\nexec cat ${quote(join(root, "ip-link.json"))}\n`, { mode: 0o755 });
   const tool = join(dir, "alia-box-identity");
-  writeFileSync(tool, `#!/bin/sh\nPATH=${quote(join(dir, "bin"))}:$PATH BBBOX_IDENTITY_ROOT=${quote(root)} BBBOX_IDENTITY_NIC_WAIT_SECONDS=0 exec bash ${quote(IDENTITY_SCRIPT)} "$@"\n`, { mode: 0o755 });
+  writeFileSync(tool, `#!/bin/sh\nPATH=${quote(join(dir, "bin"))}:$PATH ALIABOX_IDENTITY_ROOT=${quote(root)} ALIABOX_IDENTITY_NIC_WAIT_SECONDS=0 exec bash ${quote(IDENTITY_SCRIPT)} "$@"\n`, { mode: 0o755 });
   if (options.on !== false) assert.equal(spawnSync(tool, ["enable", "--no-unit"]).status, 0, "the image's build turned the reset on");
   if (options.booted !== false) assert.equal(spawnSync(tool, ["boot"]).status, 0, "the boot check ran, as its unit runs it at the box's first boot");
   return { root, tool };

@@ -3,10 +3,10 @@ set -euo pipefail
 usage() {
   cat >&2 <<'TEXT'
 The root steps of 070 unit 7's live check, on the Proxmox node. Each acts
-only on the VMIDs in BBBOX_VMIDS, and only on guests that carry the tag
-install.<BBBOX_INSTALL>, as alia-box's boxes and forks do.
+only on the VMIDs in ALIABOX_VMIDS, and only on guests that carry the tag
+install.<ALIABOX_INSTALL>, as alia-box's boxes and forks do.
 
-  live: BBBOX_VMIDS="3170 3171" BBBOX_INSTALL=<id> proxmox-root.sh <command> [vmid]
+  live: ALIABOX_VMIDS="3170 3171" ALIABOX_INSTALL=<id> proxmox-root.sh <command> [vmid]
   (card-late and sample take one VMID or several, quoted, and act on one)
 
   config <vmid>
@@ -36,7 +36,7 @@ install.<BBBOX_INSTALL>, as alia-box's boxes and forks do.
       and says whether any sample before the arm had onboot 1 and no lock,
       and how long the clone was unlocked before alia-box disarmed it
   leftovers
-      read only: lists every guest in BBBOX_VMIDS that carries the install's
+      read only: lists every guest in ALIABOX_VMIDS that carries the install's
       tag, with its status and tags, for the clean-up
   destroy <vmid>
       stops and destroys a guest of the install that alia-box no longer
@@ -44,11 +44,11 @@ install.<BBBOX_INSTALL>, as alia-box's boxes and forks do.
 TEXT
   exit 2
 }
-[ $# -ge 1 ] && [ -n "${BBBOX_VMIDS:-}" ] && [ -n "${BBBOX_INSTALL:-}" ] || usage
+[ $# -ge 1 ] && [ -n "${ALIABOX_VMIDS:-}" ] && [ -n "${ALIABOX_INSTALL:-}" ] || usage
 command=$1
 node=$(hostname)
 
-listed() { [[ " $BBBOX_VMIDS " == *" $1 "* ]] || { echo "VMID $1 is not in BBBOX_VMIDS: $BBBOX_VMIDS" >&2; exit 2; }; }
+listed() { [[ " $ALIABOX_VMIDS " == *" $1 "* ]] || { echo "VMID $1 is not in ALIABOX_VMIDS: $ALIABOX_VMIDS" >&2; exit 2; }; }
 kind_of() {
   if [ -e "/etc/pve/nodes/$node/qemu-server/$1.conf" ]; then echo qm
   elif [ -e "/etc/pve/nodes/$node/lxc/$1.conf" ]; then echo pct
@@ -57,7 +57,7 @@ kind_of() {
 ours() {
   local tool=$1 vmid=$2 tags
   tags=$($tool config "$vmid" | sed -n 's/^tags: //p')
-  [[ ";$tags;" == *";install.$BBBOX_INSTALL;"* ]]
+  [[ ";$tags;" == *";install.$ALIABOX_INSTALL;"* ]]
 }
 held() {
   local config
@@ -98,7 +98,7 @@ must_be_ours() {
   local tool
   tool=$(kind_of "$1")
   [ "$tool" != none ] || { echo "no guest $1 on $node" >&2; exit 2; }
-  ours "$tool" "$1" || { echo "guest $1 does not carry the tag install.$BBBOX_INSTALL" >&2; exit 2; }
+  ours "$tool" "$1" || { echo "guest $1 does not carry the tag install.$ALIABOX_INSTALL" >&2; exit 2; }
   echo "$tool"
 }
 
@@ -193,7 +193,7 @@ case $command in
     fi
     ;;
   leftovers)
-    for vmid in $BBBOX_VMIDS; do
+    for vmid in $ALIABOX_VMIDS; do
       tool=$(kind_of "$vmid")
       [ "$tool" != none ] || continue
       ours "$tool" "$vmid" || continue

@@ -18,7 +18,7 @@ import { FileStorage } from "./conformance/file-storage.ts";
 import { interruptStep, type StepSeen } from "./conformance/interrupt.ts";
 import { COMMAND, THREAD, readyBox, standing, untilHeld, world, type World } from "./snapshot-world.ts";
 
-const RESTORED = /^bbbox-bx[0-9a-z]+-[0-9a-f]{8}$/;
+const RESTORED = /^aliabox-bx[0-9a-z]+-[0-9a-f]{8}$/;
 const MAKES_FAKE_DOCKER_BACKEND = fileURLToPath(new URL("./fake-docker-elsewhere.ts", import.meta.url));
 const ENGINE_HOLDS_THE_COPY_CREATE = "copy-landing.json";
 const COPY_MAY_LAND = "copy-may-land";
@@ -70,7 +70,7 @@ async function restoredVolumeOnce(fake: FakeDockerHost): Promise<string> {
 
 function boxLabels(fake: FakeDockerHost, container: string): Record<string, string> {
   const labels = fake.inspect(container).Config.Labels;
-  return Object.fromEntries(["bbbox.backend", "bbbox.install", "bbbox.box", "bbbox.thread", "bbbox.name", "bbbox.kind", "bbbox.created"].map((key) => [key, labels[key] ?? ""]));
+  return Object.fromEntries(["aliabox.backend", "aliabox.install", "aliabox.box", "aliabox.thread", "aliabox.name", "aliabox.kind", "aliabox.created"].map((key) => [key, labels[key] ?? ""]));
 }
 
 test("Docker restores a snapshot as a new container that keeps the box's ID, name and labels, and its undo goes forward again", async () => {
@@ -87,8 +87,8 @@ test("Docker restores a snapshot as a new container that keeps the box's ID, nam
   assert.equal(restored.name, box.name);
   assert.match(fresh, RESTORED);
   assert.deepEqual(boxLabels(fake, fresh), labelsBefore);
-  assert.equal(fake.inspect(fresh).Config.Labels["bbbox.from-snapshot"], target.id);
-  assert.ok(fake.inspect(fresh).Config.Env.includes(`BBBOX_IDENTITY=${box.id}`));
+  assert.equal(fake.inspect(fresh).Config.Labels["aliabox.from-snapshot"], target.id);
+  assert.ok(fake.inspect(fresh).Config.Env.includes(`ALIABOX_IDENTITY=${box.id}`));
   assert.equal(fake.inspect(fresh).State.Status, "running");
   assert.deepEqual(readBoth(fake, restored), ["A", "A"]);
   assert.deepEqual(fake.containers(), [fresh], "the old container is gone once the new one runs");
@@ -104,7 +104,7 @@ test("Docker restores a snapshot as a new container that keeps the box's ID, nam
   for (const id of [target.id, answer.undo!.id, undone.undo!.id]) await state.snapshots.delete(COMMAND, standing(forward), id);
   await state.boxes.release(THREAD, box.id, "done with it", BY_COMMAND);
   assert.deepEqual(fake.containers(), []);
-  assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /bbbox-/);
+  assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /aliabox-/);
 });
 
 test("Docker kills the box, takes its undo, copies the snapshot's Docker data, makes the new container, starts it, then removes the old one", async () => {
@@ -366,7 +366,7 @@ test("Docker puts the old container back when the new one does not start, and re
   assert.deepEqual(fake.containers(), [old]);
   assert.equal(fake.inspect(old).State.Status, "running");
   assert.deepEqual(readBoth(fake, back), ["B", "B"]);
-  assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /bbbox-bx[0-9a-z]+-[0-9a-f]{8}-docker/);
+  assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /aliabox-bx[0-9a-z]+-[0-9a-f]{8}-docker/);
   assert.equal(state.store.record(target.id)!.livesOn.ref, old);
 });
 
@@ -381,7 +381,7 @@ test("Docker removes a part-made restored container's volume when copying its Do
   assert.equal(back.guest!.ref, old);
   assert.equal(back.state, "ready");
   assert.deepEqual(fake.containers(), [old]);
-  assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /bbbox-bx[0-9a-z]+-[0-9a-f]{8}-docker/);
+  assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /aliabox-bx[0-9a-z]+-[0-9a-f]{8}-docker/);
 });
 
 test("Docker finishes a restore that VesnALIA Box stopped after the undo was taken, leaving one working box", async () => {
@@ -474,13 +474,13 @@ test("Docker blanks in a snapshot image every label VesnALIA Box gives a box's c
   const settings: BoxContainerSettings = {
     box: { boxId: "bx1", threadId: "thr_1", name: "amber-fox", kind: "linux", createdAt: 1, size: { cores: 2, memoryMiB: 4096, diskGiB: null, gpu: "shared" } } as never,
     installId: "test",
-    name: "bbbox-bx1",
-    image: "bbbox/linux:1",
-    dockerVolume: "bbbox-bx1-docker",
+    name: "aliabox-bx1",
+    image: "aliabox/linux:1",
+    dockerVolume: "aliabox-bx1-docker",
     placement: { gpu: "nvidia.com/gpu=0", card: "GPU-1", part: "shared", cpus: null },
     lxcfs: null,
     privileged: true,
-    network: "bbbox",
+    network: "aliabox",
     firstStart: "runs-its-services",
     fromSnapshot: "sn1",
   };

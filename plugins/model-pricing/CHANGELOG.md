@@ -9,11 +9,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Built and tested against bb 0.45. Nothing you can see changes, and it still runs on bb 0.44.
+- Built and tested against VesnALIA 0.45. Nothing you can see changes, and it still runs on VesnALIA 0.44.
 
 ## 0.1.0
 
-The first release: Model Pricing for bb, ported from the Paseo plugin of the same name (0.3.0).
+The first release: Model Pricing for VesnALIA, ported from the Paseo plugin of the same name (0.3.0).
 
 ### Added
 

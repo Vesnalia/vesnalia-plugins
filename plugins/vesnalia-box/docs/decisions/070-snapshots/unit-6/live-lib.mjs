@@ -17,7 +17,7 @@ export function line(text) {
 }
 
 export function alia(args) {
-  return execFileSync(join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  return execFileSync(join(home, "aliac"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
 export function inBox(box, command) {

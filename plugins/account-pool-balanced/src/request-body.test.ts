@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseCodexRequestBody, parseRequestBody } from "./request-body.js";
 
 const accountUuid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-const nextAccountUuid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const nextAccountUuid = "aliabbbbbb-aliabb-4bbb-8bbb-aliabbbbbbbbbb";
 const sessionId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const encode = (value: object) =>
   new TextEncoder().encode(JSON.stringify(value));

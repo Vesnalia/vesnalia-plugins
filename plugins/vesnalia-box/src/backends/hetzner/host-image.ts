@@ -13,10 +13,10 @@ import { timedSpawn } from "../../transports/spawns.ts";
 import { PRODUCT } from "../../brand.ts";
 
 export const HOST_IMAGE_ROLE = "host-image";
-export const BUILD_LABEL = "bbbox-build";
-export const SETUP_LABEL = "bbbox-setup";
-export const APP_LABEL = "bbbox-app";
-export const ARCH_LABEL = "bbbox-arch";
+export const BUILD_LABEL = "aliabox-build";
+export const SETUP_LABEL = "aliabox-setup";
+export const APP_LABEL = "aliabox-app";
+export const ARCH_LABEL = "aliabox-arch";
 
 export type Architecture = "x86" | "arm";
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Install the BB session backend into a firstmate home.
+"""Install the ALIA session backend into a firstmate home.
 
-Copies backends/bb.sh + docs, then applies firstmate-bb-backend.patch unless
-fm-backend.sh already lists bb. Does not rewrite the rest of bin/.
+Copies backends/alia.sh + docs, then applies firstmate-alia-backend.patch unless
+fm-backend.sh already lists alia. Does not rewrite the rest of bin/.
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def already_patched(home: Path) -> bool:
         if line.startswith("FM_BACKEND_KNOWN="):
             known = line
             break
-    return " bb" in known or known.endswith('bb"')
+    return " alia" in known or known.endswith('alia"')
 
 
 def write_config(home: Path, project_id: str | None) -> None:
@@ -34,11 +34,11 @@ def write_config(home: Path, project_id: str | None) -> None:
     backend = cfg / "backend"
     current = backend.read_text().strip() if backend.exists() else ""
     if current in ("", "tmux"):
-        backend.write_text("bb\n")
+        backend.write_text("alia\n")
         print(f"wrote {backend}")
     if project_id:
-        (cfg / "bb-project").write_text(project_id + "\n")
-        print(f"wrote {cfg / 'bb-project'}")
+        (cfg / "alia-project").write_text(project_id + "\n")
+        print(f"wrote {cfg / 'alia-project'}")
 
 
 def main() -> None:
@@ -51,23 +51,23 @@ def main() -> None:
     if not (home / "bin" / "fm-backend.sh").is_file():
         die(f"{home} is not a firstmate root")
     overlay = Path(args.overlay).resolve() if args.overlay else Path(__file__).resolve().parent
-    src = overlay / "bin" / "backends" / "bb.sh"
+    src = overlay / "bin" / "backends" / "alia.sh"
     if not src.is_file():
         die(f"missing adapter {src}")
     dest_dir = home / "bin" / "backends"
     dest_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dest_dir / "bb.sh")
-    os.chmod(dest_dir / "bb.sh", 0o755)
-    print(f"copied {dest_dir / 'bb.sh'}")
-    docs_src = overlay / "docs" / "bb-backend.md"
+    shutil.copy2(src, dest_dir / "alia.sh")
+    os.chmod(dest_dir / "alia.sh", 0o755)
+    print(f"copied {dest_dir / 'alia.sh'}")
+    docs_src = overlay / "docs" / "alia-backend.md"
     if docs_src.is_file():
         (home / "docs").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(docs_src, home / "docs" / "bb-backend.md")
-        print(f"copied {home / 'docs' / 'bb-backend.md'}")
+        shutil.copy2(docs_src, home / "docs" / "alia-backend.md")
+        print(f"copied {home / 'docs' / 'alia-backend.md'}")
     if already_patched(home):
-        print("fm-backend.sh already lists bb; skip patch")
+        print("fm-backend.sh already lists alia; skip patch")
     else:
-        patch = overlay / "firstmate-bb-backend.patch"
+        patch = overlay / "firstmate-alia-backend.patch"
         if not patch.is_file():
             die(f"missing {patch}")
         result = subprocess.run(
@@ -79,13 +79,13 @@ def main() -> None:
         sys.stdout.write(result.stdout)
         sys.stderr.write(result.stderr)
         if result.returncode != 0:
-            die("could not patch this firstmate checkout for backend=bb")
+            die("could not patch this firstmate checkout for backend=alia")
     teardown = home / "bin" / "fm-teardown.sh"
     teardown_text = teardown.read_text() if teardown.is_file() else ""
-    if '[ "$BACKEND" = bb ]' in teardown_text:
-        print("fm-teardown.sh already handles bb; skip teardown patch")
+    if '[ "$BACKEND" = alia ]' in teardown_text:
+        print("fm-teardown.sh already handles alia; skip teardown patch")
     else:
-        patch = overlay / "firstmate-bb-teardown.patch"
+        patch = overlay / "firstmate-alia-teardown.patch"
         if not patch.is_file():
             die(f"missing {patch}")
         result = subprocess.run(
@@ -97,9 +97,9 @@ def main() -> None:
         sys.stdout.write(result.stdout)
         sys.stderr.write(result.stderr)
         if result.returncode != 0:
-            die("could not patch fm-teardown.sh for backend=bb")
+            die("could not patch fm-teardown.sh for backend=alia")
     write_config(home, args.project_id or None)
-    print("BB backend ready. FM_BACKEND=bb via config/backend.")
+    print("ALIA backend ready. FM_BACKEND=alia via config/backend.")
 
 
 if __name__ == "__main__":

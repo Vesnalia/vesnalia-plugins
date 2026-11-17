@@ -117,7 +117,7 @@ describe("destination labels", () => {
       devices: {
         "com.apple.CoreSimulator.SimRuntime.iOS-26-5": [
           { udid: "AAA", name: "iPhone 16", state: "Booted" },
-          { udid: "BBB", name: "iPad Pro", state: "Shutdown" },
+          { udid: "ALIAB", name: "iPad Pro", state: "Shutdown" },
         ],
       },
     });

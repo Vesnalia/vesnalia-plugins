@@ -8,10 +8,10 @@ async function rpc(method, input = null) {
 }
 
 const ADDED = [
-  ["b", "Docker on build-1", "bbbox/linux:1"],
-  ["c", "Docker on build-2", "bbbox/linux:1"],
-  ["d", "Docker on build-3", "bbbox/linux:1"],
-  ["e", "Docker on build-4", "bbbox/linux:1"],
+  ["b", "Docker on build-1", "aliabox/linux:1"],
+  ["c", "Docker on build-2", "aliabox/linux:1"],
+  ["d", "Docker on build-3", "aliabox/linux:1"],
+  ["e", "Docker on build-4", "aliabox/linux:1"],
   ["f", "Docker on test-1", "alia-live/due:1"],
   ["g", "Docker on test-2", "alia-live/fails:1"],
 ];

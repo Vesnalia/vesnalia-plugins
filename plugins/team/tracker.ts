@@ -97,7 +97,7 @@ export interface TaskTracker {
     checkpoint: unknown,
   ): Promise<void>;
   /**
-   * bbt-iwi.2: merge the executor's review submission and/or an acceptance
+   * aliat-iwi.2: merge the executor's review submission and/or an acceptance
    * decision into the task in the selected tracker (Beads metadata keys
    * aliaTeamSubmission/aliaTeamAcceptance via --metadata merge; the task row on
    * built-in). Append-only; never a duplicate kv record.
@@ -145,7 +145,7 @@ const TEAM_LABEL_PREFIX = "alia-team:";
 const REVIEW_LABEL = "alia-state:review";
 const DROPPED_LABEL = "alia-state:dropped";
 const CHECKPOINT_METADATA_KEY = "aliaTeamCheckpoint";
-/** bbt-iwi.2: review submission + acceptance decisions live in Beads metadata (merge keys, other tools' keys preserved). */
+/** aliat-iwi.2: review submission + acceptance decisions live in Beads metadata (merge keys, other tools' keys preserved). */
 const SUBMISSION_METADATA_KEY = "aliaTeamSubmission";
 const ACCEPTANCE_METADATA_KEY = "aliaTeamAcceptance";
 

@@ -4,9 +4,9 @@
 Uso: analizar.py [--json]  (carpeta = la de este script)
 Entradas: hilos.jsonl.gz (extraer.py), movimientos.jsonl.gz (parsear-registro.py), tics.jsonl.gz,
 cuentas.json (organización de cada cuenta, hash corto), ahora.txt (hora de la extracción, ms).
-Sin red ni bb: el resultado se repite byte a byte.
+Sin red ni alia: el resultado se repite byte a byte.
 
-Unidad: la TANDA, cada evento de tokens de bb (un mensaje procesado, con todas sus peticiones al
+Unidad: la TANDA, cada evento de tokens de alia (un mensaje procesado, con todas sus peticiones al
 modelo). Un mismo id de turno puede traer muchas tandas (un turno abierto con subagentes de fondo
 recibe tics y avisos), así que el turno no sirve de unidad.
 La cuenta de una tanda es la del último `provider.env-resolved` que arrancó un proceso, es decir, el
@@ -47,7 +47,7 @@ def tandas_de(h):
     """Las tandas de un hilo, en orden: arranque, cuenta, sesión, modelo y contexto que llevaban.
 
     El arranque es el primer mensaje, turno o reconstrucción tras la tanda anterior. Un evento de
-    contexto no arranca nada: bb lo emite también justo después de los tokens de la tanda anterior.
+    contexto no arranca nada: alia lo emite también justo después de los tokens de la tanda anterior.
     """
     cuenta, conocida, modelo, sesion = None, False, None, None
     ctx_ultimo = None

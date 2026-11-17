@@ -120,7 +120,7 @@ test("split resizing changes adjacent widths, supports equalization and survives
 test("split ignores foreign and invalid drops and opens no duplicate native chat", async () => {
   const slot = mount({ connected: true, language: "en", threads: [thread("a", "p1", "Alpha"), thread("b", "p1", "Beta")] });
   await slot.findByTestId("alia-thread-chat");
-  for (const transfer of [splitTransfer("p2", "b"), splitTransfer("p1", "missing"), { types: ["text/plain"], getData: () => "b" }, { types: ["application/x-bbdesk-thread"], getData: () => "broken" }]) {
+  for (const transfer of [splitTransfer("p2", "b"), splitTransfer("p1", "missing"), { types: ["text/plain"], getData: () => "b" }, { types: ["application/x-aliadesk-thread"], getData: () => "broken" }]) {
     dropSplit(slot, transfer);
     assert.deepEqual(splitIds(slot), ["a"]);
   }

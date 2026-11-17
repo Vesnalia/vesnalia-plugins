@@ -11,7 +11,7 @@ import { COMMAND, readyBox, rejection, standing, world } from "./snapshot-world.
 
 const HELPER = `node ${new URL("./fake-machine.mjs", import.meta.url).pathname}`;
 const HOST_KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIDbH0n7Bm2fQzZ0lH8w5j0c0pYh7J6Hq4Xb1x2u3v4w";
-const LVM_THIN_HOOK = '{"contract":1,"scope":"machine","holds":["disk"],"whileRunning":"pauses","restore":"in-place","restarts":false,"lives":"host","keepsPastRelease":"no","price":null,"excludes":"memory","storage":{"name":"bbvg/thinpool","type":"lvmthin","percentFull":12}}';
+const LVM_THIN_HOOK = '{"contract":1,"scope":"machine","holds":["disk"],"whileRunning":"pauses","restore":"in-place","restarts":false,"lives":"host","keepsPastRelease":"no","price":null,"excludes":"memory","storage":{"name":"aliavg/thinpool","type":"lvmthin","percentFull":12}}';
 const fake = fakeSsh();
 const disposed = disposedOnceTheFileEnds();
 
@@ -62,7 +62,7 @@ describe("Pool machines report whether they can snapshot (090)", () => {
 
     assert.match(check(checks, "machine.build-1.snapshots").detail, /^Home snapshots: none: ext4 under \/home, which neither clones nor snapshots\. Machine snapshots: none: no snapshot hook is installed\. Probed just now\. ALIA Box takes no snapshots on the SSH host pool yet\.$/);
     assert.match(check(checks, "machine.build-2.snapshots").detail, /^Home snapshots: btrfs subvolumes available under \/home, 40 GiB free\. Machine snapshots: none: no snapshot hook is installed\./);
-    assert.match(check(checks, "machine.build-3.snapshots").detail, /^Home snapshots: none: its boxes have root through its whole-machine reset, .*\. Machine snapshots: hook found: machine scope, LVM thin \(bbvg\/thinpool, 12% full\)\./);
+    assert.match(check(checks, "machine.build-3.snapshots").detail, /^Home snapshots: none: its boxes have root through its whole-machine reset, .*\. Machine snapshots: hook found: machine scope, LVM thin \(aliavg\/thinpool, 12% full\)\./);
     assert.match(check(checks, "machine.mac-1.snapshots").detail, /^Home snapshots: APFS clones available under \/Users, 40 GiB free\./);
     assert.ok(["build-1", "build-2", "build-3", "mac-1"].every((name) => check(checks, `machine.${name}.snapshots`).status === "ok"));
     assert.equal(
@@ -73,13 +73,13 @@ describe("Pool machines report whether they can snapshot (090)", () => {
 
   it("names a hook that speaks another contract, or fails, as offering nothing, with its own words", async () => {
     machine("192.0.2.75", { "snapshot-hook": '{"contract":2,"scope":"machine"}' });
-    machine("192.0.2.76", { "hook-fails": "lvs: volume group bbvg not found" });
+    machine("192.0.2.76", { "hook-fails": "lvs: volume group aliavg not found" });
     const backend = pool("build-5 192.0.2.75 linux\nbuild-6 192.0.2.76 linux");
 
     const { checks } = await backend.doctor();
 
     assert.match(check(checks, "machine.build-5.snapshots").detail, /Machine snapshots: none: its snapshot hook speaks contract 2, and ALIA Box speaks 1\./);
-    assert.match(check(checks, "machine.build-6.snapshots").detail, /Machine snapshots: none: its snapshot hook's describe failed: it exited with 1: lvs: volume group bbvg not found\./);
+    assert.match(check(checks, "machine.build-6.snapshots").detail, /Machine snapshots: none: its snapshot hook's describe failed: it exited with 1: lvs: volume group aliavg not found\./);
   });
 
   it("never offers machine snapshots on a Mac that lends iOS slots, even with none in use, but does on a Mac lent whole", async () => {
@@ -90,7 +90,7 @@ describe("Pool machines report whether they can snapshot (090)", () => {
     const { checks } = await backend.doctor();
 
     assert.match(check(checks, "machine.mac-2.snapshots").detail, /Machine snapshots: none: it lends iOS slots, whose users share it, so no snapshot of the whole machine stands in for one box's\./);
-    assert.match(check(checks, "machine.mac-3.snapshots").detail, /Machine snapshots: hook found: machine scope, LVM thin \(bbvg\/thinpool, 12% full\)\./);
+    assert.match(check(checks, "machine.mac-3.snapshots").detail, /Machine snapshots: hook found: machine scope, LVM thin \(aliavg\/thinpool, 12% full\)\./);
     assert.match(check(checks, "snapshot-offers").detail, /1 of 2 machines could offer machine snapshots by a hook \(mac-3\)/);
     assert.match(backend.noSnapshotsWhy(guestOn("mac-2")) ?? "", /; for a machine snapshot, it lends iOS slots, whose users share it, so no snapshot of the whole machine stands in for one box's$/);
     assert.match(backend.noSnapshotsWhy(guestOn("mac-3")) ?? "", /reports machine snapshots: hook found: machine scope/);

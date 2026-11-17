@@ -80,11 +80,11 @@ Xtigervnc 1.13.1, XFCE, socat and xdotool, and a `box` user with sudo
 ### How it fits
 
 - **Acquire.** Create a container from the kind's image through the Engine
-  API with labels (`bbbox.backend`, `bbbox.kind`, `bbbox.generation`), the
-  name `bbbox-<box>`, `--init`, memory, CPU and process limits, the kind's
+  API with labels (`aliabox.backend`, `aliabox.kind`, `aliabox.generation`), the
+  name `aliabox-<box>`, `--init`, memory, CPU and process limits, the kind's
   network, and `--shm-size` of at least 1 GiB (Chrome crashes with Docker's
   default 64 MiB `/dev/shm`). Then start it. A warm container is created as
-  `bbbox-warm-<n>` and claimed by renaming it.
+  `aliabox-warm-<n>` and claimed by renaming it.
 - **Release.** `docker rm -f -v`. A missing container counts as released.
 - **Ready.** `docker exec <c> true` answers as the box user, then the desktop
   answers RFB. `readyTimeoutMs` 30 s.
@@ -127,7 +127,7 @@ Xtigervnc 1.13.1, XFCE, socat and xdotool, and a `box` user with sudo
 - **Computer use.** As for LXC: the Linux helper, with the accessibility bus
   and XTEST, and no permissions to grant.
 - **Images.** Built by the setup script from Dockerfiles in this repository
-  (`bbbox/linux-desktop`, `bbbox/linux`), with the version in the
+  (`aliabox/linux-desktop`, `aliabox/linux`), with the version in the
   tag. Published images can come later.
 - **Setup for a new user.** Docker Engine on Linux, or Docker Desktop; a
   setting for the Docker host (a socket or `ssh://`); run the setup script to
@@ -149,7 +149,7 @@ Machines you own, reached over SSH, lent to one box at a time and reset when
 it is released.
 
 - **Two users on each machine.**
-  - `bbbox-admin` is used by alia-box only. It has alia-box's admin key, and sudo
+  - `aliabox-admin` is used by alia-box only. It has alia-box's admin key, and sudo
     only for the scripts in `/usr/local/libexec/alia-box/`.
   - `box` is the box user the thread gets. By default it has no admin rights.
 - **Acquire (claim).** From the pool store, take a free machine that serves
@@ -429,11 +429,11 @@ desktop kind. A separate driver is not needed.
 ## Tart on the Apple Virtualization framework (virtual; later)
 
 - **Where things run.** alia-box reaches each Mac host over SSH as
-  `bbbox-admin` and runs `tart` there. VMs sit on the host's NAT
+  `aliabox-admin` and runs `tart` there. VMs sit on the host's NAT
   (192.168.64.0/24), which only the host reaches, so every route goes through
   the host.
 - **Acquire.**
-  1. `tart clone <image> bbbox-<box>`. The clone is copy on write on APFS,
+  1. `tart clone <image> aliabox-<box>`. The clone is copy on write on APFS,
      and Tart gives it a new MAC address when another local VM has the same
      one.
   2. `tart set --cpu --memory`.
@@ -468,7 +468,7 @@ desktop kind. A separate driver is not needed.
   the VM. It uses Apple's Virtualization framework, and prints
   `vnc://:<password>@127.0.0.1:<port>` with a random port and a new password
   on each run.
-  - The launchd job writes that URL to a file only `bbbox-admin` can read.
+  - The launchd job writes that URL to a file only `aliabox-admin` can read.
   - `open()` reads the file and returns the route
     `ssh -W 127.0.0.1:<port> <mac>`, with a `vnc-password`.
   - It shows the VM's screen from boot, needs nothing in the guest, and keeps
@@ -513,7 +513,7 @@ desktop kind. A separate driver is not needed.
 - **Setup for a new user.**
   1. An Apple silicon Mac on macOS 14 or later.
   2. `brew install openai/tools/tart`.
-  3. Remote Login for `bbbox-admin` with alia-box's key.
+  3. Remote Login for `aliabox-admin` with alia-box's key.
   4. `tart pull` the image, then run the Packer build.
   5. Add the Mac to settings with its host key.
 

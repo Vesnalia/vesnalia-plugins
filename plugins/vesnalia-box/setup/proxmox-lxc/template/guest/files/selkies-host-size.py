@@ -1,8 +1,8 @@
-# bb-box: patches Selkies 2.0.0 so that, capturing a host compositor
+# alia-box: patches Selkies 2.0.0 so that, capturing a host compositor
 # (--wayland-host-display), it streams Sway's output at Sway's size and never
 # resizes it (060). Unpatched, it reads the size from its own compositor's
 # screen, which starts at 1024x768, and sizes the host to match: each viewer
-# that connected set Sway to 1024x768, undoing bb-box's own sizing (021,
+# that connected set Sway to 1024x768, undoing alia-box's own sizing (021,
 # 048). pixelflux lists only its own outputs, so the size comes from Sway.
 # A lone viewer's capture, as the first on a fresh box or after every viewer
 # left, starts at Sway's size too: it started at the session's 1024x768, or
@@ -13,8 +13,8 @@
 # is applied once, so a Selkies patched by an earlier version gets the rest.
 import sys
 
-MARK = "_bb_box_host_output_size"
-VIEWER_MARK = "_bb_box_viewer_host_size"
+MARK = "_alia_box_host_output_size"
+VIEWER_MARK = "_alia_box_viewer_host_size"
 path = sys.argv[1]
 source = open(path).read()
 host = MARK not in source
@@ -45,15 +45,15 @@ if viewer:
     source = source.replace(VIEWER, """        if 'primary' in self.capture_instances:
             return True
         layout = getattr(self, 'display_layouts', {}).get('primary')
-        # bb-box: capturing a host compositor, a viewer's capture starts at
+        # alia-box: capturing a host compositor, a viewer's capture starts at
         # Sway's size, which a viewer never changes: the session's 1024x768,
         # or a layout an earlier controller left, would size Sway to it
         # (selkies-host-size.py).
-        _bb_box_viewer_host_size = None
+        _alia_box_viewer_host_size = None
         if IS_WAYLAND and (getattr(self.cli_args, 'wayland_host_display', '') or '').strip():
-            _bb_box_viewer_host_size = await asyncio.to_thread(_bb_box_host_output_size)
-        if _bb_box_viewer_host_size is not None:
-            w, h = _bb_box_viewer_host_size
+            _alia_box_viewer_host_size = await asyncio.to_thread(_alia_box_host_output_size)
+        if _alia_box_viewer_host_size is not None:
+            w, h = _alia_box_viewer_host_size
             x = y = 0
             if hasattr(self, 'display_layouts'):
                 self.display_layouts['primary'] = {'w': w, 'h': h, 'x': x, 'y': y}
@@ -65,17 +65,17 @@ if not host:
     sys.exit(0)
 
 source = source.replace(GEOMETRY, """        if IS_WAYLAND and (getattr(self.cli_args, 'wayland_host_display', '') or '').strip():
-            # bb-box: capturing a host compositor, the desktop is the host's
+            # alia-box: capturing a host compositor, the desktop is the host's
             # output, whose size Sway keeps (selkies-host-size.py).
-            size = await asyncio.to_thread(_bb_box_host_output_size)
+            size = await asyncio.to_thread(_alia_box_host_output_size)
             if size is not None:
                 return size
 """ + GEOMETRY)
 source = source.replace(FLAG, FLAG + '''
 
 
-def _bb_box_host_output_size():
-    """bb-box: the host compositor's active output's size in pixels, from Sway."""
+def _alia_box_host_output_size():
+    """alia-box: the host compositor's active output's size in pixels, from Sway."""
     import json, subprocess
     try:
         out = subprocess.run(["swaymsg", "-r", "-t", "get_outputs"], capture_output=True, timeout=5, check=True).stdout

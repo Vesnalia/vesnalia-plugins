@@ -1042,7 +1042,7 @@ describe("LogPanel", () => {
         ...(options.openThreadPanel ? { openThreadPanel: options.openThreadPanel } : {}),
         rpc: {
           overview: () => view,
-          log: () => ({ ok: true, commits: [commit(), commit({ sha: "b".repeat(40), shortSha: "bbbbbbb", subject: "Merge branch 'x'", refs: [], parents: ["c".repeat(40), "d".repeat(40)] })], skip: 0, hasMore: false }),
+          log: () => ({ ok: true, commits: [commit(), commit({ sha: "b".repeat(40), shortSha: "aliabbbbb", subject: "Merge branch 'x'", refs: [], parents: ["c".repeat(40), "d".repeat(40)] })], skip: 0, hasMore: false }),
           commitDetails: () => DETAILS,
           commitPatch: (input: { path: string }) => ({ ok: true, path: input.path, patch: "@@ -1 +1 @@\n-a\n+b\n", truncated: false, binary: false, contents: null }),
           cherryPick: () => ({ ok: true, message: "Cherry-picked aaaaaaa.", overview: view }),

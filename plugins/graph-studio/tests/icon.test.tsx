@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// BBP-17: one glyph everywhere — the sidebar's branding icon.
+// ALIAP-17: one glyph everywhere — the sidebar's branding icon.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanup, render } from "@testing-library/react";

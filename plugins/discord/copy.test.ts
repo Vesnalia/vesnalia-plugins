@@ -25,7 +25,7 @@ test("README leads from install through token setup and pairing in order", () =>
 });
 
 test("public copy uses the VesnALIA wordmark and includes the demo media", () => {
-  assert.doesNotMatch(readme, /\bBB\b/);
+  assert.doesNotMatch(readme, /\bALIA\b/);
   assert.match(readme, /## Demo/);
   for (const image of [
     "test-run-discord.png",
@@ -36,6 +36,6 @@ test("public copy uses the VesnALIA wordmark and includes the demo media", () =>
     assert.ok(existsSync(new URL(`./docs/images/${image}`, import.meta.url)));
   }
   assert.equal(packageJson.description, packageJson.alia.description);
-  assert.match(packageJson.description, /\bbb\b/);
-  assert.doesNotMatch(packageJson.description, /\bBB\b/);
+  assert.match(packageJson.description, /\aliab\b/);
+  assert.doesNotMatch(packageJson.description, /\bALIA\b/);
 });

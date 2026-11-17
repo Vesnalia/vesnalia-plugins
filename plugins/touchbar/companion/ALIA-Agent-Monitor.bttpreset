@@ -1,5 +1,5 @@
 {
-  "BTTPresetName": "BB Agent Monitor",
+  "BTTPresetName": "ALIA Agent Monitor",
   "BTTPresetUUID": "32C7C8A9-CA42-4BD6-8A97-BD17FD380614",
   "BTTPresetContent": [
     {
@@ -8,8 +8,8 @@
       "BTTAppSpecificSettings": {},
       "BTTTriggers": [
         {
-          "BTTWidgetName": "BB Summary",
-          "BTTTriggerName": "BB Touch Bar Summary",
+          "BTTWidgetName": "ALIA Summary",
+          "BTTTriggerName": "ALIA Touch Bar Summary",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescription": "Shell Script / Task Widget",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
@@ -23,7 +23,7 @@
             "BTTScriptType": 0,
             "BTTTouchBarAlwaysShowButton": 1,
             "BTTTouchBarScriptUpdateInterval": 2,
-            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" card summary 2>/dev/null || printf 'BB offline'",
+            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" card summary 2>/dev/null || printf 'ALIA offline'",
             "BTTTouchBarButtonColor": "18.000000, 25.000000, 38.000000, 255.000000",
             "BTTTouchBarFontColor": "230.000000, 237.000000, 246.000000, 255.000000",
             "BTTTouchBarButtonFontSize": 12,
@@ -34,14 +34,14 @@
           "BTTActionsToExecute": [
             {
               "BTTPredefinedActionType": 206,
-              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" open-card 0 >/dev/null 2>&1 || true",
+              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" open-card 0 >/dev/null 2>&1 || true",
               "BTTShellTaskActionConfig": "/bin/zsh:::-c:::-:::"
             }
           ]
         },
         {
-          "BTTWidgetName": "BB Thread 1",
-          "BTTTriggerName": "BB Touch Bar Thread 1",
+          "BTTWidgetName": "ALIA Thread 1",
+          "BTTTriggerName": "ALIA Touch Bar Thread 1",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescription": "Shell Script / Task Widget",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
@@ -55,7 +55,7 @@
             "BTTScriptType": 0,
             "BTTTouchBarAlwaysShowButton": 1,
             "BTTTouchBarScriptUpdateInterval": 2,
-            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" card 0 2>/dev/null || true",
+            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" card 0 2>/dev/null || true",
             "BTTTouchBarButtonColor": "20.000000, 58.000000, 91.000000, 255.000000",
             "BTTTouchBarFontColor": "236.000000, 246.000000, 255.000000, 255.000000",
             "BTTTouchBarButtonFontSize": 11,
@@ -66,14 +66,14 @@
           "BTTActionsToExecute": [
             {
               "BTTPredefinedActionType": 206,
-              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" open-card 0 >/dev/null 2>&1 || true",
+              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" open-card 0 >/dev/null 2>&1 || true",
               "BTTShellTaskActionConfig": "/bin/zsh:::-c:::-:::"
             }
           ]
         },
         {
-          "BTTWidgetName": "BB Thread 2",
-          "BTTTriggerName": "BB Touch Bar Thread 2",
+          "BTTWidgetName": "ALIA Thread 2",
+          "BTTTriggerName": "ALIA Touch Bar Thread 2",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescription": "Shell Script / Task Widget",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
@@ -87,7 +87,7 @@
             "BTTScriptType": 0,
             "BTTTouchBarAlwaysShowButton": 1,
             "BTTTouchBarScriptUpdateInterval": 2,
-            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" card 1 2>/dev/null || true",
+            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" card 1 2>/dev/null || true",
             "BTTTouchBarButtonColor": "42.000000, 35.000000, 78.000000, 255.000000",
             "BTTTouchBarFontColor": "243.000000, 239.000000, 255.000000, 255.000000",
             "BTTTouchBarButtonFontSize": 11,
@@ -98,14 +98,14 @@
           "BTTActionsToExecute": [
             {
               "BTTPredefinedActionType": 206,
-              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" open-card 1 >/dev/null 2>&1 || true",
+              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" open-card 1 >/dev/null 2>&1 || true",
               "BTTShellTaskActionConfig": "/bin/zsh:::-c:::-:::"
             }
           ]
         },
         {
-          "BTTWidgetName": "BB Thread 3",
-          "BTTTriggerName": "BB Touch Bar Thread 3",
+          "BTTWidgetName": "ALIA Thread 3",
+          "BTTTriggerName": "ALIA Touch Bar Thread 3",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescription": "Shell Script / Task Widget",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
@@ -119,7 +119,7 @@
             "BTTScriptType": 0,
             "BTTTouchBarAlwaysShowButton": 1,
             "BTTTouchBarScriptUpdateInterval": 2,
-            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" card 2 2>/dev/null || true",
+            "BTTTouchBarShellScriptString": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" card 2 2>/dev/null || true",
             "BTTTouchBarButtonColor": "67.000000, 42.000000, 32.000000, 255.000000",
             "BTTTouchBarFontColor": "255.000000, 244.000000, 236.000000, 255.000000",
             "BTTTouchBarButtonFontSize": 11,
@@ -130,7 +130,7 @@
           "BTTActionsToExecute": [
             {
               "BTTPredefinedActionType": 206,
-              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/BBTouchBar/bb-touchbar\" open-card 2 >/dev/null 2>&1 || true",
+              "BTTShellTaskActionScript": "\"$HOME/Library/Application Support/AliaTouchBar/alia-touchbar\" open-card 2 >/dev/null 2>&1 || true",
               "BTTShellTaskActionConfig": "/bin/zsh:::-c:::-:::"
             }
           ]

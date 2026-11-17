@@ -1,5 +1,5 @@
-#ifndef BB_BOX_H264_ENCODER_H
-#define BB_BOX_H264_ENCODER_H
+#ifndef ALIA_BOX_H264_ENCODER_H
+#define ALIA_BOX_H264_ENCODER_H
 
 #include <stddef.h>
 #include <stdint.h>

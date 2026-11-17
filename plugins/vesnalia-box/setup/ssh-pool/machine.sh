@@ -21,7 +21,7 @@
 #               says the hook restarts the machine to finish
 #   restore.failed/  the last whole-machine reset that failed, with its log
 #
-# Each box gets a new user, bbx-<generation>, whose UID and GID are 70000
+# Each box gets a new user, aliax-<generation>, whose UID and GID are 70000
 # plus the generation modulo 10000, so an ID comes back only after 10000
 # boxes. A machine that is itself an unprivileged container may map only IDs
 # 0 to 65535; there they are 60706 plus the generation modulo 478, between
@@ -47,7 +47,7 @@ VERSION=1
 STATE=/var/lib/alia-box
 HOOK=/usr/local/libexec/alia-box/reset-machine
 SKEL=/etc/alia-box/skel
-PREFIX=bbx-
+PREFIX=aliax-
 HOMES=/home
 SNAPSHOT_PROBE=1
 SNAPSHOT_HOOK=/usr/local/libexec/alia-box/snapshot-machine

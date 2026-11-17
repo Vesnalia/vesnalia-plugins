@@ -1,4 +1,4 @@
-// Fullscreen overview diagram (BBP-71): pure data shaping, no React, no
+// Fullscreen overview diagram (ALIAP-71): pure data shaping, no React, no
 // @xyflow/react — so the layout/filter/mapping logic is unit-testable
 // without rendering anything. Components under ../components turn this into
 // nodes and edges for @xyflow/react, styled to match the reference look —
@@ -23,7 +23,7 @@ export type OverviewSource = {
     branch: string | null;
     needsYou: number;
     members: ReadonlyArray<{ key: string; lead: boolean; activity: string; needsYou?: readonly string[] }>;
-    /** VesnALIA tasks carrying the label `crew-<name>` — the source of truth for factory crews, which never set `task` (BBP-84). */
+    /** VesnALIA tasks carrying the label `crew-<name>` — the source of truth for factory crews, which never set `task` (ALIAP-84). */
     labelTasks?: ReadonlyArray<{ key: string; title: string; status: string }>;
   }>;
   leadLinks: ReadonlyArray<{ from: string; to: string; count: number }>;
@@ -40,7 +40,7 @@ export type CrewNode = {
   task: string | null;
   members: ReadonlyArray<{ key: string; lead: boolean; activity: string; needsYou?: readonly string[] }>;
   needsYou: number;
-  /** BBP-95: a real failure anywhere in the crew outranks a mere decision — red vs. amber. */
+  /** ALIAP-95: a real failure anywhere in the crew outranks a mere decision — red vs. amber. */
   needsYouSeverity: "error" | "decision" | null;
 };
 
@@ -165,7 +165,7 @@ export function buildOverviewGraph(projects: ReadonlyArray<OverviewProject>, ove
       taskCount: taskIds.size,
       runningCount: overview.crews.filter((crew) => crew.status === "running").length,
       needsYouCount: overview.crews.filter((crew) => crew.needsYou > 0).length,
-      // BBP-95: crews with a real failure, counted apart from those that only wait on a decision.
+      // ALIAP-95: crews with a real failure, counted apart from those that only wait on a decision.
       errorCount: overview.crews.filter((crew) => hasErrorReason(crew.members.flatMap((member) => member.needsYou ?? []))).length,
     });
   }

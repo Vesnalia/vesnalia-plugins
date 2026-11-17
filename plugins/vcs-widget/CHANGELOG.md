@@ -63,11 +63,11 @@ Renamed, and the last surfaces: a settings page of its own, and a read-only
 way in from a terminal or an agent.
 
 - Renamed the plugin to "VCS Widget": the display name, the palette rows
-  (`VCS Widget: ...`), and the plugin id, which bb derives from the package
+  (`VCS Widget: ...`), and the plugin id, which VesnALIA derives from the package
   name and is now `vcs-widget`. A new id means a fresh settings and kv store,
   so the plugin has to be removed and reinstalled and favourites start empty.
   The repository directory and the Linear project keep their old names.
-- `bb vcs-widget status | branches | log`, with `--thread`, `--json`,
+- `alia vcs-widget status | branches | log`, with `--thread`, `--json`,
   `--limit`, `--remote`/`--all`, `--branch` and `--grep`. It runs on the
   machine that owns the worktree, so it answers for a thread whose workspace
   is on another machine, where `git` in the local shell would read the wrong
@@ -82,8 +82,8 @@ way in from a terminal or an agent.
 - Output is bounded whatever the repository looks like: `status --json`
   prints branch counts instead of the arrays, `branches` and `log` cap at
   500 and 100 rows, so a repository with thousands of branches cannot blow
-  bb's 1 MiB CLI output cap.
-- Two settings sections under bb's own form: "Agent access", which repeats
+  VesnALIA's 1 MiB CLI output cap.
+- Two settings sections under VesnALIA's own form: "Agent access", which repeats
   what the plugin exposes outside the UI, and "Favourite branches", which
   lists every starred branch with the machine and worktree it belongs to and
   clears them per repository. That store had no UI before — a favourite on a
@@ -115,7 +115,7 @@ The plugin's own git log, as a thread panel tab.
 - Selecting a commit opens the drawer: full sha, author and committer with
   their dates, the message, and the files the commit changed against its
   first parent (against nothing for the first commit). Selecting a file
-  swaps the drawer for bb's diff viewer with both complete sides, so
+  swaps the drawer for VesnALIA's diff viewer with both complete sides, so
   expand-context works.
 - Per-commit context menu: Checkout Revision, New Branch from (the popup's
   form, with the commit as the start point), Cherry-Pick, Revert Commit,
@@ -150,7 +150,7 @@ The plugin's own commit dialog, as a thread panel tab.
   checkbox per file whose state is the staged state (ticking runs `git add`,
   unticking `git reset -q --`, a partially staged file shows a mixed box and
   each group header toggles the whole group).
-- Diff preview of the selected file in bb's diff viewer with both complete
+- Diff preview of the selected file in VesnALIA's diff viewer with both complete
   sides handed over (expand-context works), and a Staged / Unstaged switch
   for a file changed on both sides; untracked files diff against /dev/null.
 - Commit runs as a background job so hooks can take as long as they need:
@@ -170,7 +170,7 @@ The plugin's own commit dialog, as a thread panel tab.
 - New typed error `nothing_to_commit`; the panel refuses to commit while the
   index is locked, a job runs or conflicts remain, and explains why.
 - Live refresh: the panel follows `git add` and edits made from a terminal
-  or by an agent through bb's environment events and the host watch.
+  or by an agent through VesnALIA's environment events and the host watch.
 
 
 ## 0.2.0 (2026-09-09) — milestone 2
@@ -201,21 +201,21 @@ refresh from the host, and favourites.
   the repository.
 - Live refresh from the host: the worker watches the git dir (and the common
   dir of a linked worktree) and signals changes to every popup on that
-  repository, in addition to bb's own environment events.
+  repository, in addition to VesnALIA's own environment events.
 - Favourites, kept per host and repository, listed first and ranked higher.
 - Checkout Tag or Revision (quick action and palette row) with a tag list;
   detached checkouts confirm first.
 - Side panel tabs: "Compare branches" (commits on either side, changed
-  files, per-file patch in bb's diff viewer) and "Diff with working tree".
+  files, per-file patch in VesnALIA's diff viewer) and "Diff with working tree".
 - Git older than 2.24 is reported in the status line and blocks mutations.
 - Error headlines now quote the line that decided the error code
   (`CONFLICT (content): ...` instead of `Auto-merging ...`).
 
 ## 0.1.0 (2026-09-09) — milestone 1
 
-First release: an IntelliJ-style Git branches popup in bb's thread header.
+First release: an IntelliJ-style Git branches popup in VesnALIA's thread header.
 
-- Branch button in the thread header (label from bb's sidebar, no RPC until
+- Branch button in the thread header (label from VesnALIA's sidebar, no RPC until
   the popup opens; icon-only on compact viewports; hidden threads read the
   overview for their label).
 - Popup with search and plugin-owned ranking, Actions (Update Project,
@@ -236,7 +236,7 @@ First release: an IntelliJ-style Git branches popup in bb's thread header.
   `conflict`, `non_fast_forward`, `no_upstream`, `auth_required`, `network`,
   `timeout`, `cancelled`, `busy`, ...) with hints; host transport failures
   become typed results and still trigger a refresh.
-- Refresh without polling: status nudges, a realtime `changed` channel, bb's
+- Refresh without polling: status nudges, a realtime `changed` channel, VesnALIA's
   `environment:changed` events, reconnect and worker-exit refetches.
 - Five command palette rows; requests travel in module scope and obey the
   row guards.

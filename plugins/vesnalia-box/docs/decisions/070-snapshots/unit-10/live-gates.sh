@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 cd "$HOME"
-B=./bbc
+B=./aliac
 export PATH=$HOME/.local/share/alia-box/microsandbox/bin:$PATH
 now() { date +%s.%N; }
 since() { awk -v a="$1" -v b="$(now)" 'BEGIN { printf "%.2f s", b - a }'; }

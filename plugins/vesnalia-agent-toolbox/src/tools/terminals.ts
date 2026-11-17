@@ -4,7 +4,7 @@ import { requireThreadId, type Registrar } from "../lib/toolkit";
 
 export function registerTerminalTools(alia: AliaPluginApi, register: Registrar) {
   register("terminals", {
-    name: "bbtools_terminals_list",
+    name: "aliatools_terminals_list",
     description:
       "List VesnALIA terminal sessions in the current thread: id, title, status, cwd. Use it to see running shells and their scope.",
     parameters: z.object({}),
@@ -23,7 +23,7 @@ export function registerTerminalTools(alia: AliaPluginApi, register: Registrar) 
   });
 
   register("terminals", {
-    name: "bbtools_terminal_create",
+    name: "aliatools_terminal_create",
     description:
       "Create a VesnALIA terminal session attached to the current thread. Use it to run a shell the user can watch live in the VesnALIA UI, or start a long-running command in a visible terminal.",
     parameters: z.object({
@@ -38,16 +38,16 @@ export function registerTerminalTools(alia: AliaPluginApi, register: Registrar) 
         ...(title ? { title } : {}),
         start: command ? { mode: "command", command } : { mode: "shell" },
       });
-      return `Created terminal ${session.id}${title ? ` ("${title}")` : ""}. Use bbtools_terminal_output / bbtools_terminal_input with this id.`;
+      return `Created terminal ${session.id}${title ? ` ("${title}")` : ""}. Use aliatools_terminal_output / aliatools_terminal_input with this id.`;
     },
   });
 
   register("terminals", {
-    name: "bbtools_terminal_output",
+    name: "aliatools_terminal_output",
     description:
-      "Read recent output of a VesnALIA terminal session (decoded text tail). Use it after bbtools_terminal_input or bbtools_terminal_create to see what the shell printed.",
+      "Read recent output of a VesnALIA terminal session (decoded text tail). Use it after aliatools_terminal_input or aliatools_terminal_create to see what the shell printed.",
     parameters: z.object({
-      terminalId: z.string().describe("Terminal session id (from bbtools_terminals_list or bbtools_terminal_create)."),
+      terminalId: z.string().describe("Terminal session id (from aliatools_terminals_list or aliatools_terminal_create)."),
       tailBytes: z.number().int().min(200).max(200000).optional().describe("Max bytes of tail to read (default 8000)."),
     }),
     execute: async ({ terminalId, tailBytes }) => {
@@ -66,7 +66,7 @@ export function registerTerminalTools(alia: AliaPluginApi, register: Registrar) 
   });
 
   register("terminals", {
-    name: "bbtools_terminal_input",
+    name: "aliatools_terminal_input",
     description:
       "Type text into a VesnALIA terminal session (as if the user typed it). Use it to run commands or answer prompts in a terminal the user can watch.",
     parameters: z.object({
@@ -80,12 +80,12 @@ export function registerTerminalTools(alia: AliaPluginApi, register: Registrar) 
         terminalId,
         dataBase64: Buffer.from(data, "utf8").toString("base64"),
       });
-      return `Typed into terminal ${terminalId}. Use bbtools_terminal_output to read the result.`;
+      return `Typed into terminal ${terminalId}. Use aliatools_terminal_output to read the result.`;
     },
   });
 
   register("terminals", {
-    name: "bbtools_terminal_close",
+    name: "aliatools_terminal_close",
     description:
       "Close a VesnALIA terminal session. Use it to clean up terminals you created.",
     parameters: z.object({

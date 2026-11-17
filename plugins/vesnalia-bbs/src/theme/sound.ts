@@ -31,7 +31,7 @@ const DTMF: Record<string, [number, number]> = {
   "*": [941, 1209], "0": [941, 1336], "#": [941, 1477],
 };
 
-/** Phone-keypad letters, so "1-800-BBBBS" dials properly. */
+/** Phone-keypad letters, so "1-800-ALIABBS" dials properly. */
 function keypadDigit(ch: string): string | null {
   if (ch in DTMF) return ch;
   const pads = ["ABC", "DEF", "GHI", "JKL", "MNO", "PQRS", "TUV", "WXYZ"];

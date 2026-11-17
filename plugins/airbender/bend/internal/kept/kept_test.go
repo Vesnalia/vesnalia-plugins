@@ -7,7 +7,7 @@
 //
 // Why: the copy is only worth having if it is never wrong where the
 // tracker's own answer would have been right. These are the rules that
-// keep it so (bead-bb-c9l.14).
+// keep it so (bead-alia-c9l.14).
 
 package kept
 

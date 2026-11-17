@@ -514,7 +514,7 @@ describe.skipIf(!HAS_FFMPEG)("rendering", () => {
     const { paths } = await setup();
     await fs.mkdir(paths.avatarRenders, { recursive: true });
     const used = path.join(paths.avatarRenders, "aaaaaaaaaaaa.mjpeg");
-    const unused = path.join(paths.avatarRenders, "bbbbbbbbbbbb.mjpeg");
+    const unused = path.join(paths.avatarRenders, "aliabbbbbbbbbb.mjpeg");
     await fs.writeFile(used, "x");
     await fs.writeFile(unused, "x");
     // A process whose argv carries the flag, like the bot's Chrome.

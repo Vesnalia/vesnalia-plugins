@@ -330,7 +330,7 @@ The AWS policy, with `<region>` and `<account>` filled in:
       "Action": "ec2:RunInstances",
       "Resource": "arn:aws:ec2:<region>:<account>:instance/*",
       "Condition": {
-        "Null": { "aws:RequestTag/bbbox:install": "false" },
+        "Null": { "aws:RequestTag/aliabox:install": "false" },
         "StringEquals": { "ec2:InstanceType": ["t3.medium", "c7i.large", "c7i.xlarge", "m7i.2xlarge"] }
       }
     },
@@ -360,14 +360,14 @@ The AWS policy, with `<region>` and `<account>` filled in:
       "Effect": "Allow",
       "Action": ["ec2:StartInstances", "ec2:StopInstances", "ec2:RebootInstances", "ec2:TerminateInstances", "ec2:CreateImage", "ec2:DeregisterImage", "ec2:DeleteSnapshot"],
       "Resource": "*",
-      "Condition": { "Null": { "aws:ResourceTag/bbbox:install": "false" } }
+      "Condition": { "Null": { "aws:ResourceTag/aliabox:install": "false" } }
     },
     {
       "Sid": "TagNewImagesAndSnapshots",
       "Effect": "Allow",
       "Action": "ec2:CreateImage",
       "Resource": ["arn:aws:ec2:<region>::image/*", "arn:aws:ec2:<region>::snapshot/*"],
-      "Condition": { "Null": { "aws:RequestTag/bbbox:install": "false" } }
+      "Condition": { "Null": { "aws:RequestTag/aliabox:install": "false" } }
     },
     {
       "Sid": "SetupKeyAndSecurityGroup",

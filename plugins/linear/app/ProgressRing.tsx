@@ -17,8 +17,8 @@ export function ProgressRing({
       width={size}
       height={size}
       viewBox="0 0 16 16"
-      className="bbl-completed bbl-glyph shrink-0"
-      style={color === null ? undefined : ({ "--bbl": color } as CSSProperties)}
+      className="alial-completed alial-glyph shrink-0"
+      style={color === null ? undefined : ({ "--alial": color } as CSSProperties)}
       aria-hidden="true"
       focusable="false"
     >
@@ -29,7 +29,7 @@ export function ProgressRing({
         fill="none"
         strokeWidth="2"
         strokeDasharray="43.982297150257104"
-        className="bbl-progress-track"
+        className="alial-progress-track"
       />
       <circle
         cx="8"
@@ -40,7 +40,7 @@ export function ProgressRing({
         strokeDasharray={SUB_ISSUE_CIRCUMFERENCE}
         strokeDashoffset={subIssueArc(done, total)}
         transform="rotate(-90 8 8)"
-        stroke="var(--bbl)"
+        stroke="var(--alial)"
       />
     </svg>
   );

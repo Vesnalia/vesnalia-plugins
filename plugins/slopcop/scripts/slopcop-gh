@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A `gh` wrapper that authenticates as a SlopCop GitHub App installation.
 //
-// Why a wrapper and not an env var on the BB process: the operator's own `gh`
+// Why a wrapper and not an env var on the ALIA process: the operator's own `gh`
 // login must keep working on the same machine. `gh` prefers GH_TOKEN over the
 // keyring, so exporting it globally would hijack every interactive `gh` call.
 // Scoping it to one wrapper binary keeps the bot identity confined to the

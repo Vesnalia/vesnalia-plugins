@@ -173,7 +173,7 @@ describe("server smoke", () => {
     );
     await rpc.updateNote({
       id: note.id,
-      body: `still here ![img](bbnote://attachment/${keptId})`,
+      body: `still here ![img](alianote://attachment/${keptId})`,
     });
     const remaining = (await rpc.listAttachments({ noteId: note.id })) as {
       attachments: Array<{ id: string; bytes: number }>;
@@ -194,7 +194,7 @@ describe("server smoke", () => {
     })) as { id: string };
     await rpc.updateNote({
       id: note.id,
-      body: `title line\n![shot](bbnote://attachment/${id})\ntail`,
+      body: `title line\n![shot](alianote://attachment/${id})\ntail`,
     });
     const result = (await rpc.deleteAttachment({ id })) as { note: { body: string } | null };
     expect(result.note?.body).toBe("title line\ntail");

@@ -1,4 +1,4 @@
-// Modified for bb-plugin-ios-simulator: share encoding without sharing client backpressure.
+// Modified for alia-plugin-ios-simulator: share encoding without sharing client backpressure.
 import Foundation
 
 public struct AVCCDeliveryFrame: Sendable {

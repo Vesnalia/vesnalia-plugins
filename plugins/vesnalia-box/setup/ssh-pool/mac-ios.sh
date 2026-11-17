@@ -151,7 +151,7 @@ sshd_refuses_slots() {
   [ -n "$users$groups" ] || return 1
   set -f
   for pattern in $users; do
-    case bbd-1 in ${pattern%%@*}) set +f; return 1 ;; esac
+    case aliad-1 in ${pattern%%@*}) set +f; return 1 ;; esac
   done
   for group in $groups; do
     case $group in _developer | com.apple.access_ssh | staff | localaccounts | everyone) set +f; return 1 ;; esac
@@ -224,5 +224,5 @@ if [ -z "${HOST_SETTINGS:-}" ]; then
 fi
 echo "ios=$os $build $list companion=$idb_version"
 if sshd_refuses_slots; then
-  echo "warning=sshd lets only some users log in, with AllowUsers or AllowGroups, and no slot user, bbd-*, so no ios box can reach its slot. Add bbd-* beside bbx-* to AllowUsers in /etc/ssh/sshd_config or /etc/ssh/sshd_config.d; new connections read it."
+  echo "warning=sshd lets only some users log in, with AllowUsers or AllowGroups, and no slot user, aliad-*, so no ios box can reach its slot. Add aliad-* beside aliax-* to AllowUsers in /etc/ssh/sshd_config or /etc/ssh/sshd_config.d; new connections read it."
 fi

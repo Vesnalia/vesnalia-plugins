@@ -5,7 +5,7 @@ script-count guard, and the docs that stop repeating today").
 **Branch:** `alia/final-gaps-rebase-guard-door-docs-thr_uc2scxqk54`, based on
 `origin/master` `4f21e4e4`.
 **Commits:** `f169e46f` (the band floor), `0103c018` (the contrast door),
-`bbec7312` (the docs page), then this record.
+`aliaec7312` (the docs page), then this record.
 **Nothing was pushed, merged, tagged or released.**
 
 ## 1. The merge that would have amputated the suite (PR #420)

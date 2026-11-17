@@ -2188,8 +2188,8 @@ to edit another stream's file, stop and raise it — do not edit.
 | `package.json` | §2 verbatim |
 | `tsconfig.json` | §3 verbatim |
 | `contract.ts` | §4 verbatim — **frozen**, nobody else edits it |
-| `components.json` | copy from `/tmp/bbscaffoldprobe/alia-plugin-probe/components.json` (registry ref `desktop-v0.39.0`) |
-| `components/ui/{button,card,dialog,input,icon,motion,coarse-pointer-sizing,overlay-trigger,responsive-overlay}.tsx` | copy from `/tmp/bbscaffoldprobe/alia-plugin-probe/components/ui/` |
+| `components.json` | copy from `/tmp/aliascaffoldprobe/alia-plugin-probe/components.json` (registry ref `desktop-v0.39.0`) |
+| `components/ui/{button,card,dialog,input,icon,motion,coarse-pointer-sizing,overlay-trigger,responsive-overlay}.tsx` | copy from `/tmp/aliascaffoldprobe/alia-plugin-probe/components/ui/` |
 | `components/ui/hooks/{use-compact-viewport.tsx,use-media-query.ts}` | same source |
 | `hooks/useBrowserDimmingModal.ts`, `lib/utils.ts`, `lib/portal-scope.ts` | same source |
 | `components/ui/{context-menu,menu-item-hover,dropdown-menu,table,checkbox,tooltip,separator}.tsx` | `npx shadcn add @alia-core/context-menu @alia-core/dropdown-menu @alia-core/table @alia-core/checkbox @alia-core/tooltip @alia-core/separator` (needs network). **Offline fallback**: extract `files[0].content` from `…/alia-main/packages/plugin-registry/r/<name>.json` — e.g. `node -e 'const j=require("<r>/table.json");require("fs").writeFileSync("components/ui/table.tsx",j.files[0].content)'` |

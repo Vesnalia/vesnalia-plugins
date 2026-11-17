@@ -47,11 +47,11 @@ export function WorkerSwarm({ run }: { run: RunDto }) {
         <Progress
           indeterminate
           aria-label={`${statusLabel(run.status)} ${runTitle(run)}`}
-          className="bbx-progress-track h-1"
+          className="aliax-progress-track h-1"
           indicatorClassName={
             run.status === "finishing"
-              ? "bbx-progress-breath w-full"
-              : "bbx-progress-comet"
+              ? "aliax-progress-breath w-full"
+              : "aliax-progress-comet"
           }
         />
       </Slot>
@@ -77,7 +77,7 @@ export function WorkerSwarm({ run }: { run: RunDto }) {
               key={index}
               className={cn(
                 "size-1.5 rounded-full transition-[opacity,transform] duration-300 ease-out",
-                index < live ? "bbx-worker" : "bbx-worker-idle",
+                index < live ? "aliax-worker" : "aliax-worker-idle",
               )}
               // Staggered so the row breathes as a wave rather than a unison
               // blink, which at twelve dots reads as a warning light.

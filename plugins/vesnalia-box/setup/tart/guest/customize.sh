@@ -3,7 +3,7 @@
 # prepare-image.sh builds the image. The user has passwordless sudo, as in
 # Cirrus Labs' images. Settings come in the environment:
 #
-#   BBBOX_SSH_PUBLIC_KEY  alia-box's public keys, one per line, which the user accepts
+#   ALIABOX_SSH_PUBLIC_KEY  alia-box's public keys, one per line, which the user accepts
 #   CUA_VERSION           Cua Driver release to install, for example 0.30.4
 #   CUA_SHA256            SHA-256 of its darwin-arm64 archive
 #   BLACKHOLE_VERSION     BlackHole 2ch release to install, for example 0.7.1
@@ -13,14 +13,14 @@ set -eu
 user=$(id -un)
 home=$HOME
 die() { echo "customize: $*" >&2; exit 1; }
-[ -n "${BBBOX_SSH_PUBLIC_KEY:-}" ] || die "BBBOX_SSH_PUBLIC_KEY is not set"
+[ -n "${ALIABOX_SSH_PUBLIC_KEY:-}" ] || die "ALIABOX_SSH_PUBLIC_KEY is not set"
 [ -n "${CUA_VERSION:-}" ] && [ -n "${CUA_SHA256:-}" ] || die "CUA_VERSION and CUA_SHA256 must be set"
 sudo -n true 2>/dev/null || die "$user needs passwordless sudo while the image is built"
 
 # alia-box's key, marked so it is easy to find. SSH takes keys only.
 mkdir -p "$home/.ssh" && chmod 700 "$home/.ssh"
 touch "$home/.ssh/authorized_keys" && chmod 600 "$home/.ssh/authorized_keys"
-printf '%s\n' "$BBBOX_SSH_PUBLIC_KEY" | while read -r line; do
+printf '%s\n' "$ALIABOX_SSH_PUBLIC_KEY" | while read -r line; do
   [ -n "$line" ] || continue
   grep -qF "$(echo "$line" | awk '{print $2}')" "$home/.ssh/authorized_keys" || printf '%s\n' "$line" >>"$home/.ssh/authorized_keys"
 done

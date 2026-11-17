@@ -148,7 +148,7 @@ interface Slot {
   readonly state: SlotState;
 }
 
-const slotUser = (slot: Slot) => slot.carried ? `bbd-i${slot.generation}` : `bbd-${slot.generation}`;
+const slotUser = (slot: Slot) => slot.carried ? `aliad-i${slot.generation}` : `aliad-${slot.generation}`;
 const slotUid = (slot: Slot) => slot.carried ? 79990 + slot.generation : 80000 + (slot.generation % 10000);
 
 type SlotState =
@@ -167,7 +167,7 @@ type Placement =
 ```
 
 - **A slot's user and UID come from its generation,** by one function each,
-  so a record cannot hold `bbd-7` with UID 80009. The image's carried slots
+  so a record cannot hold `aliad-7` with UID 80009. The image's carried slots
   have a range of their own, 79991 and 79992, so the image's check can
   forbid every file in the 80000 range and exempt exactly those two users
   by name and UID ([Slots in the image](#slots-in-the-image)).
@@ -205,7 +205,7 @@ making -> ready -> held -> releasing -> resetting -> (removed)
 | --- | --- | --- | --- |
 | A host's state, its slots and their claims | on the host, `/var/db/alia-box/host/`: a state file, a folder a slot, each claim a marker made with `ln`, all changed under the helper's `flock` | the host's helper, as root | its backend, through the helper's `status` |
 | A Tart host's VM, image build and settings snapshot | the Mac's owner file for the VM, `~/.alia-box/tart/owners/<vm>`, with `role=device-host`, as every Tart VM has one; its state there is a cache of the helper's | the Tart backend | the Tart backend at start and in each sweep; the doctor |
-| A Namespace host | the instance's labels, as Namespace boxes have today, with `bbbox-role` `device-host` | the Namespace backend | the Namespace backend; the doctor |
+| A Namespace host | the instance's labels, as Namespace boxes have today, with `aliabox-role` `device-host` | the Namespace backend | the Namespace backend; the doctor |
 | A pool Mac's mode | the pool helper's state, `/var/db/alia-box`: its owner marker when lent whole, a `slots` marker while it has slots, each made with `ln`, so one wins | the pool's helper, as root | the pool backend, through the helper's `status` |
 | Where a box is, and what it can do | the box record: `guest.data` (`host`, `generation`, `carried`) and `capabilities` | the registry, from the backend's acquire, once | every tool and the panel |
 | Hosts' settings | alia-box's configuration: each backend's `ios-hosts` ([below](#the-ios-hosts-setting)) | the operator | each backend |
@@ -322,7 +322,7 @@ in a Tart VM at 8 cores and 32 GiB (M3):
 
 | Step | What | Time |
 | --- | --- | --- |
-| 1. The user | `sysadminctl -addUser bbd-<generation> -UID <uid>`, a standard user, hidden, in `_developer`, its home from the pool's home template (the login PATH, which M12 found missing) and made `700` | 1.8 to 3.4 s |
+| 1. The user | `sysadminctl -addUser aliad-<generation> -UID <uid>`, a standard user, hidden, in `_developer`, its home from the pool's home template (the login PATH, which M12 found missing) and made `700` | 1.8 to 3.4 s |
 | 2. CoreSimulator's defaults | the user's first `simctl` makes 19 default devices: deleted | 2.2 to 15.5 s |
 | 3. The device | `simctl create` of the kind's default model, in the user's own set | 0.3 to 1.5 s |
 | 4. Slim | the runtime's `disabled.plist` copied to `/private/var/tmp/com.apple.CoreSimulator.SimDevice.<udid>/`, the user's, before the first boot | under 0.1 s |
@@ -341,7 +341,7 @@ claim boots nothing.
 
 A Tart host is a clone of the ios image, and lives only while it holds
 boxes, so its first box always meets a new host. The image therefore
-carries two slots, `bbd-i1` and `bbd-i2`, UIDs 79991 and 79992, each with
+carries two slots, `aliad-i1` and `aliad-i2`, UIDs 79991 and 79992, each with
 its device made, seeded, first-booted and shut down, as the image's own
 devices are (063 unit 3.2), and their daemons written but not loaded. A
 clone of the image gets them clean every time, as nothing ever ran in them.
@@ -349,14 +349,14 @@ Every clone has the same two UDIDs; each is in its own VM's device set, so
 they never meet.
 
 - **At the host's start** nothing boots. The first box's claim takes
-  `bbd-i1` and loads its daemons: a cold boot of a device booted before,
+  `aliad-i1` and loads its daemons: a cold boot of a device booted before,
   5.0 to 5.8 s for the image's own device (M13), 7.7 s for a slot's after a
   restart (M16), instead of a device's making. Then the host boots
-  `bbd-i2`'s device in the background, as its ready slot.
+  `aliad-i2`'s device in the background, as its ready slot.
 - **The UID check.** The image's check fails on any file owned by a UID
   from 80000 to 89999, and on any owned by 79990 to 79999 but the two
   carried users' own, by name and UID. The sweep accepts both ranges.
-- **The first slot made in a running host is `bbd-1`,** UID 80001.
+- **The first slot made in a running host is `aliad-1`,** UID 80001.
 - **Cost:** the two devices' first-boot data, about 1.6 GiB each (063
   E24), once on the Mac's disk, as clones share it.
 
@@ -703,7 +703,7 @@ the Mac's own encoder, shared with no VM (POOL).
 
 | What happens | The host | Its boxes |
 | --- | --- | --- |
-| An ios box finds no slot, and a Mac has a free VM slot | cloned from the ios image as `alia-box-host-<id>` and booted, `starting` with the box promised; the carried `bbd-i1` claimed for it, `bbd-i2` booted after as the ready slot; more made one at a time while it holds a box | the first waits about 50 to 60 s (M13, M14); boxes that came meanwhile join it |
+| An ios box finds no slot, and a Mac has a free VM slot | cloned from the ios image as `alia-box-host-<id>` and booted, `starting` with the box promised; the carried `aliad-i1` claimed for it, `aliad-i2` booted after as the ready slot; more made one at a time while it holds a box | the first waits about 50 to 60 s (M13, M14); boxes that came meanwhile join it |
 | Its last box is released | the helper writes `deleting`; the backend stops and deletes it; the Mac's VM slot is free again | |
 | A slot's device or CoreSimulatorService crashes | launchd starts that user's CoreSimulatorService again within 5 s (the research) | that box only: its server boots the device again, about 5 s (063); the others went on at 55.5 and 56.9 fps through it (the research) |
 | A slot's idb_companion dies | | that box only: a new companion in about 0.1 s, a stall under 1 s (063 results) |
@@ -1157,7 +1157,7 @@ made as in M13, UIDs 80001 and 80002, with no console session.
 | The installer | downloaded and installed the server's alia-app, 5 s; enrolled the machine; then failed: "Could not register the VesnALIA host-daemon launch agent … launchctl: Bootstrap failed: 125: Domain does not support specified action" | the same, then ran the daemon under its own `--supervise`; connected |
 | The daemon's port, chosen by the installer | 38889 | 38890 (the VM's own user's daemon had 38888) |
 | Then | its LaunchAgent's plist copied to `/Library/LaunchDaemons` with `UserName` added, and loaded: connected 0.7 s after | the installer's process stopped, and a LaunchDaemon written with the same command, port and data folder: connected 0.5 s after |
-| A terminal made through VesnALIA on the machine | ran as `bbd-1`, UID 80001, and `simctl` saw its own devices | ran as `bbd-2`, UID 80002 |
+| A terminal made through VesnALIA on the machine | ran as `aliad-1`, UID 80001, and `simctl` saw its own devices | ran as `aliad-2`, UID 80002 |
 
 ### M15: the device server under a LaunchDaemon
 
@@ -1462,7 +1462,7 @@ build after changes. Every finding changed the note.
 | --- | --- | --- |
 | 1 | The order cannot be run by the registry; a starting host cannot be joined; bursts make several hosts | Changed. Each lender answers with a graded `SlotTier`; the registry chooses under one lock for device placement and holds it until the claim, promise or `starting` record is written; `starting` has `promised`, `making` has `for`; a lost `ln` race is asked again, three times: [Placing a box](#placing-a-box). Unit 4's live check acquires three at once and wants one host |
 | 2 | The last release's delete races a claim; two writers of host state | Changed. The helper's `release` decides `last` under its lock and writes `deleting`, which refuses every later claim; the backend deletes after; the owner file is a cache; the upkeep finishes a `deleting` host: [The last release deletes the host](#the-last-release-deletes-the-host) |
-| 3 | The image's carried slots break its own UID check; both boot at every start | Changed. Carried slots are `bbd-i1` and `bbd-i2`, UIDs 79991 and 79992, exempted by name and UID; nothing boots at the host's start; the first claim boots one, then the other boots as the ready slot: [Slots in the image](#slots-in-the-image) |
+| 3 | The image's carried slots break its own UID check; both boot at every start | Changed. Carried slots are `aliad-i1` and `aliad-i2`, UIDs 79991 and 79992, exempted by name and UID; nothing boots at the host's start; the first claim boots one, then the other boots as the ready slot: [Slots in the image](#slots-in-the-image) |
 | 4 | Shared becomes the default before enrolment and the server-as-daemon are proven | Measured, and the flip moved. M14: two slots enrolled on a fresh VesnALIA and ran terminals through it; M15: the delivered server under a daemon, restarted in 0.3 to 1.3 s and from a new version in 1.7 s; M16: both back after a cold restart. The default flips in unit 6, after alia-box's own enrolment passes in unit 3; `connect`'s words when no server comes |
 | 5 | Nothing bounds one box's load or shows whose it is | Changed. A booted-device bound, a disk reserve, a memory floor for lending, background priority for the helper's work, and each slot's cores, memory and disk in the helper's status; box_status names the busiest slot: [What one box can take from the others](#what-one-box-can-take-from-the-others). The encoder used by a box's own tools stays unseen, and the note says so |
 | 6 | Shared loopback gives false passes against another box's server | Changed. A port range per slot in its environment, box_status and the skill; the common dev ports held by the helper with words: [Ports](#ports-a-range-for-each-box). Holding them is open question 3 |

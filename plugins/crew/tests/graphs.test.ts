@@ -16,7 +16,7 @@ function fakeClock(start = 0) {
 function fakeRpc(runs: GraphRun[]): Pick<GraphsRpc, "startRun" | "getRun"> {
   let polled = 0;
   return {
-    // Mirrors graph-studio's real startRun, which throws without a parent thread (BBP-30 review fix).
+    // Mirrors graph-studio's real startRun, which throws without a parent thread (ALIAP-30 review fix).
     startRun: async (args) => {
       if (!args.threadId) throw new Error("A run needs a parent thread whose environment the workers inherit.");
       return runs[0]!;

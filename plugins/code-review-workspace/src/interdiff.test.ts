@@ -63,7 +63,7 @@ const binary = (index: string) =>
   diff("diff --git a/img/logo.png b/img/logo.png", `index ${index} 100644`, "Binary files a/img/logo.png and b/img/logo.png differ");
 
 test("identical inputs: every file is unchanged", () => {
-  const patch = reviewedApp + newFile + renamed("7777777..8888888", "@@ -1,3 +1,3 @@") + binary("aaaaaaa..bbbbbbb");
+  const patch = reviewedApp + newFile + renamed("7777777..8888888", "@@ -1,3 +1,3 @@") + binary("aaaaaaa..aliabbbbb");
   const files = interdiff(patch, patch);
   expect(files.map((f) => [f.file, f.status])).toEqual([
     ["src/app.ts", "unchanged"],
@@ -177,8 +177,8 @@ test("a file renamed since your review is compared with its old path's diff", ()
 });
 
 test("a binary file: rebased (same new blob) is unchanged; replaced (new blob) is changed", () => {
-  const reviewed = binary("aaaaaaa..bbbbbbb");
-  expect(interdiff(reviewed, binary("ccccccc..bbbbbbb"))[0].status).toBe("unchanged");
+  const reviewed = binary("aaaaaaa..aliabbbbb");
+  expect(interdiff(reviewed, binary("ccccccc..aliabbbbb"))[0].status).toBe("unchanged");
   const replaced = binary("aaaaaaa..ddddddd");
   expect(interdiff(reviewed, replaced)[0]).toEqual({
     file: "img/logo.png",

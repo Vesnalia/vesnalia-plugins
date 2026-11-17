@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only scheduled Claude installation checks through existing BB machine terminals.
+"""Read-only scheduled Claude installation checks through existing ALIA machine terminals.
 No model, login, update, settings mutation, credential reads or implicit host discovery.
 """
 import argparse
@@ -59,13 +59,13 @@ def local_report(run=subprocess.run):
     return report
 
 
-def bb(*args, timeout=30):
+def alia(*args, timeout=30):
     values = list(args)
     values.insert(values.index('--') if '--' in values else len(values), '--json')
-    proc = subprocess.run([os.environ.get('BB_CLI') or 'bb', *values],
+    proc = subprocess.run([os.environ.get('ALIA_CLI') or 'alia', *values],
                           stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=timeout)
     if proc.returncode:
-        raise RuntimeError('BB command unavailable')
+        raise RuntimeError('ALIA command unavailable')
     return json.loads(proc.stdout)
 
 
@@ -89,18 +89,18 @@ def validate_report(value):
 def check_host(host_id, connected):
     if not connected:
         return {'status': 'offline', 'version': None, 'doctorExit': None, 'issues': []}
-    # Host identity comes from the authenticated native BB target, never from this JSON payload.
-    terminal = bb('terminal', 'create', '--machine', host_id, '--cwd', '/tmp',
+    # Host identity comes from the authenticated native ALIA target, never from this JSON payload.
+    terminal = alia('terminal', 'create', '--machine', host_id, '--cwd', '/tmp',
                   '--title', 'Claude read-only installation doctor', '--', 'python3', '-c',
                   Path(__file__).read_text(), '--local')
     if terminal.get('hostId') != host_id or not isinstance(terminal.get('id'), str):
         raise ValueError('Native terminal identity mismatch')
     terminal_id = terminal['id']
     try:
-        done = bb('terminal', 'wait', terminal_id, '--exit', '--timeout', '70s', timeout=75)
+        done = alia('terminal', 'wait', terminal_id, '--exit', '--timeout', '70s', timeout=75)
         if done.get('exitCode') != 0:
             raise ValueError('Diagnostic terminal did not exit successfully')
-        output = bb('terminal', 'output', terminal_id, '--tail-bytes', '8192')
+        output = alia('terminal', 'output', terminal_id, '--tail-bytes', '8192')
         if output.get('status') != 'exited' or output.get('exitCode') != 0 or output.get('truncated'):
             raise ValueError('Incomplete diagnostic output')
         chunks = output.get('chunks', [])
@@ -113,7 +113,7 @@ def check_host(host_id, connected):
         return {**report, 'terminalId': terminal_id}
     finally:
         # Only this owned diagnostic terminal; no provider processes or sessions.
-        bb('terminal', 'close', terminal_id)
+        alia('terminal', 'close', terminal_id)
 
 
 def save(path, value):
@@ -144,7 +144,7 @@ def main():
     hosts = json.loads(args.hosts_file.read_text())
     if not isinstance(hosts, list) or not 1 <= len(hosts) <= 8 or any(type(h) is not str or not re.fullmatch(r'host_[a-z0-9]+', h) for h in hosts) or len(set(hosts)) != len(hosts):
         parser.error('Expected 1..8 unique existing native machine IDs')
-    machines = bb('machine', 'list')
+    machines = alia('machine', 'list')
     rows = machines if isinstance(machines, list) else machines.get('machines', [])
     by_id = {m['id']: m for m in rows}
     args.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)

@@ -140,7 +140,7 @@ describe("Diff Tree panel", () => {
   it("loads immutable image versions for historical comparisons", async () => {
     const a = "a".repeat(40), b = "b".repeat(40);
     const slot = await open([file("a.ts")], {}, {
-      history: () => ({ commits: [{ sha: b, shortSha: "bbbbbbbb", subject: "Image update", author: "Test", timestamp: 1 }], hasMore: false }),
+      history: () => ({ commits: [{ sha: b, shortSha: "aliabbbbbb", subject: "Image update", author: "Test", timestamp: 1 }], hasMore: false }),
       committedChanges: () => ({ from: a, to: b, label: "Selected range", files: [file("new.png", { previousPath: "old.png", binary: true })], truncated: false }),
       imageDiff: () => ({ old: picture(), next: picture() }),
     });
@@ -354,7 +354,7 @@ describe("Diff Tree panel", () => {
   it("keeps a chosen historical commit when reopening the viewer", async () => {
     const a = "a".repeat(40), b = "b".repeat(40);
     const rpc = {
-      history: () => ({ commits: [{ sha: b, shortSha: "bbbbbbbb", subject: "Latest", author: "Test", timestamp: 1 }, { sha: a, shortSha: "aaaaaaaa", subject: "Previous", author: "Test", timestamp: 0 }], hasMore: false }),
+      history: () => ({ commits: [{ sha: b, shortSha: "aliabbbbbb", subject: "Latest", author: "Test", timestamp: 1 }, { sha: a, shortSha: "aaaaaaaa", subject: "Previous", author: "Test", timestamp: 0 }], hasMore: false }),
       committedChanges: ({ selection }: { selection: { sha: string } }) => ({ from: "c".repeat(40), to: selection.sha, label: "Selected commit", files: [file("history.ts")], truncated: false }),
       committedPatch: ({ path }: { path: string }) => patch(path),
       committedContents: () => ({ old: "old\n", next: "new\n" }),
@@ -740,7 +740,7 @@ describe("Diff Tree panel", () => {
   it("loads recent-commit ranges and an individual history commit through the same immutable target", async () => {
     const a = "a".repeat(40), b = "b".repeat(40), c = "c".repeat(40);
     const slot = await open([file("a.ts")], {}, {
-      history: () => ({ commits: [{ sha: b, shortSha: "bbbbbbbb", subject: "Latest", author: "Test", timestamp: 1 }, { sha: a, shortSha: "aaaaaaaa", subject: "Previous", author: "Test", timestamp: 0 }], hasMore: false }),
+      history: () => ({ commits: [{ sha: b, shortSha: "aliabbbbbb", subject: "Latest", author: "Test", timestamp: 1 }, { sha: a, shortSha: "aaaaaaaa", subject: "Previous", author: "Test", timestamp: 0 }], hasMore: false }),
       committedChanges: ({ selection }: { selection: { kind: string; sha: string } }) => ({ from: c, to: selection.kind === "since" ? b : selection.sha, label: selection.kind === "since" ? "Selected range" : "Selected commit", files: [file("history.ts")], truncated: false }),
       committedPatch: ({ path }: { path: string }) => patch(path),
       committedContents: () => ({ old: "old\n", next: "new\n" }),

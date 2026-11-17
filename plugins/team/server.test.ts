@@ -8,7 +8,7 @@ import {
 import plugin, {
   applyPlaceholders,
   findSourceByPath,
-  gitIgnoresBB,
+  gitIgnoresALIA,
   strings,
   joinPath,
   parseEnvironmentSpec,
@@ -273,15 +273,15 @@ describe("резолюция проекта по cwd", () => {
   });
 });
 
-describe("gitIgnoresBB", () => {
+describe("gitIgnoresALIA", () => {
   it("распознаёт типичные паттерны .vesnalia", () => {
-    expect(gitIgnoresBB("node_modules\n.alia\n")).toBe(true);
-    expect(gitIgnoresBB(".vesnalia/\n")).toBe(true);
-    expect(gitIgnoresBB(".vesnalia/*\n")).toBe(true);
+    expect(gitIgnoresALIA("node_modules\n.alia\n")).toBe(true);
+    expect(gitIgnoresALIA(".vesnalia/\n")).toBe(true);
+    expect(gitIgnoresALIA(".vesnalia/*\n")).toBe(true);
     // A single file under .vesnalia does not block versioning of .vesnalia/teams/.
-    expect(gitIgnoresBB(".vesnalia/team.yaml\n")).toBe(false);
-    expect(gitIgnoresBB("# .vesnalia comment\ndist/\n")).toBe(false);
-    expect(gitIgnoresBB("")).toBe(false);
+    expect(gitIgnoresALIA(".vesnalia/team.yaml\n")).toBe(false);
+    expect(gitIgnoresALIA("# .vesnalia comment\ndist/\n")).toBe(false);
+    expect(gitIgnoresALIA("")).toBe(false);
   });
 });
 

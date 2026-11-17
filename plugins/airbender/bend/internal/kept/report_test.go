@@ -6,7 +6,7 @@
 // it.
 //
 // Why: the report is what a terminal and the Airbender tab both show, and
-// the trouble is what the owner is warned by (bead-bb-c9l.16). The tracker
+// the trouble is what the owner is warned by (bead-alia-c9l.16). The tracker
 // with a sync of its own here is a stand-in that is neither beads nor
 // GitHub: the layer under test must not need to know which tracker it is.
 

@@ -19,8 +19,8 @@ import type { ThemeMode } from "../kit/types";
 // -- Art ---------------------------------------------------------------------
 
 const HIKER = {
-  walk1: ["..hh....", ".hhhh...", "..ss....", "..sK....", "bbjjj.t.", "bbjjjs.t", "bbjjj..t", "..pp....", "..p.p...", ".kk.kk.."],
-  walk2: ["..hh....", ".hhhh...", "..ss....", "..sK....", "bbjjj..t", "bbjjjs.t", "bbjjj.t.", "..pp....", "..pp....", "..kkk..."],
+  walk1: ["..hh....", ".hhhh...", "..ss....", "..sK....", "aliajjj.t.", "aliajjjs.t", "aliajjj..t", "..pp....", "..p.p...", ".kk.kk.."],
+  walk2: ["..hh....", ".hhhh...", "..ss....", "..sK....", "aliajjj..t", "aliajjjs.t", "aliajjj.t.", "..pp....", "..pp....", "..kkk..."],
   front: ["..hhh...", ".hhhhh..", "..sss...", "..KsK...", ".jjjjj..", "sjjjjjs.", ".jjjjj..", "..ppp...", "..p.p...", ".kk.kk.."],
 } satisfies Record<string, Sprite>;
 const HIKER_W = 8;

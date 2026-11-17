@@ -5,7 +5,7 @@ import { sampleReport } from "../helpers.js";
 
 export const THREAD = "thr_aaaaaaaa";
 export const CHILD = "thr_cccccccc";
-export const OTHER = "thr_bbbbbbbb";
+export const OTHER = "thr_aliabbbbbb";
 export const QUIET = { budget: null, stopAtBudget: false, notifyExpensiveTurn: false };
 
 export function answer(over: Partial<UsageAnswer> = {}): UsageAnswer {

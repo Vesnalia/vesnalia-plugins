@@ -35,7 +35,7 @@ both the committed image and the copied inner volume. The image's source box
 label and identity variable were blank.
 
 The image and volume used the agreed names and ownership labels. The volume had
-no `bbbox.volume-of` label. Delete removed both objects. Restore, fork and Keep
+no `aliabox.volume-of` label. Delete removed both objects. Restore, fork and Keep
 refused. Fork used the core's existing identity-reset refusal for this test box.
 
 For recovery, the box had 1 GiB of extra Docker data. The separate VesnALIA's recorded
@@ -88,8 +88,8 @@ deleted every snapshot and released the box.
 | LXCFS 5.0.4, VesnALIA killed after the undo's commit | 5.7 s | finished by the sweep 183 s after VesnALIA restarted | 9.0 s | as above |
 
 In every run the box kept its ID, name, thread and kind labels, and
-`BBBOX_IDENTITY` was its own ID. The new container was named
-`bbbox-<box>-<8 hex>` and carried `bbbox.from-snapshot`. After each restore,
+`ALIABOX_IDENTITY` was its own ID. The new container was named
+`aliabox-<box>-<8 hex>` and carried `aliabox.from-snapshot`. After each restore,
 and after each recovery, Docker listed one container for the box. After the
 deletes and the release, Docker listed no VesnALIA Box containers, volumes or
 snapshot images.
@@ -138,8 +138,8 @@ failed resets by changing what its `boot` does.
 
 The source wrote `A` to `~/work.txt` and, in a running inner container, to its
 volume and its writable layer. The fork had `A` in all three. It was named
-`bbbox-<fork>-<8 hex>`, with its own box ID, name and labels,
-`bbbox.from-snapshot`, and `BBBOX_IDENTITY` its own box ID. Docker's events
+`aliabox-<fork>-<8 hex>`, with its own box ID, name and labels,
+`aliabox.from-snapshot`, and `ALIABOX_IDENTITY` its own box ID. Docker's events
 for it, from the volume's create: its container's create at 883 ms, after the
 copy of the Docker data, its start at 1,258 ms, VesnALIA Box's check at 1,568 ms, and
 the change of its restart policy to `unless-stopped` at 1,825 ms.
@@ -166,7 +166,7 @@ the releases, Docker listed no VesnALIA Box containers, volumes or snapshot imag
 
 Measured on 10 November 2026 on a Proxmox QEMU VM with 8 vCPU, 16 GiB of
 memory and a 100 GiB disk: Docker 29.1.3 with the containerd image store,
-and the Linux image built from this change, labelled `bbbox.fork-hold="1"`
+and the Linux image built from this change, labelled `aliabox.fork-hold="1"`
 and holding `/usr/local/libexec/alia-box/fork-hold`. A separate VesnALIA ran there,
 a fresh `npx alia-app@0.49.0` with no account, its ports dropped from outside
 the VM, with VesnALIA Box installed from the branch and markers on for its Docker
@@ -189,7 +189,7 @@ changed to exit 0 without resetting.
 | Fork of the snapshot as it was, held at VesnALIA Box's check | Its own identity value, a marker with its own value and no box, a new machine ID and new SSH host keys, no VesnALIA credentials, access file or Tailscale state of the source's. It ran the same four processes, no port answered and no inner container ran. When the gate opened, the check passed. VesnALIA Box changed the policy to `unless-stopped` 67 ms after the gate opened, and wrote the release 22 ms after that. Its inner containers started 560 ms after the release. Port 2222 then served the fork's own new ED25519 key, not the source's. Its start took 668 ms and the check 703 ms, the gate's wait included |
 | VesnALIA's server killed with `kill -9` while a fork was held at its check | VesnALIA's own supervisor started the server again at once, before the VM's VesnALIA machine had reconnected, so the fork failed and VesnALIA Box could not yet delete it. The fork stayed held for 3 minutes, its four processes and no port, through a `docker restart` too. The next sweep set its policy to `no`, killed it and deleted it and its Docker data. It never wrote the release |
 | An ordinary stop and start of the source | Not held: its inner containers started 520 ms after `docker start` |
-| A restore of the source to the snapshot as it was | Not held: the new container had `BBBOX_FORK_HOLD` blank, from the snapshot's image, and restart policy `unless-stopped`. Its inner containers started 470 ms after `docker start`, with `A` back |
+| A restore of the source to the snapshot as it was | Not held: the new container had `ALIABOX_FORK_HOLD` blank, from the snapshot's image, and restart policy `unless-stopped`. Its inner containers started 470 ms after `docker start`, with `A` back |
 
 The fork joined VesnALIA as a VesnALIA machine of its own, with credentials of its own.
 A write of `B` in the fork, in all three places, left the source with `A`,
@@ -216,7 +216,7 @@ source was one of the person's machines, `linux` with 2 cores and 2 GiB.
 | Step | What happened |
 | --- | --- |
 | Take two snapshots, `before` and `plain` | Each paused the box for 3.1 to 3.5 s; 259 MB each |
-| `alia box snapshot keep ... --check`, then keep | "If src-b is released, it stays where it is until Fri 11 Dec; nothing is copied then, and from then on it takes its whole size, up to 259 MB on (the host)'s Docker's disk". The engine then had the tag `bbbox-kept/<install>/<snapshot>:2026-12-11` on the snapshot's image |
+| `alia box snapshot keep ... --check`, then keep | "If src-b is released, it stays where it is until Fri 11 Dec; nothing is copied then, and from then on it takes its whole size, up to 259 MB on (the host)'s Docker's disk". The engine then had the tag `aliabox-kept/<install>/<snapshot>:2026-12-11` on the snapshot's image |
 | Keep `--until 2026-12-31`, unkeep, keep again | The tag moved to `:2026-12-31`, was removed, then came back as `:2026-12-11`; one keep tag at a time |
 | Remove the machine | Its container went, and `plain`'s image and volume with it. `before`'s image, volume and keep tag stayed. `alia box snapshot list --all` listed it, kept until 2026-12-11, its box released. The doctor said "1 kept snapshot holds about 259 MB on Docker's disk" |
 | Fork from the kept snapshot, alone on the engine | Refused by VesnALIA Box's check and released: Docker gave the fork the address its source had, as the lowest free one. See below |
@@ -257,7 +257,7 @@ engine.
 | Remove the machine, then fork from the kept snapshot | The engine had no container. Docker gave the fork 172.16.1.2, its source's address. VesnALIA Box handed it over 1.1 s after the request: it held `A` in its file and in an inner Docker volume, and its reset ran, its identity value its own box ID |
 | Tag the kept image with two more keep dates, 2026-11-25 and 2026-12-20, then sweep | One keep tag stayed, `:2026-12-20`, and the snapshot was listed as kept until 2026-12-20 |
 | The backend's host set to `ssh://` the same machine; a new machine, take, keep, remove, fork | Over SSH the fork got its source's address too and was handed over in 6.5 s, with the file from before the take and its reset run |
-| Doctor; remove `bbbox/linux:1`, as a refresh does; delete the first kept snapshot; doctor | With two kept snapshots, about 8 MB that nothing else shares, as the two still shared the base layers. With one left, "It takes about 2.9 GB of Docker's disk that nothing else there shares, and up to 3.0 GB", against Docker's own unique size of 2.898 GB for the image, which shared only the Ubuntu layer, plus 7 MB of Docker data |
+| Doctor; remove `aliabox/linux:1`, as a refresh does; delete the first kept snapshot; doctor | With two kept snapshots, about 8 MB that nothing else shares, as the two still shared the base layers. With one left, "It takes about 2.9 GB of Docker's disk that nothing else there shares, and up to 3.0 GB", against Docker's own unique size of 2.898 GB for the image, which shared only the Ubuntu layer, plus 7 MB of Docker data |
 | Delete the kept snapshot | Its image, keep tag and volume went |
 
 The fake Docker host now gives a starting container the lowest free address,
@@ -276,7 +276,7 @@ from this repository, without VesnALIA. It needs no VesnALIA server: it calls th
 backend directly, as an install of its own called `conformance`.
 
 Two Proxmox QEMU VMs, each with 8 vCPU, 16 GiB of memory and a 100 GiB
-disk, ran Ubuntu 24.04.5 and Docker 29.1.3. Each had `bbbox/linux:1` built
+disk, ran Ubuntu 24.04.5 and Docker 29.1.3. Each had `aliabox/linux:1` built
 by `setup/docker/build.sh linux`. One VM ran the suite against its own
 engine, through the local socket. It also ran the suite against the other
 VM's engine, through `ssh://`. Each engine ran on the containerd image
@@ -337,7 +337,7 @@ commands, copies, Docker in the box, stop and start, sizes and live
 resize, interrupted acquires, image builds and two installs. Enrolment and
 reconnection to VesnALIA were skipped, as the suite ran without a VesnALIA server.
 
-The overlay2 engines ran the `bbbox/linux:1` image each had built on the
+The overlay2 engines ran the `aliabox/linux:1` image each had built on the
 containerd store, saved with `docker save` and loaded with `docker load`
 after the switch, as a rebuild's package downloads ran at about 75 KB/s.
 

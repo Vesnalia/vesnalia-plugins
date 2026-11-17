@@ -642,7 +642,7 @@ describe("the computer tools on a device (063, 7.1)", () => {
       };
       const computer = new DeviceComputer(deps);
       const ref = refOf((await computer.observe(BOX, { window: 1 })).text, /"Address"/);
-      const done = await computer.type(BOX, { ref, text: "bbtest ✓" });
+      const done = await computer.type(BOX, { ref, text: "aliatest ✓" });
       assert.equal(keyboardAtText, true, `${platform}: the text went only once the keyboard showed`);
       assert.doesNotMatch(done.text, /typed anyway/);
     }

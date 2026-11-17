@@ -1,4 +1,4 @@
-u=${1:-bbd-1}; D=/Users/$u/.alia-box/device
+u=${1:-aliad-1}; D=/Users/$u/.alia-box/device
 now() { python3 -c 'import time;print(time.time())'; }
 spid() { pgrep -u $u -f "src/device/main.ts" | head -1; }
 lines() { sudo grep -c "listening on" $D/server.log; }

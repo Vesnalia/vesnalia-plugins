@@ -31,7 +31,7 @@ export class Bridge {
     this.proxmox.guests.set(vmid, {
       vmid,
       name: parsed.keys.hostname ?? `CT${vmid}`,
-      ...(spec.pool === null ? {} : { pool: spec.pool ?? "bbbox" }),
+      ...(spec.pool === null ? {} : { pool: spec.pool ?? "aliabox" }),
       status: spec.running ? "running" : "stopped",
       template: spec.template === true,
       config: { ...parsed.keys, ...(parsed.description ? { description: parsed.description } : {}) },

@@ -334,7 +334,7 @@ describe("frontend: human interface", () => {
     store.setStudyState(s.id, "harvesting", "test");
     const h = store.insertHarvest({ study_id: s.id, from_state: "paused" }, "test");
     store.updateHarvest(h.id, { state: "frozen", base_sha: s.base_sha, best_sha: s.best_sha, promotions_json: "[]", finished_at: Date.now() });
-    const m = store.insertAdhocRun({ study_id: s.id, kind: "measure", ref_a: "base", ref_b: "split/1", sha_a: "aaaaaaa", sha_b: "bbbbbbb", host_id: "local", pairs: null, actor: "thr_agent" });
+    const m = store.insertAdhocRun({ study_id: s.id, kind: "measure", ref_a: "base", ref_b: "split/1", sha_a: "aaaaaaa", sha_b: "aliabbbbb", host_id: "local", pairs: null, actor: "thr_agent" });
     store.updateAdhocRun(m.id, { state: "done", bench_seconds: 12, result_json: JSON.stringify({ kind: "measure", text: "B (split/1) vs A (base): 12.0% lower size, one run each on local: win against the 1.00% threshold" }) });
     const g = store.insertAdhocRun({ study_id: s.id, kind: "gate", ref_a: null, ref_b: "split/2", sha_a: null, sha_b: "ccccccc", host_id: null, pairs: null, actor: "thr_agent" });
     store.updateAdhocRun(g.id, { state: "failed", error: "gate failed: npm test exited 1" });

@@ -23,10 +23,10 @@ interface Doctor {
 }
 
 const DOT: Record<ProbeState, string> = {
-  ok: "bbxs-tone bbxs-tone-live",
-  warn: "bbxs-tone bbxs-tone-stalled",
-  blocked: "bbxs-tone bbxs-tone-dead",
-  unknown: "bbxs-tone",
+  ok: "aliaxs-tone aliaxs-tone-live",
+  warn: "aliaxs-tone aliaxs-tone-stalled",
+  blocked: "aliaxs-tone aliaxs-tone-dead",
+  unknown: "aliaxs-tone",
 };
 
 export function Doctor() {
@@ -48,7 +48,7 @@ export function Doctor() {
   useEffect(() => load(false), [load]);
 
   if (doctor === null) {
-    return <div className="bbxs-skeleton m-4 h-40" aria-hidden />;
+    return <div className="aliaxs-skeleton m-4 h-40" aria-hidden />;
   }
 
   return (
@@ -62,7 +62,7 @@ export function Doctor() {
           <li key={probe.id} className="flex gap-3">
             <span
               className={`${DOT[probe.state]} mt-1.5 size-2 shrink-0 rounded-full`}
-              style={{ backgroundColor: "var(--bbxs)" }}
+              style={{ backgroundColor: "var(--aliaxs)" }}
               aria-hidden
             />
             <div className="min-w-0 space-y-0.5">

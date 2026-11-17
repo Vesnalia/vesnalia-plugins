@@ -140,7 +140,7 @@ tokens() {
 }
 
 ports_closed() {
-  local ns=alia-box-check-$$ host=veth-bbc$$ peer=veth-bbn$$ result=
+  local ns=alia-box-check-$$ host=veth-aliac$$ peer=veth-alian$$ result=
   sudo -n ip netns add "$ns" || return 1
   sudo -n ip link add "$host" type veth peer name "$peer" &&
     sudo -n ip link set "$peer" netns "$ns" &&

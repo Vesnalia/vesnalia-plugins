@@ -35,7 +35,7 @@ function toolFor(root: string): { readonly tool: string; readonly bin: string } 
   mkdirSync(bin);
   writeFileSync(join(bin, "ip"), `#!/bin/sh\nif [ "$1" = -o ]; then cat ${quote(join(root, "ip-addr.txt"))} 2>/dev/null; exit 0; fi\nexec cat ${quote(join(root, "ip-link.json"))}\n`, { mode: 0o755 });
   const tool = join(dir, "alia-box-identity");
-  writeFileSync(tool, `#!/bin/sh\nPATH=${quote(bin)}:$PATH BBBOX_IDENTITY_ROOT=${quote(root)} BBBOX_IDENTITY_NIC_WAIT_SECONDS=0 BBBOX_IDENTITY_SETTLE_SECONDS=0 exec bash ${quote(IDENTITY_SCRIPT)} "$@"\n`, { mode: 0o755 });
+  writeFileSync(tool, `#!/bin/sh\nPATH=${quote(bin)}:$PATH ALIABOX_IDENTITY_ROOT=${quote(root)} ALIABOX_IDENTITY_NIC_WAIT_SECONDS=0 ALIABOX_IDENTITY_SETTLE_SECONDS=0 exec bash ${quote(IDENTITY_SCRIPT)} "$@"\n`, { mode: 0o755 });
   return { tool, bin };
 }
 
@@ -349,7 +349,7 @@ test("the identity a snapshot holds and the fork check read the DHCP client ID o
   put(join(root, "etc/alia-box/identity"), "alia-box identity 1\nsource eth\nmac bc:24:11:0f:01:2c\n");
   put(join(bin, "alia-box-identity"), `#!/bin/sh\nprintf '${STATUS_RESET.replaceAll("\n", "\\n")}\\n'\n`, 0o755);
   put(join(bin, "id"), "#!/bin/sh\necho 0\n", 0o755);
-  const run = (script: string) => spawnSync("/bin/sh", ["-c", script.replaceAll(IDENTITY_TOOL, join(bin, "alia-box-identity"))], { encoding: "utf8", env: { BBBOX_IDENTITY_ROOT: root, PATH: `${bin}:${process.env.PATH ?? ""}` } });
+  const run = (script: string) => spawnSync("/bin/sh", ["-c", script.replaceAll(IDENTITY_TOOL, join(bin, "alia-box-identity"))], { encoding: "utf8", env: { ALIABOX_IDENTITY_ROOT: root, PATH: `${bin}:${process.env.PATH ?? ""}` } });
   const clientId = createHash("sha256").update("01f6839d58e72c").digest("hex");
   const held = run(forkSafetyScript());
   assert.deepEqual(forkSafetyOf(held.stdout, held.status).identity?.dhcpClientIds, [clientId], held.stderr);
@@ -418,10 +418,10 @@ test("070 unit 7: a fork its backend cannot copy fails with the backend's words,
   const { state } = forks;
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "set up" });
-  state.provider.forkWhy = "The Proxmox token lacks VM.Clone on /pool/bbbox.";
+  state.provider.forkWhy = "The Proxmox token lacks VM.Clone on /pool/aliabox.";
   assert.match((await rejection(state.snapshots.fork(COMMAND, box, standing(box), "set up"))).message, /cannot fork "set up" of box .+: The Proxmox token lacks VM\.Clone/);
   state.provider.forkWhy = null;
-  state.provider.forkFault = new Error("Proxmox's copy of snapshot bbsn of guest g1 failed: out of space");
+  state.provider.forkFault = new Error("Proxmox's copy of snapshot aliasn of guest g1 failed: out of space");
   const answer = await state.snapshots.fork(COMMAND, box, standing(box), "set up");
   const fork = await forked(state, answer.box);
   assert.equal(fork.state, "failed");
@@ -582,7 +582,7 @@ test("070 unit 7 reviews: before box_fork takes a snapshot, the box is checked a
   const runsOn: Standing = { box: { id: box.id, threadId: THREAD }, runsOn: true };
   assert.equal((await rejection(state.snapshots.checkForkOfBox(agent, box, runsOn))).code, "not_owner");
   assert.equal((await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box), { asMachine: true }))).code, "not_owner");
-  state.provider.forkWhy = "The Proxmox token lacks VM.Clone on /pool/bbbox.";
+  state.provider.forkWhy = "The Proxmox token lacks VM.Clone on /pool/aliabox.";
   assert.match((await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box)))).message, /lacks VM\.Clone/);
   state.provider.forkWhy = null;
   writeFileSync(join(forks.source.root, "etc/alia-box/identity"), "garbled\n");
@@ -610,7 +610,7 @@ function probedFork(): { readonly root: string; readonly breakTool: (name: strin
     root,
     breakTool: (name) => put(join(bin, name), `#!/bin/sh\necho "${name}: simulated Input/output error" >&2\nexit 2\n`, 0o755),
     seen: () => {
-      const ran = spawnSync("sh", ["-c", forkCheckScript().replaceAll(IDENTITY_TOOL, tool)], { encoding: "utf8", env: { ...process.env, BBBOX_IDENTITY_ROOT: root, PATH: `${bin}:${process.env.PATH}` } });
+      const ran = spawnSync("sh", ["-c", forkCheckScript().replaceAll(IDENTITY_TOOL, tool)], { encoding: "utf8", env: { ...process.env, ALIABOX_IDENTITY_ROOT: root, PATH: `${bin}:${process.env.PATH}` } });
       return parseForkSeen(ran.stdout, ran.status);
     },
   };

@@ -1,4 +1,4 @@
-// bbt-iwi.2 — server-level acceptance flow with the fake plugin host: the
+// aliat-iwi.2 — server-level acceptance flow with the fake plugin host: the
 // executor's grounded review submission, lead acceptance with a reason,
 // manual acceptance, returns with a remark, and the non-accepter callers
 // (helpers, threads of another team). No model calls; the built-in tracker
@@ -168,7 +168,7 @@ const listTasks = async (harness: ReturnType<typeof makeHost>["harness"]) => {
   return JSON.parse(result.stdout).tasks as Task[];
 };
 
-describe("verifiable acceptance flow (bbt-iwi.2)", () => {
+describe("verifiable acceptance flow (aliat-iwi.2)", () => {
   it("executor reports with grounds, lead accepts with a reason, manual path stays explicit", async () => {
     const { alia, harness } = makeHost(THREADS);
     await plugin(alia);

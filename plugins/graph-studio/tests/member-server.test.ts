@@ -81,7 +81,7 @@ function sdk(crew: ReturnType<typeof crewStub>, extra: Record<string, unknown> =
       events: { list: async () => [] },
       ...extra,
     },
-    // Shaped like VesnALIA's answer (BBP-21): without a providerId only the default
+    // Shaped like VesnALIA's answer (ALIAP-21): without a providerId only the default
     // provider's catalogue comes back, so a check that does not name the
     // provider never sees claude-code's models.
     providers: {
@@ -352,7 +352,7 @@ describe("resume after a reload", () => {
   });
 });
 
-describe("rerun from a checkpoint (BBP-15)", () => {
+describe("rerun from a checkpoint (ALIAP-15)", () => {
   async function checkpointBefore(host: FakePluginHost, runId: string, nodeId: string) {
     const { checkpoints } = (await host.harness.behavior.callRpc("listCheckpoints", { runId })) as {
       checkpoints: Array<{ checkpointId: string; next: string[] }>;

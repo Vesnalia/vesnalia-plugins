@@ -31,13 +31,13 @@
   home (no session, no workspace) and a session with no folder still answer `no_repo`. With no session, a workspace
   with no `id` non-empty once trimmed is `handler_error`, as a workspace without an absolute path already was. The
   plugin's lines name such a caller `session=none workspace=<id>`, never its path (Syns syns-pages-workspace-caller,
-  unife-B-0259). bb offers no new-session page, so nothing changes there. No method, result, reason, fragment or guide
+  unife-B-0259). VesnALIA offers no new-session page, so nothing changes there. No method, result, reason, fragment or guide
   text changed.
 
 ## 0.12.2
 
 - **The workspace opens again in the home's view of a session.** 0.12.0's bootstrap did nothing in any embedded
-  document, so the Thread Pages home (bb and Claude Code), which shows a session's page as an embed, showed the agent's
+  document, so the Thread Pages home (VesnALIA and Claude Code), which shows a session's page as an embed, showed the agent's
   page alone where its thread page shows the workspace. The bootstrap now does nothing only in a frame inside a page
   (an app, the agent's page in the workspace, a page another page embeds), which the host's kernel config says with
   `frame`. A page shown whole, at its own address or in the home's view, boots the workspace. A host that does not say
@@ -49,7 +49,7 @@
 
 The first release of this code: 0.12.0 sat on `main` with earlier bundles under that number and was never
 released, so it takes the next one (Syns B-0093, B-0102). The page script, how a call from an app's frame is scoped, and one sentence of the guide changed; no method, result,
-reason or fragment changed. Needs Thread Pages 1.13.4 (bb) or Unife Pages 0.5.4 (Claude Code), the first that hold a frame in the
+reason or fragment changed. Needs Thread Pages 1.13.4 (VesnALIA) or Unife Pages 0.5.4 (Claude Code), the first that hold a frame in the
 folder it is given: on an older host an app shows "showing a page in a frame needs Thread Pages 1.13.4 or Unife Pages
 0.5.4" in place of the app.
 
@@ -71,7 +71,7 @@ folder it is given: on an older host an app shows "showing a page in a frame nee
   not, it shows no app. A frame mark of any other shape is `bad_scope`.
 - **The guide** ends § *Apps in the workspace*'s first paragraph with the owner's sentence "An app is a page frame: what
   works on your page works in it." (D95 point 4, D97). 15,567 of 15,872 bytes.
-- **What the page host still does.** It reads the app's document, carries its relative CSS and JS inside it (bb serves
+- **What the page host still does.** It reads the app's document, carries its relative CSS and JS inside it (VesnALIA serves
   a page's files inside the page, not by URL), and opens its links (B-0105). When the workspace clears the page for
   itself it now keeps every plugin's page script, which the host carries into each frame. A new version of the app's
   document (another's change to its folder) is shown in the same frame, which keeps typed text and scroll (Unife Pages
@@ -138,10 +138,10 @@ changed; three reasons' meanings are worded anew.
 The page script changed; no method, result, reason, guide text or fragment changed.
 
 - **Links to this host's pages.** A link in an app or the agent's page to a page address (`…/page?session=…`) still
-  goes to `navigation.openExternal` first. When the host refuses it as its own address (`invalid_params`), which bb
+  goes to `navigation.openExternal` first. When the host refuses it as its own address (`invalid_params`), which VesnALIA
   and Unife Pages do for every name they count as theirs, the link opens instead: this session's own documents in
   the workspace, another session's page with `pages.open` (its entry document: `pages.open` takes no path). Before,
-  nothing opened. The address `bb pages init` gives (bb Connect's) works the same when the page is read locally
+  nothing opened. The address `alia pages init` gives (VesnALIA Connect's) works the same when the page is read locally
   (Syns B-0105).
 - **Full screen and copy in a frame.** Every frame the workspace opens carries `allow="fullscreen *; clipboard-write
   *"`: full screen works from an app as on a Thread Page, and a clipboard write works wherever the Thread Page itself
@@ -191,7 +191,7 @@ Syns CLI 0.3.25 (the design tree's D84 to D89). Needs Thread Pages 1.11.0 or Uni
 0.3.25.
 
 - **A page script.** The declaration says `pageScript: true`, and the plugin answers each served page
-  (`threadPagesPageScript` on bb, `kind: "pageScript"` on Claude Code): the page host, at the plugin's version, when
+  (`threadPagesPageScript` on VesnALIA, `kind: "pageScript"` on Claude Code): the page host, at the plugin's version, when
   one `syns repo --json` in the session's folder succeeds (a repository, or a folder placed in one); none otherwise, or
   when the check takes over 1.5 s. The host gets only the version when it already holds that script. The page host is
   `bartsoj/syns-workspace-light-template`'s `.page/pagehost.js` (version 3), now the plugin's, without the two strings
@@ -244,7 +244,7 @@ session sees what 0.9.0 gave it.
 ## 0.9.0
 
 One CLI run per page call, on both hosts, on the latest CLI only (Syns roadmap 280; `bartsoj/syns` D-244, Q-0155;
-the plugin's design tree D83). Bb and Claude Code answer every call alike; the plugin stays an adapter of the CLI.
+the plugin's design tree D83). VesnALIA and Claude Code answer every call alike; the plugin stays an adapter of the CLI.
 
 - **Minimum CLI.** One minimum for every method: the Syns CLI, 0.3.24 or later (it carries
   Syns roadmaps 277–279). No `syns --version` is run and no method declares a minimum: `cli_too_old` is gone. An
@@ -264,11 +264,11 @@ the plugin's design tree D83). Bb and Claude Code answer every call alike; the p
 - **`syns.ls` takes `format: "lines"`:** each entry one string, `path\tblob\tsize`, a folder's blob and size empty,
   up to 9,000 a page and inside the 1 MiB answer. Without it the answer is 0.8.7's, byte for byte, and `limit` stays
   at most 1,500.
-- **The 25 s limit stops the call's run** on both hosts: the host call's signal on bb, the call's signal on Claude
+- **The 25 s limit stops the call's run** on both hosts: the host call's signal on VesnALIA, the call's signal on Claude
   Code. A run still waiting for a slot leaves the queue.
-- **`SYNS_CALLER`** names the host in every request's User-Agent: `syns/<v> (bb-plugin)` on bb, `syns/<v>
+- **`SYNS_CALLER`** names the host in every request's User-Agent: `syns/<v> (alia-plugin)` on VesnALIA, `syns/<v>
   (claude-pages)` on Claude Code.
-- **bb holds its host worker** until 15 minutes after the last run, so the next call finds it warm.
+- **VesnALIA holds its host worker** until 15 minutes after the last run, so the next call finds it warm.
 - A refusal with nothing on standard output and an `error:` line on standard error (the CLI's own argument parser)
   now reaches the page in those words, redacted, rather than the generic sentence.
 
@@ -309,8 +309,8 @@ the plugin's design tree D83). Bb and Claude Code answer every call alike; the p
 - The instruction's first line also covers "open this Syns template": the agent follows TOOLS.md, so the
   person gets their own copy with the app as the page, instead of a pull of the template itself.
 
-- Docs: on bb the host is Thread Pages 1.10.0 or later (the Unife Pages host under its bb name); on Claude Code the
-  Syns marketplace installs everything in one command. PLUGIN_OVERVIEW.md updated for the BB Community listing.
+- Docs: on VesnALIA the host is Thread Pages 1.10.0 or later (the Unife Pages host under its VesnALIA name); on Claude Code the
+  Syns marketplace installs everything in one command. PLUGIN_OVERVIEW.md updated for the VesnALIA Community listing.
 
 ## 0.8.2
 
@@ -332,10 +332,10 @@ Claude Code, and one call shape on both hosts.
   of the same table and dispatch. The Unife Pages daemon starts it and
   supervises it (unife-pages U45). The CLI runs on this machine.
 - **The session's folder comes with the call** (`caller.workspace`,
-  unife-pages U44), on both hosts. The plugin no longer asks bb's SDK for
-  it; it needs a host that sends it (bb-pages and claude-pages with U44).
+  unife-pages U44), on both hosts. The plugin no longer asks VesnALIA's SDK for
+  it; it needs a host that sends it (alia-pages and claude-pages with U44).
 - **Provenance is host-neutral:** a page's write records `by.integration`
-  `syns-pages` and `by.trigger` `page`. Before, they were `syns-bb-plugin`
+  `syns-pages` and `by.trigger` `page`. Before, they were `syns-alia-plugin`
   and `thread-page`; a page that reads them changes with this release.
 
 ## 0.7.0
@@ -348,10 +348,10 @@ The same declaration on every Unife Pages host (07 R-X1). No method changed.
   page made it" and names `threadPage.setScope` where it explains a scope.
 - The fragment is held to the protocol's 2,048 bytes; the 1,200-character
   cap of the one-slot era is gone. The live check reads the fragment's slot
-  from `bb pages status`.
+  from `alia pages status`.
 - The tests run the declaration through the protocol's own validator and
-  bb-pages' discovery, and diff it against a frozen copy.
-- `src/syns-process.ts` holds finding and running the CLI, apart from bb's
+  alia-pages' discovery, and diff it against a frozen copy.
+- `src/syns-process.ts` holds finding and running the CLI, apart from VesnALIA's
   host entry, so another host's runner can use it.
 
 ## 0.6.1
@@ -431,7 +431,7 @@ before on older Thread Pages.
 - **`syns.place { template, path, version? }`** places a template as a new
   folder of the session's repository. It always runs at the session's folder,
   whatever the scope.
-  - It records the page's provenance (integration `syns-bb-plugin`, the
+  - It records the page's provenance (integration `syns-alia-plugin`, the
     session as run, trigger `thread-page`).
   - It answers `checkout_dirty` while the checkout holds unpublished edits,
     which the CLI's `place` does not refuse; `occupied` when the folder already
@@ -441,19 +441,19 @@ before on older Thread Pages.
   `cli_too_old`, with what is needed and what is there.
 - **No skills.** The plugin ships none. The instruction fragment holds the
   `syns.*` essentials, one line on looking for a template first, and where the
-  setup doc is: `syns cat SETUP.md --repo bartsoj/syns-bb-plugin-setup`.
+  setup doc is: `syns cat SETUP.md --repo bartsoj/syns-alia-plugin-setup`.
 - The guide no longer repeats each method's description, which Thread Pages
   prints in its roster.
 
 ## 0.3.2
 
-- The network rule for Syns CLI 0.3.8, which works inside bb's sandbox: `syns`
+- The network rule for Syns CLI 0.3.8, which works inside VesnALIA's sandbox: `syns`
   runs inside it; a failed command is retried once after `syns upgrade`.
 
 ## 0.3.1
 
 - The guide says what marks a page's own write: `by.integration`
-  `syns-bb-plugin` together with `by.trigger` `thread-page`. `by.run` is not
+  `syns-alia-plugin` together with `by.trigger` `thread-page`. `by.run` is not
   enough on its own, because agents' pushes set it too.
 
 ## 0.3.0
@@ -469,7 +469,7 @@ before on older Thread Pages.
 ## 0.2.2
 
 - `syns.repo` passes on a placed folder's `holder`, `path` and `number`.
-- The instruction fragment fits whole in bb's 4,096-character instruction cut.
+- The instruction fragment fits whole in VesnALIA's 4,096-character instruction cut.
 - The guide's wording covers placed folders.
 
 ## 0.2.1
@@ -488,5 +488,5 @@ before on older Thread Pages.
 
 ## 0.1.0
 
-- Fourteen `syns.*` capabilities for bb Thread Pages, run through the Syns CLI
+- Fourteen `syns.*` capabilities for VesnALIA Thread Pages, run through the Syns CLI
   on the session's machine.

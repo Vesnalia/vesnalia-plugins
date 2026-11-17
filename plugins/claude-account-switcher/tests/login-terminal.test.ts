@@ -1488,7 +1488,7 @@ test("a browser-launch failure is surfaced without waiting for login timeout", a
         create: async () => terminal("running"),
         get: async () => terminal("running"),
         output: async () =>
-          "ALIA_CLAUDE_LOGIN_INPUT_READY\nBB_CLAUDE_LOGIN_BROWSER_FAILED\n",
+          "ALIA_CLAUDE_LOGIN_INPUT_READY\nALIA_CLAUDE_LOGIN_BROWSER_FAILED\n",
       },
       "thread_1",
       { sleep: async () => undefined },
@@ -1550,7 +1550,7 @@ test("authorization return becomes available from the parent launcher marker", a
       create: async () => terminal("running"),
       get: async () => terminal("exited", 0),
       output: async () =>
-        `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+        `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nALIA_CLAUDE_LOGIN_INPUT_READY\n`,
     },
     "thread_1",
     {

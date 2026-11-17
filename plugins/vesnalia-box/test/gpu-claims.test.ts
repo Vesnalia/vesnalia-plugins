@@ -383,10 +383,10 @@ test("071 unit 5: the claim rules on their own: holders, reservations, the lock,
   assert.deepEqual(await waitForAnswer({ read: async () => lines, sleep: async () => {} }, 1, { part: "shared", card: A, generation: 9 }), { is: "unanswered" });
   assert.deepEqual(await settleOutstanding({ read: async () => lines, sleep: async () => {} }, async () => [{ vmid: 2, tags: [marker("shared", CARD_B, 2)] }]), [{ vmid: 2, marker: marker("shared", CARD_B, 2) }]);
   assert.deepEqual(await settleOutstanding({ read: async () => parseHelperLines("    at 1"), sleep: async () => {} }, async () => [{ vmid: 2, tags: [marker("shared", CARD_B, 2)] }]), [], "with no ledger lines there is no helper to wait for");
-  const seen = { node: "pve", pool: "bbbox", vmid: 9190, now: 1_000_000_000_000, ago: () => "just now" };
+  const seen = { node: "pve", pool: "aliabox", vmid: 9190, now: 1_000_000_000_000, ago: () => "just now" };
   assert.equal(cardsView(null, seen).is, "none");
   assert.equal(cardsView("    at 1000000000\n    gpu GPU-x 0:1:0.0 0 1 2", seen).is, "none", "a report with no helper line: as before 071");
-  assert.equal(cardsView(`    at 1000000000\n${report}\n    serves bbbox`, seen).is, "on");
+  assert.equal(cardsView(`    at 1000000000\n${report}\n    serves aliabox`, seen).is, "on");
   assert.equal(cardsView(`    at 1000000000\n${report}\n    serves other`, seen).is, "blocked");
 });
 
@@ -1032,7 +1032,7 @@ test("071 unit 5, go review 3 H1: the doctor's VMID range check fails on a guest
   assert.match(doctor?.detail ?? "", /CT 7003, of install 9zz2/);
   await assert.rejects(backend.acquire(box(), null, hooks(), signal()), /CT 7003, of install 9zz2/);
 
-  const unseen = /The token sees only the guests it has VM\.Audit on, those of pool bbbox, so a guest elsewhere in the range, or another install's range that overlaps this one, is not seen: this check is no proof that the range is this install's alone\./;
+  const unseen = /The token sees only the guests it has VM\.Audit on, those of pool aliabox, so a guest elsewhere in the range, or another install's range that overlaps this one, is not seen: this check is no proof that the range is this install's alone\./;
   const hidden = new ClaimsBridge();
   hidden.proxmox.hidden.add(7003);
   const quiet = (await hidden.backend().doctor()).checks.find((check) => check.id === "proxmox.vmids");

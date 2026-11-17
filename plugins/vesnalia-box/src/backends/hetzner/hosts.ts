@@ -3,10 +3,10 @@ import type { BackendStorage } from "../types.ts";
 import { HetznerError, type Hetzner, type HetznerServer, type Labels } from "./api.ts";
 
 export const LABEL = {
-  install: "bbbox-install",
-  host: "bbbox-host",
-  role: "bbbox-role",
-  image: "bbbox-image",
+  install: "aliabox-install",
+  host: "aliabox-host",
+  role: "aliabox-role",
+  image: "aliabox-image",
 } as const;
 
 export type HostState = "creating" | "ready" | "deleting";

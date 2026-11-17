@@ -2121,7 +2121,7 @@ it("confirms terminal state with Gitea, cleans up, and refuses to restart a merg
   const { host, settle } = await startAutoFixers();
   await enable(host, pr42);
   settle("acme/widgets#42", true);
-  await idle(host, "Merged.\nBB_GITEA_AUTO_FIX: MERGED");
+  await idle(host, "Merged.\nALIA_GITEA_AUTO_FIX: MERGED");
   await expect(autoFixerStatus(host)).resolves.toMatchObject({
     status: "archived", outcome: "merged",
     mergedAt: "2026-09-28T01:00:00Z",
@@ -2229,7 +2229,7 @@ it("fails an unconfirmed marker and resumes the retained thread on retry", async
     status: "failed",
     error: "provider crashed",
   });
-  await idle(host, "Need approval.\nBB_GITEA_AUTO_FIX: NEEDS_YOU");
+  await idle(host, "Need approval.\nALIA_GITEA_AUTO_FIX: NEEDS_YOU");
   await expect(autoFixerStatus(host)).resolves.toMatchObject({
     status: "failed",
   });

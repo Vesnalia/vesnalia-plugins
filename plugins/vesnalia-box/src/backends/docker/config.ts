@@ -44,10 +44,10 @@ export interface DockerConfig {
 }
 
 export const DOCKER_DEFAULTS = {
-  linuxImage: `bbbox/linux:${IMAGE_VERSION}`,
-  desktopImage: `bbbox/linux-desktop:${IMAGE_VERSION}`,
-  waylandImage: `bbbox/linux-desktop-wayland:${IMAGE_VERSION}`,
-  network: "bbbox",
+  linuxImage: `aliabox/linux:${IMAGE_VERSION}`,
+  desktopImage: `aliabox/linux-desktop:${IMAGE_VERSION}`,
+  waylandImage: `aliabox/linux-desktop-wayland:${IMAGE_VERSION}`,
+  network: "aliabox",
   boxes: 10,
   boxesPerCard: BOXES_PER_CARD,
   gpuMemoryMiB: SERVER_GPU_MIB,

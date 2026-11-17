@@ -49,9 +49,9 @@ const boxName = "proud-crane";
   import { pieceMenu } from "../../effects/piece-menu.ts";
 
   const menuSays: Record<string, string> = {
-    terminal: "In BB, this opens the box's terminal beside its desktop.",
-    paste: "In BB, this types your text into the box.",
-    full: "In BB, this fills the screen with the desktop.",
+    terminal: "In ALIA, this opens the box's terminal beside its desktop.",
+    paste: "In ALIA, this types your text into the box.",
+    full: "In ALIA, this fills the screen with the desktop.",
   };
 
   function startDesktop(piece: HTMLElement): void {
@@ -84,7 +84,7 @@ const boxName = "proud-crane";
       click.classList.remove("ping");
       void click.offsetWidth;
       click.classList.add("ping");
-      say("In BB, your clicks and keys go to the box.");
+      say("In ALIA, your clicks and keys go to the box.");
     });
 
     const menu = pieceMenu<null>(piece.querySelector<HTMLElement>(".desktop-menu")!, (choice) => say(menuSays[choice]!));

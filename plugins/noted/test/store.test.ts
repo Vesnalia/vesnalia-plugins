@@ -24,7 +24,7 @@ describe("store", () => {
   });
   it("records revisions and returns the latest", () => {
     const s = fresh(); const a = s.createSession(sessionInput);
-    s.addRevision(a.id, "aaa", 10, "open"); const r2 = s.addRevision(a.id, "bbb", 12, "idle");
+    s.addRevision(a.id, "aaa", 10, "open"); const r2 = s.addRevision(a.id, "aliab", 12, "idle");
     expect(s.latestRevision(a.id)?.id).toBe(r2.id);
     expect(s.listRevisions(a.id)).toHaveLength(2);
   });

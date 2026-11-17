@@ -1,4 +1,4 @@
-"""Exercise the installed BB provider and real Pi child; no BB thread or LLM call.
+"""Exercise the installed ALIA provider and real Pi child; no ALIA thread or LLM call.
 Leaves its isolated artifacts intact; only its owned process group is stopped.
 """
 import argparse
@@ -22,7 +22,7 @@ SCRATCH = Path(tempfile.mkdtemp(prefix='pi-command-sync-live-'))
 driver = f'''
 import {{experimental_providerBridge as bridge}} from {json.dumps(HOST.as_uri())};
 import {{prepareRuntime}} from {json.dumps(ADDON.as_uri())};
-process.env.BB_PI_BRIDGE_COMMAND = prepareRuntime({json.dumps(str(SCRATCH / 'data'))}).launcher;
+process.env.ALIA_PI_BRIDGE_COMMAND = prepareRuntime({json.dumps(str(SCRATCH / 'data'))}).launcher;
 bridge.start({{pluginId: 'provider-pi', dataDir: {json.dumps(str(SCRATCH))}, tempDir: {json.dumps(str(SCRATCH))}}});
 let buffer = '';
 process.stdin.on('data', chunk => {{
@@ -36,9 +36,9 @@ process.stdin.on('data', chunk => {{
 '''
 env = dict(os.environ, HOME=str(SCRATCH),
            PI_CODING_AGENT_DIR=os.environ.get('PI_CODING_AGENT_DIR', str(Path.home() / '.pi/agent')),
-           BB_PI_BRIDGE_ARGS=json.dumps(['--extension', str(ROOT / 'tests/no-model-probe.mjs')]),
-           BB_PI_BRIDGE_SESSION_DIR=str(SCRATCH / 'sessions'),
-           BB_PI_COMMAND_MENU_DIR=str(SCRATCH / 'menu'))
+           ALIA_PI_BRIDGE_ARGS=json.dumps(['--extension', str(ROOT / 'tests/no-model-probe.mjs')]),
+           ALIA_PI_BRIDGE_SESSION_DIR=str(SCRATCH / 'sessions'),
+           ALIA_PI_COMMAND_MENU_DIR=str(SCRATCH / 'menu'))
 process = subprocess.Popen(['node', '--input-type=module', '-e', driver], cwd=SCRATCH, env=env,
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=(SCRATCH / 'stderr.log').open('wb'), start_new_session=True)
@@ -86,7 +86,7 @@ try:
     result = request('thread/start', {'threadId': 'isolated-slash-probe', 'cwd': str(SCRATCH),
                                      'options': OPTIONS, 'instructionMode': 'append'}, 'start')
     provider_id = result['providerThreadId']
-    for index, command in enumerate(['/session', '/commands reload', '/bb-probe', '/reload', '/thinking', '/settings']):
+    for index, command in enumerate(['/session', '/commands reload', '/alia-probe', '/reload', '/thinking', '/settings']):
         start = len(records)
         req_id = f'command-{index}'
         mentions = []
@@ -111,8 +111,8 @@ try:
         assert 'FELL THROUGH' not in page, command
         assert 'provider/stream' not in page, 'Unexpected model request'
         expected = {'/session': 'sessionId', '/commands reload': '/reload',
-                    '/bb-probe': 'Command executed', '/reload': 'Reloaded Pi',
-                    '/thinking': 'Thinking:', '/settings': 'BB cannot render'}[command]
+                    '/alia-probe': 'Command executed', '/reload': 'Reloaded Pi',
+                    '/thinking': 'Thinking:', '/settings': 'ALIA cannot render'}[command]
         assert expected in page, f'{command} did not return its native result'
         assert 'agent_start' not in page, 'Unexpected model turn'
         print(f'PASS {command}: accepted, native result, settled boundary')

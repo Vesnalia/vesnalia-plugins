@@ -14,8 +14,8 @@ tmp/
 __pycache__/
 *.py[cod]
 
-# Local BB/editor state
-.bb/
+# Local ALIA/editor state
+.vesnalia/
 .vscode/
 .idea/
 *.swp

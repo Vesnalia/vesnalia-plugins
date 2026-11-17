@@ -68,7 +68,7 @@ describe("activity axes", () => {
     expect(deriveActivity(input({ thread: thread({ archived: true }), interactions: [{ id: "i", kind: "approval", title: "?" }] })).needsYou).toEqual([]);
   });
 
-  it("a stopped loop needs you without changing the activity, but only with a reason and a suggested action (BBP-87)", () => {
+  it("a stopped loop needs you without changing the activity, but only with a reason and a suggested action (ALIAP-87)", () => {
     expect(deriveActivity(input({ stoppedLoops: 1 }))).toMatchObject({ activity: "idle", needsYou: [], diagnoses: ["Stopped: loop"] });
     const withDetail = deriveActivity(input({ stoppedLoops: 1, stoppedLoop: { reason: "step 6 reached maxSteps 6", action: "Ship it" } }));
     expect(withDetail).toMatchObject({ activity: "idle", needsYou: ["loop"], diagnoses: ["Stopped: loop"] });
@@ -126,7 +126,7 @@ describe("activity tracker", () => {
     expect((await tracker.views(store.getCrew(crew.id)!)).map((view) => view.rowStatus?.tone ?? null)).toEqual([null, "running", null]);
   });
 
-  it("BBP-87: a stopped-loop message needs a reason AND a body to count as Needs you (loop)", async () => {
+  it("ALIAP-87: a stopped-loop message needs a reason AND a body to count as Needs you (loop)", async () => {
     const { service, port, store } = setup();
     const { members } = await running(service, port);
     const sender = members["dev-impl"]!;
@@ -173,7 +173,7 @@ describe("activity tracker", () => {
   });
 });
 
-describe("graph-approval on Needs you (BBP-32)", () => {
+describe("graph-approval on Needs you (ALIAP-32)", () => {
   it("positive: deriveActivity adds graph-approval and the question text", () => {
     const derived = deriveActivity(input({ graphQuestion: { runId: "run_1", graphId: "release", nodeId: "n1", question: "Ship it?" } }));
     expect(derived.needsYou).toContain("graph-approval");

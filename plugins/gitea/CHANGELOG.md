@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Read native auto-merge state from the Gitea timeline, including schedules created outside BB, instead of a saved local selection.
+- Read native auto-merge state from the Gitea timeline, including schedules created outside VesnALIA, instead of a saved local selection.
 - Show auto-merge as unavailable when native state cannot be read or the timeline is incomplete.
 - Treat the exact already-scheduled HTTP 409 response as success; preserve other Gitea error messages.
 - Opening or reloading pages reads state without scheduling or cancelling merges.
@@ -15,7 +15,7 @@
 
 - Replace separate request and cancellation buttons with one accessible Auto-merge on/off toggle.
 - Remember successful native merge requests per account, repository, and PR across reloads and restarts; clear the selection only after confirmed closure or merger. Failed cancellation or PR reads preserve the selection.
-- Opening or reloading pages never schedules merges. The selection records BB requests; outside-BB queue changes cannot be reflected because the deployed Gitea API does not expose queue state.
+- Opening or reloading pages never schedules merges. The selection records VesnALIA requests; outside-ALIA queue changes cannot be reflected because the deployed Gitea API does not expose queue state.
 
 ## 1.1.1 - 2026-10-08
 
@@ -36,7 +36,7 @@
 
 ### Fixed
 
-- Automatically archive auto-fixers when their PR closes or merges, including paused and failed sessions; stop threads, withdraw queued automation, and invoke BB resource cleanup.
+- Automatically archive auto-fixers when their PR closes or merges, including paused and failed sessions; stop threads, withdraw queued automation, and invoke VesnALIA resource cleanup.
 - Retry failed terminal cleanup while retaining the confirmed PR outcome.
 - Fix stale caches, duplicate mutations, and diff whitespace handling.
 

@@ -5,7 +5,7 @@
 // operation into the calls GitHub needs.
 //
 // Why: the owner wants an agent to run the same `bend` commands whether a
-// repository's issues are in beads or on GitHub (bead-bb-c9l.1). GitHub is
+// repository's issues are in beads or on GitHub (bead-alia-c9l.1). GitHub is
 // the first hosted tracker, and the first test of whether the common shape
 // holds for one that is not beads. Everything that decides where a thing is
 // kept on GitHub lives in this one file.
@@ -16,14 +16,14 @@
 //     type (`type:<name>`), priority (`priority:<0-4>`), category
 //     (`category:<name>`, the same convention as with beads), "in
 //     progress" (`in-progress`, on an open issue) and Someday (`someday`,
-//     on an open issue; bead-bb-26g). GitHub makes a label the
+//     on an open issue; bead-alia-26g). GitHub makes a label the
 //     first time it is applied. As marked sections at the end of the
 //     description (see tracker/parts.go): requirements, done, plan, notes.
 //   - Free-form data kept with an issue (the Airbender tab keeps an epic's
 //     branch there) has no field on GitHub, and a label will not do: GitHub
 //     refuses one over 50 characters. It is kept as one hidden line at the
 //     end of the description, `<!-- bend:data {"key":"value"} -->`, which
-//     github.com does not show (bead-bb-c9l.6). A visible section was
+//     github.com does not show (bead-alia-c9l.6). A visible section was
 //     rejected: it would show for what only tools read.
 //   - "Discovered from" and "related" do not exist on GitHub. They are kept
 //     as lines of a marked "Links" section, written on BOTH issues, so that
@@ -84,7 +84,7 @@ const (
 const inProgress = "in-progress"
 
 // someday is the label on an open issue set aside for later: the status
-// tracker.DeferredStatus (bead-bb-26g).
+// tracker.DeferredStatus (bead-alia-26g).
 const someday = "someday"
 
 // sections are the marked sections of a description, name and visible
@@ -125,7 +125,7 @@ var dataLine = regexp.MustCompile(`(?:^|\n)<!-- bend:data (\{[^\n]*\}) -->\s*$`)
 // Only the very last line counts, which is where it is always written. A
 // line of the same shape further up is text: an issue that describes this
 // very line, or quotes another issue's, must not have that taken as its
-// own data (bead-bb-c9l.6, found in review). The price: someone who types
+// own data (bead-alia-c9l.6, found in review). The price: someone who types
 // under the line on github.com turns it into text, and the data reads as
 // gone until the line is last again.
 func splitData(body string) (string, map[string]string) {
@@ -769,7 +769,7 @@ func (github *adapter) List(filter tracker.ListFilter) ([]tracker.Issue, error) 
 			continue
 		}
 		// The default list leaves Someday out, as tracker.Narrow does
-		// (bead-bb-26g).
+		// (bead-alia-26g).
 		if filter.Status == nil && issue.Status == tracker.DeferredStatus {
 			continue
 		}
@@ -1153,7 +1153,7 @@ func (github *adapter) Stop(id string) error {
 // it stopped half-way (the local copy sends a change again when GitHub
 // could not be reached), an issue already closed is not closed again, and
 // the comment is added once: the other order added the comment anew at
-// every attempt until the closing went through (bead-bb-c9l.15).
+// every attempt until the closing went through (bead-alia-c9l.15).
 func (github *adapter) Close(id, reason string) error {
 	issue, err := github.need(id)
 	if err != nil {
@@ -1297,7 +1297,7 @@ func (github *adapter) Link(id, otherID, kind string) error {
 	// The link is two lines, one on each issue, written one after the
 	// other. Each is written only where it is missing, so that a link left
 	// half made (the second write did not reach GitHub) is finished when
-	// asked again, not refused as "already linked" (bead-bb-c9l.15).
+	// asked again, not refused as "already linked" (bead-alia-c9l.15).
 	link := tracker.TextLink{Kind: kind, Direction: "out", ID: strconv.Itoa(other.Number)}
 	back := mirror(link, strconv.Itoa(issue.Number))
 	mine, theirs := false, false

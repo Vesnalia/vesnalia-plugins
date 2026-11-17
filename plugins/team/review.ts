@@ -1,4 +1,4 @@
-// bbt-iwi.2 — verifiable acceptance backend: the executor's review submission
+// aliat-iwi.2 — verifiable acceptance backend: the executor's review submission
 // (result, artifacts, actual checks, remaining problems) and the lead's or
 // the user's manual acceptance decisions (accept / changes-requested with a
 // reason). Storage belongs to the selected tracker only — Beads issue
@@ -200,7 +200,7 @@ export function latestDecision(
 }
 
 /**
- * bbt-iwi.2 integrity fix: describe pieces of a RAW stored record that the
+ * aliat-iwi.2 integrity fix: describe pieces of a RAW stored record that the
  * tolerant read would drop. A damaged record must never be overwritten by a
  * later append — the caller refuses with this message instead, so the
  * original (possibly unsupported) history is preserved for a human decision.
@@ -262,7 +262,7 @@ export interface AcceptanceGateInput {
   acceptReason: string | null | undefined;
   returnReason: string | null | undefined;
   /**
-   * bbt-iwi.2 fix: the id of the submission the caller reviewed. When
+   * aliat-iwi.2 fix: the id of the submission the caller reviewed. When
    * given, it must match the submission stored after this call — a stale
    * UI/CLI view never auto-accepts a rewritten, unreviewed report. A manual
    * acceptance grounds on the report only through this explicit reference.
@@ -398,7 +398,7 @@ const duplicateDecision = (
   (latest.submissionRef ?? null) === (acceptBasis(caller, currentSubmission, expected) === "submission" ? currentSubmission?.id ?? null : null);
 
 /**
- * The verifiable-acceptance gate for one task update (bbt-iwi.2).
+ * The verifiable-acceptance gate for one task update (aliat-iwi.2).
  *
  * Every done transition (except an idempotent done→done) and every entry into
  * review is gated for team threads: the lead accepts only with a grounded

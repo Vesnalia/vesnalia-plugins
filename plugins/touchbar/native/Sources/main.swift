@@ -11,7 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var terminationSources: [DispatchSourceSignal] = []
 
     private var readinessURL: URL {
-        NativeConfig.applicationSupport.appendingPathComponent("BBTouchBar.ready")
+        NativeConfig.applicationSupport.appendingPathComponent("AliaTouchBar.ready")
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

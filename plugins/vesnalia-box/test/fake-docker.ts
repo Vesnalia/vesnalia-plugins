@@ -73,7 +73,7 @@ function imageWithIdentityReset(root: string, version: number): void {
   writeIn(root, "etc/machine-id", `${IMAGE_MACHINE_ID}\n`);
   writeIn(root, "etc/ssh/ssh_host_ed25519_key", "private\n");
   writeIn(root, "etc/ssh/ssh_host_ed25519_key.pub", `${IMAGE_HOST_KEY}\n`);
-  const enabled = spawnSync("bash", [join(root, "usr/local/sbin/alia-box-identity"), "enable", "--no-unit"], { env: { ...process.env, BBBOX_IDENTITY_ROOT: root }, encoding: "utf8" });
+  const enabled = spawnSync("bash", [join(root, "usr/local/sbin/alia-box-identity"), "enable", "--no-unit"], { env: { ...process.env, ALIABOX_IDENTITY_ROOT: root }, encoding: "utf8" });
   assert.equal(enabled.status, 0, `the image's build turned the reset on: ${enabled.stderr}`);
 }
 
@@ -94,13 +94,13 @@ export function fakeDockerHost(host: Record<string, unknown> = {}): FakeDockerHo
   fakeIdentityTools(join(root, "identity-bin"));
   // As setup/docker/build.sh labels its images: the layout, and a fresh record (049).
   const record = (kind: string) => JSON.stringify({ contract: 1, image: "standard", kind, arch: "x86_64", build: "build.fake", built: new Date().toISOString(), os: "Ubuntu 24.04.5 LTS", tools: { node: "24.21.0" } });
-  const label = (kind: string) => ({ "bbbox.image-version": "1", "bbbox.fork-hold": "1", "bbbox.image-record": record(kind) });
+  const label = (kind: string) => ({ "aliabox.image-version": "1", "aliabox.fork-hold": "1", "aliabox.image-record": record(kind) });
   writeFileSync(
     join(root, "images.json"),
     JSON.stringify({
-      "bbbox/linux:1": label("linux"),
-      "bbbox/linux-desktop:1": { ...label("linux-desktop"), "bbbox.gpu-bus-id": "1" },
-      "bbbox/linux-desktop-wayland:1": label("linux-desktop-wayland-cpu"),
+      "aliabox/linux:1": label("linux"),
+      "aliabox/linux-desktop:1": { ...label("linux-desktop"), "aliabox.gpu-bus-id": "1" },
+      "aliabox/linux-desktop-wayland:1": label("linux-desktop-wayland-cpu"),
     }),
   );
   let values = { ...host };
@@ -138,7 +138,7 @@ export function fakeDockerHost(host: Record<string, unknown> = {}): FakeDockerHo
     withoutForkHold: (image) => {
       const path = join(root, "images.json");
       const images = JSON.parse(readFileSync(path, "utf8"));
-      delete images[image]["bbbox.fork-hold"];
+      delete images[image]["aliabox.fork-hold"];
       writeFileSync(path, JSON.stringify(images));
     },
   };

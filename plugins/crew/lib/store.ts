@@ -229,7 +229,7 @@ export const MIGRATIONS: readonly string[] = [
      message_id TEXT NOT NULL,
      created_at INTEGER NOT NULL
    )`,
-  // BBP-31: links a graph-studio run (crew_graph_run) back to the member and
+  // ALIAP-31: links a graph-studio run (crew_graph_run) back to the member and
   // crew that started it, durably — graph-studio only indexes runs by thread.
   `CREATE TABLE IF NOT EXISTS graph_runs (
      run_id TEXT PRIMARY KEY,
@@ -289,7 +289,7 @@ export const MESSAGE_STATUSES = [
   "failed",
 ] as const;
 export type MessageStatus = (typeof MESSAGE_STATUSES)[number];
-/** `info`: a status report to the human — shown, but never an open question (BBP-23). */
+/** `info`: a status report to the human — shown, but never an open question (ALIAP-23). */
 export type MessageKind = "message" | "system" | "info";
 export type Priority = "normal" | "urgent";
 /** Why a message waits: re-evaluated by the delivery service on every drain. */
@@ -401,7 +401,7 @@ export type HandoverRow = {
 };
 export type MemberEnvRow = { memberId: string; environmentId: string | null; path: string | null; branch: string | null; updatedAt: number };
 
-/** BBP-31: a graph-studio run started by crew_graph_run, linked to the member and crew that started it. */
+/** ALIAP-31: a graph-studio run started by crew_graph_run, linked to the member and crew that started it. */
 export type GraphRunRow = {
   runId: string;
   crewId: string;
@@ -1361,7 +1361,7 @@ export function createStore(db: Database, now: () => number = Date.now) {
       const guard = from && from.length > 0 ? ` AND state IN (${from.map(() => "?").join(", ")})` : "";
       return db.prepare(`UPDATE handovers SET ${sets.join(", ")} WHERE id = ?${guard}`).run(...values, id, ...(from ?? [])).changes === 1;
     },
-    /** BBP-31: record a just-started graph run, linked to the member and crew. */
+    /** ALIAP-31: record a just-started graph run, linked to the member and crew. */
     insertGraphRun(row: Pick<GraphRunRow, "runId" | "crewId" | "memberId" | "graphId" | "status">): GraphRunRow {
       const at = now();
       db.prepare(

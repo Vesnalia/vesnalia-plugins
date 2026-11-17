@@ -1,62 +1,62 @@
 /* Hallmark · shape: app screen · scope: Reports group · genre: modern-minimal · theme: ALIA (kit tokens) · states: 8 · v1.0.0 */
 /* critique: tool output as quiet lists; state carried by icon plus word, the accent spent on the measured value only. */
 
-.bbui-reports {
+.aliaui-reports {
   display: grid;
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   min-width: 0;
 }
-.bbui-reports > * { min-width: 0; }
-.bbui-reports-title { margin: 0; }
-.bbui-reports-lede {
+.aliaui-reports > * { min-width: 0; }
+.aliaui-reports-title { margin: 0; }
+.aliaui-reports-lede {
   display: flex;
   align-items: center;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   margin: 0;
-  font: var(--bbui-head);
+  font: var(--aliaui-head);
 }
-.bbui-reports-lede .bbui-label { font: var(--bbui-small); }
+.aliaui-reports-lede .aliaui-label { font: var(--aliaui-small); }
 
 /* Icons: shape tells the state, colour repeats it. */
-.bbui-reports-icon { flex: none; color: var(--bbui-muted); }
-.bbui-reports-icon[data-tone="good"] { color: var(--bbui-success-text); }
-.bbui-reports-icon[data-tone="bad"] { color: var(--bbui-danger-text); }
-.bbui-reports-icon[data-tone="warn"] { color: var(--bbui-warning-text); }
-.bbui-reports-icon[data-tone="accent"], .bbui-reports-icon[data-tone="info"] { color: var(--bbui-accent); }
+.aliaui-reports-icon { flex: none; color: var(--aliaui-muted); }
+.aliaui-reports-icon[data-tone="good"] { color: var(--aliaui-success-text); }
+.aliaui-reports-icon[data-tone="bad"] { color: var(--aliaui-danger-text); }
+.aliaui-reports-icon[data-tone="warn"] { color: var(--aliaui-warning-text); }
+.aliaui-reports-icon[data-tone="accent"], .aliaui-reports-icon[data-tone="info"] { color: var(--aliaui-accent); }
 
 /* Lists of rows: hairlines between, no boxes. */
-.bbui-reports-list {
+.aliaui-reports-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
 }
-.bbui-reports-row {
+.aliaui-reports-row {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr);
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   align-items: start;
-  padding: var(--bbui-s2) 0;
-  border-top: 1px solid var(--bbui-rule);
+  padding: var(--aliaui-s2) 0;
+  border-top: 1px solid var(--aliaui-rule);
 }
-.bbui-reports-row:first-child { border-top: 0; }
-.bbui-reports-row > .bbui-reports-icon { height: 20px; } /* one text line tall, so the glyph centres on the first line */
-.bbui-reports-main { display: grid; gap: var(--bbui-s1); min-width: 0; }
-.bbui-reports-line {
+.aliaui-reports-row:first-child { border-top: 0; }
+.aliaui-reports-row > .aliaui-reports-icon { height: 20px; } /* one text line tall, so the glyph centres on the first line */
+.aliaui-reports-main { display: grid; gap: var(--aliaui-s1); min-width: 0; }
+.aliaui-reports-line {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--bbui-s1) var(--bbui-s3);
+  gap: var(--aliaui-s1) var(--aliaui-s3);
   min-width: 0;
 }
-.bbui-reports-name { min-width: 0; overflow-wrap: anywhere; }
-.bbui-reports-where { color: var(--bbui-muted); overflow-wrap: anywhere; }
-.bbui-reports-pre {
+.aliaui-reports-name { min-width: 0; overflow-wrap: anywhere; }
+.aliaui-reports-where { color: var(--aliaui-muted); overflow-wrap: anywhere; }
+.aliaui-reports-pre {
   margin: 0;
-  padding: var(--bbui-s2) var(--bbui-s3);
-  border-radius: var(--bbui-r-control);
-  background: var(--bbui-well);
+  padding: var(--aliaui-s2) var(--aliaui-s3);
+  border-radius: var(--aliaui-r-control);
+  background: var(--aliaui-well);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 16em;
@@ -64,173 +64,173 @@
 }
 
 /* Folded lists (passes, skips): a native disclosure. */
-.bbui-reports-fold { min-width: 0; }
-.bbui-reports-summary {
+.aliaui-reports-fold { min-width: 0; }
+.aliaui-reports-summary {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--bbui-s1);
+  gap: var(--aliaui-s1);
   list-style: none;
   min-height: 32px;
-  padding: 0 var(--bbui-s2);
-  margin-left: calc(-1 * var(--bbui-s2));
-  border-radius: var(--bbui-r-control);
-  color: var(--bbui-muted);
-  font: var(--bbui-head);
+  padding: 0 var(--aliaui-s2);
+  margin-left: calc(-1 * var(--aliaui-s2));
+  border-radius: var(--aliaui-r-control);
+  color: var(--aliaui-muted);
+  font: var(--aliaui-head);
   cursor: pointer;
   outline: 2px solid transparent;
   outline-offset: 2px;
-  transition: background-color var(--bbui-micro) var(--bbui-ease-out), transform var(--bbui-micro) var(--bbui-ease-out);
+  transition: background-color var(--aliaui-micro) var(--aliaui-ease-out), transform var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-reports-summary::-webkit-details-marker { display: none; }
-.bbui-reports-summary::before { content: ""; position: absolute; inset: -6px; } /* 44px hit area */
-.bbui-reports-summary:focus-visible { outline-color: var(--bbui-ring); transition: none; }
-.bbui-reports-chevron { flex: none; transition: transform var(--bbui-short) var(--bbui-ease-out); }
-.bbui-reports-fold[open] > .bbui-reports-summary .bbui-reports-chevron { transform: rotate(90deg); }
+.aliaui-reports-summary::-webkit-details-marker { display: none; }
+.aliaui-reports-summary::before { content: ""; position: absolute; inset: -6px; } /* 44px hit area */
+.aliaui-reports-summary:focus-visible { outline-color: var(--aliaui-ring); transition: none; }
+.aliaui-reports-chevron { flex: none; transition: transform var(--aliaui-short) var(--aliaui-ease-out); }
+.aliaui-reports-fold[open] > .aliaui-reports-summary .aliaui-reports-chevron { transform: rotate(90deg); }
 @media (hover: hover) {
-  .bbui-reports-summary:hover { background: var(--bbui-well); color: var(--bbui-ink); }
+  .aliaui-reports-summary:hover { background: var(--aliaui-well); color: var(--aliaui-ink); }
 }
-.bbui-reports-summary:active { transform: translateY(1px); }
-.bbui-reports-fold[open] > .bbui-reports-summary { color: var(--bbui-ink); }
+.aliaui-reports-summary:active { transform: translateY(1px); }
+.aliaui-reports-fold[open] > .aliaui-reports-summary { color: var(--aliaui-ink); }
 
-.bbui-reports-sub { margin: 0; color: var(--bbui-muted); overflow-wrap: anywhere; }
-.bbui-reports-meta { justify-content: flex-start; margin: 0; }
-.bbui-reports-path { min-width: 0; overflow-wrap: anywhere; }
-.bbui-reports-fix { font: var(--bbui-small); color: var(--bbui-ink); }
-.bbui-reports-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: end; }
+.aliaui-reports-sub { margin: 0; color: var(--aliaui-muted); overflow-wrap: anywhere; }
+.aliaui-reports-meta { justify-content: flex-start; margin: 0; }
+.aliaui-reports-path { min-width: 0; overflow-wrap: anywhere; }
+.aliaui-reports-fix { font: var(--aliaui-small); color: var(--aliaui-ink); }
+.aliaui-reports-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: end; }
 
 /* Links: underlined text, the accent only on hover. */
-.bbui-reports-link {
+.aliaui-reports-link {
   color: inherit;
   text-decoration: underline;
-  text-decoration-color: var(--bbui-rule);
+  text-decoration-color: var(--aliaui-rule);
   text-underline-offset: 2px;
-  border-radius: var(--bbui-r-control);
+  border-radius: var(--aliaui-r-control);
   outline: 2px solid transparent;
   outline-offset: 2px;
-  transition: text-decoration-color var(--bbui-micro) var(--bbui-ease-out), color var(--bbui-micro) var(--bbui-ease-out);
+  transition: text-decoration-color var(--aliaui-micro) var(--aliaui-ease-out), color var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-reports-link:focus-visible { outline-color: var(--bbui-ring); }
+.aliaui-reports-link:focus-visible { outline-color: var(--aliaui-ring); }
 @media (hover: hover) {
-  .bbui-reports-link:hover { text-decoration-color: currentColor; color: var(--bbui-accent); }
+  .aliaui-reports-link:hover { text-decoration-color: currentColor; color: var(--aliaui-accent); }
 }
-.bbui-reports-link:active { transform: translateY(1px); }
-.bbui-reports-out {
+.aliaui-reports-link:active { transform: translateY(1px); }
+.aliaui-reports-out {
   display: inline-flex;
   align-items: center;
-  gap: var(--bbui-s1);
+  gap: var(--aliaui-s1);
   min-height: 32px;
-  font: var(--bbui-head);
+  font: var(--aliaui-head);
   white-space: nowrap;
 }
 
 /* Findings: one group per file, its path as the group head. */
-.bbui-reports-groups { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--bbui-s3); }
-.bbui-reports-group { display: grid; gap: var(--bbui-s1); min-width: 0; }
-.bbui-reports-group-head { padding-bottom: var(--bbui-s1); border-bottom: 1px solid var(--bbui-rule); }
-.bbui-reports-group-head .bbui-reports-path { font-weight: 560; }
+.aliaui-reports-groups { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--aliaui-s3); }
+.aliaui-reports-group { display: grid; gap: var(--aliaui-s1); min-width: 0; }
+.aliaui-reports-group-head { padding-bottom: var(--aliaui-s1); border-bottom: 1px solid var(--aliaui-rule); }
+.aliaui-reports-group-head .aliaui-reports-path { font-weight: 560; }
 
 /* Figures (coverage totals): a flat row, no boxes. */
-.bbui-reports-figures {
+.aliaui-reports-figures {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   margin: 0;
 }
-.bbui-reports-figure { display: grid; gap: 2px; align-content: start; min-width: 0; }
-.bbui-reports-figure dd { margin: 0; }
+.aliaui-reports-figure { display: grid; gap: 2px; align-content: start; min-width: 0; }
+.aliaui-reports-figure dd { margin: 0; }
 
 /* Slim bars: coverage meters, benchmark pairs. Filled through classes, never attributes. */
-.bbui-reports-bar { display: block; width: 100%; height: 6px; overflow: visible; }
-.bbui-reports-bar-fill { fill: var(--bbui-accent); }
-.bbui-reports-bar-fill[data-tone="muted"] { fill: var(--bbui-muted); }
-.bbui-reports-meter {
+.aliaui-reports-bar { display: block; width: 100%; height: 6px; overflow: visible; }
+.aliaui-reports-bar-fill { fill: var(--aliaui-accent); }
+.aliaui-reports-bar-fill[data-tone="muted"] { fill: var(--aliaui-muted); }
+.aliaui-reports-meter {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(64px, 2fr) 56px;
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   align-items: center;
-  padding: var(--bbui-s1) 0;
+  padding: var(--aliaui-s1) 0;
 }
-.bbui-reports-meter .bbui-reports-bar { background: var(--bbui-well); border-radius: 2px; }
-.bbui-reports-pair {
+.aliaui-reports-meter .aliaui-reports-bar { background: var(--aliaui-well); border-radius: 2px; }
+.aliaui-reports-pair {
   display: grid;
   grid-template-columns: auto minmax(48px, 1fr) auto;
-  gap: var(--bbui-s1) var(--bbui-s3);
+  gap: var(--aliaui-s1) var(--aliaui-s3);
   align-items: center;
 }
 
 /* Tables: full width, horizontal rules only. */
-.bbui-reports-scroll { overflow-x: auto; min-width: 0; }
-.bbui-reports-table { width: 100%; border-collapse: collapse; }
-.bbui-reports-table th {
-  font: var(--bbui-small);
-  color: var(--bbui-muted);
+.aliaui-reports-scroll { overflow-x: auto; min-width: 0; }
+.aliaui-reports-table { width: 100%; border-collapse: collapse; }
+.aliaui-reports-table th {
+  font: var(--aliaui-small);
+  color: var(--aliaui-muted);
   text-align: start;
-  padding: var(--bbui-s1) var(--bbui-s2) var(--bbui-s1) 0;
-  border-bottom: 1px solid var(--bbui-rule);
+  padding: var(--aliaui-s1) var(--aliaui-s2) var(--aliaui-s1) 0;
+  border-bottom: 1px solid var(--aliaui-rule);
 }
-.bbui-reports-table td {
-  padding: var(--bbui-s2) var(--bbui-s2) var(--bbui-s2) 0;
-  border-bottom: 1px solid var(--bbui-rule);
+.aliaui-reports-table td {
+  padding: var(--aliaui-s2) var(--aliaui-s2) var(--aliaui-s2) 0;
+  border-bottom: 1px solid var(--aliaui-rule);
   vertical-align: baseline;
 }
-.bbui-reports-table tr:last-child td { border-bottom: 0; }
-.bbui-reports-table td[data-gap="major"], .bbui-reports-table td[data-gap="missing"] { font-weight: 560; }
+.aliaui-reports-table tr:last-child td { border-bottom: 0; }
+.aliaui-reports-table td[data-gap="major"], .aliaui-reports-table td[data-gap="missing"] { font-weight: 560; }
 
 /* Pipeline: steps sit under their job, a step smaller. */
-.bbui-reports-steps .bbui-reports-row { padding: var(--bbui-s1) 0; border-top: 0; font: var(--bbui-small); }
+.aliaui-reports-steps .aliaui-reports-row { padding: var(--aliaui-s1) 0; border-top: 0; font: var(--aliaui-small); }
 
 /* Waterfall: name, track, duration on one shared axis. */
-.bbui-reports-figure-block { display: grid; gap: var(--bbui-s2); margin: 0; min-width: 0; }
-.bbui-reports-lane {
+.aliaui-reports-figure-block { display: grid; gap: var(--aliaui-s2); margin: 0; min-width: 0; }
+.aliaui-reports-lane {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(96px, 3fr) 72px; /* fixed ends so every row's track lines up with the axis */
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   align-items: center;
   min-width: 0;
 }
-.bbui-reports-lanes { gap: 0; }
-.bbui-reports-lane-name { display: flex; align-items: center; gap: var(--bbui-s1); min-width: 0; }
-.bbui-reports-lane-name .bbui-reports-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bbui-reports-track { display: block; width: 100%; height: 24px; }
-.bbui-reports-grid { stroke: var(--bbui-rule); stroke-width: 1; }
-.bbui-reports-span { fill: var(--bbui-accent); }
-.bbui-reports-span[data-tone="bad"] { fill: var(--bbui-danger); }
-.bbui-reports-axis { border-top: 1px solid var(--bbui-rule); padding-top: var(--bbui-s1); }
-.bbui-reports-ticks { position: relative; height: 16px; }
-.bbui-reports-ticks > span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
-.bbui-reports-ticks > span:first-child { transform: none; }
-.bbui-reports-ticks > span:last-child:not(:first-child) { transform: translateX(-100%); }
+.aliaui-reports-lanes { gap: 0; }
+.aliaui-reports-lane-name { display: flex; align-items: center; gap: var(--aliaui-s1); min-width: 0; }
+.aliaui-reports-lane-name .aliaui-reports-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aliaui-reports-track { display: block; width: 100%; height: 24px; }
+.aliaui-reports-grid { stroke: var(--aliaui-rule); stroke-width: 1; }
+.aliaui-reports-span { fill: var(--aliaui-accent); }
+.aliaui-reports-span[data-tone="bad"] { fill: var(--aliaui-danger); }
+.aliaui-reports-axis { border-top: 1px solid var(--aliaui-rule); padding-top: var(--aliaui-s1); }
+.aliaui-reports-ticks { position: relative; height: 16px; }
+.aliaui-reports-ticks > span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.aliaui-reports-ticks > span:first-child { transform: none; }
+.aliaui-reports-ticks > span:last-child:not(:first-child) { transform: translateX(-100%); }
 
 /* Provenance: facts as a key and value list; a differing fact says how. */
-.bbui-reports-facts {
+.aliaui-reports-facts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--bbui-s2) var(--bbui-s4);
+  gap: var(--aliaui-s2) var(--aliaui-s4);
   margin: 0;
 }
-.bbui-reports-fact { display: grid; gap: 2px; min-width: 0; align-content: start; }
-.bbui-reports-fact dd { margin: 0; overflow-wrap: anywhere; }
-.bbui-reports-fact[data-drift] > .bbui-mono { color: var(--bbui-ink); font-weight: 560; }
-.bbui-reports-drift { display: flex; gap: var(--bbui-s1); align-items: flex-start; font: var(--bbui-small); }
-.bbui-reports-drift .bbui-reports-icon { height: 17px; }
+.aliaui-reports-fact { display: grid; gap: 2px; min-width: 0; align-content: start; }
+.aliaui-reports-fact dd { margin: 0; overflow-wrap: anywhere; }
+.aliaui-reports-fact[data-drift] > .aliaui-mono { color: var(--aliaui-ink); font-weight: 560; }
+.aliaui-reports-drift { display: flex; gap: var(--aliaui-s1); align-items: flex-start; font: var(--aliaui-small); }
+.aliaui-reports-drift .aliaui-reports-icon { height: 17px; }
 
 /* Loading: the skeleton has the result's shape. */
-.bbui-reports-shape-figures {
+.aliaui-reports-shape-figures {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
-.bbui-reports-shape-figures > span {
+.aliaui-reports-shape-figures > span {
   display: block;
   height: 40px;
-  border-radius: var(--bbui-r-control);
-  background: var(--bbui-well);
-  animation: bbui-pulse 1.4s var(--bbui-ease-in-out) infinite;
+  border-radius: var(--aliaui-r-control);
+  background: var(--aliaui-well);
+  animation: aliaui-pulse 1.4s var(--aliaui-ease-in-out) infinite;
 }
-.bbui-skeleton > .bbui-reports-shape-row { height: 20px; }
+.aliaui-skeleton > .aliaui-reports-shape-row { height: 20px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bbui-reports-shape-figures > span { animation: none; }
-  .bbui-reports-summary, .bbui-reports-link, .bbui-reports-chevron { transition: none; }
+  .aliaui-reports-shape-figures > span { animation: none; }
+  .aliaui-reports-summary, .aliaui-reports-link, .aliaui-reports-chevron { transition: none; }
 }

@@ -548,18 +548,18 @@ test("box_grant grants a program in a Mac's box its permissions, says how to run
     grants: async () => ({ blockedBy: null, signingIdentity, grants }),
   });
   assert.match(text(await tool("box_status", { box: box.name })), /\nmacOS permissions granted with box_grant: none\./);
-  const granted = await tool("box_grant", { box: box.name, program: "/Users/bbx-0/Applications/Probe.app", permissions: ["accessibility", "screen-recording"] });
+  const granted = await tool("box_grant", { box: box.name, program: "/Users/aliax-0/Applications/Probe.app", permissions: ["accessibility", "screen-recording"] });
   assert.ok(!isError(granted), text(granted));
   assert.match(text(granted), new RegExp(`^Granted accessibility, screen-recording to dev\\.example\\.probe in box ${box.name}\\.`));
   assert.match(text(granted), /Open the app with open, so that it is its own responsible process/);
-  const cli = await tool("box_grant", { box: box.name, program: "/Users/bbx-0/bin/tool", permissions: ["microphone"] });
-  assert.match(text(cli), /Start it through launchd from a box_run command with desktop true, as launchctl submit -l <label> -o <log> -- \/Users\/bbx-0\/bin\/tool <arguments>/);
-  assert.match(ownProcessHint("ssh-pool:macs", "/Users/bbx-0/bin/tool"), /^Run it through alia-box-own, as alia-box-own \/Users\/bbx-0\/bin\/tool <arguments>/, "the SSH host pool's Macs have alia-box-own");
+  const cli = await tool("box_grant", { box: box.name, program: "/Users/aliax-0/bin/tool", permissions: ["microphone"] });
+  assert.match(text(cli), /Start it through launchd from a box_run command with desktop true, as launchctl submit -l <label> -o <log> -- \/Users\/aliax-0\/bin\/tool <arguments>/);
+  assert.match(ownProcessHint("ssh-pool:macs", "/Users/aliax-0/bin/tool"), /^Run it through alia-box-own, as alia-box-own \/Users\/aliax-0\/bin\/tool <arguments>/, "the SSH host pool's Macs have alia-box-own");
   for (const namespace of ["namespace", "namespace:team-b"]) {
     assert.match(ownProcessHint(namespace, "/Users/runner/bin/tool"), /^Start it through launchd in the box user's session, as sudo launchctl asuser "\$\(id -u\)" sudo -u "\$\(id -un\)" launchctl submit -l <label> -o <log> -- \/Users\/runner\/bin\/tool <arguments>/, "box_run's commands on Namespace run outside the box user's session");
   }
-  assert.match(text(await tool("box_status", { box: box.name })), /\nmacOS permissions granted with box_grant: accessibility to dev\.example\.probe, screen-recording to dev\.example\.probe, microphone to \/Users\/bbx-0\/bin\/tool\./);
-  await assert.rejects(tool("box_grant", { box: box.name, program: "/Users/bbx-0/bin/tool", permissions: ["telepathy"] }), /expected one of "accessibility"/);
+  assert.match(text(await tool("box_status", { box: box.name })), /\nmacOS permissions granted with box_grant: accessibility to dev\.example\.probe, screen-recording to dev\.example\.probe, microphone to \/Users\/aliax-0\/bin\/tool\./);
+  await assert.rejects(tool("box_grant", { box: box.name, program: "/Users/aliax-0/bin/tool", permissions: ["telepathy"] }), /expected one of "accessibility"/);
   assert.doesNotMatch(text(await tool("box_status", { box: box.name })), /Signing identity/);
   signingIdentity = false;
   assert.match(text(await tool("box_status", { box: box.name })), /\nSigning identity: missing, so codesign -s "alia-box local code signing" fails in this box\. Tell the Mac's operator: its helper could not make it\.\n/);
@@ -1799,7 +1799,7 @@ test("a join that failed for something that can pass, as a DNS lookup that timed
   world.installer = failingInstaller(broken, DNS_TIMEOUT);
 
   const acquired = text(await tool("box_acquire", { kind: "linux" }));
-  assert.match(acquired, /\nBB machine: joining ALIA: try 2 of 5 starts in (2\d|30) s\. Try 1 failed: This box could not look up ALIA's address in time/, "the acquire waits for the next try to be planned, so it never says the enrolment failed");
+  assert.match(acquired, /\nALIA machine: joining ALIA: try 2 of 5 starts in (2\d|30) s\. Try 1 failed: This box could not look up ALIA's address in time/, "the acquire waits for the next try to be planned, so it never says the enrolment failed");
   const box = await failedTries(app, (await only(app)).id, 1);
   assert.deepEqual([box.enrol.state, box.enrol.hostId, box.joinTries?.problem, box.joinTries?.setup], ["enrolling", null, "dns-timeout", false]);
   assert.equal(box.joinTries?.words, `This box could not look up VesnALIA's address in time (${DNS_TIMEOUT}).`);
@@ -3163,11 +3163,11 @@ function fakeCgroup(t: { after(fn: () => void): void }, usedMiB: number, cacheMi
   const dir = tempDir("cgroup");
   writeFileSync(join(dir, "memory.current"), `${(usedMiB + cacheMiB) * 1048576}\n`);
   writeFileSync(join(dir, "memory.stat"), `anon ${usedMiB * 1048576}\ninactive_file ${cacheMiB * 1048576}\n`);
-  const before = process.env.BBBOX_CGROUP;
-  process.env.BBBOX_CGROUP = dir;
+  const before = process.env.ALIABOX_CGROUP;
+  process.env.ALIABOX_CGROUP = dir;
   t.after(() => {
-    if (before === undefined) delete process.env.BBBOX_CGROUP;
-    else process.env.BBBOX_CGROUP = before;
+    if (before === undefined) delete process.env.ALIABOX_CGROUP;
+    else process.env.ALIABOX_CGROUP = before;
   });
 }
 
@@ -3417,7 +3417,7 @@ test("after a live change of a VesnALIA machine's cores, box_resize says VesnALI
   assert.match(
     busy,
     new RegExp(
-      `\\nBB still counts 2 processors on machine ${box.name}, and its automatic thread limit stays at 2, until VesnALIA's daemon there restarts, as it does when the box next starts\\. ` +
+      `\\nALIA still counts 2 processors on machine ${box.name}, and its automatic thread limit stays at 2, until VesnALIA's daemon there restarts, as it does when the box next starts\\. ` +
         `VesnALIA Box does not restart it while thread "Build" \\(thr_worker\\) works on the machine, as that would end its turn\\. ` +
         `To raise the limit now: VesnALIA concurrency-limit host ${box.name} 4, and then VesnALIA concurrency-limit host ${box.name} auto once VesnALIA counts the new cores\\.\\n\\nNext:`,
     ),
@@ -3427,13 +3427,13 @@ test("after a live change of a VesnALIA machine's cores, box_resize says VesnALI
   const session = { hostId: box.enrol.hostId!, command: "sh", status: "running" as const, createdAt: 1 };
   world.terminals.set("term_thread", { ...session, id: "term_thread", title: "Shell", threadId: "thr_worker" });
   world.terminals.set("term_machine", { ...session, id: "term_machine", title: "Shell" });
-  assert.match(text(await tool("box_resize", { box: box.name, cores: 6 })), /\nBB still counts 4 processors .*\. ALIA Box does not restart it while 2 ALIA terminals are open on the machine, as that would end them\. To raise the limit now: alia concurrency-limit host .* 6,/);
+  assert.match(text(await tool("box_resize", { box: box.name, cores: 6 })), /\nALIA still counts 4 processors .*\. ALIA Box does not restart it while 2 ALIA terminals are open on the machine, as that would end them\. To raise the limit now: alia concurrency-limit host .* 6,/);
   world.terminals.get("term_thread")!.status = "exited";
   assert.match(text(await tool("box_resize", { box: box.name, cores: 7 })), /ALIA Box does not restart it while a ALIA terminal is open on the machine, as that would end it\./);
   // No thread works there and no terminal is open, so VesnALIA Box tries the restart: a test's fake box has no daemon of VesnALIA's to restart.
   world.terminals.get("term_machine")!.status = "exited";
   const idle = text(await tool("box_resize", { box: box.name, cores: 8 }));
-  assert.match(idle, /\nBB still counts 7 processors on machine .*, as it does when the box next starts\. To raise the limit now: alia concurrency-limit host .* 8,/);
+  assert.match(idle, /\nALIA still counts 7 processors on machine .*, as it does when the box next starts\. To raise the limit now: alia concurrency-limit host .* 8,/);
   assert.doesNotMatch(idle, /does not restart it while/);
   assert.doesNotMatch(text(await tool("box_resize", { box: box.name, memory_gib: 6 })), /ALIA still counts/, "memory alone leaves the count alone");
 });
@@ -6233,7 +6233,7 @@ test("on Windows, computer_windows and computer_launch give a window with no tit
   await new Promise((resolve) => setTimeout(resolve, 300));
   const listed = text(await tool("computer_windows", { box: box.name }));
   assert.match(listed, new RegExp(`\\n- window ${untitled}: gpui-example "gpui-example \\(untitled\\)", 640 by 480\\n`));
-  assert.match(listed, new RegExp(`\\n\\nBB Box gave window ${untitled} the title "gpui-example \\(untitled\\)", as it had none, and Cua on Windows reaches only windows with a title\\.\\n\\nNext:`));
+  assert.match(listed, new RegExp(`\\n\\nALIA Box gave window ${untitled} the title "gpui-example \\(untitled\\)", as it had none, and Cua on Windows reaches only windows with a title\\.\\n\\nNext:`));
   assert.match(text(await tool("computer_observe", { box: box.name, window: untitled })), new RegExp(`^Window ${untitled}: gpui-example "gpui-example \\(untitled\\)"`));
   await new Promise((resolve) => setTimeout(resolve, 300));
   assert.doesNotMatch(text(await tool("computer_windows", { box: box.name })), /ALIA Box gave/, "said once, and a title the window has is left alone");
@@ -6252,7 +6252,7 @@ test("on Windows, computer_windows and computer_launch give a window with no tit
 
   // An app whose window has no title, launched: Cua lists it once it has one.
   const launched = text(await tool("computer_launch", { box: box.name, app: "untitled" }));
-  assert.match(launched, /^Opened untitled\. Its window:\n- window \d+: untitled "untitled \(untitled\)", 640 by 480\n\nBB Box gave window \d+ the title "untitled \(untitled\)", as it had none, and Cua on Windows reaches only windows with a title\./);
+  assert.match(launched, /^Opened untitled\. Its window:\n- window \d+: untitled "untitled \(untitled\)", 640 by 480\n\nALIA Box gave window \d+ the title "untitled \(untitled\)", as it had none, and Cua on Windows reaches only windows with a title\./);
   const before = asked;
   await tool("computer_observe", { box: box.name, window: untitled });
   assert.equal(asked, before, "only computer_windows and computer_launch name windows");
@@ -6846,7 +6846,7 @@ test("a window a few pixels from another of its app's is moved apart, so that it
   assert.doesNotMatch(second, /Task 1/);
   assert.match(
     second,
-    /\n\nBB Box moved window 101 to \(140, 140\) on the screen: it lay within a few pixels of window 100, another window of its app, and the desktop gave that window's tree for both\.\n\nNext:/,
+    /\n\nALIA Box moved window 101 to \(140, 140\) on the screen: it lay within a few pixels of window 100, another window of its app, and the desktop gave that window's tree for both\.\n\nNext:/,
   );
   const moves = () => readDesktop(file).calls.filter((call) => call.tool === "set_window_frame");
   assert.deepEqual(
@@ -7871,10 +7871,10 @@ test("box_fork and VesnALIA box snapshot fork: with no snapshot named, box_fork 
   const snapshots = app.snapshots as unknown as Record<string, unknown>;
   snapshots.checkForkOfBox = async () => {};
   snapshots.fork = async () => {
-    throw new BoxError("unsupported", "The Proxmox token lacks VM.Clone on /pool/bbbox.");
+    throw new BoxError("unsupported", "The Proxmox token lacks VM.Clone on /pool/aliabox.");
   };
   const after = text(await tool("box_fork", { box: box.name }));
-  assert.match(after, /^The Proxmox token lacks VM\.Clone on \/pool\/bbbox\.\nTook snapshot "for a fork" \(sn[a-z2-7]{12}\) of box \S+ in [0-9.]+ s: it holds its disk\./);
+  assert.match(after, /^The Proxmox token lacks VM\.Clone on \/pool\/aliabox\.\nTook snapshot "for a fork" \(sn[a-z2-7]{12}\) of box \S+ in [0-9.]+ s: it holds its disk\./);
   assert.match(after, /ALIA Box deleted the snapshot "for a fork" it took for this, as the fork was refused\./);
   assert.deepEqual(app.snapshotStore.records({ box: box.id }).map((record) => record.name), ["plain"], "the snapshot it took is gone");
   const OTHER = "thr_other";

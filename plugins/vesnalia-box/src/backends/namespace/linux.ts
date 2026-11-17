@@ -17,9 +17,9 @@ const LINUX_CORES = [1, 2, 4, 8, 10, 12, 16, 32];
 const LINUX_MEMORY_GB = [2, 4, 8, 16, 32, 56];
 const MIB_PER_GB = 1024;
 const LOCAL_IMAGE: Readonly<Record<LinuxImageKind, string>> = {
-  linux: "bbbox/linux:1",
-  "linux-desktop-cpu": "bbbox/linux-desktop:1",
-  "linux-desktop-wayland-cpu": "bbbox/linux-desktop-wayland:1",
+  linux: "aliabox/linux:1",
+  "linux-desktop-cpu": "aliabox/linux-desktop:1",
+  "linux-desktop-wayland-cpu": "aliabox/linux-desktop-wayland:1",
 };
 const PULL_TIMEOUT_MS = 15 * 60_000;
 export const CONTAINER_MEMORY_MARGIN_MIB = 512;

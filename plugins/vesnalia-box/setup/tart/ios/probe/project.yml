@@ -1,4 +1,4 @@
-name: BBProbe
+name: AliaProbe
 options:
   bundleIdPrefix: dev.alia-box
   deploymentTarget:
@@ -10,31 +10,31 @@ settings:
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: ""
 targets:
-  BBProbe:
+  AliaProbe:
     type: application
     platform: iOS
-    sources: [BBProbe]
+    sources: [AliaProbe]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.alia-box.probe
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_CFBundleDisplayName: BBProbe
-  BBProbeUITests:
+        INFOPLIST_KEY_CFBundleDisplayName: AliaProbe
+  AliaProbeUITests:
     type: bundle.ui-testing
     platform: iOS
-    sources: [BBProbeUITests]
+    sources: [AliaProbeUITests]
     dependencies:
-      - target: BBProbe
+      - target: AliaProbe
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.alia-box.probe.uitests
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  BBProbe:
+  AliaProbe:
     build:
       targets:
-        BBProbe: all
-        BBProbeUITests: [test]
+        AliaProbe: all
+        AliaProbeUITests: [test]
     test:
-      targets: [BBProbeUITests]
+      targets: [AliaProbeUITests]

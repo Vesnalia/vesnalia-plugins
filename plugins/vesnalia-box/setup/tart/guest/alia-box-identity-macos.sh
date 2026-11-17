@@ -3,7 +3,7 @@ umask 022
 
 VERSION=4
 MARKER_HEADER="alia-box identity 1"
-root=${BBBOX_IDENTITY_ROOT:-}
+root=${ALIABOX_IDENTITY_ROOT:-}
 marker=$root/etc/alia-box/identity
 armed=$root/var/lib/alia-box/identity-armed
 resets=$root/var/lib/alia-box/identity-resets
@@ -12,7 +12,7 @@ switch=$root/usr/local/lib/alia-box/identity-reset-on
 run=$root/var/run/alia-box-identity
 boot_result=$run/boot
 users=$root/Users
-nic_wait_tenths=${BBBOX_IDENTITY_NIC_WAIT_TENTHS:-300}
+nic_wait_tenths=${ALIABOX_IDENTITY_NIC_WAIT_TENTHS:-300}
 
 say() { echo "alia-box-identity: $*"; }
 fail() { echo "alia-box-identity: $*" >&2; exit "${2:-1}"; }
@@ -23,8 +23,8 @@ note_boot() { mkdir -p "$run" 2>/dev/null; printf '%s\n' "$1" >"$boot_result" 2>
 boot_seen() { cat "$boot_result" 2>/dev/null || echo none; }
 
 live_macs() {
-  if [ -n "${BBBOX_IDENTITY_MACS:-}" ]; then
-    printf '%s\n' $BBBOX_IDENTITY_MACS | lower | sort -u
+  if [ -n "${ALIABOX_IDENTITY_MACS:-}" ]; then
+    printf '%s\n' $ALIABOX_IDENTITY_MACS | lower | sort -u
     return
   fi
   for _if in $(ioreg -r -c AppleVirtIONetwork -l 2>/dev/null | sed -n 's/.*"BSD Name" = "\(.*\)".*/\1/p'); do

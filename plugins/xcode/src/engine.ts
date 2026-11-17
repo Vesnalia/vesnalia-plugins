@@ -51,7 +51,7 @@ export const LAUNCH_SLACK_MS = 5_000;
  * done`, `until pgrep -f xcodebuild; …`).
  */
 const WATCHER_RE =
-  /\b(?:until|while)\s|\bpgrep\b|\bpkill\b|\bbb\s+xcode\s+(?:status|show|runs|stop)\b|\bsleep\s+\d/i;
+  /\b(?:until|while)\s|\bpgrep\b|\bpkill\b|\aliab\s+xcode\s+(?:status|show|runs|stop)\b|\bsleep\s+\d/i;
 
 /**
  * Commands that plausibly LAUNCH one. Deliberately broad — agents build via
@@ -61,7 +61,7 @@ const WATCHER_RE =
  * from adopting a build that happened to run inside it.
  */
 const BUILDER_RE =
-  /\bxcodebuild(?:mcp)?\b|\bbb\s+xcode\s+run\b|\.sh\b|\bmake\b|\bswift\s+(?:build|test)\b|\bfastlane\b|\bxcrun\b/i;
+  /\bxcodebuild(?:mcp)?\b|\aliab\s+xcode\s+run\b|\.sh\b|\bmake\b|\bswift\s+(?:build|test)\b|\bfastlane\b|\bxcrun\b/i;
 
 /** A command whose exit code is allowed to speak for a build's outcome. */
 export function looksLikeBuildLauncher(command: string): boolean {

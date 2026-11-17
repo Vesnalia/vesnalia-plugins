@@ -159,7 +159,7 @@ describe("name order", () => {
 
 describe("build evidence", () => {
   it("keeps the newest build per device, matching on id= only", () => {
-    const udid = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE";
+    const udid = "AAAAAAAA-ALIABB-CCCC-DDDD-EEEEEEEEEEEE";
     const map = latestBuildPerDevice([
       { destination: `platform=iOS Simulator,id=${udid}`, startedAt: 100, threadId: null, projectId: null },
       { destination: `platform=iOS Simulator,id=${udid.toLowerCase()}`, startedAt: 300, threadId: null, projectId: null },

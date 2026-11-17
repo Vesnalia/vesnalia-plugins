@@ -1,21 +1,21 @@
 # Counts Model Pilot's plan and helper decisions with the vote share behind each, and how many a
 # higher share threshold would turn into "the main agent does it".
 #   python3 -I scripts/measure/wp5_count.py [--threshold 0.65] [ROUTES.jsonl ...]
-# Live decisions come from `bb auto status` of every Model Pilot thread, replayed ones from route files.
+# Live decisions come from `alia auto status` of every Model Pilot thread, replayed ones from route files.
 import argparse, collections, concurrent.futures as cf, json, subprocess
 
-def bb(*args):
-    p = subprocess.run(["bb", *args], capture_output=True, text=True, timeout=300)
+def alia(*args):
+    p = subprocess.run(["alia", *args], capture_output=True, text=True, timeout=300)
     return json.loads(p.stdout) if p.returncode == 0 else None
 
 def live():
     threads = []
-    for proj in bb("project", "list", "--json"):
+    for proj in alia("project", "list", "--json"):
         for flags in ([], ["--archived"]):
-            threads += bb("thread", "list", "--project", proj["id"], "--include-hidden", *flags, "--json") or []
+            threads += alia("thread", "list", "--project", proj["id"], "--include-hidden", *flags, "--json") or []
     auto = {t["id"]: t for t in threads if t.get("providerId") == "auto"}
     def decisions(tid):
-        s = bb("auto", "status", "--thread", tid) or {}
+        s = alia("auto", "status", "--thread", tid) or {}
         return [(tid, h["entry"]) for h in s.get("history") or [] if h["entry"].get("type") == "route"
                 and h["entry"].get("scope") == "main" and h["entry"].get("delegation")]
     with cf.ThreadPoolExecutor(8) as ex:

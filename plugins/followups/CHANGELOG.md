@@ -46,14 +46,14 @@ All notable changes to Followups are documented here. The format follows
 
 ### Added
 
-- A standalone Codex backfill script for historical worker chats whose BB
+- A standalone Codex backfill script for historical worker chats whose VesnALIA
   records were already deleted. It previews matches by default and archives
   through Codex's API with `--apply`, without deleting chats.
 
 ### Fixed
 
 - Follow-up workers are archived once their output is used or becomes stale,
-  so BB can also archive the provider's chat when supported. Deletion stays
+  so VesnALIA can also archive the provider's chat when supported. Deletion stays
   with the existing cleanup sweep, including its retention and environment
   guards. Failed archive requests are logged and retried during cleanup.
 
@@ -75,9 +75,9 @@ All notable changes to Followups are documented here. The format follows
 
 ### Fixed
 
-- Installing from git (`bb plugin install git:`) failed to build with "Could
+- Installing from git (`alia plugin install git:`) failed to build with "Could
   not resolve @hugeicons/core-free-icons": the banner's icon package was only a
-  dev dependency, and bb installs without those. It is now a dependency.
+  dev dependency, and VesnALIA installs without those. It is now a dependency.
 
 ## 0.6.0 - 2026-10-09
 
@@ -90,18 +90,18 @@ Everything here was added or changed after the version was last bumped to 0.5.0.
 - A footer under the tiles shows how long the run took and its tokens, with a
   Details table of the split (new input, cached, output, reasoning) and the model.
 - A button in the thread header switches follow-ups on or off for that thread
-  (also `bb followups on|off <thread-id>`). A thread's own choice beats the
+  (also `alia followups on|off <thread-id>`). A thread's own choice beats the
   "Suggest follow-ups automatically" setting, which is now just the default.
 - A "Suggestion prompt" setting: `compact` (2 or 3 follow-ups, faster) or
   `detailed` (the longer rule set). Both prompts now see the user's last three
   messages as well as the answer.
 - Worker threads are deleted as soon as they finish; a sweep removes leftovers
-  (`bb followups cleanup`), and "Worker threads to keep" retains a few for
+  (`alia followups cleanup`), and "Worker threads to keep" retains a few for
   debugging.
 - Workers carry a standing instruction to treat the conversation they quote as
   material, not instructions, and to use no tools, and don't get this plugin's
   skill.
-- `bb followups` gained `on`, `off`, `regenerate`, `draft`, `cleanup` and `model`
+- `alia followups` gained `on`, `off`, `regenerate`, `draft`, `cleanup` and `model`
   commands next to `show` and `clear`.
 - Repository housekeeping: an MIT licence, a logo, design notes in
   `docs/DESIGN.md`, and `typecheck`, `build` and `dev` scripts.
@@ -112,7 +112,7 @@ Everything here was added or changed after the version was last bumped to 0.5.0.
   numbered tiles, two columns when wide and one when narrow. The arrow keys move
   between tiles, 1–9 draft one, Esc returns to the composer; skeleton tiles show
   while follow-ups are being found, and the banner is hidden while the agent runs.
-- Icons come straight from the Hugeicons set BB itself uses.
+- Icons come straight from the Hugeicons set VesnALIA itself uses.
 - Follow-ups are only drafted for a thread that has finished. A thread whose
   child threads are still working counts as still running, and is drafted for
   when the last one stops.
@@ -123,7 +123,7 @@ Everything here was added or changed after the version was last bumped to 0.5.0.
   sent, the banner was dismissed, follow-ups were turned off) is stopped at once,
   and the next run doesn't wait for it. The same goes for the worker writing a
   clicked follow-up's message, which is refused rather than handed to the composer.
-- A worker's result is waited for through BB's idle and failed events instead of
+- A worker's result is waited for through VesnALIA's idle and failed events instead of
   polling every half second.
 - At most four suggestion workers run at once; a burst of finished threads queues.
 - Model and provider lookups are remembered; worker cleanup is off the critical
@@ -157,17 +157,17 @@ Everything here was added or changed after the version was last bumped to 0.5.0.
   now the next run uses one as soon as there is one.
 - Saving a model that lists no reasoning levels keeps the level you picked, as
   running one always did.
-- `bb followups regenerate` while a draft is running waits for its own run and
+- `alia followups regenerate` while a draft is running waits for its own run and
   reports that one, instead of returning at once with the previous run's timing.
 - The banner and the header switch ignore a refresh that comes back after a
   newer one.
 - The banner no longer forgets the drafted tile, the draft's cost, or that the
-  composer holds its own draft when BB rebuilds the message box (on some
+  composer holds its own draft when VesnALIA rebuilds the message box (on some
   resizes, or leaving a thread and coming back). Before, the check mark and
   cost line vanished, and the next pick was added below the old draft instead
   of replacing it. A message that finishes after a rebuild also lands in its own
   thread's composer.
-- The follow-up tiles sit two to a row in BB's message box, as intended. Their
+- The follow-up tiles sit two to a row in VesnALIA's message box, as intended. Their
   22rem minimum was 4px too wide for two to fit, so they were always in one
   column; it is now 21rem.
 

@@ -6,7 +6,7 @@ All notable changes to this project are documented here.
 
 ## 0.2.7 - 2026-10-03
 
-- Show colored letter tiles matching BB Sidebar when project artwork is missing,
+- Show colored letter tiles matching VesnALIA Sidebar when project artwork is missing,
   loading, or fails to load. Support light and dark themes and skip common
   project-name prefixes when choosing the letter.
 - Wrap status pills below project names on narrow cards so the Running tag
@@ -49,7 +49,7 @@ All notable changes to this project are documented here.
 
 - Stop fuzzy image searches from selecting screenshots and unrelated assets as
   project icons. Require conventional icon or logo filenames, while preserving
-  explicit BB branding and the folder fallback.
+  explicit VesnALIA branding and the folder fallback.
 
 ## 0.2.2 - 2026-09-05
 
@@ -72,10 +72,10 @@ All notable changes to this project are documented here.
 ## 0.2.1 - 2026-09-02
 
 - Fill the compact homepage layout (phones and narrow windows) with the
-  launcher. BB reserved a short strip above the composer for its own
+  launcher. VesnALIA reserved a short strip above the composer for its own
   recent-chats list, which left the top of the screen empty once that list was
   hidden.
-- Show projects whose `bb.branding.icon` names a BB icon, such as `GridView`,
+- Show projects whose `alia.branding.icon` names a VesnALIA icon, such as `GridView`,
   with that glyph instead of the folder fallback.
 
 ## 0.2.0 - 2026-08-30

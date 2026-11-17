@@ -60,7 +60,7 @@ const memberSchema = z
     permissions: permissionSchema.optional(),
     environment: environmentSchema.optional(),
     skills: z.array(z.string().min(1)).default([]),
-    /** Graphs this member may run with crew_graph_run (BBP-30); names are graph-studio graph ids. */
+    /** Graphs this member may run with crew_graph_run (ALIAP-30); names are graph-studio graph ids. */
     graphs: z.array(z.string().min(1)).default([]),
     /** Stand-in for the lead towards other crews (§3.9.4); used from E3 on. */
     deputy: z.string().optional(),

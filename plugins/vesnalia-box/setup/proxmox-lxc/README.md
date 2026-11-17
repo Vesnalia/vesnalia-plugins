@@ -52,14 +52,14 @@ cp host/alia-box.env.example /etc/alia-box/alia-box.env
 Edit `/etc/alia-box/alia-box.env`. The example lists every setting with its
 default. Check at least:
 
-- `BBBOX_BRIDGE` and `BBBOX_GATEWAY_CIDR`: a bridge name and a subnet that
+- `ALIABOX_BRIDGE` and `ALIABOX_GATEWAY_CIDR`: a bridge name and a subnet that
   are free on your host and network. Boxes get addresses in this subnet.
-- `BBBOX_STORAGE`: storage with linked clones.
-- `BBBOX_ALIA_URL`: your VesnALIA server's URL. Templates then carry VesnALIA's app for the
+- `ALIABOX_STORAGE`: storage with linked clones.
+- `ALIABOX_ALIA_URL`: your VesnALIA server's URL. Templates then carry VesnALIA's app for the
   box user, so a box joins VesnALIA faster. Boxes must be able to reach this URL.
 
 A setting in the environment wins over the file, for example
-`BBBOX_BUILD_ADDRESS=10.200.0.3 template/build.sh ...` for a second build at
+`ALIABOX_BUILD_ADDRESS=10.200.0.3 template/build.sh ...` for a second build at
 the same time.
 
 ### 2. Host prerequisites
@@ -93,15 +93,15 @@ The script:
   `/root/alia-box/backup`, and brings it up. Proxmox's network API reads only
   that file. It refuses to change a different bridge of the same name;
 - turns on IPv4 forwarding (`/etc/sysctl.d/90-alia-box.conf`);
-- writes the nft table `ip bbbox` to `/etc/alia-box/network.nft`: masquerade,
-  TCP MSS clamping for VPNs with a small MTU, and any `BBBOX_DNAT` rules;
+- writes the nft table `ip aliabox` to `/etc/alia-box/network.nft`: masquerade,
+  TCP MSS clamping for VPNs with a small MTU, and any `ALIABOX_DNAT` rules;
 - installs `alia-box-network.service` (at boot) and `alia-box-network.timer`
   (every 30 s), which run `alia-box-network repair`. It brings back a missing
   bridge or table, and never takes anything down. To take the network down
   on purpose, stop the timer first.
 
 alia-box sets each box's address before it starts, so there is no DHCP. DNS in
-boxes uses `BBBOX_DNS`, which the templates carry.
+boxes uses `ALIABOX_DNS`, which the templates carry.
 
 #### Reaching boxes
 
@@ -134,7 +134,7 @@ host's own addresses whose port forward matches only traffic from elsewhere,
 such as a VPN address. Boxes then get no answer. Add a DNAT rule for boxes:
 
 ```sh
-BBBOX_DNAT="198.51.100.1:443=192.0.2.20"   # the host's VPN address -> the real server
+ALIABOX_DNAT="198.51.100.1:443=192.0.2.20"   # the host's VPN address -> the real server
 ```
 
 ### 4. Templates
@@ -158,9 +158,9 @@ template/build.sh copy-desktop 9101 9102 --gpu 0000:02:00.0   # a second GPU
 ```
 
 - `build.sh` makes a CT from Proxmox's Ubuntu 24.04 template, or for
-  `--wayland` its 26.04 template (`BBBOX_OS_TEMPLATE_WAYLAND`), customises it,
+  `--wayland` its 26.04 template (`ALIABOX_OS_TEMPLATE_WAYLAND`), customises it,
   boots it once and runs its checks as the box user. It then cleans it,
-  makes it a template in `BBBOX_POOL` and protects it.
+  makes it a template in `ALIABOX_POOL` and protects it.
 - On a host with an NVIDIA driver, `linux` and `desktop` install NVIDIA's
   userspace for exactly that driver, with no kernel modules, so the host's
   GPU helper can give their boxes a card (071). It adds about 1.4 GB to the
@@ -236,7 +236,7 @@ host/setup-token.sh
 ```
 
 This makes the pool, a user with no password, an API token with privilege
-separation, and the role `BBBoxPlugin` with only what alia-box uses:
+separation, and the role `AliaBoxPlugin` with only what alia-box uses:
 
 | Privilege | Used for |
 | --- | --- |
@@ -254,7 +254,7 @@ separation, and the role `BBBoxPlugin` with only what alia-box uses:
 
 The role applies on `/pool/<pool>`. The token also gets `PVEDatastoreUser` on
 the storage and `PVESDNUser` on the bridge, which cloning and the network
-need, and `Sys.Audit` on `/nodes/<node>` (the role `BBBoxPlugin-node`), so
+need, and `Sys.Audit` on `/nodes/<node>` (the role `AliaBoxPlugin-node`), so
 alia-box can read the node's memory, disk and network. The token cannot touch
 guests outside the pool, pass host devices through, or set container
 features other than nesting.
@@ -264,7 +264,7 @@ template and put it in the old one's place. It cannot make a template from
 nothing or give a container host devices. So a new template, a template for
 another GPU, and a new image contract need `template/build.sh` as root.
 
-The script writes the token to `BBBOX_TOKEN_FILE` (mode 0600), with the API
+The script writes the token to `ALIABOX_TOKEN_FILE` (mode 0600), with the API
 URL, the node and the SHA-256 fingerprint of the host's certificate. It never
 prints the secret.
 
@@ -300,9 +300,9 @@ The script:
 - makes a VM named `alia-box-gpu-memory` that is never started: no disk, no
   network, 16 MiB of memory and protection on. It is outside alia-box's pool,
   so the pool's role does not reach it. Its VMID is
-  `BBBOX_GPU_REPORT_VMID`, and the script refuses to run without it. Choose
+  `ALIABOX_GPU_REPORT_VMID`, and the script refuses to run without it. Choose
   a free VMID outside alia-box's VMID range. Do not use the next free VMID:
-  `template/build.sh` builds there unless `BBBOX_BUILD_VMID` is set;
+  `template/build.sh` builds there unless `ALIABOX_BUILD_VMID` is set;
 - gives alia-box's user and token `PVEAuditor`, Proxmox's read-only role, on
   `/vms/<vmid>` alone. The token can read the VM's notes, and can change
   nothing it could not before;
@@ -388,7 +388,7 @@ nodes, by writing a tag. That exposes NVIDIA's kernel driver to that guest.
 
 - Install puts in `/usr/local/sbin/alia-box-gpu`, `alia-box-gpu.service`,
   `alia-box-gpu-boot.service` and `/etc/alia-box/gpu.conf`. That file lists the
-  pools the helper serves, `BBBOX_POOL` and each `--pool`, and says
+  pools the helper serves, `ALIABOX_POOL` and each `--pool`, and says
   `writes off`. The timer is retired only once the helper has written a
   fresh report. A second run says "nothing changed".
 - Upgrade is running a newer release's `setup-gpu.sh`. It replaces the
@@ -604,10 +604,10 @@ fields against the host; Save and turn on saves them. From a terminal,
 | `node` | `pve` | from the token file; can be empty on a single-node host |
 | `tls-fingerprint` |  | from the token file: the SHA-256 of the host's certificate, which alia-box then trusts alone |
 | `ca-certificate` |  | only without a fingerprint, when a private CA signed the host's certificate |
-| `token-id` | `bbbox@pve!plugin` | from the token file |
+| `token-id` | `aliabox@pve!plugin` | from the token file |
 | `token-secret` |  | secret; from the token file |
-| `ssh-private-key` |  | secret; the key `BBBOX_SSH_KEY` names. Left empty, alia-box makes one, and its doctor shows the public key the templates must accept |
-| `pool` | `bbbox` | `BBBOX_POOL` |
+| `ssh-private-key` |  | secret; the key `ALIABOX_SSH_KEY` names. Left empty, alia-box makes one, and its doctor shows the public key the templates must accept |
+| `pool` | `aliabox` | `ALIABOX_POOL` |
 | `linux-templates` | `9100` | VMIDs of Linux templates, separated by spaces or commas |
 | `desktop-templates` | `9101` | one line per GPU desktop template: its VMID. On a host without the GPU helper, a space and the GPU its device lines name, such as `9101 GPU-<uuid>`, then `9102 GPU-<uuid>` on the next line |
 | `desktop-cpu-templates` | `9103` | VMIDs of CPU desktop templates |
@@ -615,9 +615,9 @@ fields against the host; Save and turn on saves them. From a terminal,
 | `boxes-per-card` | `4` | the most of this install's boxes running on one card, servers and desktops together; 0 means no limit. Unset, a value set in the replaced `desktops-per-gpu` is read, 0 included |
 | `whole-cards` |  | whether a box may have a card to itself. Unset, the install-wide option `general.wholeCards` says, which is off unless set |
 | `gpu-memory-mib` | `1024` | the memory a card must have free, when last read, for a new server to be placed on it; a desktop needs 384 MiB |
-| `bridge` | `vmbr200` | `BBBOX_BRIDGE` |
-| `subnet` | `10.200.0.0/24` | the subnet of `BBBOX_GATEWAY_CIDR` |
-| `gateway` | `10.200.0.1` | the address of `BBBOX_GATEWAY_CIDR` |
+| `bridge` | `vmbr200` | `ALIABOX_BRIDGE` |
+| `subnet` | `10.200.0.0/24` | the subnet of `ALIABOX_GATEWAY_CIDR` |
+| `gateway` | `10.200.0.1` | the address of `ALIABOX_GATEWAY_CIDR` |
 | `addresses` | `10.200.0.10-10.200.0.254` | box addresses; the n-th VMID gets the n-th address |
 | `vmid-first` | `9900` | boxes take VMIDs from this range; give each install a range of its own and keep other guests out of it: alia-box takes no VMID while another install's guest, or a guest that is not alia-box's, is in it, and the doctor's VMID range check fails, naming them. The token sees only its pool's guests, so the check cannot see a guest elsewhere in the range, or another install's overlapping range |
 | `vmid-last` | `9999` |  |
@@ -694,7 +694,7 @@ Its fix is the `build.sh` command that rebuilds the template.
   Boxes cloned from the old one keep running on LVM-thin. On storage where a
   linked clone needs its template, as on ZFS or Ceph RBD, `--replace` refuses
   while such boxes exist: release them first. Two builds at once each need
-  their own `BBBOX_BUILD_ADDRESS` and `BBBOX_BUILD_VMID`.
+  their own `ALIABOX_BUILD_ADDRESS` and `ALIABOX_BUILD_VMID`.
 - **Warm boxes follow the template.** Each template has a build ID in its
   tags, such as `build.20260101-120000-3f62`. alia-box hands out no warm box
   of an older build, and makes new ones. If you replace a template some
@@ -735,10 +735,10 @@ Its fix is the `build.sh` command that rebuilds the template.
    `pct set <vmid> --protection 0 && pct destroy <vmid>`.
 3. Remove the token, the user, the roles and the pool:
    `pveum user delete <user>` (its tokens go with it),
-   `pveum role delete BBBoxPlugin`, `pveum role delete BBBoxPlugin-node` and
-   `pveum pool delete <pool>`, then delete `BBBOX_TOKEN_FILE`.
+   `pveum role delete AliaBoxPlugin`, `pveum role delete AliaBoxPlugin-node` and
+   `pveum pool delete <pool>`, then delete `ALIABOX_TOKEN_FILE`.
 4. Take the network down: `systemctl disable --now alia-box-network.timer
-   alia-box-network.service`, `nft delete table ip bbbox`, then remove the
+   alia-box-network.service`, `nft delete table ip aliabox`, then remove the
    bridge's lines from `/etc/network/interfaces` and run `ifdown <bridge>`.
    Delete `/etc/systemd/system/alia-box-network.*`,
    `/usr/local/sbin/alia-box-network` and, if nothing else needs forwarding,
@@ -807,7 +807,7 @@ Every template:
 - SSH with keys only; each box makes its own host keys at first boot;
 - systemd-networkd and systemd-resolved, IPv4 only, and a gratuitous ARP once
   the address is up, so the host forgets a deleted box's MAC at once;
-- VesnALIA's app for `box`, if `BBBOX_ALIA_URL` was set;
+- VesnALIA's app for `box`, if `ALIABOX_ALIA_URL` was set;
 - `/dev/net/tun`;
 - `alia-box-check-headless`, a check alia-box runs as `box`. Its "first docker
   command" line times the first `docker` command, which starts Docker

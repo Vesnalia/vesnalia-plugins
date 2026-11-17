@@ -9,8 +9,8 @@ set -u
 # environment had (build.sh runs this through pct exec and runuser).
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
 export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-libexec=${BBBOX_LIBEXEC:-/usr/local/libexec/alia-box}
-display_env=${BBBOX_RUN_DIR:-/run/alia-box}/display.env
+libexec=${ALIABOX_LIBEXEC:-/usr/local/libexec/alia-box}
+display_env=${ALIABOX_RUN_DIR:-/run/alia-box}/display.env
 t() { printf '%-26s ' "$1"; shift; out=$("$@" 2>&1) && echo "ok   ${out:0:400}" || echo "FAIL ${out:0:400}"; }
 t "Sway ready" sh -c '"$1" wait && echo "Sway answers, and has written display.env"' sh "$libexec/display"
 # The environment programs on the desktop get: WAYLAND_DISPLAY, SWAYSOCK.

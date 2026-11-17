@@ -2,7 +2,7 @@ node_modules/
 dist/
 .claude/
 .codex/
-.bb/
+.vesnalia/
 .DS_Store
 *.log
 .env

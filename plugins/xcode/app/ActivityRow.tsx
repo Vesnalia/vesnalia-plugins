@@ -4,7 +4,7 @@
  * Two rules fight here and both win:
  *
  *  1. The FRAME is the host's. Geometry, radius, surface and rhythm come from
- *     `PromptStackCard` (see `.bbx-stack-card` in app.css) so the row sits in
+ *     `PromptStackCard` (see `.aliax-stack-card` in app.css) so the row sits in
  *     VesnALIA's prompt stack as a peer of "Running background command".
  *  2. The CONTENTS are ours. The row opens with a phrase, not a badge:
  *     "Building Almanac" while it runs, "Almanac succeeded" once it lands.
@@ -133,7 +133,7 @@ export function XcodeActivityRow({
         name={live ? "Toolbox" : statusIcon(run.status)}
         className={cn(
           "size-3.5 shrink-0",
-          live ? activityIconClass(state) : "bbx-text",
+          live ? activityIconClass(state) : "aliax-text",
         )}
         aria-hidden
       />
@@ -152,7 +152,7 @@ export function XcodeActivityRow({
       <span
         className={cn(
           "shrink-0 font-medium tabular-nums",
-          live ? "bbx-text" : activityMetaClass(state),
+          live ? "aliax-text" : activityMetaClass(state),
         )}
       >
         {formatDuration(elapsed)}
@@ -218,19 +218,19 @@ export function XcodeActivityRow({
           <Progress
             indeterminate
             aria-label={`${runStatusLabel(run)} ${runTitle(run)}`}
-            className="bbx-progress-track h-0.5 rounded-none"
+            className="aliax-progress-track h-0.5 rounded-none"
             indicatorClassName={
               run.status === "finishing"
-                ? "bbx-progress-breath w-full"
-                : "bbx-progress-comet"
+                ? "aliax-progress-breath w-full"
+                : "aliax-progress-comet"
             }
           />
         ) : (
           <Progress
             value={progress}
             aria-label={`${runStatusLabel(run)} ${runTitle(run)} — ${progress}% of a typical run`}
-            className="bbx-progress-track h-0.5 rounded-none"
-            indicatorClassName="bbx-progress-fill"
+            className="aliax-progress-track h-0.5 rounded-none"
+            indicatorClassName="aliax-progress-fill"
           />
         )
       ) : null}
@@ -300,7 +300,7 @@ function Headline({ run }: { run: RunDto }) {
   const nameEl = (
     <span className="font-semibold text-foreground">{name}</span>
   );
-  const verbEl = <span className="bbx-text font-medium">{verb}</span>;
+  const verbEl = <span className="aliax-text font-medium">{verb}</span>;
   return (
     // No title here: the outer row already carries the full-meta tooltip, and
     // an inner one shadows it over most of the hover area.

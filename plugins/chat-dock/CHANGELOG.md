@@ -29,11 +29,11 @@ Releases are the tags `chat-dock/vX.Y.Z` of https://github.com/nfour/bb-plugins.
 
 ## 0.1.2 (2026-10-29)
 
-- With the right panel split into tiles, the composer docks under the bottom tile (the left one of a bottom row), not the first tile BB created.
+- With the right panel split into tiles, the composer docks under the bottom tile (the left one of a bottom row), not the first tile VesnALIA created.
 
 ## 0.1.1 (2026-10-29)
 
-- Requires BB 0.48 or later.
+- Requires VesnALIA 0.48 or later.
 - The dock button switches docking on and off. The other options moved to a **Chat dock** submenu in the thread's actions menu.
 
 ## 0.1.0 (2026-10-29)

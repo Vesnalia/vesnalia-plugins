@@ -303,7 +303,7 @@ describe("панель Team: дерево команд", () => {
     const task = SNAPSHOT.roles[1]!.tasks[0]!;
     const { slot } = await mount({ snapshots: [{ ...SNAPSHOT, roles: [
       SNAPSHOT.roles[0]!,
-      { ...SNAPSHOT.roles[1]!, tasks: [task, { ...task, id: "bbt-free", role: "", title: "Unassigned work", status: "todo" }] },
+      { ...SNAPSHOT.roles[1]!, tasks: [task, { ...task, id: "aliat-free", role: "", title: "Unassigned work", status: "todo" }] },
     ] }] });
     fireEvent.click(await slot.findByText("▸ Open work packages (2)"));
     expect(slot.getByRole("columnheader", { name: "Assigned role" })).toBeTruthy();

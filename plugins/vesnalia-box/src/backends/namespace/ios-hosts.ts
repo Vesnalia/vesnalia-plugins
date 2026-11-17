@@ -388,7 +388,7 @@ export class NamespaceHosts implements SlotLender {
     const now = this.#access.now();
     const record: NamespaceHostRecord = {
       backend: this.#access.backendId,
-      tag: `bbbox-${this.#access.installId}-ios-host-${randomBytes(3).toString("hex")}`,
+      tag: `aliabox-${this.#access.installId}-ios-host-${randomBytes(3).toString("hex")}`,
       instance: null,
       made: now,
       endsAt: now + this.#access.longestLifeMs(),

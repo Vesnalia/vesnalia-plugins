@@ -386,8 +386,8 @@ test("the worker finds Docker as the docker CLI would", () => {
   assert.deepEqual(endpointOf("unix:///var/run/docker.sock"), { path: "/var/run/docker.sock" });
   assert.deepEqual(endpointOf("npipe:////./pipe/docker_engine"), { path: "\\\\.\\pipe\\docker_engine" });
   assert.deepEqual(endpointOf("tcp://127.0.0.1:2375"), { host: "127.0.0.1", port: 2375 });
-  assert.deepEqual(endpointOf("wsl://bbdocker"), { wsl: { user: null, distro: "bbdocker" } });
-  assert.deepEqual(endpointOf("wsl://box@bbdocker"), { wsl: { user: "box", distro: "bbdocker" } });
+  assert.deepEqual(endpointOf("wsl://aliadocker"), { wsl: { user: null, distro: "aliadocker" } });
+  assert.deepEqual(endpointOf("wsl://box@aliadocker"), { wsl: { user: "box", distro: "aliadocker" } });
   assert.equal(endpointOf("wsl://"), null);
   assert.equal(endpointOf("ssh://me@host"), null);
 });
@@ -487,7 +487,7 @@ test("wsl dial-stdio returns what it writes after the client half-closes", async
   };
   let hub!: RelayHub;
   const { connectTo } = joined(() => hub);
-  const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ wsl: { distro: "bbdocker", user: "box" } }), dial } }));
+  const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ wsl: { distro: "aliadocker", user: "box" } }), dial } }));
   t.after(() => worker.experimental_dispose());
   hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {} });
   t.after(() => hub.dispose());
@@ -571,7 +571,7 @@ test("a dial-stdio child that exits without stdout gives the client the reason, 
 test("a wsl host whose dial-stdio cannot start fails the docker check with the reason", async () => {
   const worker = experimental_createHostEntryHarness(hostEntry({
     relay: {
-      endpoint: async () => ({ wsl: { distro: "bbdocker", user: null } }),
+      endpoint: async () => ({ wsl: { distro: "aliadocker", user: null } }),
       dial: () => {
         throw new Error("wsl.exe: spawn wsl.exe ENOENT");
       },
@@ -581,5 +581,5 @@ test("a wsl host whose dial-stdio cannot start fails the docker check with the r
   await worker.experimental_dispose();
   assert.equal(answer.found, false);
   assert.match(answer.reason ?? "", /wsl.exe/);
-  assert.equal(answer.endpoint, "wsl://bbdocker");
+  assert.equal(answer.endpoint, "wsl://aliadocker");
 });

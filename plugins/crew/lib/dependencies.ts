@@ -30,7 +30,7 @@ export interface TasksPort {
   /** Id of the label with this name in the tracker project, created when missing. */
   ensureLabel(projectId: string, name: string): Promise<string>;
   setLabels(taskId: string, labelIds: string[]): Promise<void>;
-  /** Tasks of the tracker project carrying this label by name (BBP-84); empty when the label doesn't exist. */
+  /** Tasks of the tracker project carrying this label by name (ALIAP-84); empty when the label doesn't exist. */
   listByLabel(projectId: string, labelName: string): Promise<LabelledTask[]>;
 }
 

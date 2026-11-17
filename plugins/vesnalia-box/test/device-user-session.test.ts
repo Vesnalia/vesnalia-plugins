@@ -111,8 +111,8 @@ test("a job in the user's own session gets its input, gives back its output and 
   process.env.ALIA_BOX_TEST_SECRET = "not for the plist";
   t.after(() => delete process.env.ALIA_BOX_TEST_SECRET);
 
-  const first = await jobs.run("/bin/sh", ["-c", 'cat; printf " in %s" "$LC_ALL"; echo oops >&2; exit 3'], { timeoutMs: 10_000, input: "bbtest ✓ é", env: { LC_ALL: "en_US.UTF-8" } });
-  assert.deepEqual(first, { code: 3, stdout: "bbtest ✓ é in en_US.UTF-8", stderr: "oops\n" });
+  const first = await jobs.run("/bin/sh", ["-c", 'cat; printf " in %s" "$LC_ALL"; echo oops >&2; exit 3'], { timeoutMs: 10_000, input: "aliatest ✓ é", env: { LC_ALL: "en_US.UTF-8" } });
+  assert.deepEqual(first, { code: 3, stdout: "aliatest ✓ é in en_US.UTF-8", stderr: "oops\n" });
   const second = await jobs.run("/bin/sh", ["-c", "cat"], { timeoutMs: 10_000 });
   assert.deepEqual(second, { code: 0, stdout: "", stderr: "" });
 
@@ -182,7 +182,7 @@ test("simctl sets and reads the device's clipboard through the pasteboard's way,
   assert.equal(await simctl.pasteboardReady(), null);
   assert.ok(launchd.loaded.has(`${OWN_DOMAIN}/${PASTEBOARD_SERVER_LABEL}`), "ready loads the pasteboard server, so the box's own simctl finds it too");
   assert.equal(await simctl.clipboard("UDID-1"), "read pbpaste");
-  await simctl.setClipboard("UDID-1", "bbtest");
+  await simctl.setClipboard("UDID-1", "aliatest");
   await simctl.ui("UDID-1", "appearance");
   assert.deepEqual(jobs, ["simctl pbpaste UDID-1", "simctl pbcopy UDID-1"]);
   assert.deepEqual(ran, ["/bin/sh simctl ui UDID-1 appearance"]);

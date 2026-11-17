@@ -4,8 +4,8 @@
 
 #include "encoder.h"
 
-#ifndef BB_H264_X264_REVISION
-#define BB_H264_X264_REVISION "unknown"
+#ifndef ALIA_H264_X264_REVISION
+#define ALIA_H264_X264_REVISION "unknown"
 #endif
 
 static x264_t *x264;
@@ -66,7 +66,7 @@ static void x264_close(void) {
 }
 
 static void x264_describe(char *words, size_t size) {
-  snprintf(words, size, "x264 0.%d, source %s", X264_BUILD, BB_H264_X264_REVISION);
+  snprintf(words, size, "x264 0.%d, source %s", X264_BUILD, ALIA_H264_X264_REVISION);
 }
 
 const Encoder X264_ENCODER = {"x264", x264_open, x264_encode, x264_close, x264_describe};

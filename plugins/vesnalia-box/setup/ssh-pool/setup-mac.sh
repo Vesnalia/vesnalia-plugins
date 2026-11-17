@@ -3,7 +3,7 @@
 # Mac and run it there with sudo, from an administrator's account:
 #
 #   sudo sh setup-mac.sh --key "ssh-ed25519 AAAA... alia-box" [--name mac-mini]
-#     [--address 192.0.2.30] [--port 22] [--admin bbbox-admin]
+#     [--address 192.0.2.30] [--port 22] [--admin aliabox-admin]
 #
 # --key is the public key alia-box's doctor shows. Give it once for each
 # alia-box install that lends the Mac. The Mac must have Apple silicon,
@@ -33,7 +33,7 @@
 # - has the helper note Xcode's version and Simulator runtimes, which the
 #   pool's offers follow
 # - starts the Mac's reset generation at 0 and makes the first box user,
-#   bbx-0, the automatic login
+#   aliax-0, the automatic login
 # - prints the line for alia-box's machines setting, the host keys, and the
 #   steps for a person at the Mac: Screen Sharing, Full Disk Access for
 #   SSH, Cua Driver's grants, the grant for a viewer's input, and Xcode
@@ -72,7 +72,7 @@ SHARE=/usr/local/share/alia-box
 BREW=/opt/homebrew/bin/brew
 CUA_APP=/Applications/CuaDriver.app
 here=$(cd "$(dirname "$0")" && pwd)
-keys='' admin=bbbox-admin name='' address='' port=''
+keys='' admin=aliabox-admin name='' address='' port=''
 
 die() {
   printf 'setup-mac.sh: %s\n' "$*" >&2
@@ -107,7 +107,7 @@ done
 [ "$(uname -m)" = arm64 ] || die "alia-box lends only Macs with Apple silicon."
 [ -n "$keys" ] || die "Give --key the public key alia-box's doctor shows, starting ssh-ed25519."
 printf '%s\n' "$admin" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$' || die "--admin must be a user name."
-case $admin in bbx-*) die "bbx- names are for box users. Choose another admin user." ;; esac
+case $admin in aliax-*) die "aliax- names are for box users. Choose another admin user." ;; esac
 [ -f "$here/machine-mac.sh" ] && [ -d "$here/mac-home" ] && [ -f "$here/mac-chrome.sh" ] && [ -f "$here/mac-ios.sh" ] ||
   die "machine-mac.sh, mac-chrome.sh, mac-ios.sh and mac-home must be beside setup-mac.sh. Copy the whole setup/ssh-pool directory."
 fdesetup status 2>/dev/null | grep -qx 'FileVault is Off\.' ||
@@ -296,7 +296,7 @@ cat >"$daemon" <<'PLIST'
 <plist version="1.0"><dict>
 <key>Label</key><string>dev.alia-box.clear-alia-state</string>
 <key>ProgramArguments</key><array><string>/bin/sh</string><string>-c</string>
-<string>rm -rf /Users/bbx-*/.alia-machines/*/daemon.lock.lock /Users/bbx-*/.alia-machines/*/install-daemon.pid</string></array>
+<string>rm -rf /Users/aliax-*/.alia-machines/*/daemon.lock.lock /Users/aliax-*/.alia-machines/*/install-daemon.pid</string></array>
 <key>RunAtLoad</key><true/>
 </dict></plist>
 PLIST

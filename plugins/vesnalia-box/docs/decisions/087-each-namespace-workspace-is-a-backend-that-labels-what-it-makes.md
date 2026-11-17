@@ -16,7 +16,7 @@ reached only through its token, and nothing in the configuration says which
 workspace a token belongs to, so two backends may point at one workspace.
 
 A Namespace backend found its machines by the install's label alone,
-`bbbox-install`. Two backends of one install would each have held, swept,
+`aliabox-install`. Two backends of one install would each have held, swept,
 extended and released the other's machines, destroyed the other's image
 build machines, removed the other's stale tailnet devices, and built images
 under the same tag and unique tag.
@@ -27,8 +27,8 @@ under the same tag and unique tag.
   and so on. Its driver's `several` names no host, so two may share a
   workspace and a token.
 - Each machine a Namespace backend makes, for a box, a shared iOS host, a
-  measurement or an image build, carries `bbbox-backend`, the backend's ID
-  with `-` for `:`, beside `bbbox-install`. A backend lists, finds, keeps
+  measurement or an image build, carries `aliabox-backend`, the backend's ID
+  with `-` for `:`, beside `aliabox-install`. A backend lists, finds, keeps
   alive, releases, sweeps and checks only machines with its own label.
 - The backend with the ID `namespace` also owns machines with the
   install's label and no backend label, which earlier versions made. No

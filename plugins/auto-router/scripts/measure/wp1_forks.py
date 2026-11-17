@@ -8,27 +8,27 @@
 # depends on, so the judge can check facts. Keep CASES and OUT outside the repo: they hold private text.
 import argparse, collections, concurrent.futures as cf, datetime, json, os, random, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from paired import JUDGE, bb, completed_turns, judge_one, session_ids, transcripts, wait_turn
+from paired import JUDGE, alia, completed_turns, judge_one, session_ids, transcripts, wait_turn
 from prices import RATES, priced_as, usd
 from sources import claude
 
 def events(thread):
-    return json.loads(bb("thread", "log", thread, "--all", "--json"))
+    return json.loads(alia("thread", "log", thread, "--all", "--json"))
 
 def wait_compacted(thread, timeout_s=1800):
-    """Compacts the thread and waits until it logged the compaction and is idle again. BB drops a
+    """Compacts the thread and waits until it logged the compaction and is idle again. ALIA drops a
     compact request that reaches a fork while it is still starting, so the request is sent again
     until a compaction item starts."""
     end = time.time() + timeout_s
     for _ in range(10):
-        if json.loads(bb("thread", "show", thread, "--json"))["thread"]["status"] == "idle":
-            bb("thread", "compact", thread)
+        if json.loads(alia("thread", "show", thread, "--json"))["thread"]["status"] == "idle":
+            alia("thread", "compact", thread)
         time.sleep(30)
         if any(e["type"] == "item/started" and e["data"].get("item", {}).get("type") == "contextCompaction"
                for e in events(thread)):
             break
     while time.time() < end:
-        status = json.loads(bb("thread", "show", thread, "--json"))["thread"]["status"]
+        status = json.loads(alia("thread", "show", thread, "--json"))["thread"]["status"]
         if status == "error":
             return "error"
         if status == "idle" and any(e["type"] == "thread/compacted" for e in events(thread)):
@@ -37,8 +37,8 @@ def wait_compacted(thread, timeout_s=1800):
     return "timeout"
 
 def fork(source, title):
-    owner = ["--lifecycle-owner-thread", os.environ["BB_THREAD_ID"]] if os.environ.get("BB_THREAD_ID") else []
-    return json.loads(bb("thread", "fork", source, "--json", "--title", title, *owner))["id"]
+    owner = ["--lifecycle-owner-thread", os.environ["ALIA_THREAD_ID"]] if os.environ.get("ALIA_THREAD_ID") else []
+    return json.loads(alia("thread", "fork", source, "--json", "--title", title, *owner))["id"]
 
 def price(thread, since, split):
     """The fork's requests after `since`, as compaction (before `split`) and follow-up (after it)."""
@@ -61,30 +61,30 @@ def run_case(case, full=None, compact=None):
         full = fork(case["thread"], f"measure wp1 {case['id']} full")
         compact = fork(case["thread"], f"measure wp1 {case['id']} compacted")
     else:
-        created = json.loads(bb("thread", "show", full, "--json"))["thread"]["createdAt"]
+        created = json.loads(alia("thread", "show", full, "--json"))["thread"]["createdAt"]
         started = datetime.datetime.fromtimestamp(created / 1000, datetime.timezone.utc)
     compacted = any(e["type"] == "item/completed" and e["data"].get("item", {}).get("type") == "contextCompaction"
                     for e in events(compact))
-    state = "done" if compacted and json.loads(bb("thread", "show", compact, "--json"))["thread"]["status"] == "idle" \
+    state = "done" if compacted and json.loads(alia("thread", "show", compact, "--json"))["thread"]["status"] == "idle" \
         else wait_compacted(compact)
     split = datetime.datetime.now(datetime.timezone.utc)
     result = {"id": case["id"], "source": case["thread"], "full": full, "compacted": compact, "compactState": state}
     if state != "done":
         for t in (full, compact):
-            bb("thread", "stop", t)
+            alia("thread", "stop", t)
         return result
     arms = {}
     for name, t in (("full", full), ("compacted", compact)):
         before = completed_turns(t)
-        bb("thread", "tell", t, "--message-file", "-", stdin=case["followUp"], as_user=True)
+        alia("thread", "tell", t, "--message-file", "-", stdin=case["followUp"], as_user=True)
         arms[name] = (t, before)
     for name, (t, before) in arms.items():
         result[f"{name}State"] = wait_turn(t, before)
-        result[f"{name}Answer"] = json.loads(bb("thread", "output", t, "--json")).get("output") or ""
+        result[f"{name}Answer"] = json.loads(alia("thread", "output", t, "--json")).get("output") or ""
     time.sleep(20)  # let the transcripts flush
     for name, (t, _) in arms.items():
         result[f"{name}Price"] = price(t, started, split)
-        bb("thread", "stop", t)
+        alia("thread", "stop", t)
     return result
 
 def cmd_run(o):

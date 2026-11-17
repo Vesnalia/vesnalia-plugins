@@ -48,8 +48,8 @@ test("normalizedFileHash changes when a change line does", () => {
 
 test("normalizedFileHash of a binary diff keeps the new blob, ignores the base blob", () => {
   const bin = (index: string) => `diff --git a/x.png b/x.png\nindex ${index} 100644\nBinary files a/x.png and b/x.png differ\n`;
-  expect(normalizedFileHash(bin("aaaaaaa..bbbbbbb"))).toBe(normalizedFileHash(bin("ccccccc..bbbbbbb")));
-  expect(normalizedFileHash(bin("aaaaaaa..bbbbbbb"))).not.toBe(normalizedFileHash(bin("aaaaaaa..ddddddd")));
+  expect(normalizedFileHash(bin("aaaaaaa..aliabbbbb"))).toBe(normalizedFileHash(bin("ccccccc..aliabbbbb")));
+  expect(normalizedFileHash(bin("aaaaaaa..aliabbbbb"))).not.toBe(normalizedFileHash(bin("aaaaaaa..ddddddd")));
 });
 
 test("a Viewed mark on a file GitHub sent no diff for goes stale when the file's blob changes", async () => {
@@ -58,7 +58,7 @@ test("a Viewed mark on a file GitHub sent no diff for goes stale when the file's
     : { code: 0, stderr: "", stdout: JSON.stringify({ filename: "data/big.json", status: "modified", sha, additions: 30000, deletions: 0, changes: 30000 }) + "\n" };
   const before = await readPrDiff(files("aaa1111222") as any, 1, "acme/web");
   const same = await readPrDiff(files("aaa1111222") as any, 1, "acme/web");
-  const after = await readPrDiff(files("bbb2222333") as any, 1, "acme/web");
+  const after = await readPrDiff(files("aliab2222333") as any, 1, "acme/web");
   expect(before).toContain("GitHub didn't send this file's diff: it's too large or binary. (blob aaa1111)");
   const viewed = [{ file: "data/big.json", hash: hashForFile(before, "data/big.json")!, viewedAt: 1 }];
   expect(computeFileViewState(viewed, fileHashCache(() => same))).toEqual([{ file: "data/big.json", viewed: true, stale: false, viewedAt: 1 }]);

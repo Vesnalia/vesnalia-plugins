@@ -438,7 +438,7 @@ describe("the human address", () => {
     expect(view.needsYou).toEqual([]);
   });
 
-  it("kind info: stored and shown as info, no Needs you, not an open question, nothing waits (BBP-23)", async () => {
+  it("kind info: stored and shown as info, no Needs you, not an open question, nothing waits (ALIAP-23)", async () => {
     const { service, port, store } = setup();
     const { self } = await running(service, port);
     const [info] = await service.send({ projectId: PROJECT, from: self("dev-impl"), to: "human", subject: "Status", body: "Tests green.", humanKind: "info" });

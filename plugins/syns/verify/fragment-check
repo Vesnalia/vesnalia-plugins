@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""fragment-check — what a fresh session of this bb really received from the Syns plugin (cell E4).
+"""fragment-check — what a fresh session of this alia really received from the Syns plugin (cell E4).
 
 What it does: reads the system prompt a fresh Claude Code session was started with (the `prompt_snapshot` its
 transcript records), finds the plugin's fragment under `## syns <version>`, and compares it with the fragment the
-code declares (`src/text/fragment.ts`). It also reads `bb pages status` (the placement the host reports, per slot and
-cap) and `bb pages guide` (the plugin's section of the guide, its size against the spec's limit, every registered
+code declares (`src/text/fragment.ts`). It also reads `alia pages status` (the placement the host reports, per slot and
+cap) and `alia pages guide` (the plugin's section of the guide, its size against the spec's limit, every registered
 method listed). Pass = the fragment arrived whole and byte-equal, the host says it arrives whole, the guide section
 fits and lists every method.
 
@@ -14,7 +14,7 @@ session received another. Only a fresh session's own prompt shows what an agent 
 When it does not: a session that was resumed or forked carries an older prompt; give it a fresh one (the session
 `verify/run --fixtures` starts, or a scenario session of `verify/run-scenarios`).
 
-How to run (python3, standard library; calls `bb`):
+How to run (python3, standard library; calls `alia`):
   python3 verify/fragment-check --thread <thr_x> --code <checkout of the code repo> [--json]
   python3 verify/fragment-check --jsonl <transcript.jsonl> --code <path> [--json]
 Exit codes: 0 pass · 1 fail (each failure named) · 5 usage error (no transcript, no snapshot, no fragment source).
@@ -48,9 +48,9 @@ def declared(code):
 
 
 def transcript_of(thread):
-    rc, out, _ = sh(["bb", "thread", "log", thread, "--json", "--all"])
+    rc, out, _ = sh(["alia", "thread", "log", thread, "--json", "--all"])
     if rc:
-        raise SystemExit(f"fragment-check: bb thread log {thread} failed")
+        raise SystemExit(f"fragment-check: alia thread log {thread} failed")
     ids = {(e.get("data") or {}).get("providerThreadId") for e in json.loads(out)} - {None}
     for i in ids:
         hits = glob.glob(os.path.expanduser(f"~/.claude/projects/*/{i}.jsonl"))
@@ -83,7 +83,7 @@ def received(prompt):
 
 
 def host_status():
-    rc, out, _ = sh(["bb", "pages", "status"])
+    rc, out, _ = sh(["alia", "pages", "status"])
     slots = {}
     for m in re.finditer(r"^(standing instruction|fragment (\S+) (\S+)) → slot \"(\w+)\": (\d+) characters of (\d+), (.+)$",
                          out, re.M):
@@ -101,7 +101,7 @@ def guide_heads(code):
 def guide_section(version, heads):
     """(roster lines the host writes, the plugin's own guide text, whole guide bytes) of the `### syns` section.
     The plugin's text starts at its own level-1 heading and ends at the first level-2 heading it does not declare."""
-    rc, out, _ = sh(["bb", "pages", "guide"])
+    rc, out, _ = sh(["alia", "pages", "guide"])
     m = re.search(r"^### syns %s\n" % re.escape(version), out, re.M)
     if not m:
         return "", "", len(out.encode())
@@ -145,9 +145,9 @@ def main():
                      + (" (cut: the declared text starts with the received one)" if want.strip().startswith(got.strip()) else ""))
     host = slots.get(f"fragment syns {got_version or code_version}")
     if not host:
-        fails.append("bb pages status reports no placement for the fragment")
+        fails.append("alia pages status reports no placement for the fragment")
     elif host["state"] != "arrives whole":
-        fails.append(f"bb pages status: {host['state']}")
+        fails.append(f"alia pages status: {host['state']}")
     gbytes = len(guide.encode())
     if not guide:
         fails.append("the guide's syns section holds no text of the plugin's own")

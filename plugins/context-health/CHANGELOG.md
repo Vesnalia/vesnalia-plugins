@@ -37,7 +37,7 @@ All notable changes to Context Health are documented here. The format follows
 
 ### Fixed
 
-- Request thread events in pages of 100 to respect BB's event-list limit,
+- Request thread events in pages of 100 to respect VesnALIA's event-list limit,
   while retaining coverage of up to 1,000 relevant events per refresh.
 
 ## 0.1.0 - 2026-09-09

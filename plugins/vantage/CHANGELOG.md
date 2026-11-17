@@ -12,25 +12,25 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 ### Added
 
-- A Worktrees section in bb's thread context card (bb 0.48.1, `threadContextCard` experiment): at most three child worktrees that changed something, waiting on you first, with their line counts, an "N more" row and one row for shared files that opens the overlaps page. bb shows the card beside the transcript only when the pane has room.
-- A line under each thread's row in bb's sidebar with its line counts and shared-file count, shown when bb's `threadRowMetadata` experiment and Organize → Rows → Metadata are on. A worktree's numbers go to its own thread only.
+- A Worktrees section in VesnALIA's thread context card (VesnALIA 0.48.1, `threadContextCard` experiment): at most three child worktrees that changed something, waiting on you first, with their line counts, an "N more" row and one row for shared files that opens the overlaps page. VesnALIA shows the card beside the transcript only when the pane has room.
+- A line under each thread's row in VesnALIA's sidebar with its line counts and shared-file count, shown when VesnALIA's `threadRowMetadata` experiment and Organize → Rows → Metadata are on. A worktree's numbers go to its own thread only.
 - Four settings for what counts as a thread's work: "Compare with the closest base branch" (on), "Leave out branch history above this many commits" (50), "Share of those commits a thread must have made to see the whole branch" (10%) and "Fold untracked folders with more files than this" (200).
-- A review says when Vantage compared with another base than bb's, or left a branch's history out, with "Use master" or "Show all N" to see the whole branch and "Count only its work" to go back. The choice is kept per worktree.
+- A review says when Vantage compared with another base than VesnALIA's, or left a branch's history out, with "Use master" or "Show all N" to see the whole branch and "Count only its work" to go back. The choice is kept per worktree.
 
 ### Changed
 
-- Every worktree is read with git on its machine. Vantage compares it with whichever likely base its branch is fewest commits ahead of: the base bb records, that branch on origin, origin's default branch, origin/main or origin/master, or a base branch's own upstream. A checkout on `main` compared with a stale `master` no longer counts 2,794 commits, and a branch compared with a local `main` 122 commits behind origin no longer counts 504.
+- Every worktree is read with git on its machine. Vantage compares it with whichever likely base its branch is fewest commits ahead of: the base VesnALIA records, that branch on origin, origin's default branch, origin/main or origin/master, or a base branch's own upstream. A checkout on `main` compared with a stale `master` no longer counts 2,794 commits, and a branch compared with a local `main` 122 commits behind origin no longer counts 504.
 - When a branch is far ahead of its base and its threads made few of those commits, only their commits and the uncommitted files are shown and counted.
 - An untracked folder with more files than the limit, or one holding a git repository such as a clone, is one entry that no count includes, with its first files on request.
 - A worktree's row, status and numbers belong to the thread nearest the tree's root; other threads in it, such as read-only reviewers, are named in its header.
-- The segment above the composer starts with the thread's own line counts, compared with the closest base, then its child worktrees, so a thread working on its own has a summary too. It shows whenever the thread or a child changed something, with bb's thread context card on or off. Its numbers always show and its words take only the row's spare room, so it is about 60 to 120px in a full row; opened, it lists at most three lines instead of a list up to 256px tall.
+- The segment above the composer starts with the thread's own line counts, compared with the closest base, then its child worktrees, so a thread working on its own has a summary too. It shows whenever the thread or a child changed something, with VesnALIA's thread context card on or off. Its numbers always show and its words take only the row's spare room, so it is about 60 to 120px in a full row; opened, it lists at most three lines instead of a list up to 256px tall.
 - The thread's Vantage tab opens on a strip of worktrees, the thread's own first, and on its own worktree, instead of a list to drill into. All changes is the strip's last chip.
-- The Vantage button in the thread header is a labelled "Vantage" button that bb draws after the workspace's Open button, through bb 0.48's header thread actions, because SDK 0.6.104 dropped the slot the icon button used. Clicking it again closes the tab, and on a narrow pane it folds into the thread menu.
+- The Vantage button in the thread header is a labelled "Vantage" button that VesnALIA draws after the workspace's Open button, through VesnALIA 0.48's header thread actions, because SDK 0.6.104 dropped the slot the icon button used. Clicking it again closes the tab, and on a narrow pane it folds into the thread menu.
 - One line names every file a worktree shares with others, instead of one strip per file and worktree. The scope switch's first button reads "This thread's work" or "Its work".
 
 ### Removed
 
-- Reading worktrees through bb's environment status and diff calls, and the 10-second fallback to git. SDK 0.6.104 removed those calls.
+- Reading worktrees through VesnALIA's environment status and diff calls, and the 10-second fallback to git. SDK 0.6.104 removed those calls.
 
 ### Fixed
 
@@ -42,7 +42,7 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 ### Compatibility
 
-- Needs bb 0.48.1 or later and builds with SDK 0.6.104. Without the thread context card experiment, Vantage uses the segment above the composer. Turning off bb's own changed-files summary (`bb plugin config bb--git set showGitChanges false`) leaves one summary per thread.
+- Needs VesnALIA 0.48.1 or later and builds with SDK 0.6.104. Without the thread context card experiment, Vantage uses the segment above the composer. Turning off VesnALIA's own changed-files summary (`alia plugin config alia--git set showGitChanges false`) leaves one summary per thread.
 
 ## 0.8.0 (2026-10-28)
 
@@ -70,7 +70,7 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 ### Changed
 
-- Watch and Track reviews are gone. Vantage always shows each thread's real state, the one bb's sidebar shows, so Waiting-on-you rows, the strips, the composer summary and the Info section count every thread. Every file has a Reviewed tick, and progress with Hide reviewed appears once you tick one.
+- Watch and Track reviews are gone. Vantage always shows each thread's real state, the one VesnALIA's sidebar shows, so Waiting-on-you rows, the strips, the composer summary and the Info section count every thread. Every file has a Reviewed tick, and progress with Hide reviewed appears once you tick one.
 - Two settings replace the two defaults: "Badge the Vantage icon when a thread needs you" (on by default) and "Show a toast when a thread needs you" (off by default).
 - The Changed group is now To review, and a worktree that cannot be read sits under a new Unavailable group instead of To review.
 
@@ -87,22 +87,22 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 ### Fixed
 
-- A comment edited while its message was being sent is kept as a draft. Send used to remove the sent comments by id after bb accepted the message, so a comment edited in that moment lost its new text while the agent got the old text. Sending now removes only the comments exactly as they were sent, comparing text and quote as well as id.
+- A comment edited while its message was being sent is kept as a draft. Send used to remove the sent comments by id after VesnALIA accepted the message, so a comment edited in that moment lost its new text while the agent got the old text. Sending now removes only the comments exactly as they were sent, comparing text and quote as well as id.
 
 ## 0.6.1 (2026-10-24)
 
 ### Fixed
 
-- Installing from the marketplace works again. 0.6.0 failed with "Could not resolve @get-bb/plugin-sdk" because the page took `defineRpcContract` from the SDK's root package, which a git install without dev dependencies does not have; the contract now uses a local copy that returns its argument. A test follows every file the app entry imports and fails if one takes a value from that root package.
+- Installing from the marketplace works again. 0.6.0 failed with "Could not resolve @vesnalia/plugin-sdk" because the page took `defineRpcContract` from the SDK's root package, which a git install without dev dependencies does not have; the contract now uses a local copy that returns its argument. A test follows every file the app entry imports and fails if one takes a value from that root package.
 
 ## 0.6.0 (2026-10-24)
 
 ### Added
 
-- The page's worktree list replaces bb's thread list while the page is open, grouped by what needs doing (Needs you, To review, Changed, Working, Reviewed, Archived) or by project, with search and filter chips. bb's title bar names the worktree and holds Refresh and the overlap count.
+- The page's worktree list replaces VesnALIA's thread list while the page is open, grouped by what needs doing (Needs you, To review, Changed, Working, Reviewed, Archived) or by project, with search and filter chips. VesnALIA's title bar names the worktree and holds Refresh and the overlap count.
 - An overview that says what to look at next, with counts and an Up next list, a Working list, overlapping files, reviewed worktrees and changes outside worktrees.
 - A review with one switch for all, uncommitted, committed or one commit's changes, a file tree, and every diff in one stream, unified or side by side, with unchanged lines that expand and Collapse all and Expand all (`X`).
-- Comments on a file, optionally quoting selected lines, collected into one message sent now or queued after the agent's current turn. The page's Agent tab shows that worktree's conversation in bb's own chat.
+- Comments on a file, optionally quoting selected lines, collected into one message sent now or queued after the agent's current turn. The page's Agent tab shows that worktree's conversation in VesnALIA's own chat.
 - An overlaps page for files two worktrees both changed, side by side, with a guess at whether merging will conflict made from the changed line ranges and a ready-made `Ask <agent> to rebase onto <other>` comment.
 - In a thread, the Vantage tab gains All changes and the watch and review switches, a folded one-line summary above the composer shows once a child thread has changes, the Info tab has a Worktrees section, and the thread menu has "Review changes in Vantage".
 - Watching (Needs you, the navigation badge and toasts) and reviews (reviewed ticks, progress, folding) are chosen per thread and inherited by child threads, with the settings "Watch every thread's worktrees" and "Track reviews in every thread", both off by default. Diffs and file lists work either way.
@@ -111,7 +111,7 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 ### Changed
 
 - The Repositories view is replaced by All changes, which lists every change grouped by repository; an address saying `repositories` still opens it.
-- Pull requests come from bb's GitHub PR Status plugin, and the thread tab uses `experimental_tab` because SDK 0.6.75 removed the old APIs.
+- Pull requests come from VesnALIA's GitHub PR Status plugin, and the thread tab uses `experimental_tab` because SDK 0.6.75 removed the old APIs.
 - Watch and review choices and reviewed marks live in Vantage's plugin storage, and comment drafts in the browser's. Vantage still never stages, commits or changes a file.
 
 ### Security
@@ -120,42 +120,42 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 ### Compatibility
 
-- Needs bb 0.47 and plugin SDK 0.6.75, up from bb 0.46 and SDK 0.6.49.
+- Needs VesnALIA 0.47 and plugin SDK 0.6.75, up from VesnALIA 0.46 and SDK 0.6.49.
 
 ## 0.5.0 (2026-10-21)
 
 ### Added
 
-- A worktree whose branch is its base branch reads `on base` instead of ↑0 ↓0 with no changes, and its row, Commits tab, `bb vantage worktree`, `bb vantage worktrees` and `bb vantage changes` list the commits its threads made there. The JSON gains `onBase` and `threadCommits`.
+- A worktree whose branch is its base branch reads `on base` instead of ↑0 ↓0 with no changes, and its row, Commits tab, `alia vantage worktree`, `alia vantage worktrees` and `alia vantage changes` list the commits its threads made there. The JSON gains `onBase` and `threadCommits`.
 - Those commits come from the checkout's HEAD reflog, kept when one of the thread's `git commit` commands ran and dropped when they are no longer on HEAD, such as an amended commit; pulls, merges and rebases never count. Commits are matched by time, so a commit someone else makes in the same checkout during that window counts as the thread's, and a commit made by a command other than `git commit` is not found.
 
 ## 0.4.3 (2026-10-21)
 
 ### Fixed
 
-- Agents get Vantage's bundled skill. bb reads each `bb.skills` entry as a folder that holds skill folders, and Vantage listed its one skill's own folder (`./skills/vantage`), so bb found no skill in it. It now lists `./skills`, and the marketplace build fails when a skills entry holds no skill folder with a `SKILL.md`.
+- Agents get Vantage's bundled skill. VesnALIA reads each `alia.skills` entry as a folder that holds skill folders, and Vantage listed its one skill's own folder (`./skills/vantage`), so VesnALIA found no skill in it. It now lists `./skills`, and the marketplace build fails when a skills entry holds no skill folder with a `SKILL.md`.
 
 ## 0.4.2 (2026-10-20)
 
 ### Fixed
 
-- On a phone the Vantage button is no longer drawn in bb's thread header, where it made the title shrink, covered the thread actions button and pushed the panel toggle off screen. The tab still opens from the right panel's tab list.
+- On a phone the Vantage button is no longer drawn in VesnALIA's thread header, where it made the title shrink, covered the thread actions button and pushed the panel toggle off screen. The tab still opens from the right panel's tab list.
 
 ## 0.4.1 (2026-10-19)
 
 ### Fixed
 
-- A workspace that bb's status or Branch-scope diff does not answer within 10 seconds is read with git on its machine instead, and stays that way until the server restarts. bb's status can take more than 30 seconds and time out on a repository far behind its base; git answered in under a second on one 110,000 commits behind.
-- A workspace whose folder is below its repository root is grouped under that root, and its diffs, a commit's files and its file links are read there, because bb returns empty patches for it.
+- A workspace that VesnALIA's status or Branch-scope diff does not answer within 10 seconds is read with git on its machine instead, and stays that way until the server restarts. VesnALIA's status can take more than 30 seconds and time out on a repository far behind its base; git answered in under a second on one 110,000 commits behind.
+- A workspace whose folder is below its repository root is grouped under that root, and its diffs, a commit's files and its file links are read there, because VesnALIA returns empty patches for it.
 - An archived thread's kept branch is read in the folder the thread ran in when its project's folder is not a repository, or the project has none, instead of showing as unavailable or as recorded edits only.
 
 ## 0.4.0 (2026-10-19)
 
 ### Added
 
-- A checkout a thread made and works in outside bb, such as a world tree from `dev tree add`, becomes a thread checkout. It gets a worktree row grouped with the thread's project, with its branch, commits ahead and behind `origin/HEAD`, its commits and every uncommitted and committed change, and the Repositories view lists its changes under "Thread checkout".
+- A checkout a thread made and works in outside VesnALIA, such as a world tree from `dev tree add`, becomes a thread checkout. It gets a worktree row grouped with the thread's project, with its branch, commits ahead and behind `origin/HEAD`, its commits and every uncommitted and committed change, and the Repositories view lists its changes under "Thread checkout".
 - The edit index notes every folder a thread's commands change into with `cd`, `pushd` or `git -C` and an absolute or `~/` path, the 32 most recent per thread. Folders are looked up only for threads that edited files outside their own workspace, and the host expands `~/` itself.
-- `bb vantage worktree <thread>` prints every worktree the thread is in, its own workspace first and then any thread checkout.
+- `alia vantage worktree <thread>` prints every worktree the thread is in, its own workspace first and then any thread checkout.
 
 ### Changed
 
@@ -188,7 +188,7 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 - The side tab and the page answer a quick outline request first, so every worktree row and repository header draws at once with skeleton placeholders for the git numbers until the full result arrives.
 - The page hides archived threads by default, with a "Show archived (N)" toggle remembered on the device; the thread tab keeps showing archived children.
-- `bb vantage changes` and `bb vantage worktrees` gain `--archived` for use with `--all`.
+- `alia vantage changes` and `alia vantage worktrees` gain `--archived` for use with `--all`.
 
 ### Changed
 
@@ -198,10 +198,10 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 
 ### Added
 
-- A full-screen Vantage page in bb's left navigation covering every thread active in the last 24 hours, anything running, and threads archived in that window. Its Worktrees view lists them by project with the selected worktree's changes, commits, chat and terminal beside the list on a wide window, and its Repositories view groups every changed repository by project.
+- A full-screen Vantage page in VesnALIA's left navigation covering every thread active in the last 24 hours, anything running, and threads archived in that window. Its Worktrees view lists them by project with the selected worktree's changes, commits, chat and terminal beside the list on a wide window, and its Repositories view groups every changed repository by project.
 - Project, text and "With changes only" filters narrow both views, and every view and selection has its own address, so back and forward work.
 - A thread's Vantage tab gains an "Open full screen" button that opens the page on that thread's tree.
-- `bb vantage changes` and `bb vantage worktrees` gain `--all` and `--hours`, and the time window and thread limit become settings: "Time window for the full-screen page (hours)", 1 to 720, default 24, and "Most threads on the full-screen page", 10 to 500, default 200.
+- `alia vantage changes` and `alia vantage worktrees` gain `--all` and `--hours`, and the time window and thread limit become settings: "Time window for the full-screen page (hours)", 1 to 720, default 24, and "Most threads on the full-screen page", 10 to 500, default 200.
 
 ### Changed
 
@@ -212,11 +212,11 @@ Notable changes to Vantage, newest first. Releases are tagged `vantage/vX.Y.Z` i
 ### Added
 
 - A Vantage tab in a thread's side panel with a Worktrees view: one row per workspace in the thread and its child threads, with live status, branch, commits ahead and behind, uncommitted files, line counts and the pull request, plus a warning for files changed in more than one worktree.
-- Opening a row shows that worktree's changes and commits with diffs, the child thread's chat, a terminal in its directory and bb's thread menu, without leaving the parent thread.
-- A Repositories view grouping everything the thread tree changed by repository: thread workspaces through bb's environment diff API, other checkouts agents edited by path through a host entry that runs git on that machine, archived children's kept branches, and recorded edits for files outside any repository.
-- `bb vantage changes`, `bb vantage worktrees` and `bb vantage worktree` print the same for agents, and a Vantage button in the thread header opens the tab.
+- Opening a row shows that worktree's changes and commits with diffs, the child thread's chat, a terminal in its directory and VesnALIA's thread menu, without leaving the parent thread.
+- A Repositories view grouping everything the thread tree changed by repository: thread workspaces through VesnALIA's environment diff API, other checkouts agents edited by path through a host entry that runs git on that machine, archived children's kept branches, and recorded edits for files outside any repository.
+- `alia vantage changes`, `alia vantage worktrees` and `alia vantage worktree` print the same for agents, and a Vantage button in the thread header opens the tab.
 - Vantage only reads: it never stages, commits or changes a file.
 
 ### Compatibility
 
-- Needs bb 0.46 and plugin SDK 0.6.49.
+- Needs VesnALIA 0.46 and plugin SDK 0.6.49.

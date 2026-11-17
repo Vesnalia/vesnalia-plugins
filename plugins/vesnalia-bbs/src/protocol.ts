@@ -4,7 +4,7 @@ export type Auth =
   | { mode: 'login'; handle: string; secret: string };
 
 export type ClientControl =
-  | { t: 'hello'; v: 1; client: 'bbbbs/0.1.0'; cols: number; rows: number; kind: 'human' | 'agent'; auth: Auth }
+  | { t: 'hello'; v: 1; client: 'aliabbs/0.1.0'; cols: number; rows: number; kind: 'human' | 'agent'; auth: Auth }
   | { t: 'resize'; cols: number; rows: number }
   | { t: 'ping' };
 

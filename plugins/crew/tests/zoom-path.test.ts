@@ -8,7 +8,7 @@ const project: ZoomPath = { projectId: "p1" };
 const crew: ZoomPath = { projectId: "p1", crew: "factory-4" };
 const agent: ZoomPath = { projectId: "p1", crew: "factory-4", member: "dev-impl" };
 
-describe("zoom path (BBP-83)", () => {
+describe("zoom path (ALIAP-83)", () => {
   it("names the four levels: projects, project, crew, agent", () => {
     expect([all, project, crew, agent].map(zoomLevel)).toEqual([0, 1, 2, 3]);
   });
@@ -38,7 +38,7 @@ function crews(count: number, overrides: Partial<OverviewSource["crews"][number]
   };
 }
 
-describe("project clusters (BBP-83)", () => {
+describe("project clusters (ALIAP-83)", () => {
   it("a cluster counts its running crews and the crews that wait on you", () => {
     const base = crews(3);
     const source = { ...base, crews: [{ ...base.crews[0]!, status: "running" }, { ...base.crews[1]!, status: "running", needsYou: 2 }, base.crews[2]!] };
@@ -82,7 +82,7 @@ describe("project clusters (BBP-83)", () => {
   });
 });
 
-describe("expanded crew in the layout (BBP-83)", () => {
+describe("expanded crew in the layout (ALIAP-83)", () => {
   it("a crew given a larger size pushes its row neighbour right and the next row down", () => {
     const graph = buildOverviewGraph([{ id: "p1", name: "P1" }], new Map([["p1", crews(MAX_CREWS_PER_ROW + 1)]]));
     const visible = new Set(graph.nodes.map((node) => node.id));

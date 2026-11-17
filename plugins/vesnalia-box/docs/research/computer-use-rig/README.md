@@ -10,8 +10,8 @@ It builds accessibility-cli at the measured commit, as released
 release binaries, checked by SHA256.
 
 ```sh
-docker build -t bbbox-cu-rig .
-docker run -d --name cu-desk --shm-size=1g -p 127.0.0.1:15900:5900 bbbox-cu-rig
+docker build -t aliabox-cu-rig .
+docker run -d --name cu-desk --shm-size=1g -p 127.0.0.1:15900:5900 aliabox-cu-rig
 ```
 
 The desktop is on VNC at `127.0.0.1:15900`. Run the benchmarks as the

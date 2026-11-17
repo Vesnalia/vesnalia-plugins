@@ -130,7 +130,7 @@ export function linuxImageBuildScript(target: LinuxImageTarget, tag: string, ali
     'tar -xzf - -C "$work"',
     WORKSPACE_FROM_METADATA,
     '[ -n "$workspace" ] || { echo "Namespace\'s metadata names no workspace, so the image has nowhere to go." >&2; exit 3; }',
-    `ref="nscr.io/$workspace/bbbox/${target}:${tag}"`,
+    `ref="nscr.io/$workspace/aliabox/${target}:${tag}"`,
     `bash "$work/setup/docker/build.sh" ${aliaUrl ? `--alia-url ${quote(aliaUrl)} ` : ""}--tag "$ref" ${target} >&2`,
     'docker push -q "$ref" >&2',
     'echo "$ref"',
@@ -233,7 +233,7 @@ export class LinuxImages {
 
   async buildInstances(signal?: AbortSignal): Promise<Instance[]> {
     const deps = this.#deps;
-    const builds = await deps.api.list({ [INSTALL_LABEL]: deps.owner.installId, "bbbox-role": IMAGE_BUILD_ROLE }, signal);
+    const builds = await deps.api.list({ [INSTALL_LABEL]: deps.owner.installId, "aliabox-role": IMAGE_BUILD_ROLE }, signal);
     return builds.filter((instance) => deps.owner.owns(instance.labels));
   }
 
@@ -329,7 +329,7 @@ export class LinuxImages {
       const made = await deps.api.create(
         {
           shape: BUILD_SHAPE,
-          labels: { ...deps.owner.labels(), "bbbox-role": IMAGE_BUILD_ROLE, "bbbox-target": target },
+          labels: { ...deps.owner.labels(), "aliabox-role": IMAGE_BUILD_ROLE, "aliabox-target": target },
           deadline: deps.now() + BUILD_LIFE_MS,
           purpose: `alia-box ${target} image build`,
           uniqueTag: deps.owner.uniqueTag(`image-${target}`),

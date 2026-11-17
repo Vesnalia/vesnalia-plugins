@@ -9,7 +9,7 @@
 // committed them, so a worktree made from main lacked them and the tab
 // offered to add them again, onto that issue's branch. Files committed on a
 // branch reach main only if the branch is merged, and a stale branch never
-// is. The owner's rule (bead-bb-25p): set Airbender up only from the main
+// is. The owner's rule (bead-alia-25p): set Airbender up only from the main
 // folder, on the main branch; anywhere else setup only says so; and there,
 // offer to commit its files at once.
 //
@@ -45,7 +45,7 @@ const StepCommit = "commit"
 
 // committedFiles are the files setup writes at the repository's top folder,
 // to be committed; beads' settings file among them, which setup changes when
-// it switches beads' journal on (bead-bb-cnv).
+// it switches beads' journal on (bead-alia-cnv).
 var committedFiles = []string{detect.SettingFile, instructions.AgentsFile, instructions.ClaudeFile, instructions.FactsFile, beadsConfig}
 
 // beadsConfig is beads' settings file, tracked in the repository.

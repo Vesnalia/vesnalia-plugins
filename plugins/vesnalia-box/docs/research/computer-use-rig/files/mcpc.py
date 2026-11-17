@@ -41,7 +41,7 @@ def rpc(method, params=None, notify=False):
 
 
 rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
-                   "clientInfo": {"name": "bb-box-rig", "version": "0"}})
+                   "clientInfo": {"name": "alia-box-rig", "version": "0"}})
 rpc("notifications/initialized", notify=True)
 print(json.dumps({"event": "ready", "ms": round((time.monotonic() - t0) * 1000)}), flush=True)
 

@@ -290,7 +290,7 @@ test("a restore's new guest is a copy, with the box's labels and a token of its 
   const fresh = await backend.adoptSnapshot({ id: SNAP, ref: taken.ref, guest: old }, box(), { macs: {}, smbios: null }, hooks);
   const token = (fresh.data as { guest: string }).guest;
   assert.match(token, /^[a-z2-9]{8}$/);
-  assert.equal(fresh.ref, `bbbox-${BOX}-${token}`);
+  assert.equal(fresh.ref, `aliabox-${BOX}-${token}`);
   assert.notEqual(fresh.ref, old.ref);
   assert.equal(claims[0]!.ref, fresh.ref, "the new guest is claimed before boat is asked");
   const staging = (claims[1]!.data as { staging: string }).staging;
@@ -299,15 +299,15 @@ test("a restore's new guest is a copy, with the box's labels and a token of its 
   const deploy = fake.calls.find((call) => call.method === "POST" && call.path === "/sandboxes" && call.body.from === taken.ref)!;
   assert.equal(deploy.body.name, `alia-box:restoring:${BOX}:${token}`);
   assert.equal(deploy.body.noEnv, true);
-  assert.deepEqual(deploy.body.env, { BBBOX_IDENTITY: BOX }, "the deployed sandbox gets the box's own identity value, so it is no copy to its reset");
+  assert.deepEqual(deploy.body.env, { ALIABOX_IDENTITY: BOX }, "the deployed sandbox gets the box's own identity value, so it is no copy to its reset");
   assert.deepEqual(fake.sandboxes.get(staging)!.labels, {}, "boat gives a deployed sandbox no labels");
   assert.equal(fake.sandboxes.get(staging)!.state, "deleted", "the deployed sandbox is deleted once copied");
   const copy = fake.calls.find((call) => call.method === "POST" && call.path === `/sandboxes/${staging}/fork`)!;
   assert.equal((copy.body.labels as Record<string, string>)[LABELS.box], BOX);
   assert.equal((copy.body.labels as Record<string, string>)[LABELS.guest], token);
-  assert.equal(copy.headers["idempotency-key"], `bbbox-inst1-${BOX}-${token}`);
-  assert.deepEqual(copy.body.env, { BBBOX_IDENTITY: BOX });
-  assert.deepEqual(fake.sandboxes.get((fresh.data as { sandbox: string }).sandbox)!.env, { BBBOX_IDENTITY: BOX }, "a same-box swap passes the box's value on, so the new guest keeps the box's identity");
+  assert.equal(copy.headers["idempotency-key"], `aliabox-inst1-${BOX}-${token}`);
+  assert.deepEqual(copy.body.env, { ALIABOX_IDENTITY: BOX });
+  assert.deepEqual(fake.sandboxes.get((fresh.data as { sandbox: string }).sandbox)!.env, { ALIABOX_IDENTITY: BOX }, "a same-box swap passes the box's value on, so the new guest keeps the box's identity");
   const stops = fake.calls.filter((call) => call.method === "POST" && call.path === `/sandboxes/${staging}/stop`);
   assert.equal(stops.length, 1, "it is stopped before it is copied, so the copy holds all of it");
   await backend.start(fresh);
@@ -433,19 +433,19 @@ function forkBox(): BoxIdentity {
   return { boxId: FORK, threadId: "thr_2", name: "fork-of-box", kind: "linux", createdAt: START + 60_000, size: { ...SMALL, gpu: "none" } };
 }
 
-test("11b: every sandbox VesnALIA Box makes for a box carries the box's ID as BBBOX_IDENTITY, from the template's fork on, and a stop and start keeps it", async () => {
+test("11b: every sandbox VesnALIA Box makes for a box carries the box's ID as ALIABOX_IDENTITY, from the template's fork on, and a stop and start keeps it", async () => {
   const { fake, backend } = setup();
   const guest = await boxOn(backend);
   const fork = fake.calls.find((call) => call.method === "POST" && call.path.endsWith("/fork"))!;
-  assert.deepEqual(fork.body.env, { BBBOX_IDENTITY: BOX });
+  assert.deepEqual(fork.body.env, { ALIABOX_IDENTITY: BOX });
   assert.equal(fork.body.noEnv, true, "still none of the account's own secrets");
   const sandbox = (guest.data as { sandbox: string }).sandbox;
-  assert.deepEqual(fake.sandboxes.get(sandbox)!.env, { BBBOX_IDENTITY: BOX });
+  assert.deepEqual(fake.sandboxes.get(sandbox)!.env, { ALIABOX_IDENTITY: BOX });
   await backend.stop(guest);
   await backend.start(guest);
   const resume = fake.calls.find((call) => call.method === "POST" && call.path === `/sandboxes/${sandbox}/resume`)!;
   assert.equal(resume.body.env, undefined, "a resume never replaces it");
-  assert.deepEqual(fake.sandboxes.get(sandbox)!.env, { BBBOX_IDENTITY: BOX });
+  assert.deepEqual(fake.sandboxes.get(sandbox)!.env, { ALIABOX_IDENTITY: BOX });
   assert.equal(backend.identitySource("linux"), "value");
   assert.deepEqual(await backend.guestIdentity(guest), { macs: {}, smbios: null, value: BOX }, "boat's MAC addresses are boat's, never compared; the value is the box's ID");
 });
@@ -458,19 +458,19 @@ test("11b: a fork deploys the saved snapshot with the fork's own ID as its value
   const hooks: AcquireHooks = { ...acquireHooks(), claim: async (guest) => void claims.push(guest) };
   const made = await backend.forkSnapshot({ id: SNAP, ref: taken.ref, guest: source }, forkBox(), null, hooks, new AbortController().signal);
   const token = (made.data as { guest: string }).guest;
-  assert.equal(made.ref, `bbbox-${FORK}-${token}`);
+  assert.equal(made.ref, `aliabox-${FORK}-${token}`);
   assert.equal(claims[0]!.ref, made.ref, "claimed before boat is asked");
   const staging = (claims[1]!.data as { staging: string }).staging;
   const deploy = fake.calls.find((call) => call.method === "POST" && call.path === "/sandboxes" && call.body.from === taken.ref)!;
-  assert.deepEqual(deploy.body.env, { BBBOX_IDENTITY: FORK }, "the fork's value is not its source's, so its first boot resets it");
+  assert.deepEqual(deploy.body.env, { ALIABOX_IDENTITY: FORK }, "the fork's value is not its source's, so its first boot resets it");
   assert.equal(deploy.body.name, `alia-box:restoring:${FORK}:${token}`);
   assert.equal(fake.sandboxes.get(staging)!.state, "deleted");
   const copied = fake.sandboxes.get((made.data as { sandbox: string }).sandbox)!;
   assert.equal(copied.labels[LABELS.box], FORK);
   assert.equal(copied.labels[LABELS.thread], "thr_2");
-  assert.deepEqual(copied.env, { BBBOX_IDENTITY: FORK });
+  assert.deepEqual(copied.env, { ALIABOX_IDENTITY: FORK });
   const sourceSandbox = fake.sandboxes.get((source.data as { sandbox: string }).sandbox)!;
-  assert.deepEqual(sourceSandbox.env, { BBBOX_IDENTITY: BOX });
+  assert.deepEqual(sourceSandbox.env, { ALIABOX_IDENTITY: BOX });
   assert.equal(await backend.power(source), "running");
   assert.equal(fake.saved.size, 1, "the snapshot stays");
   const again = await backend.forkSnapshot({ id: SNAP, ref: taken.ref, guest: source }, forkBox(), made, hooks, new AbortController().signal);
@@ -490,7 +490,7 @@ test("11b: a kept snapshot outlives its box's sandbox as it is, and forks from b
   assert.equal(plan.fork.ok, true, "the sandbox is gone, and the saved snapshot still forks");
   assert.deepEqual(plan.fork.size, { cores: 2, memoryMiB: 4096, diskGiB: 51 });
   const made = await backend.forkSnapshot({ id: SNAP, ref: taken.ref, guest: source }, forkBox(), null, acquireHooks(), new AbortController().signal);
-  assert.deepEqual(fake.sandboxes.get((made.data as { sandbox: string }).sandbox)!.env, { BBBOX_IDENTITY: FORK });
+  assert.deepEqual(fake.sandboxes.get((made.data as { sandbox: string }).sandbox)!.env, { ALIABOX_IDENTITY: FORK });
 });
 
 test("11b: a fork needs 2 of boat's starts, said in its plan, and is refused before boat is asked when they are not there", async () => {

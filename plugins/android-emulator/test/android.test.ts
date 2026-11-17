@@ -59,7 +59,7 @@ test('viewerAddresses keeps RFC 1918 as LAN and 100.64/10 as VPN', () => {
 });
 
 test('sdkRoot prefers ANDROID_HOME, then ANDROID_SDK_ROOT, then the platform default', () => {
-  const base = mkdtempSync(join(tmpdir(), 'bbae-sdk-'));
+  const base = mkdtempSync(join(tmpdir(), 'aliaae-sdk-'));
   const home = join(base, 'home'), root = join(base, 'root'), local = join(base, 'local');
   for (const path of [home, root, join(local, 'Android', 'Sdk'), join(base, 'Android', 'Sdk')]) mkdirSync(path, { recursive: true });
   assert.equal(sdkRoot({ ANDROID_HOME: home, ANDROID_SDK_ROOT: root }, 'linux', base), home);

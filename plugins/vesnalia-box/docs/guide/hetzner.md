@@ -131,12 +131,12 @@ See [Snapshots](snapshots.md#hetzner-cloud-and-namespace) for the rest.
 
 ## Check that nothing is left running
 
-VesnALIA Box labels everything it makes in the project with `bbbox-install=` and this install's ID. `alia box install-id` shows the ID.
+VesnALIA Box labels everything it makes in the project with `aliabox-install=` and this install's ID. `alia box install-id` shows the ID.
 
-In Hetzner's Console, the project's **Servers** should list only the hosts that `alia box doctor` shows under **Hosts**, and, while a host image is built, a server with the label `bbbox-role=image-build`. With Hetzner's command line, `hcloud`:
+In Hetzner's Console, the project's **Servers** should list only the hosts that `alia box doctor` shows under **Hosts**, and, while a host image is built, a server with the label `aliabox-role=image-build`. With Hetzner's command line, `hcloud`:
 
 ```sh
-hcloud server list -l bbbox-install=<install ID>
+hcloud server list -l aliabox-install=<install ID>
 ```
 
 VesnALIA Box checks every few minutes. It deletes:
@@ -159,7 +159,7 @@ If VesnALIA's server is not on a tailnet, set **SSH from** in the backend's sett
 2. Turn the Hetzner Cloud backend off in VesnALIA Box's settings. Its hosts are deleted as they become idle, within the idle time. Boxes it already has keep working until they are released.
 3. Check that the project has no server with the install's label left.
 4. In Hetzner's Console, delete what VesnALIA Box keeps between uses:
-   - the snapshots with the label `bbbox-role=host-image`, under **Images**, then **Snapshots**
+   - the snapshots with the label `aliabox-role=host-image`, under **Images**, then **Snapshots**
    - the firewall and the SSH key named `alia-box-` and the install's ID, under **Firewalls** and **Security**
 5. Delete the API token, under **Security**, then **API tokens**.
 

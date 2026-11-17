@@ -2,7 +2,7 @@
 
 A read-only file opener for live workspace, absolute-host, and thread-storage `.md` and `.markdown` files. It uses a centered prose column, generous spacing, bounded code highlighting, and quiet tables. VesnALIA keeps its own tabs and file-opening preferences.
 
-BBP-27 through BBP-31 implement this package. BBP-32 records assembled checks and installed local-host evidence. Koen accepted browser verification and waived the remaining native desktop checks. See the [archived acceptance decision](../openspec/changes/archive/2026-10-05-markdown-reader/tasks.md#browser-acceptance-decision-and-checklist-closure-2026-10-04) for coverage limits.
+ALIAP-27 through ALIAP-31 implement this package. ALIAP-32 records assembled checks and installed local-host evidence. Koen accepted browser verification and waived the remaining native desktop checks. See the [archived acceptance decision](../openspec/changes/archive/2026-10-05-markdown-reader/tasks.md#browser-acceptance-decision-and-checklist-closure-2026-10-04) for coverage limits.
 
 ## Use
 
@@ -68,7 +68,7 @@ Labels are case-insensitive. JSX, TSX, JSON5, and other unlisted labels remain p
 
 The small Refractor core bundle imports only these grammars and their required shared grammar. Code uses live host UI tokens with weight, muted comments, and subdued string underlines. It does not select a separate syntax palette or promise to reproduce VesnALIA's VS Code code-theme document. The system monospace fallback yields to the host `--font-mono` token.
 
-The toolbar, reading column, and optional outline respond to the actual reader width. Wide code and tables scroll locally. Images retain their aspect ratio. Live host token changes preserve Preview/Raw and outline state without another read or remount. Git snapshots, deleted-file previews, chat messages, diffs, and unrelated extensions stay with VesnALIA. BBP-32 separates fixture results, installed local-host evidence, and native checks waived by the operator.
+The toolbar, reading column, and optional outline respond to the actual reader width. Wide code and tables scroll locally. Images retain their aspect ratio. Live host token changes preserve Preview/Raw and outline state without another read or remount. Git snapshots, deleted-file previews, chat messages, diffs, and unrelated extensions stay with VesnALIA. ALIAP-32 separates fixture results, installed local-host evidence, and native checks waived by the operator.
 
 ## Compatibility and local build
 

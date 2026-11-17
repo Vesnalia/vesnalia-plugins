@@ -85,7 +85,7 @@ test("catalog unavailable saved applications can be disconnected", async () => {
 test("real page source renders Russian empty state and authored SVG controls", async () => {
   const slot = mount();
   await slot.findByText("Выберите проекты для работы");
-  assert.equal(app.navPanels[0].title, "BBDesk");
+  assert.equal(app.navPanels[0].title, "AliaDesk");
   assert.equal(app.navPanels[0].icon, "dashboard/mark");
   assert.equal(slot.queryByRole("heading", { level: 1 }), null);
   assert.equal(slot.queryByText("Мои проекты"), null);
@@ -199,9 +199,9 @@ test("launcher main and adjacent-area controls issue separate native targets", a
 });
 
 test("catalog includes hidden app panels, excludes itself and pins without opening", async () => {
-  const slot=mount({language:'en',navigationItems:[{...item,isVisible:false},{...item,id:'dashboard/dashboard',pluginId:'dashboard',label:'BBDesk'}]});
+  const slot=mount({language:'en',navigationItems:[{...item,isVisible:false},{...item,id:'dashboard/dashboard',pluginId:'dashboard',label:'AliaDesk'}]});
   await showCatalog(slot, "Configure projects and applications");
-  assert.equal(slot.queryByRole('listitem',{name:'BBDesk'}),null);
+  assert.equal(slot.queryByRole('listitem',{name:'AliaDesk'}),null);
   fireEvent.click(slot.getByRole("tab",{name:"Applications"}));
   const entry=slot.getByRole('listitem',{name:item.label});
   assert.equal(entry.dataset.added,'false');
@@ -225,7 +225,7 @@ test("navigation wrapper preserves the original rail and releases stale actions 
   assert.equal(slot.getByRole("button", { name: "Открыть Заметки рядом" }).disabled, true);
   fireEvent.click(slot.getByRole("button", { name: "Настроить проекты и приложения" }));
   fireEvent.click(slot.getByRole("tab", { name: "Приложения" }));
-  assert.ok(slot.getByText(/выберите «BBDesk»/));
+  assert.ok(slot.getByText(/выберите «AliaDesk»/));
   assert.equal(slot.queryByText(/Установите плагин/), null);
   cleanup();
   const rail = renderSlot(app.experimentalSidebarNavigations[0], { isCompactViewport: false, placement: "rail", experimental_Original: () => createElement("span", null, "Original rail") }, { sidebarNavigation: { items: [] } });

@@ -5,8 +5,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 LC_ALL=C
 export PATH LC_ALL
 
-STATE=${BBBOX_STATE:-/var/lib/alia-box}
-HOOK=${BBBOX_SNAPSHOT_HOOK:-/usr/local/libexec/alia-box/snapshot-machine}
+STATE=${ALIABOX_STATE:-/var/lib/alia-box}
+HOOK=${ALIABOX_SNAPSHOT_HOOK:-/usr/local/libexec/alia-box/snapshot-machine}
 OPERATIONS=$STATE/snapshot-operations
 MOST_LAUNCHES=3
 EXIT_USAGE=2
@@ -18,7 +18,7 @@ quit() {
   [ $# -eq 0 ] || printf '%s\n' "$*" >&2
   exit "$code"
 }
-boot_id() { cat "${BBBOX_BOOT_ID_FILE:-/proc/sys/kernel/random/boot_id}"; }
+boot_id() { cat "${ALIABOX_BOOT_ID_FILE:-/proc/sys/kernel/random/boot_id}"; }
 valid_operation() { case $1 in op[a-z0-9]*) case $1 in *[!a-z0-9]*) return 1 ;; esac ;; *) return 1 ;; esac; }
 put() { cat >"$1.new.$$" && mv -f "$1.new.$$" "$1"; }
 

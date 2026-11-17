@@ -1,6 +1,6 @@
 # Live check run-2, 2026-10-30T05:17:06.070Z
 
-Box: amber-coral (bxi4ygvp2o2x4i), container bbbox-bxi4ygvp2o2x4i.
+Box: amber-coral (bxi4ygvp2o2x4i), container aliabox-bxi4ygvp2o2x4i.
 
 - PASS [Follow-up] a thread with no title heads its card on the Threads tab with its first prompt, as VesnALIA's sidebar does: headed "CALL box_list", not thr_3ipni8xbqm
 - PASS [Activity] the page shows Live tiles for a box being read, with the time of its last reading: Read at 5:17:14 AM, then Read at 5:17:19 AM; CPU tile "CPU pressure 1%  0 %  idle · 4 cores"

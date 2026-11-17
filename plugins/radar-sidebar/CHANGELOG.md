@@ -8,29 +8,29 @@ All notable changes to Radar Sidebar are documented here. The format follows
 
 ## 0.5.3 - 2026-10-10
 
-BB 0.46 retired the sidebar navigation slot that Radar's navigation and rail
-were built on. On BB 0.46, 0.5.2 can't load: its bundle registers the removed
+VesnALIA 0.46 retired the sidebar navigation slot that Radar's navigation and rail
+were built on. On VesnALIA 0.46, 0.5.2 can't load: its bundle registers the removed
 slot, so the thread list disappears too. This release keeps the thread list
-working and leaves navigation to BB's own rail.
+working and leaves navigation to VesnALIA's own rail.
 
 ### Removed
 
 - Radar's navigation above the list, the navigation rail and its labelled
-  mode. BB's own rail now holds Home, plugins and your destinations, and
+  mode. VesnALIA's own rail now holds Home, plugins and your destinations, and
   plugins can no longer replace it. The **Navigation rail** (`railNav`) and
   **Labelled rail** (`wideRail`) settings and the rail's project filter over
   the list go with them.
 
 ### Changed
 
-- Requires BB 0.46 or later. On BB 0.44 or 0.45, keep 0.5.2, which still has
+- Requires VesnALIA 0.46 or later. On VesnALIA 0.44 or 0.45, keep 0.5.2, which still has
   the navigation and rail.
 
 ## 0.5.2 - 2026-10-04
 
 ### Fixed
 
-- Keep BB's sidebar toggle and the updates chips inside the navigation rail.
+- Keep VesnALIA's sidebar toggle and the updates chips inside the navigation rail.
   The desktop toggle was offset past the rail to clear the traffic lights,
   and the updates chips wrapped out of the footer column.
 - Give the updates chips a taller cell in the narrow rail. The project
@@ -43,12 +43,12 @@ working and leaves navigation to BB's own rail.
   whose time label moved.
 - Unmount rows in a folded group or family once it finishes closing.
   Folded threads no longer cost rendering work or pull-request lookups.
-- Stop the sidebar toggle alignment from 0.5.1 slowing down all of BB.
+- Stop the sidebar toggle alignment from 0.5.1 slowing down all of VesnALIA.
   Its `body:has()` rules made every DOM change restyle the whole page,
   even with the rail off. That covered each streamed chunk and each
-  tooltip or menu opening. The rail now renders its overrides for BB's
+  tooltip or menu opening. The rail now renders its overrides for VesnALIA's
   sidebar as `<style>` elements in its own markup, applied only while it
-  is mounted. It no longer uses `:has()` and never writes to BB's
+  is mounted. It no longer uses `:has()` and never writes to VesnALIA's
   elements. Computed styles are unchanged.
   In a 20,000-element benchmark, a chat update drops from about 6.8ms to
   0.35ms, and a tooltip from about 5.8ms to 2µs.
@@ -62,7 +62,7 @@ working and leaves navigation to BB's own rail.
 
 ### Fixed
 
-- Align BB's sidebar toggle with the navigation rail's icon column in narrow,
+- Align VesnALIA's sidebar toggle with the navigation rail's icon column in narrow,
   labelled and mobile layouts. The override releases when the rail is off
   or the desktop sidebar is collapsed.
 
@@ -87,7 +87,7 @@ working and leaves navigation to BB's own rail.
 ### Fixed
 
 - Home clears the project filter without creating a thread; New thread keeps
-  BB's original action and does not clear the selected project.
+  VesnALIA's original action and does not clear the selected project.
 - Turning the rail off restores every project while remembering the filter
   for later; an independently selected list offers its own clear control.
 - Project tiles sort by real activity rather than read timestamps, with live
@@ -181,12 +181,12 @@ working and leaves navigation to BB's own rail.
 - Folded-family status describes only hidden descendants, excluding the parent.
 - Mounted rows react to changes in celebration, hover-card and adaptive-collapse
   settings, and reuse unchanged provider records to preserve row memoization.
-- Navigation follows BB's live order and visibility hook and delegates saves to
+- Navigation follows VesnALIA's live order and visibility hook and delegates saves to
   host actions, removing duplicate preference fetches, races and merge logic.
 - Section grip drags move the selected threads together and report partial
   failures. Keyboard section dragging works and exposes its grip to assistive
   technology while project sorting retains its own keyboard behavior.
-- Archive shortcuts and bulk actions leave completion feedback to BB, which
+- Archive shortcuts and bulk actions leave completion feedback to VesnALIA, which
   may require confirmation before archiving a family.
 - Opening a row menu closes its hover preview and cancels pending previews.
 - Time buckets use local calendar boundaries across daylight-saving changes.
@@ -197,16 +197,16 @@ working and leaves navigation to BB's own rail.
 
 - Create sections directly in Radar's section view with **New section**:
   inline naming, keyboard cancellation, pending-state protection and retryable
-  error feedback through BB's section API.
+  error feedback through VesnALIA's section API.
 
 ### Changed
 
-- Update to BB 0.44 navigation API: use host sidebar navigation hooks, split
+- Update to VesnALIA 0.44 navigation API: use host sidebar navigation hooks, split
   drag handles, and support dedicated skills panel actions.
 
 ### Fixed
 
-- Keyboard shortcuts no longer take over the rest of BB. They stay out of
+- Keyboard shortcuts no longer take over the rest of VesnALIA. They stay out of
   text fields, open dialogs and menus and controls outside the list, ignore keys another handler already
   handled or that carry ⌘/Ctrl/Alt, and no longer swallow arrow keys when
   the list is empty. Enter keeps its native behaviour on links and buttons;
@@ -246,8 +246,8 @@ working and leaves navigation to BB's own rail.
   filter box no longer blocks typing on large lists.
 - Removed about 1,600 lines of unused UI code and the unused `zod` and
   `@radix-ui/react-checkbox` dependencies.
-- BB now shows the radar icon for the plugin. `bb.branding.icon` named an icon
-  BB's own set does not have, so BB fell back to its default; it now points
+- VesnALIA now shows the radar icon for the plugin. `alia.branding.icon` named an icon
+  VesnALIA's own set does not have, so VesnALIA fell back to its default; it now points
   at `assets/icon.svg`.
 
 ## 0.1.0 - 2026-09-28
@@ -273,7 +273,7 @@ working and leaves navigation to BB's own rail.
 - Status filter chips (all / live / waiting / unread), multi-select with bulk
   archive, pin and mark-read, full keyboard traversal, and comfortable or
   compact density.
-- Navigation that follows BB's own server-synced sidebar arrangement, so
+- Navigation that follows VesnALIA's own server-synced sidebar arrangement, so
   arranging destinations in either surface carries over.
 - Six settings: five that turn down the louder visuals, and a default row
   density.

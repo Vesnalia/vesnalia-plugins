@@ -151,7 +151,7 @@ function setupToken() {
     run() {
       return spawnSync("bash", [SETUP_TOKEN], {
         encoding: "utf8",
-        env: { PATH: `${bin}:/usr/bin:/bin`, BBBOX_ENV: join(dir, "absent.env"), BBBOX_NODE: "node-1", BBBOX_TOKEN_FILE: tokenFile },
+        env: { PATH: `${bin}:/usr/bin:/bin`, ALIABOX_ENV: join(dir, "absent.env"), ALIABOX_NODE: "node-1", ALIABOX_TOKEN_FILE: tokenFile },
       });
     },
     calls(): string[] {
@@ -161,8 +161,8 @@ function setupToken() {
 }
 
 function privilegesSet(calls: readonly string[], verb: "add" | "modify"): string[] {
-  const call = calls.find((line) => line.startsWith(`role ${verb} BBBoxPlugin --privs `));
-  assert.ok(call, `pveum role ${verb} BBBoxPlugin was called: ${calls.join("; ")}`);
+  const call = calls.find((line) => line.startsWith(`role ${verb} AliaBoxPlugin --privs `));
+  assert.ok(call, `pveum role ${verb} AliaBoxPlugin was called: ${calls.join("; ")}`);
   return call.split(" --privs ")[1]!.split(",");
 }
 
@@ -171,7 +171,7 @@ test("setup-token.sh gives a new role both snapshot rights, and a rerun adds the
   const first = host.run();
   assert.equal(first.status, 0, first.stderr);
   assert.deepEqual(privilegesSet(host.calls(), "add"), [...TOKEN_ROLE]);
-  assert.match(first.stdout, /^created token bbbox@pve!plugin in /m);
+  assert.match(first.stdout, /^created token aliabox@pve!plugin in /m);
   assert.doesNotMatch(first.stdout + first.stderr, /fake-secret-from-pveum/);
   assert.match(readFileSync(host.tokenFile, "utf8"), /^PROXMOX_TOKEN_SECRET=fake-secret-from-pveum$/m);
   assert.equal(statSync(host.tokenFile).mode & 0o777, 0o600);
@@ -181,7 +181,7 @@ test("setup-token.sh gives a new role both snapshot rights, and a rerun adds the
   assert.equal(rerun.status, 0, rerun.stderr);
   const again = host.calls().slice(before);
   assert.deepEqual(privilegesSet(again, "modify"), [...TOKEN_ROLE]);
-  assert.ok(!again.some((line) => line.startsWith("user token add") || line.startsWith("user add") || line.startsWith("role add BBBoxPlugin ")), again.join("; "));
-  assert.match(rerun.stdout, /token bbbox@pve!plugin already exists; .* kept/);
+  assert.ok(!again.some((line) => line.startsWith("user token add") || line.startsWith("user add") || line.startsWith("role add AliaBoxPlugin ")), again.join("; "));
+  assert.match(rerun.stdout, /token aliabox@pve!plugin already exists; .* kept/);
   assert.doesNotMatch(rerun.stdout + rerun.stderr, /fake-secret-from-pveum/);
 });

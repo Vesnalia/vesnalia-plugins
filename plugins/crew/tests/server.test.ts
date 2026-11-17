@@ -20,7 +20,7 @@ describe("server wiring", () => {
     await harness.lifecycle.dispose();
   });
 
-  it("getCrew decorates the crew with its project's name, like listCrews (BBP-79)", async () => {
+  it("getCrew decorates the crew with its project's name, like listCrews (ALIAP-79)", async () => {
     const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
     harness.sdk.stub("projects.get", async () => ({ id: "p1", name: "My Project", sources: [] }));
     await plugin(alia);

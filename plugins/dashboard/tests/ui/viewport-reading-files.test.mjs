@@ -165,10 +165,10 @@ test("search, browser chrome, pinch zoom and desktop resizing do not activate mo
 });
 
 test("chat file hrefs preserve Windows paths, encoded names and line locations", () => {
-  assert.deepEqual(parseChatFileLink("/E:/Development/BBDesk/CHANGELOG.md"), { path: "E:/Development/BBDesk/CHANGELOG.md", location: null });
+  assert.deepEqual(parseChatFileLink("/E:/Development/AliaDesk/CHANGELOG.md"), { path: "E:/Development/AliaDesk/CHANGELOG.md", location: null });
   assert.deepEqual(parseChatFileLink("file:///E:/My%20Project/report.md#L8-L12"), { path: "E:/My Project/report.md", location: { kind: "range", startLine: 8, endLine: 12 } });
   assert.deepEqual(parseChatFileLink("E:\\Project\\app.tsx:12:3"), { path: "E:/Project/app.tsx", location: { kind: "line", line: 12, column: 3 } });
-  assert.equal(resolveChatFilePath("../verification/report.md", "E:\\Development\\BBDesk\\plugin"), "E:/Development/BBDesk/verification/report.md");
+  assert.equal(resolveChatFilePath("../verification/report.md", "E:\\Development\\AliaDesk\\plugin"), "E:/Development/AliaDesk/verification/report.md");
   assert.equal(resolveChatFilePath("/tmp/report.md", "E:/Project"), "/tmp/report.md");
   assert.equal(resolveChatFilePath("../../../report.md", "E:/Project"), null);
   for (const href of ["https://example.com/report.md", "http://localhost:1234/", "plugin://dashboard/home", "/api/attachments/test.zip", "/plugins/dashboard/home", "#L2", "//example.com/a.md", "file://server/a.md", "/bad%00.md", "/bad%ZZ.md", "app.ts:0", "app.ts#L8-L2"]) assert.equal(parseChatFileLink(href), null, href);
@@ -179,7 +179,7 @@ test("local result links open a native file preview on the thread's machine and 
   let allowed;
   await act(async () => { allowed = fireEvent.click(slot.getByText("Open report")); });
   assert.equal(allowed, false);
-  assert.deepEqual(slot.inspection.navigateCalls, [{ method: "experimental_openFilePreview", options: { target: { kind: "host", hostId: "machine-a", path: "E:/Development/BBDesk/CHANGELOG.md" }, location: null } }]);
+  assert.deepEqual(slot.inspection.navigateCalls, [{ method: "experimental_openFilePreview", options: { target: { kind: "host", hostId: "machine-a", path: "E:/Development/AliaDesk/CHANGELOG.md" }, location: null } }]);
 });
 
 test("relative file links and middle clicks use the environment root and preserve line numbers", async () => {

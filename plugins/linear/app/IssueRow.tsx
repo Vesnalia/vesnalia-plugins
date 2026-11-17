@@ -98,14 +98,14 @@ function RowBody({
     <li
       {...rest}
       role="option"
-      id={`bbl-row-${row.id}`}
+      id={`alial-row-${row.id}`}
       aria-selected={selected}
       aria-label={row.accessibleName}
-      data-bbl-row={row.id}
-      className={`${toneClass(row.tone)} bbl-row group relative flex cursor-pointer flex-col gap-0.5 rounded-md py-1.5 pl-2 pr-1.5 ${
-        selected ? "bbl-row-selected" : "hover:bg-state-hover"
+      data-alial-row={row.id}
+      className={`${toneClass(row.tone)} alial-row group relative flex cursor-pointer flex-col gap-0.5 rounded-md py-1.5 pl-2 pr-1.5 ${
+        selected ? "alial-row-selected" : "hover:bg-state-hover"
       }`}
-      style={row.glyph.color === null ? undefined : ({ "--bbl": row.glyph.color } as CSSProperties)}
+      style={row.glyph.color === null ? undefined : ({ "--alial": row.glyph.color } as CSSProperties)}
       onClick={() => onOpen(row.id)}
     >
       <div className="flex min-w-0 items-center gap-2.5">
@@ -143,7 +143,7 @@ function RowBody({
           cannot click.
         */}
         <span className="ml-auto grid shrink-0 place-items-center">
-          <span className="bbl-row-meta col-start-1 row-start-1 flex items-center gap-2">
+          <span className="alial-row-meta col-start-1 row-start-1 flex items-center gap-2">
             {row.assignee !== null ? (
               <span
                 className="hidden size-5 place-items-center overflow-hidden rounded-full bg-muted text-[10px] font-medium text-muted-foreground sm:grid"
@@ -165,7 +165,7 @@ function RowBody({
             <span className="hidden w-3 text-center sm:block" aria-hidden>
               {row.priorityMark !== null ? (
                 <span
-                  className={`${priorityToneClass(row.priorityMark)} bbl-text text-xs font-semibold`}
+                  className={`${priorityToneClass(row.priorityMark)} alial-text text-xs font-semibold`}
                 >
                   {row.priorityMark === "urgent" ? "!!" : "!"}
                 </span>
@@ -177,7 +177,7 @@ function RowBody({
             </span>
           </span>
 
-          <span className="bbl-row-actions col-start-1 row-start-1 flex items-center">
+          <span className="alial-row-actions col-start-1 row-start-1 flex items-center">
             <button
               type="button"
               className="flex h-6 items-center gap-1 rounded px-1.5 text-[11px] font-medium text-muted-foreground hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -201,7 +201,7 @@ function RowBody({
           <span className="w-[4.75rem] shrink-0" aria-hidden />
           {row.secondLine.kind === "sub-issues" && row.secondLine.progress !== undefined ? (
             <span
-              className="bbl-text flex items-center gap-1.5 truncate text-[11px]"
+              className="alial-text flex items-center gap-1.5 truncate text-[11px]"
               role="img"
               aria-label={row.secondLine.text}
               title={row.secondLine.text}
@@ -212,7 +212,7 @@ function RowBody({
               </span>
             </span>
           ) : (
-            <span className="bbl-text truncate text-[11px]">{row.secondLine.text}</span>
+            <span className="alial-text truncate text-[11px]">{row.secondLine.text}</span>
           )}
         </div>
       ) : null}

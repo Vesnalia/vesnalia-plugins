@@ -1,7 +1,7 @@
 [Unit]
-Description=bb-box: report each GPU's free memory in the notes of VM bb-box-gpu-memory
-After=pve-cluster.service bb-box-nvidia-devices.service
+Description=alia-box: report each GPU's free memory in the notes of VM alia-box-gpu-memory
+After=pve-cluster.service alia-box-nvidia-devices.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/bb-box-gpu-memory
+ExecStart=/usr/local/sbin/alia-box-gpu-memory

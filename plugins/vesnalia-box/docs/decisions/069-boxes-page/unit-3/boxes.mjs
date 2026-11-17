@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 const home = process.env.HOME;
 const thread = process.env.RUN_THREAD;
-const list = JSON.parse(execFileSync(join(home, "bbc"), ["box", "list", "--thread", thread, "--json"], { encoding: "utf8" }));
+const list = JSON.parse(execFileSync(join(home, "aliac"), ["box", "list", "--thread", thread, "--json"], { encoding: "utf8" }));
 const containers = execFileSync("docker", ["ps", "-a", "--format", "{{.Names}} {{.Labels}}"], { encoding: "utf8" }).trim().split("\n");
 const boxes = list.map((box) => ({
   id: box.id,

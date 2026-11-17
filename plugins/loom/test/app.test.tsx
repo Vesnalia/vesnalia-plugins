@@ -2278,7 +2278,7 @@ describe("changes tab", () => {
     fireEvent.click(slot.container.querySelector<HTMLElement>('[data-source="branch"]')!);
     fireEvent.click(fileRow(slot, "src/a.ts").querySelector<HTMLElement>('[data-file-ticket="CSV-1"]')!);
     expect(slot.container.querySelector("[data-change-source]")!.getAttribute("data-change-source")).toBe("merge:CSV-1");
-    expect(slot.container.querySelector("[data-change-source]")!.textContent).toContain("What its merge bbbbbbb added to loom/csv, 2h ago");
+    expect(slot.container.querySelector("[data-change-source]")!.textContent).toContain("What its merge aliabbbbb added to loom/csv, 2h ago");
   });
 
   it("reads a live worktree's patch by the ticket's key and marks a file git does not track yet", async () => {
@@ -3344,7 +3344,7 @@ describe("ticket", () => {
     const runOutput = vi.fn(() => ({ output: "unused" }));
     const items: Item[] = [
       checks({ steps: [step({ label: "git commit", kind: "git", exitCode: null, durationMs: 40 }), step({ label: "npm run lint", durationMs: 1200 }), step({ label: "npm test", durationMs: 131_800 })] }),
-      checks({ afterMerge: true, status: "failed", changed: "moved HEAD from aaa to bbb", steps: [step({ label: "npm run e2e", durationMs: 500 })] }),
+      checks({ afterMerge: true, status: "failed", changed: "moved HEAD from aaa to aliab", steps: [step({ label: "npm run e2e", durationMs: 500 })] }),
       checks({ status: "failed", steps: [step({ label: "npm run lint" }), step({ label: "npm test", ok: false, exitCode: 1, durationMs: 300, output: "1 failing" })] }),
     ];
     const slot = await mountTicket({ activity: withItems(items) }, { runOutput });
@@ -3363,7 +3363,7 @@ describe("ticket", () => {
 
     expect(cards[1]!.textContent).toContain("Checks after the merge failed");
     const changed = cards[1]!.querySelector("[data-changed]")!;
-    expect(changed.textContent).toBe("The command passed but changed the branch: moved HEAD from aaa to bbb.");
+    expect(changed.textContent).toBe("The command passed but changed the branch: moved HEAD from aaa to aliab.");
     expect(changed.className).toContain("text-destructive-text");
 
     expect(cards[2]!.textContent).toContain("Checks failed");

@@ -19172,7 +19172,7 @@ function decodeHtmlEntities(value) {
     lsquo: "\u2018",
     nbsp: " ",
     quot: '"',
-    raquo: "\xBB",
+    raquo: "\xALIA",
     rdquo: "\u201D",
     rsquo: "\u2019",
     lt: "<"

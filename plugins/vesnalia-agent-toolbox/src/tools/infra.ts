@@ -6,7 +6,7 @@ import { resolveHost } from "../lib/resolve-host";
 // Read-only for now: letting an agent create or pause machines is an easy way to rack up cloud bills.
 export function registerInfraTools(alia: AliaPluginApi, register: Registrar) {
   register("machines", {
-    name: "bbtools_machines_list",
+    name: "aliatools_machines_list",
     description:
       "List machines (hosts) enrolled with VesnALIA, with their connection and lifecycle status. Use it to see where threads and workspaces can run.",
     parameters: z.object({}),
@@ -23,7 +23,7 @@ export function registerInfraTools(alia: AliaPluginApi, register: Registrar) {
   });
 
   register("machines", {
-    name: "bbtools_environments_list",
+    name: "aliatools_environments_list",
     description:
       "List workspaces (environments / worktrees) of a VesnALIA project with branch, host, and status. Use it to orient across a project's checkouts before delegating work.",
     parameters: z.object({

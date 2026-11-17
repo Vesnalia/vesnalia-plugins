@@ -22,12 +22,12 @@ describe("buildTranscript", () => {
   });
 
   it("keeps the first message and the newest messages when the text is too long", () => {
-    const items = [user("first"), user("aaaa"), user("bbbb"), user("cccc")];
+    const items = [user("first"), user("aaaa"), user("aliabb"), user("cccc")];
     // "User: first" is 11 characters and each other line is 10.
     const transcript = buildTranscript(items, 31);
 
     expect(transcript).toBe(
-      "User: first\n\n[… 1 earlier messages omitted …]\n\nUser: bbbb\n\nUser: cccc",
+      "User: first\n\n[… 1 earlier messages omitted …]\n\nUser: aliabb\n\nUser: cccc",
     );
   });
 });

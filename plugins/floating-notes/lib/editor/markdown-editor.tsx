@@ -45,7 +45,7 @@ import { languages } from "@codemirror/language-data";
 import type { KeyBinding } from "@codemirror/view";
 import { livePreview } from "./live-preview";
 import { isBareUrl, markdownLinkSnippet, wrapSelectionWith } from "./markdown-utils";
-import { bbnotesHighlightStyle, bbnotesTheme } from "./theme";
+import { alianotesHighlightStyle, alianotesTheme } from "./theme";
 import { wikiLinks } from "./wiki-links";
 import "./editor.css";
 
@@ -60,7 +60,7 @@ export interface MarkdownEditorProps {
   onChange?: (body: string) => void;
   /** Paste/drop of an image file → resolves to an attachment id. */
   onPasteImage?: (file: File) => Promise<string>;
-  /** Resolve `bbnote://attachment/<id>` to a data: URI for inline render. */
+  /** Resolve `alianote://attachment/<id>` to a data: URI for inline render. */
   resolveAttachment?: (id: string) => Promise<string | null>;
   /** ⌘/Ctrl+click on a link. */
   onOpenLink?: (href: string) => void;
@@ -275,7 +275,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         for (const result of results) {
           if (result.status === "fulfilled") {
             const { file, id } = result.value;
-            snippets.push(`![${altTextFor(file)}](bbnote://attachment/${id})`);
+            snippets.push(`![${altTextFor(file)}](alianote://attachment/${id})`);
           }
         }
         const current = viewRef.current;
@@ -313,7 +313,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             // (fenced-code sub-languages still supply their own sets).
             markdownLanguage.data.of({ closeBrackets: { brackets: ["(", "[", "`"] } }),
             markdown({ base: markdownLanguage, codeLanguages: languages }),
-            syntaxHighlighting(bbnotesHighlightStyle),
+            syntaxHighlighting(alianotesHighlightStyle),
             closeBrackets(),
             // indentWithTab keeps the standard escape hatch: Escape, then Tab,
             // moves focus out of the editor (built into @codemirror/view).
@@ -324,7 +324,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
               ...defaultKeymap,
               ...historyKeymap,
             ]),
-            bbnotesTheme,
+            alianotesTheme,
             // Before livePreview so wiki-pill mousedown wins over generic
             // link handling. Callbacks read refs — prop updates need no
             // reconfiguration and never recreate the view.
@@ -464,7 +464,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     return (
       <div
         ref={containerRef}
-        className={className ? `bbnotes-editor ${className}` : "bbnotes-editor"}
+        className={className ? `alianotes-editor ${className}` : "alianotes-editor"}
       />
     );
   },

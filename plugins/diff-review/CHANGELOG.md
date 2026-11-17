@@ -73,9 +73,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Diff Review stops waiting for reads nobody needs any more**: the changes of files loaded on
   demand, those of commented files, and the check for the branch's pull request, when the plugin is
   reloaded, turned off or removed, or when the window that asked closes before the answer arrives. It
-  then asks for no more of those changes. A read bb's own Git or GitHub PR Status plugin has already
-  started still runs to the end there, as bb 0.48.1 does not stop it. This needs bb 0.48.1 or newer;
-  on bb 0.48.0 Diff Review waits for every read as before.
+  then asks for no more of those changes. A read VesnALIA's own Git or GitHub PR Status plugin has already
+  started still runs to the end there, as VesnALIA 0.48.1 does not stop it. This needs VesnALIA 0.48.1 or newer;
+  on VesnALIA 0.48.0 Diff Review waits for every read as before.
 
 ## 0.4.0
 
@@ -83,7 +83,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Review a GitHub pull request.** Pick *Pull request #N* in the view picker (offered when the
   workspace's branch has one) or *A pull request…* to paste any pull request's address, or run
-  `bb diff-review open <address>`. Its changes are fetched into the workspace's repository without
+  `alia diff-review open <address>`. Its changes are fetched into the workspace's repository without
   switching your checkout, and its review threads from GitHub appear on their lines, marked GitHub.
   The thread's tab comes back on it until the pull request is closed or merged.
 - **Answer GitHub's threads from the tab.** A reply, Resolve or Reopen on one of them goes to GitHub;
@@ -94,17 +94,17 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on a file or the whole change in the summary. A comment that cannot be posted says why. It posts
   exactly the text the dialog showed, refuses if the pull request got new commits meanwhile, and
   keeps your replies and the agent's answers in the tab. It posts as the GitHub CLI's account on the
-  machine running bb, and only from that button.
+  machine running VesnALIA, and only from that button.
 - GitHub comments on a whole file show on the file, and comments GitHub marks outdated keep the code
   they were made on instead of moving to whatever is at their old line now.
 - **Fix a pull request in a new thread.** In a pull request's view, *A new thread…* in Send to agent
   starts it in a new worktree that checks out the pull request.
 
-Needs the GitHub CLI (`gh`), signed in, on the machine running bb.
+Needs the GitHub CLI (`gh`), signed in, on the machine running VesnALIA.
 
 ## 0.3.0
 
-Needs bb 0.48 or newer.
+Needs VesnALIA 0.48 or newer.
 
 ### Added
 
@@ -114,7 +114,7 @@ Needs bb 0.48 or newer.
   merged), and **Any file**: search the workspace for any file, in the diff or not, and comment on its
   lines. They work on a remote machine too. Each thread's Review tab comes back on the view you
   picked in it, unless that view is gone (a range whose branch was deleted, say).
-- **Viewed.** Each file has a Viewed box, shared with bb's own diff panel: marking a file folds it, and
+- **Viewed.** Each file has a Viewed box, shared with VesnALIA's own diff panel: marking a file folds it, and
   a file that changed since you marked it says so.
 - **Find in the diff**, across every file, folded ones included, with the match count, previous and
   next, and match case.
@@ -126,7 +126,7 @@ Needs bb 0.48 or newer.
   file only if it is still the version you were looking at, and leaves symlinks and submodules alone.
 - **Summarize** the change, from the AI review dialog, and **Explain** a file or the lines you
   selected; each answer appears as a comment in the tab.
-- **Open** shows a file in bb's own viewer, at the version the view shows.
+- **Open** shows a file in VesnALIA's own viewer, at the version the view shows.
 - **Hide whitespace** in the toolbar.
 - **Colour-blind diff colours** (blue and orange instead of green and red), in the settings.
 - **A Reviews page** in the sidebar lists every review with comments, across projects, with a count
@@ -143,13 +143,13 @@ Needs bb 0.48 or newer.
   an older one whose comment showed up late.
 - **Palette commands** for every action of the tab: reload, send, AI review, find, go to, the next or
   previous comment, the toolbar switches and more.
-- **`bb diff-review open`** opens a thread's review on a view and file from the command line.
+- **`alia diff-review open`** opens a thread's review on a view and file from the command line.
 - A comment notes when its file changed since it was made.
 
 ### Changed
 
 - A second click on the **Review** button in the thread's header closes the tab.
-- Diffs come from bb's Git plugin. If it is turned off, the tab says so instead of failing.
+- Diffs come from VesnALIA's Git plugin. If it is turned off, the tab says so instead of failing.
 - The tab hears about changes to the workspace made outside an agent's turn (your own edits, a `git`
   command) and reloads by itself, and a tab you are not looking at waits to reload until you open it.
 
@@ -181,7 +181,7 @@ Needs bb 0.48 or newer.
 - **Fix in a new thread.** Send to agent can now start a new thread in the same workspace instead of
   sending to the thread under review, with the provider and model you pick.
 - **The runs, listed in the tab**, with a link to each thread and Close, which archives it. An AI review
-  that ended while files in the workspace changed lists them, since bb cannot stop a review from
+  that ended while files in the workspace changed lists them, since VesnALIA cannot stop a review from
   editing.
 - **Settings** for the provider and model AI runs start with (Claude Code and its default model unless
   you change them; each run can pick another) and for how they run: *Approve for me* unless you choose
@@ -202,7 +202,7 @@ Needs bb 0.48 or newer.
 
 - **A Review tab beside each thread** with the diff of the thread's workspace: its uncommitted
   changes, the changes committed since the base branch, all changes since the base branch, or one of
-  the branch's commits, split or unified, in bb's code theme. It opens on the uncommitted changes, or,
+  the branch's commits, split or unified, in VesnALIA's code theme. It opens on the uncommitted changes, or,
   when there are none, on the changes committed since the base branch. Diffs load on their own as you
   scroll; very large changes start folded.
 - **A Review button in the thread's title bar** that opens the tab.

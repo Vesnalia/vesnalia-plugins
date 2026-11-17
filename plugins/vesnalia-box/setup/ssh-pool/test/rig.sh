@@ -20,12 +20,12 @@
 # alone, whose boxes have Docker, and via.json with plain reached through
 # the bastion. A pool's boxes have Docker only when every machine gives it
 # (041), so settings.json's do not. Keep <dir> out of the repository.
-# Everything the rig makes is named bbbox-sshpool*.
+# Everything the rig makes is named aliabox-sshpool*.
 
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 setup=$(dirname "$here")
-NAME=bbbox-sshpool
+NAME=aliabox-sshpool
 VOLUME=$NAME-docker
 
 die() {
@@ -118,7 +118,7 @@ EOF
   cat >"$dir/via.json" <<EOF
 {
   "ssh-pool-enabled": true,
-  "ssh-pool-machines": $(json "plain bbbox-admin@$NAME-plain linux via=jump@127.0.0.1:2220"),
+  "ssh-pool-machines": $(json "plain aliabox-admin@$NAME-plain linux via=jump@127.0.0.1:2220"),
   "ssh-pool-known-hosts": $(json "$bastion
 $plain"),
   "ssh-pool-ssh-private-key": { "file": "id_ed25519" }

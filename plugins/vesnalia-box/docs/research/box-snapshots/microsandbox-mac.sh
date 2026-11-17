@@ -179,7 +179,7 @@ msb stop c-r --quiet; msb start c-r --quiet; held c-r >"$work/c1.txt" 2>&1; same
 echo "== E: alia-box's own snapshot commands, by group:member, through a linked home and through a real one"
 ids() { msb snap ls --format json | field snapshot_id; }
 gone() { ! ids | grep -qx "$1"; }
-idof() { msb snap ls --group bbbox-e --format json | tr ',{}' '\n\n\n' | grep -E '"(name|snapshot_id)"' | paste -d' ' - - | grep "\"$1\"" | sed -n 's/.*"\(snap_[0-9a-f]*\)".*/\1/p'; }
+idof() { msb snap ls --group aliabox-e --format json | tr ',{}' '\n\n\n' | grep -E '"(name|snapshot_id)"' | paste -d' ' - - | grep "\"$1\"" | sed -n 's/.*"\(snap_[0-9a-f]*\)".*/\1/p'; }
 step() { local what=$1 said rc; shift; said=$("$@" 2>&1); rc=$?; [ $rc = 0 ] || echo "  $what: rc=$rc, said: $(printf '%s' "$said" | sed 's/snap_[0-9a-f]*/<ID>/g' | tail -n 1)"; return $rc; }
 main_home=$MSB_HOME
 mkdir -p "$work/hl" "$work/hr"
@@ -191,19 +191,19 @@ for how in linked real; do
   msb pull alpine:3.20 >/dev/null 2>&1
   msb create alpine:3.20 --name e-src --quiet --cpus 1 --memory 1024M --tmpfs /run
   msb exec e-src -- sh -c 'echo x > /root/x; sync'
-  msb snapshot create e0 --sandbox e-src --group bbbox-e --label bbbox.box=e --quiet
-  msb snapshot create e1 --sandbox e-src --group bbbox-e --label bbbox.box=e --full --quiet
+  msb snapshot create e0 --sandbox e-src --group aliabox-e --label aliabox.box=e --quiet
+  msb snapshot create e1 --sandbox e-src --group aliabox-e --label aliabox.box=e --full --quiet
   e0=$(idof e0) e1=$(idof e1)
   said=$(msb snapshot inspect "$e0" 2>&1) && echo "  inspect by ID: works" || echo "  inspect by ID: $(printf '%s' "$said" | sed 's/snap_[0-9a-f]*/<ID>/g' | tail -n 1)"
-  step "inspect bbbox-e:e0" msb snapshot inspect bbbox-e:e0 && pass "E $how: inspect by group:member" || fail "E $how: inspect by group:member"
-  step "restore bbbox-e:e0" msb snapshot restore bbbox-e:e0 --name e-r --quiet && [ "$(msb exec e-r -- cat /root/x 2>&1)" = x ] && pass "E $how: a restore by group:member" || fail "E $how: a restore by group:member"
-  step "restore bbbox-e:e1 --disk-only" msb snapshot restore bbbox-e:e1 --name e-f --disk-only --quiet && [ "$(msb exec e-f -- cat /root/x 2>&1)" = x ] && pass "E $how: a fork's restore of a memory snapshot's disk by group:member" || fail "E $how: a fork's restore of a memory snapshot's disk by group:member"
-  msb snapshot head bbbox-e --format json >/dev/null
-  step "remove --force bbbox-e:e0" msb snapshot remove --force --quiet bbbox-e:e0 && gone "$e0" && pass "E $how: a parent removed by group:member with --force" || fail "E $how: a parent removed by group:member with --force"
-  msb snapshot create e2 --sandbox e-src --group bbbox-e --label bbbox.box=e --quiet; e2=$(idof e2)
-  msb snapshot head bbbox-e:e1 --format json >/dev/null
-  step "remove bbbox-e:e2" msb snapshot remove --quiet bbbox-e:e2 && gone "$e2" && pass "E $how: the old head removed by group:member once another is head" || fail "E $how: the old head removed by group:member once another is head"
+  step "inspect aliabox-e:e0" msb snapshot inspect aliabox-e:e0 && pass "E $how: inspect by group:member" || fail "E $how: inspect by group:member"
+  step "restore aliabox-e:e0" msb snapshot restore aliabox-e:e0 --name e-r --quiet && [ "$(msb exec e-r -- cat /root/x 2>&1)" = x ] && pass "E $how: a restore by group:member" || fail "E $how: a restore by group:member"
+  step "restore aliabox-e:e1 --disk-only" msb snapshot restore aliabox-e:e1 --name e-f --disk-only --quiet && [ "$(msb exec e-f -- cat /root/x 2>&1)" = x ] && pass "E $how: a fork's restore of a memory snapshot's disk by group:member" || fail "E $how: a fork's restore of a memory snapshot's disk by group:member"
+  msb snapshot head aliabox-e --format json >/dev/null
+  step "remove --force aliabox-e:e0" msb snapshot remove --force --quiet aliabox-e:e0 && gone "$e0" && pass "E $how: a parent removed by group:member with --force" || fail "E $how: a parent removed by group:member with --force"
+  msb snapshot create e2 --sandbox e-src --group aliabox-e --label aliabox.box=e --quiet; e2=$(idof e2)
+  msb snapshot head aliabox-e:e1 --format json >/dev/null
+  step "remove aliabox-e:e2" msb snapshot remove --quiet aliabox-e:e2 && gone "$e2" && pass "E $how: the old head removed by group:member once another is head" || fail "E $how: the old head removed by group:member once another is head"
   msb rm -f e-src e-r e-f --quiet
-  step "remove bbbox-e:e1" msb snapshot remove --quiet bbbox-e:e1 && gone "$e1" && [ -z "$(ids)" ] && pass "E $how: the last removed by group:member after its sandboxes went, as a release does, and none left" || fail "E $how: the last removed by group:member after its sandboxes went, as a release does, and none left"
+  step "remove aliabox-e:e1" msb snapshot remove --quiet aliabox-e:e1 && gone "$e1" && [ -z "$(ids)" ] && pass "E $how: the last removed by group:member after its sandboxes went, as a release does, and none left" || fail "E $how: the last removed by group:member after its sandboxes went, as a release does, and none left"
 done
 export MSB_HOME=$main_home

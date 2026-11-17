@@ -123,8 +123,8 @@ test("two boat.dev backends on one account each label what they make with their 
 
   assert.equal(sandboxOf(on, ownGuest).labels[LABELS.backend], "boat");
   assert.equal(sandboxOf(on, otherGuest).labels[LABELS.backend], "boat-team-b");
-  assert.equal(sandboxOf(on, ownGuest).idempotencyKey, `bbbox-inst1-${BOX_A}`, "the first backend's keys are as before");
-  assert.equal(sandboxOf(on, otherGuest).idempotencyKey, `bbbox-inst1-boat-team-b-${BOX_B}`);
+  assert.equal(sandboxOf(on, ownGuest).idempotencyKey, `aliabox-inst1-${BOX_A}`, "the first backend's keys are as before");
+  assert.equal(sandboxOf(on, otherGuest).idempotencyKey, `aliabox-inst1-boat-team-b-${BOX_B}`);
   assert.deepEqual((await first.held()).map((guest) => guest.data?.box), [BOX_A]);
   assert.deepEqual((await second.held()).map((guest) => guest.data?.box), [BOX_B]);
 
@@ -144,7 +144,7 @@ test("after the upgrade, a sandbox or template labelled only with the install is
   const second = backendOn(on, TEAM_B, { templateLabels: null });
   const legacyTemplate = plantTemplate(on, LEGACY_LABELS);
   const older = on.fake.add({ labels: { ...LEGACY_LABELS, [LABELS.box]: BOX_A, [LABELS.thread]: "thr_1", [LABELS.name]: "box-old", [LABELS.kind]: "linux", [LABELS.created]: String(START) }, state: "ready" });
-  const guest: Guest = { ref: `bbbox-${BOX_A}`, host: null, address: null, size: null, data: { box: BOX_A, sandbox: older.id } };
+  const guest: Guest = { ref: `aliabox-${BOX_A}`, host: null, address: null, size: null, data: { box: BOX_A, sandbox: older.id } };
 
   assert.deepEqual((await second.held()).map((held) => held.data?.box), []);
   assert.deepEqual((await first.held()).map((held) => held.data?.box), [BOX_A]);
@@ -182,7 +182,7 @@ test("each backend's upkeep deletes only its own old templates and its own aband
   const legacy = oldKey(LEGACY_LABELS);
   const seconds = oldKey(new BoatOwner(TEAM_B, "inst1").labels());
   const firstStaging = on.fake.add({ labels: {}, name: stagingName(BOX_A, "aaaaaaaa"), state: "archived", ...long });
-  const secondStaging = on.fake.add({ labels: {}, name: stagingName(BOX_B, "bbbbbbbb", "boat-team-b"), state: "archived", ...long });
+  const secondStaging = on.fake.add({ labels: {}, name: stagingName(BOX_B, "aliabbbbbb", "boat-team-b"), state: "archived", ...long });
 
   await second.maintain(undefined, new Set());
   assert.deepEqual([firsts.state, legacy.state, seconds.state, firstStaging.state, secondStaging.state], ["archived", "archived", "deleted", "archived", "deleted"]);
@@ -277,7 +277,7 @@ test("a second backend's restore deploys a sandbox named with its ID, which only
   assert.equal(deployed.name, `alia-box:restoring:boat-team-b:${BOX_B}:${token}`);
   assert.equal(deployed.state, "deleted");
   assert.equal(sandboxOf(on, fresh).labels[LABELS.backend], "boat-team-b");
-  assert.equal(sandboxOf(on, fresh).idempotencyKey, `bbbox-inst1-boat-team-b-${BOX_B}-${token}`);
+  assert.equal(sandboxOf(on, fresh).idempotencyKey, `aliabox-inst1-boat-team-b-${BOX_B}-${token}`);
 });
 
 interface Device {

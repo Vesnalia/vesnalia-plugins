@@ -1,4 +1,4 @@
--- @conn docker-bb-sql-test
+-- @conn docker-alia-sql-test
 -- Query parameters example (0.4.2)
 -- Put the caret on a statement (or select it) and press Run / ⌘Enter.
 -- A dialog asks for each :name. Session remembers last values.

@@ -2,7 +2,7 @@
 
 ## 0.1.0
 
-- First public release in the `bb-plugins` collection.
+- First public release in the `alia-plugins` collection.
 - Focus-out and idle collapse with configurable delay and thresholds.
 - Draft-preserving, portal-aware and rendered-visibility-aware selection of the live composer.
 - Settings apply without a reload; disabling removes all listeners and timers.

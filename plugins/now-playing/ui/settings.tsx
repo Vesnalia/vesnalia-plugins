@@ -78,13 +78,13 @@ function Preview({
 function accentSurface(style: AccentStyle, theme: Theme): Hex {
   if (style === "pocket") return surfaces(theme).card;
   if (style === "terminal") return terminalPalette(theme, theme.primary).bg;
-  return style === "bbamp" ? "#000000" : "#0e0d0b";
+  return style === "aliaamp" ? "#000000" : "#0e0d0b";
 }
 
 function shownAccent(style: AccentStyle, color: Hex, theme: Theme): Hex {
   if (style === "pocket") return pocketPalette(theme, color).line;
   if (style === "terminal") return terminalPalette(theme, color).hi;
-  return lcdPalette(color, style === "bbamp" ? "#000000" : "#0e0d0b").hi;
+  return lcdPalette(color, style === "aliaamp" ? "#000000" : "#0e0d0b").hi;
 }
 
 function Swatch({

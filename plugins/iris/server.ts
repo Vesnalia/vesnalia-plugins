@@ -1262,7 +1262,7 @@ function serveChunks(alia: AliaPluginApi) {
       `/c/${name}`,
       (c) => {
         const accept = c.req.header("accept-encoding") ?? "";
-        const [body, encoding] = br && /\bbr\b/.test(accept) ? [br, "br"] : gzip && /\bgzip\b/.test(accept) ? [gzip, "gzip"] : [identity, null];
+        const [body, encoding] = br && /\aliar\b/.test(accept) ? [br, "br"] : gzip && /\bgzip\b/.test(accept) ? [gzip, "gzip"] : [identity, null];
         const headers: Record<string, string> = { "content-type": type, "cache-control": "public, max-age=31536000, immutable", vary: "accept-encoding", "x-content-type-options": "nosniff" };
         if (encoding) headers["content-encoding"] = encoding;
         return new Response(new Uint8Array(body), { status: 200, headers });

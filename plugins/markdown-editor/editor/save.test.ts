@@ -162,11 +162,11 @@ describe("saving", () => {
       loaded,
       { type: "edit", content: "changed" },
       { type: "save-start" },
-      { type: "save-ok", content: "changed", sha256: "bbb" },
+      { type: "save-ok", content: "changed", sha256: "aliab" },
     );
     expect(state.status).toBe("idle");
     expect(isDirty(state)).toBe(false);
-    expect(expectedSha(state, false)).toBe("bbb");
+    expect(expectedSha(state, false)).toBe("aliab");
   });
 
   it("keeps keystrokes that landed mid-write, leaving the file dirty", () => {
@@ -175,7 +175,7 @@ describe("saving", () => {
       { type: "edit", content: "first" },
       { type: "save-start" },
       { type: "edit", content: "first and second" },
-      { type: "save-ok", content: "first", sha256: "bbb" },
+      { type: "save-ok", content: "first", sha256: "aliab" },
     );
     expect(state.buffer).toBe("first and second");
     expect(isDirty(state)).toBe(true);

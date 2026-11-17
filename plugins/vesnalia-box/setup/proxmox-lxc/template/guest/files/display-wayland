@@ -1,7 +1,7 @@
 #!/bin/bash
-# bb-box: the Wayland desktop's display (048): Sway, headless, drawn by the
-# CPU, run as the box user by bb-box-display.service. Installed as
-# /usr/local/libexec/bb-box/display in the Wayland desktop template.
+# alia-box: the Wayland desktop's display (048): Sway, headless, drawn by the
+# CPU, run as the box user by alia-box-display.service. Installed as
+# /usr/local/libexec/alia-box/display in the Wayland desktop template.
 #
 #   display              start Sway (the service's main process)
 #   display wait         wait until Sway answers and has said its Wayland
@@ -10,16 +10,16 @@
 #   display resize WxH   set the output's size, then move and shrink each
 #                        floating window into it, less the bar
 #   display vnc-config   write wayvnc's config from the box's VNC password
-#                        (bb-box-vnc.service's ExecStartPre)
+#                        (alia-box-vnc.service's ExecStartPre)
 #   display vnc          run wayvnc, and end it when it loses Sway
-#                        (bb-box-vnc.service's main process)
+#                        (alia-box-vnc.service's main process)
 #
-# /run/bb-box/display.env has WAYLAND_DISPLAY, SWAYSOCK and the session's
+# /run/alia-box/display.env has WAYLAND_DISPLAY, SWAYSOCK and the session's
 # XDG_ variables, and no DISPLAY: SSH commands, the units and Cua read it.
 # Each command exits 0 when it worked, and otherwise non-zero with the reason
 # on stderr.
 set -u
-run=${BBBOX_RUN_DIR:-/run/bb-box}
+run=${ALIABOX_RUN_DIR:-/run/alia-box}
 output=HEADLESS-1
 export SWAYSOCK=$run/sway.sock
 
@@ -139,7 +139,7 @@ sys.exit(0 if o and "%dx%d" % (o[0]["width"], o[0]["height"]) == sys.argv[2] els
     if [ "${VNC_AUTH:-password}" = none ]; then
       : >"$run/wayvnc.conf"
     else
-      password=$(cat /var/lib/bb-box/vnc-password) || exit 1
+      password=$(cat /var/lib/alia-box/vnc-password) || exit 1
       printf 'enable_auth=true\nusername=%s\npassword=%s\nrelax_encryption=true\n' "$(id -un)" "$password" >"$run/wayvnc.conf"
     fi
     exit 0
@@ -194,4 +194,4 @@ echo "display: Sway on the CPU" >&2
 # The host's NVIDIA module shows in /proc/modules inside a CT, and Sway then
 # refuses to start without --unsupported-gpu. It uses no GPU here: it draws
 # with pixman on the CPU.
-exec sway --unsupported-gpu -c /etc/bb-box/sway.conf
+exec sway --unsupported-gpu -c /etc/alia-box/sway.conf

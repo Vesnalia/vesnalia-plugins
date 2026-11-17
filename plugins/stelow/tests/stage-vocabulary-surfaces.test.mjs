@@ -184,7 +184,7 @@ test("summary carries the produces sentence and never points elsewhere", () => {
     }
     // The regression this module exists to remove.
     assert.doesNotMatch(summary.text, /see the .*map/i, `${stage} must not point at another component`);
-    assert.doesNotMatch(summary.text, /\bbelow\b/i, `${stage} must not refer to layout it cannot see`);
+    assert.doesNotMatch(summary.text, /\aliaelow\b/i, `${stage} must not refer to layout it cannot see`);
   }
 });
 

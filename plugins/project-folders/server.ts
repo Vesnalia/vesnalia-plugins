@@ -2176,7 +2176,7 @@ export default async function plugin(alia: AliaPluginApi) {
         .catch((e) => alia.log.debug(String(e)));
     await write(
       "README.md",
-      "# Chat files\n\nthread.json contains chat metadata. history/index.json indexes the full history (newest pages first).\nartifacts/ holds documents and results, notes/ holds notes, tmp/ holds temporary files.\nBB remains the canonical chat store; this is an automatically updated copy.\n",
+      "# Chat files\n\nthread.json contains chat metadata. history/index.json indexes the full history (newest pages first).\nartifacts/ holds documents and results, notes/ holds notes, tmp/ holds temporary files.\nALIA remains the canonical chat store; this is an automatically updated copy.\n",
     );
     for (const name of ["artifacts", "notes", "tmp"])
       await alia.sdk.files.mkdir({

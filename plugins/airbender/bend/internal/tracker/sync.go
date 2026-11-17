@@ -5,7 +5,7 @@
 // tracker that has a sync of its own (Syncer).
 //
 // Why: bend keeps a repository's issues in step with their remote by
-// itself, for every tracker (bead-bb-c9l.16). The layer above the adapters
+// itself, for every tracker (bead-alia-c9l.16). The layer above the adapters
 // (the local copy, the helper that keeps time, the commands, the log) must
 // do that without knowing which tracker it is: the owner asked that nothing
 // of beads leaks through this layer. So everything a tracker's own sync has

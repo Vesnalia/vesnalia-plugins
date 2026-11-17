@@ -13,7 +13,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 [ $# -ge 3 ] || die "usage: smoke.sh <template-vmid> <box-vmid> <box-address> [--keep]"
 template=$1 vmid=$2 addr=$3 keep=${4:-}
 # shellcheck disable=SC1090
-. "$BBBOX_TOKEN_FILE"
+. "$ALIABOX_TOKEN_FILE"
 api=https://127.0.0.1:8006/api2/json
 node=$PROXMOX_NODE
 headers=$(mktemp)
@@ -40,19 +40,19 @@ wait_task() { # poll every 50 ms; "OK" and "WARNINGS: n" are success
   done
 }
 ssh_box() {
-  ssh -i "$BBBOX_SSH_KEY" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+  ssh -i "$ALIABOX_SSH_KEY" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
     -o BatchMode=yes -o ConnectTimeout=2 -o ConnectionAttempts=1 "box@$addr" "$@"
 }
 
 t0=$(ms)
 upid=$(call POST "/nodes/$node/lxc/$template/clone" --data-urlencode "newid=$vmid" \
-  --data-urlencode "hostname=alia-box-smoke-$vmid" --data-urlencode "pool=$BBBOX_POOL" --data-urlencode "full=0" | jq -er .data)
+  --data-urlencode "hostname=alia-box-smoke-$vmid" --data-urlencode "pool=$ALIABOX_POOL" --data-urlencode "full=0" | jq -er .data)
 wait_task "$upid"
 t1=$(ms)
 # Clones inherit the template's protection flag; clear it so the box can be
 # deleted later.
 call PUT "/nodes/$node/lxc/$vmid/config" \
-  --data-urlencode "net0=name=eth0,bridge=$BBBOX_BRIDGE,ip=$addr/$BBBOX_PREFIX,gw=$BBBOX_GATEWAY,type=veth" \
+  --data-urlencode "net0=name=eth0,bridge=$ALIABOX_BRIDGE,ip=$addr/$ALIABOX_PREFIX,gw=$ALIABOX_GATEWAY,type=veth" \
   --data-urlencode "delete=protection" >/dev/null
 # Tags only after the box is in the pool: Proxmox checks them on /vms/<id>.
 call PUT "/nodes/$node/lxc/$vmid/config" --data-urlencode "tags=alia-box;smoke" >/dev/null

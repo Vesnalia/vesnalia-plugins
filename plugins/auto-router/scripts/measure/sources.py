@@ -1,5 +1,5 @@
 # Reads every model request from the local agent logs: Claude Code, Codex and Pi.
-# Claude Code and Codex logs also hold the runs of BB, T3 Code and Model Pilot, because those apps run the same agents.
+# Claude Code and Codex logs also hold the runs of ALIA, T3 Code and Model Pilot, because those apps run the same agents.
 import datetime, glob, json, os
 
 HOME = os.path.expanduser("~")

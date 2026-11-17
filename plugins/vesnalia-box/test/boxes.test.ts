@@ -660,8 +660,8 @@ test("box details promise a restored box enrols again only when its kind can enr
     enrol: { state: "off", hostId: null, error: null },
     capabilities: { ...box.capabilities, enrol },
   });
-  assert.match(boxDetail(restored(true)), /\nBB machine: not enrolled since ALIA Box restored its lost record\. It enrols again once it runs and answers/);
-  assert.match(boxDetail(restored(false)), /\nBB machine: not enrolled(\n|$)/, "a kind that never enrols, such as linux-docker");
+  assert.match(boxDetail(restored(true)), /\nALIA machine: not enrolled since ALIA Box restored its lost record\. It enrols again once it runs and answers/);
+  assert.match(boxDetail(restored(false)), /\nALIA machine: not enrolled(\n|$)/, "a kind that never enrols, such as linux-docker");
 });
 
 test("box details say a box still being made joins VesnALIA once it is ready, not that it was made while its kind did not join VesnALIA", async () => {
@@ -675,10 +675,10 @@ test("box details say a box still being made joins VesnALIA once it is ready, no
     capabilities: { ...box.capabilities, enrol: true },
   });
   for (const state of ["acquiring", "starting"] as const) {
-    assert.match(boxDetail(making(state)), /\nBB machine: not yet: it joins ALIA once it is ready, if ALIA Box enrols boxes(\n|$)/, state);
+    assert.match(boxDetail(making(state)), /\nALIA machine: not yet: it joins ALIA once it is ready, if ALIA Box enrols boxes(\n|$)/, state);
   }
-  assert.match(boxDetail(making("failed")), /\nBB machine: not enrolled(\n|$)/, "a failed box is not about to join");
-  assert.match(boxDetail({ ...making("starting"), readyAt: Date.now() }), /\nBB machine: not enrolled: it was made while boxes of its kind did not join ALIA/, "a box that was ready before");
+  assert.match(boxDetail(making("failed")), /\nALIA machine: not enrolled(\n|$)/, "a failed box is not about to join");
+  assert.match(boxDetail({ ...making("starting"), readyAt: Date.now() }), /\nALIA machine: not enrolled: it was made while boxes of its kind did not join ALIA/, "a box that was ready before");
 });
 
 test("concurrent acquires from different threads never share the last room", async () => {
@@ -1261,7 +1261,7 @@ test("a Windows command starts a watchdog that stops it in the box at its timeou
 });
 
 test("a Windows desktop command runs as a one-off scheduled task in the box user's session", async () => {
-  const env = envScript("windows", { BBX_ONE: "one" });
+  const env = envScript("windows", { ALIAX_ONE: "one" });
   const script = command("windows", "Get-Process", { session: "desktop", cwd: "C:\\work", env, timeoutMs: 1_500 });
   // The env file is written before the task starts, and the task's PowerShell reads it.
   assert.ok(script.startsWith(`$aliaBoxEnv = Join-Path $HOME '.config/alia-box/env.ps1'; New-Item -ItemType Directory -Force -Path (Split-Path $aliaBoxEnv) | Out-Null; Set-Content`));
@@ -2767,15 +2767,15 @@ printf '%s\0' "$@" > "$FAKE_LOG/$n"
 [ -z "$FAKE_REFUSES" ] || { echo 'sudo: a password is required' >&2; exit 1; }
 [ "$1 $2 $3 $4 $5 $6 $7 $8 $9" = "-n /bin/launchctl asuser $(id -u) /usr/bin/sudo -n -u $(id -un) --" ] || exit 1
 shift 9
-exec env -i HOME="$HOME" PATH="$PATH" BBX_SESSION=Aqua "$@"
+exec env -i HOME="$HOME" PATH="$PATH" ALIAX_SESSION=Aqua "$@"
 `,
     { mode: 0o755 },
   );
   writeFileSync(join(fakes, "stat"), `#!/bin/sh\n[ "$*" = "-f %Su /dev/console" ] && printf '%s\\n' "$FAKE_CONSOLE"\n`, { mode: 0o755 });
-  const script = command("macos", 'printf \'%s|%s|%s\\n\' "$BBX_SESSION" "$BBX_ONE" "$PWD"; echo to-stderr >&2; cat; exit 5', {
+  const script = command("macos", 'printf \'%s|%s|%s\\n\' "$ALIAX_SESSION" "$ALIAX_ONE" "$PWD"; echo to-stderr >&2; cat; exit 5', {
     session: "desktop",
     cwd: work,
-    env: envScript("macos", { BBX_ONE: "one" }),
+    env: envScript("macos", { ALIAX_ONE: "one" }),
   });
   const zsh = spawnSync("zsh", ["-fc", "command -v zsh"], { encoding: "utf8" }).stdout?.trim();
   const shells = ["/bin/sh", ...(zsh ? [zsh] : [])];

@@ -22,7 +22,7 @@ const A_KILL_TAKES_EFFECT_WITHIN_MS = 5_000;
 const KILL_POLL_MS = 20;
 
 const A_DEVELOPERS_MACHINE: TestMachineFacts = { root: false, sudo: SUDO_ANSWERS.noPassword, tailscale: "/usr/bin/tailscale", box: false, githubActions: false, override: false, noExemptions: false };
-const REFUSAL = /^ALIA Box's tests will not run on this machine: this user can run sudo without a password, and Tailscale is installed, at \/usr\/bin\/tailscale\. A test that goes wrong could change this machine: one once logged a machine out of its tailnet\. Run the tests in a ALIA Box box or on GitHub Actions\. To run them here anyway, at the risk of changing this machine, set BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/;
+const REFUSAL = /^ALIA Box's tests will not run on this machine: this user can run sudo without a password, and Tailscale is installed, at \/usr\/bin\/tailscale\. A test that goes wrong could change this machine: one once logged a machine out of its tailnet\. Run the tests in a ALIA Box box or on GitHub Actions\. To run them here anyway, at the risk of changing this machine, set ALIABOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/;
 const REFUSED = /ALIA Box's tests will not run on this machine: (.+, and )?this user can run sudo without a password/;
 const COULD_NOT_TELL = /ALIA Box's tests will not run on this machine: (.+, and )?ALIA Box could not tell whether this user can run sudo without a password/;
 const NOT_ROOT = 1000;
@@ -91,7 +91,7 @@ test("a sudo that does not answer, or fails, counts as a risk, and the refusal n
   const refusal = testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.inconclusive, tailscale: null }) ?? "";
 
   assert.match(refusal, /^ALIA Box's tests will not run on this machine: ALIA Box could not tell whether this user can run sudo without a password, as sudo -n true did not answer in time or failed\./);
-  assert.match(refusal, /set BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/);
+  assert.match(refusal, /set ALIABOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/);
 });
 
 test("the tests run on a machine with none of those risks, in a VesnALIA Box box, on GitHub Actions, or when a person accepts the risk", () => {

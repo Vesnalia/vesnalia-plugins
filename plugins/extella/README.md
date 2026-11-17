@@ -42,7 +42,7 @@ npm test                                   # fake alia host, no network
 EXTELLA_API_KEY=... EXTELLA_AGENT=agent_... EXTELLA_DEVICE=... node --test test/live.mjs
 ```
 
-The live test saves `bbtest_word_count` into the agent's scope and runs it; delete it afterwards.
+The live test saves `aliatest_word_count` into the agent's scope and runs it; delete it afterwards.
 
 ## License
 

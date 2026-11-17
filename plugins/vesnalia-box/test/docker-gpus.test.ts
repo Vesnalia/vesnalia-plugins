@@ -78,12 +78,12 @@ test("071 unit 11: a shared server gets one card as a CDI device, labelled with 
   const guest = await backend.acquire(identity("linux", "shared"), null, hooks(), signal());
   const made = fake.inspect(guest.ref);
   assert.deepEqual(made.HostConfig.Devices, [DEVICE_A]);
-  assert.equal(made.Config.Labels["bbbox.gpu"], DEVICE_A);
-  assert.equal(made.Config.Labels["bbbox.gpu-card"], CARD_A);
-  assert.equal(made.Config.Labels["bbbox.gpu-part"], "shared");
+  assert.equal(made.Config.Labels["aliabox.gpu"], DEVICE_A);
+  assert.equal(made.Config.Labels["aliabox.gpu-card"], CARD_A);
+  assert.equal(made.Config.Labels["aliabox.gpu-part"], "shared");
   assert.ok(env(fake, guest.ref).includes(`CUDA_VISIBLE_DEVICES=GPU-${CARD_A}`));
   assert.ok(env(fake, guest.ref).includes(`NVIDIA_VISIBLE_DEVICES=GPU-${CARD_A}`));
-  assert.ok(!env(fake, guest.ref).includes("BBBOX_GPU=1"), "BBBOX_GPU is a desktop's display switch");
+  assert.ok(!env(fake, guest.ref).includes("ALIABOX_GPU=1"), "ALIABOX_GPU is a desktop's display switch");
   assert.equal(environmentFile(fake, guest.ref), `CUDA_VISIBLE_DEVICES="GPU-${CARD_A}"\nNVIDIA_VISIBLE_DEVICES="GPU-${CARD_A}"\n`);
   assert.deepEqual(guest.claim, { card: CARD_A, part: "shared", generation: 1, answer: "granted" });
   assert.deepEqual(guest.data, { box: guest.data?.box, gpu: DEVICE_A, card: CARD_A, part: "shared" });
@@ -125,7 +125,7 @@ test("071 unit 11: on WSL, where the CDI spec has only nvidia.com/gpu=all, every
   assert.deepEqual(fake.inspect(second.ref).HostConfig.Devices, ["nvidia.com/gpu=all"]);
   assert.deepEqual([first.claim?.card, second.claim?.card], [CARD_A, CARD_B]);
   assert.ok(env(fake, second.ref).includes(`CUDA_VISIBLE_DEVICES=GPU-${CARD_B}`));
-  assert.equal(fake.inspect(second.ref).Config.Labels["bbbox.gpu-card"], CARD_B);
+  assert.equal(fake.inspect(second.ref).Config.Labels["aliabox.gpu-card"], CARD_B);
   assert.equal(fact(second, "Cards"), "On fake-docker, Docker gives every card as one device, so every box with a GPU can open every card. Whole card is what VesnALIA Box places, not what a box can reach.");
   const probe = fake.calls().find((args) => args[0] === "container" && args[1] === "run" && args.at(-1)!.includes("--query-gpu"))!;
   assert.deepEqual(probe.filter((arg, at) => probe[at - 1] === "--device"), ["nvidia.com/gpu=all"]);
@@ -240,7 +240,7 @@ test("071 unit 11: a fresh box whose CUDA picks another card is removed, its car
   const moved = await backend.acquire(identity("linux", "shared", "thr_abc123", "tidy-glade"), null, { ...hooks(), claim: async (guest) => void claimed.push(guest) }, signal());
   assert.equal(moved.claim?.card, CARD_A, "card 1 failed its check, so the box was made again on card 0");
   assert.deepEqual(claimed.map((guest) => guest.data?.card ?? null), [CARD_B, CARD_A, CARD_A], "the acquire's record follows the box to its new card");
-  assert.equal(fake.inspect(moved.ref).Config.Labels["bbbox.gpu-card"], CARD_A);
+  assert.equal(fake.inspect(moved.ref).Config.Labels["aliabox.gpu-card"], CARD_A);
   assert.equal(fake.containers().length, 2);
   const next = await backend.acquire(identity("linux", "shared"), null, hooks(), signal());
   assert.equal(next.claim?.card, CARD_A, "card 1 is left out, though it has fewer boxes");
@@ -741,7 +741,7 @@ test("071 unit 11: with no reading at all, a box's card is matched by its device
   fake.set({ probeFails: "docker: Error response from daemon: the toolkit's hook failed" });
   const restarted = make("test");
   const shared = await restarted.acquire(identity("linux", "shared"), null, hooks(), signal());
-  assert.equal(fake.inspect(shared.ref).Config.Labels["bbbox.gpu"], devices[1], "the shared box goes to the device whose card is not held whole");
+  assert.equal(fake.inspect(shared.ref).Config.Labels["aliabox.gpu"], devices[1], "the shared box goes to the device whose card is not held whole");
   fake.set({ gpus: [devices[1]] });
   const lost = await restarted.capacity("linux", { ...SMALL, gpu: "shared" }, [], signal());
   assert.equal(lost.ok, false);
@@ -775,14 +775,14 @@ test("071 unit 11: a CUDA error other than no device, such as 802, keeps a fresh
 test("071 unit 11: devices named by index whose cards could not be read still take shared boxes, by device, with no CUDA variables and no check; a whole card is refused on them", async () => {
   const { fake, backend } = setup({}, { gpus: ["nvidia.com/gpu=0", "nvidia.com/gpu=1"], probeFails: "docker: Error response from daemon: unknown" }, { whole: true });
   const desktop = await backend.acquire(identity("linux-desktop", "shared"), null, hooks(), signal());
-  assert.equal(fake.inspect(desktop.ref).Config.Labels["bbbox.gpu"], "nvidia.com/gpu=0");
-  assert.equal(fake.inspect(desktop.ref).Config.Labels["bbbox.gpu-card"], undefined);
+  assert.equal(fake.inspect(desktop.ref).Config.Labels["aliabox.gpu"], "nvidia.com/gpu=0");
+  assert.equal(fake.inspect(desktop.ref).Config.Labels["aliabox.gpu-card"], undefined);
   assert.ok(!env(fake, desktop.ref).some((pair) => /^(CUDA|NVIDIA)_VISIBLE_DEVICES=/.test(pair)));
   assert.equal(desktop.claim, undefined);
   assert.equal(fact(desktop, "GPU"), "card 0, shared");
   assert.equal(fact(desktop, "GPU check"), "Run nvidia-smi -i 0 to see it; every card on the host is listed");
   const server = await backend.acquire(identity("linux", "shared"), null, hooks(), signal());
-  assert.equal(fake.inspect(server.ref).Config.Labels["bbbox.gpu"], "nvidia.com/gpu=1", "the next goes to the device with fewer boxes");
+  assert.equal(fake.inspect(server.ref).Config.Labels["aliabox.gpu"], "nvidia.com/gpu=1", "the next goes to the device with fewer boxes");
   assert.deepEqual((await backend.held(signal())).map((each) => each.data?.part).sort(), ["shared", "shared"]);
   assert.match((await backend.capacity("linux", { ...SMALL, gpu: "whole" }, [], signal())).message!, /^No card on fake-docker is free for a whole card now: card 0 has .* running and card 1 has .* running\./);
   const plan = await backend.planResize(desktop, "linux-desktop", { ...SMALL, gpu: "whole" }, [], signal());
@@ -816,14 +816,14 @@ test("071 unit 11: on WSL a desktop that is not privileged still names its card 
   await backend.acquire(identity("linux-desktop", "shared"), null, hooks(), signal());
   const second = await backend.acquire(identity("linux-desktop", "shared"), null, hooks(), signal());
   assert.equal(fake.inspect(second.ref).HostConfig.Privileged, false);
-  assert.ok(env(fake, second.ref).includes(`BBBOX_GPU_ID=GPU-${CARD_B}`));
-  assert.ok(env(fake, second.ref).includes(`BBBOX_GPU_CARD=GPU-${CARD_B}`));
+  assert.ok(env(fake, second.ref).includes(`ALIABOX_GPU_ID=GPU-${CARD_B}`));
+  assert.ok(env(fake, second.ref).includes(`ALIABOX_GPU_CARD=GPU-${CARD_B}`));
   const linux = setup({ privileged: false }, TWO_CARDS);
   const own = await linux.backend.acquire(identity("linux-desktop", "shared"), null, hooks(), signal());
-  assert.ok(!env(linux.fake, own.ref).some((pair) => pair.startsWith("BBBOX_GPU_ID=")), "a desktop that sees only its own card needs no name for it");
+  assert.ok(!env(linux.fake, own.ref).some((pair) => pair.startsWith("ALIABOX_GPU_ID=")), "a desktop that sees only its own card needs no name for it");
 });
 
-test("071 unit 11: the desktop launcher gives its session and services the box's card from BBBOX_GPU_CARD, past its clean environment", () => {
+test("071 unit 11: the desktop launcher gives its session and services the box's card from ALIABOX_GPU_CARD, past its clean environment", () => {
   const start = readFileSync(new URL("../setup/docker/start", import.meta.url), "utf8");
   const from = start.indexOf("box_env=(");
   const to = start.indexOf("as_box()");
@@ -831,7 +831,7 @@ test("071 unit 11: the desktop launcher gives its session and services the box's
   const fragment = start.slice(from, to);
   const run = (card: string | null) =>
     execFileSync("bash", ["-c", `set -u; home=/home/box; user=box; ${fragment}\nenv -i "\${box_env[@]}" sh -c 'echo "CUDA=\${CUDA_VISIBLE_DEVICES:-unset} NVIDIA=\${NVIDIA_VISIBLE_DEVICES:-unset}"'`], {
-      env: { PATH: process.env.PATH, ...(card ? { BBBOX_GPU_CARD: card, NVIDIA_VISIBLE_DEVICES: "void" } : {}) },
+      env: { PATH: process.env.PATH, ...(card ? { ALIABOX_GPU_CARD: card, NVIDIA_VISIBLE_DEVICES: "void" } : {}) },
       encoding: "utf8",
     }).trim();
   assert.equal(run(`GPU-${CARD_A}`), `CUDA=GPU-${CARD_A} NVIDIA=GPU-${CARD_A}`);
@@ -1063,7 +1063,7 @@ const NO_IDENTITY = { macs: {}, smbios: null };
 function gpuLabels(fake: ReturnType<typeof fakeDockerHost>, ref: string): readonly [string, string, string, readonly string[]] {
   const made = fake.inspect(ref);
   const labels = made.Config.Labels;
-  return [labels["bbbox.gpu"] ?? "", labels["bbbox.gpu-card"] ?? "", labels["bbbox.gpu-part"] ?? "", made.HostConfig.Devices ?? []];
+  return [labels["aliabox.gpu"] ?? "", labels["aliabox.gpu-card"] ?? "", labels["aliabox.gpu-part"] ?? "", made.HostConfig.Devices ?? []];
 }
 
 async function restoreReplacing(backend: DockerBackend, box: BoxIdentity, current: Guest, ref: SnapshotRef): Promise<Guest> {
@@ -1115,9 +1115,9 @@ test("Docker refuses to restore a box that has two containers on different GPUs,
   const box = identity("linux", "shared");
   const guest = await backend.acquire(box, null, hooks(), signal());
   const taken = await backend.snapshot(guest, { id: "sngpu3", box: box.boxId, memory: false }, restoring, signal());
-  const labels = { ...fake.inspect(guest.ref).Config.Labels, "bbbox.gpu": DEVICE_B, "bbbox.gpu-card": CARD_B };
+  const labels = { ...fake.inspect(guest.ref).Config.Labels, "aliabox.gpu": DEVICE_B, "aliabox.gpu-card": CARD_B };
   const stray = `${guest.ref}-stray`;
-  execFileSync(fake.binary, ["container", "create", "--name", stray, "--network", dockerConfig().network, ...Object.entries(labels).flatMap(([key, value]) => ["--label", `${key}=${value}`]), "bbbox/linux:1"]);
+  execFileSync(fake.binary, ["container", "create", "--name", stray, "--network", dockerConfig().network, ...Object.entries(labels).flatMap(([key, value]) => ["--label", `${key}=${value}`]), "aliabox/linux:1"]);
   await backend.powerOff(guest, signal());
 
   const refused = await backend.adoptSnapshot({ id: "sngpu3", ref: taken.ref, guest }, box, NO_IDENTITY, restoring, signal()).then(

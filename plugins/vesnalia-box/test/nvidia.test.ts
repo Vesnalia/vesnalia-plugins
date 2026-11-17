@@ -20,8 +20,8 @@ const MiB = 1024 * 1024;
 const BUS_0 = "00000000:D1:00.0";
 const BUS_1 = "00000000:C1:00.0";
 
-const UUID_0 = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-const UUID_1 = "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee";
+const UUID_0 = "aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee";
+const UUID_1 = "aliabbbbbb-aliabb-cccc-dddd-eeeeeeeeeeee";
 const CARD_0 = `0, GPU-${UUID_0}, ${BUS_0}, NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 82, 13250, 97887, 69, 285.05, 300.00`;
 const CARD_1 = `1, GPU-${UUID_1}, ${BUS_1}, NVIDIA GeForce RTX 4090, 3, 1024, 24564, 41, 31.20, 450.00`;
 const TWO_CARDS = `${CARD_0}\n${CARD_1}`;
@@ -48,7 +48,7 @@ function pidsReport(cards: Readonly<Record<string, readonly Listed[]>>): string 
 const bytes = (value: number) => `${Math.round(value / MiB)} MiB`;
 
 test("nvidia-smi's card query is read per card, in MiB and W without units, and a field it cannot read is null", () => {
-  const cards = parseNvidiaCards(`${TWO_CARDS}\n2, GPU-cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee, 00000000:41:00.0, Tesla T4, [N/A], [Not Supported], 15360, [N/A], [N/A], 70.00\n`)!;
+  const cards = parseNvidiaCards(`${TWO_CARDS}\n2, GPU-cccccccc-aliabb-cccc-dddd-eeeeeeeeeeee, 00000000:41:00.0, Tesla T4, [N/A], [Not Supported], 15360, [N/A], [N/A], 70.00\n`)!;
   assert.equal(cards.length, 3);
   assert.deepEqual(cards[0], { index: 0, uuid: UUID_0, bus: "0000:d1:00.0", name: "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition", usagePercent: 82, memoryUsedBytes: 13250 * MiB, memoryTotalBytes: 97887 * MiB, temperatureC: 69, powerWatts: 285.05, powerLimitWatts: 300 });
   assert.equal(cards[1]!.name, "NVIDIA GeForce RTX 4090");

@@ -578,7 +578,7 @@
 | x-viral | да | ok / ok / - | - | - |
 | xberg | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
 | xcode | да | ok / ok / ok | - | - |
-| xlsx-preview | **нет** | - / - / - | - | сборка не проверялась |
+| xlsx-preview | **нет** | - / - / - | - | invalid manifest (alia): Invalid input: expected object, received undefined |
 | zcode | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
 | zcode-acp | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
 | zcode-provider | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 3 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |

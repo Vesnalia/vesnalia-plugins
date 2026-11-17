@@ -55,12 +55,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         if let button = statusItem.button {
             let image = NSImage(
                 systemSymbolName: "rectangle.and.hand.point.up.left.fill",
-                accessibilityDescription: "BB Touch Bar"
+                accessibilityDescription: "ALIA Touch Bar"
             )
             image?.isTemplate = true
             button.image = image
-            button.title = image == nil ? "BB" : ""
-            button.setAccessibilityLabel("BB Touch Bar settings")
+            button.title = image == nil ? "ALIA" : ""
+            button.setAccessibilityLabel("ALIA Touch Bar settings")
         }
         rebuildMenu()
     }
@@ -151,7 +151,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         showHost.state = state.showHostMonitor ? .on : .off
         menu.addItem(showHost)
         menu.addItem(.separator())
-        menu.addItem(item("Quit BB Touch Bar", action: #selector(quit), symbol: "power"))
+        menu.addItem(item("Quit ALIA Touch Bar", action: #selector(quit), symbol: "power"))
     }
 
     private func section(_ title: String) -> NSMenuItem {

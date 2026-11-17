@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Launch Cursor's ACP agent so that a pooled session cannot leak past the hub.
 
-BB's built-in `acp-cursor` spawns `cursor-agent acp` with fixed arguments, and that is
+ALIA's built-in `acp-cursor` spawns `cursor-agent acp` with fixed arguments, and that is
 not enough when the Account Pooler routes the provider. Cursor takes the address of its
 agent stream from the server config it fetches, so a hub that faithfully proxies that
 response hands the CLI Cursor's own address and the stream goes straight there —
@@ -12,7 +12,7 @@ that answers `Please sign in to continue` while every other call succeeded.
 whenever the hub gave us one. Without `CURSOR_API_ENDPOINT` the wrapper is transparent:
 the CLI runs on its own local login exactly as before.
 
-Install: copy onto PATH as `cursor-route` — BB spawns custom agents with a bare
+Install: copy onto PATH as `cursor-route` — ALIA spawns custom agents with a bare
 command and no shell, so `~` in its configuration would not expand.
 """
 import os
@@ -82,7 +82,7 @@ class AcpPoolFailures:
                 pass
         # ACP keeps stderr in memory until process exit. Preserve bounded metadata
         # in the existing thread storage too; failures never alter the protocol.
-        storage = os.environ.get('BB_THREAD_STORAGE')
+        storage = os.environ.get('ALIA_THREAD_STORAGE')
         if not storage or os.name != 'posix':
             return
         directory = descriptor = None
@@ -451,7 +451,7 @@ def watch_client_disconnect(client, upstream, stopped, disconnected=None):
 
 
 def run_gateway(executable, argv, env):
-    """Translate arbitrary Cursor RPC paths to BB's one exact gateway route."""
+    """Translate arbitrary Cursor RPC paths to ALIA's one exact gateway route."""
     target = urlsplit(env[ENDPOINT_VAR].rstrip("/"))
     if target.scheme not in ("http", "https") or not target.hostname or target.query or target.fragment or target.username:
         raise SystemExit("Invalid Cursor pool endpoint")
@@ -515,12 +515,12 @@ def run_gateway(executable, argv, env):
                         return
                     body = self.rfile.read(length)
                 headers = {k: v for k, v in self.headers.items() if k.lower() not in {
-                    "host", "connection", "content-length", "transfer-encoding", "x-bb-cursor-rpc-path"}}
+                    "host", "connection", "content-length", "transfer-encoding", "x-alia-cursor-rpc-path"}}
                 if rpc_path == "auth/exchange_user_api_key":
                     path = target.path + "/" + rpc_path
                 else:
                     path = target.path + "/rpc"
-                    headers["x-bb-cursor-rpc-path"] = rpc_path
+                    headers["x-alia-cursor-rpc-path"] = rpc_path
                 connection_type = http.client.HTTPSConnection if target.scheme == "https" else http.client.HTTPConnection
                 connection = connection_type(target.hostname, target.port, timeout=120)
                 connection.request(self.command, path, body=body, headers=headers)
@@ -536,8 +536,8 @@ def run_gateway(executable, argv, env):
                 stream_key = failures.register_model_stream(prompt, close_owned_stream)
                 response = connection.getresponse()
                 if prompt is not None:
-                    failures.model_response(rpc_path, response.getheader('x-bb-pool-error'), prompt)
-                raw_pool_id = response.getheader('x-bb-pool-request-id', '')
+                    failures.model_response(rpc_path, response.getheader('x-alia-pool-error'), prompt)
+                raw_pool_id = response.getheader('x-alia-pool-request-id', '')
                 pool_id = raw_pool_id if re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', raw_pool_id) else None
                 with failures.lock:
                     if prompt is not None or re.fullmatch(r'agent\.v[0-9]+\.AgentService/Run(?:SSE|Poll)?', rpc_path):

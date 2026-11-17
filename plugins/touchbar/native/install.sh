@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$HOME/Applications"
-INSTALL_APP="$INSTALL_DIR/BBTouchBar.app"
-SUPPORT="$HOME/Library/Application Support/BBTouchBar"
+INSTALL_APP="$INSTALL_DIR/AliaTouchBar.app"
+SUPPORT="$HOME/Library/Application Support/AliaTouchBar"
 LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
 PLIST="$LAUNCH_AGENTS/app.getbb.touchbar.native.plist"
 DOMAIN="gui/$(id -u)"
@@ -20,7 +20,7 @@ chmod 600 "$SUPPORT/alia-path"
 bash "$ROOT/build.sh"
 ALIA_TOUCHBAR_APP="$INSTALL_APP" bash "$ROOT/run.sh" stop || true
 rm -rf "$INSTALL_APP"
-ditto "$ROOT/build/BBTouchBar.app" "$INSTALL_APP"
+ditto "$ROOT/build/AliaTouchBar.app" "$INSTALL_APP"
 
 cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -29,7 +29,7 @@ cat > "$PLIST" <<PLIST
 <dict>
   <key>Label</key><string>app.getbb.touchbar.native</string>
   <key>ProgramArguments</key>
-  <array><string>$INSTALL_APP/Contents/MacOS/BBTouchBar</string></array>
+  <array><string>$INSTALL_APP/Contents/MacOS/AliaTouchBar</string></array>
   <key>RunAtLoad</key><true/>
   <key>ProcessType</key><string>Interactive</string>
 </dict>

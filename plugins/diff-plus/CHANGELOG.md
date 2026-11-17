@@ -4,7 +4,7 @@ Releases are the tags `diff-plus/vX.Y.Z` of https://github.com/nfour/bb-plugins.
 
 ## 1.2.1 (2026-11-15)
 
-- The folder tree updates when files change while the Diff tab is open, including when the last change is committed, reverted or discarded; before, it could keep showing files BB's list no longer had.
+- The folder tree updates when files change while the Diff tab is open, including when the last change is committed, reverted or discarded; before, it could keep showing files VesnALIA's list no longer had.
 - The file icons load as a stylesheet again, so the plugin's script is a third of the size.
 
 ## 1.2.0 (2026-11-12)
@@ -20,7 +20,7 @@ Releases are the tags `diff-plus/vX.Y.Z` of https://github.com/nfour/bb-plugins.
 
 ## 1.1.0 (2026-11-02)
 
-- Works in a split workspace: each pane's Diff tab shows the tree for that pane's own thread. Before, the tree in a right-hand pane could list the left pane's files while BB's cards showed the right pane's.
+- Works in a split workspace: each pane's Diff tab shows the tree for that pane's own thread. Before, the tree in a right-hand pane could list the left pane's files while VesnALIA's cards showed the right pane's.
 - The tree's column loads in one go: **Changes** shows straight away with a spinner under it, instead of a "Loading files…" line followed by an empty gap. The messages for an error or no changes sit under **Changes** too.
 
 ## 1.0.0 (2026-10-31)
@@ -44,8 +44,8 @@ Releases are the tags `diff-plus/vX.Y.Z` of https://github.com/nfour/bb-plugins.
 
 ## 0.1.1 (2026-10-29)
 
-- Requires BB 0.48 or later.
-- The changed files are read from BB's bundled Git plugin, since BB 0.48 retired the call the tree used before.
+- Requires VesnALIA 0.48 or later.
+- The changed files are read from VesnALIA's bundled Git plugin, since VesnALIA 0.48 retired the call the tree used before.
 
 ## 0.1.0 (2026-10-29)
 

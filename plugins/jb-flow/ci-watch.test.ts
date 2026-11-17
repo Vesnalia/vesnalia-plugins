@@ -115,10 +115,10 @@ test("a checks watch still ends at 3 hours", async () => {
 
 test("a new push restarts the wait but keeps reviews from before it", async () => {
   const now = T0 + 2 * HOUR;
-  const pr = prState({ headRefOid: "bbbbbbb2", statusCheckRollup: [pending], reviews: [review(T0 + HOUR)] });
+  const pr = prState({ headRefOid: "aliabbbbb2", statusCheckRollup: [pending], reviews: [review(T0 + HOUR)] });
   const result = await evaluateWatch(watch(), pr, now, "me", noLog);
   assert.equal(result.watch.since, now);
-  assert.equal(result.watch.headSha, "bbbbbbb2");
+  assert.equal(result.watch.headSha, "aliabbbbb2");
   assert.ok(result.notes.some((note) => note.includes("Review from alex")), "the review before the push is reported");
 });
 

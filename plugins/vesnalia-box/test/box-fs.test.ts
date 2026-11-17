@@ -541,7 +541,7 @@ list=\$(mktemp)
 for arg in "\$@"; do printf '%s\\n' "\$arg" >> "\$list"; done
 dest=\$(tail -n 1 "\$list")
 case "\$dest" in
-  *.bbprobe) rm -f "\$list"; exit 1 ;;
+  *.aliaprobe) rm -f "\$list"; exit 1 ;;
   *.conflict)
     if [ ! -e "\$dest" ] && [ ! -L "\$dest" ]; then
       if [ "\$(cat '${dir}/kind')" = link ]; then mkdir "\$dest.dir"; /bin/ln -s "\$dest.dir" "\$dest"; else mkdir "\$dest"; fi

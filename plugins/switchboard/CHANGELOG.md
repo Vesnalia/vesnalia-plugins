@@ -6,38 +6,38 @@ Notable changes to Switchboard, newest first. Releases are tagged `switchboard/v
 
 ### Fixed
 
-- The info card's thread title wraps inside the card. In 0.4.0 a title longer than one line ran past the card's right edge, because bb draws title text in spans that never wrap; the card now lets them wrap, breaks long words such as paths, and keeps a long mention pill to the card's width.
+- The info card's thread title wraps inside the card. In 0.4.0 a title longer than one line ran past the card's right edge, because VesnALIA draws title text in spans that never wrap; the card now lets them wrap, breaks long words such as paths, and keeps a long mention pill to the card's width.
 - A child's Parent line reads "Always notified" instead of "Notified on every outcome", which was cut off in the At a glance card.
 
 ## 0.4.0 (2026-11-03)
 
 ### Added
 
-- Root thread rows draw bb's row metadata after the title. That is GitHub PR Status's badge, with the pull request number in its state's colour, an amber dot while checks run and a red cross when they fail or the branch conflicts, plus any other plugin's row items. It replaces Switchboard's own grey number and follows the Pull request badges setting.
-- Right-clicking a selected row, with two or more rows selected, opens bb's thread menu for the whole selection: Mark read, Pin, Notifications, Notify parent, Archive and Delete, then Switchboard's Move to and Snooze for every selected thread. Escape closes the menu and clears the selection. The selection bar is unchanged.
+- Root thread rows draw VesnALIA's row metadata after the title. That is GitHub PR Status's badge, with the pull request number in its state's colour, an amber dot while checks run and a red cross when they fail or the branch conflicts, plus any other plugin's row items. It replaces Switchboard's own grey number and follows the Pull request badges setting.
+- Right-clicking a selected row, with two or more rows selected, opens VesnALIA's thread menu for the whole selection: Mark read, Pin, Notifications, Notify parent, Archive and Delete, then Switchboard's Move to and Snooze for every selected thread. Escape closes the menu and clears the selection. The selection bar is unchanged.
 - A child thread's info card says whether the child notifies its parent: on every outcome, only when stuck, or not at all.
 
 ### Changed
 
 - The info card shows the thread's whole title, wrapping long words such as paths, instead of cutting it off after two lines.
-- An unread reply now shows over background agents, background commands and waiting queued messages, as bb's own sidebar does since 0.48. A thread with a finished reply and a dev server still running shows the unread dot, counts as unread in the chips and section counts, and sits in the Unread lane, but still cannot be snoozed while that work runs. Runtime work, workflows, plan mode and goals still show as running.
-- The info card colours pull request states and checks with bb's state colours: open and passing checks in green, merged in purple, closed and failing checks in red, pending checks in amber, and drafts muted. At a glance now also shows the checks result.
-- The info card's git changes come from bb's Git plugin, which refreshes them when the workspace's files or branches change. When the Git plugin is disabled or cannot read the workspace, Changes shows Unavailable.
+- An unread reply now shows over background agents, background commands and waiting queued messages, as VesnALIA's own sidebar does since 0.48. A thread with a finished reply and a dev server still running shows the unread dot, counts as unread in the chips and section counts, and sits in the Unread lane, but still cannot be snoozed while that work runs. Runtime work, workflows, plan mode and goals still show as running.
+- The info card colours pull request states and checks with VesnALIA's state colours: open and passing checks in green, merged in purple, closed and failing checks in red, pending checks in amber, and drafts muted. At a glance now also shows the checks result.
+- The info card's git changes come from VesnALIA's Git plugin, which refreshes them when the workspace's files or branches change. When the Git plugin is disabled or cannot read the workspace, Changes shows Unavailable.
 
 ### Compatibility
 
-- Requires bb 0.48.1 or newer (plugin SDK 0.6.104), up from SDK 0.6.79. bb 0.48 retired the environment git reads that earlier versions of the info card used.
+- Requires VesnALIA 0.48.1 or newer (plugin SDK 0.6.104), up from SDK 0.6.79. VesnALIA 0.48 retired the environment git reads that earlier versions of the info card used.
 
 ## 0.3.9 (2026-10-28)
 
 ### Changed
 
-- Switchboard takes its corner radii, fonts, surface shadows and destructive foreground colour from the active bb theme, including portalled info cards and drag previews. Saved section colours are unchanged.
+- Switchboard takes its corner radii, fonts, surface shadows and destructive foreground colour from the active VesnALIA theme, including portalled info cards and drag previews. Saved section colours are unchanged.
 - Pull request numbers in rows and the pull request line in the info card are now read from the GitHub PR Status plugin by thread environment. When that plugin is absent, disabled or cannot answer, Switchboard leaves the pull request out instead of waiting on it.
 
 ### Compatibility
 
-- Requires bb Plugin SDK 0.6.79 or newer, up from 0.6.49.
+- Requires VesnALIA Plugin SDK 0.6.79 or newer, up from 0.6.49.
 
 ## 0.3.8 (2026-10-20)
 
@@ -53,8 +53,8 @@ Notable changes to Switchboard, newest first. Releases are tagged `switchboard/v
 
 ### Fixed
 
-- The running spinner turns smoothly on the compositor instead of jittering. A 92 ms main-thread timer used to turn it in 30 degree jumps, which land unevenly on a 60 Hz screen and stall while bb streams a thread; it is now a CSS animation of one turn a second in 30 even steps, and only spinners on screen animate.
-- Every spinner shares one phase, including one whose animation restarts when React moves its row, and each iteration lasts 1000 turns so its iteration events do not wake bb's main thread. Reduced motion keeps the glyph still.
+- The running spinner turns smoothly on the compositor instead of jittering. A 92 ms main-thread timer used to turn it in 30 degree jumps, which land unevenly on a 60 Hz screen and stall while VesnALIA streams a thread; it is now a CSS animation of one turn a second in 30 even steps, and only spinners on screen animate.
+- Every spinner shares one phase, including one whose animation restarts when React moves its row, and each iteration lasts 1000 turns so its iteration events do not wake VesnALIA's main thread. Reduced motion keeps the glyph still.
 - The drop flash fades an overlay's opacity on the compositor instead of repainting the row's background each frame, and reduced motion turns it off.
 - In headless Chrome with 5 to 7 running spinners, idle renderer CPU fell from 4.1% to 2.4% of a core and main-thread busy time from 2.1% to 0.4%; while a thread streamed, renderer CPU was 22.0% against 23.7% and main-thread busy time 13.3% against 15.4%.
 
@@ -66,14 +66,14 @@ Notable changes to Switchboard, newest first. Releases are tagged `switchboard/v
 - A drag no longer swallows your next click. Only the click fired by the drag's own release is ignored; before, a release over another row left the guard set, so the next click on a thread did nothing.
 - A drag cancelled with Escape waits for the pointer release, so letting go over a row does not open it.
 - The drag preview is placed at the cursor before its first paint instead of at the top of the list, and the list shows a grabbing cursor while dragging.
-- Auto-scroll moves only the sidebar, because drags cross the main pane on their way to a split. Moving off the sidebar still hands over to bb's drag-to-split.
+- Auto-scroll moves only the sidebar, because drags cross the main pane on their way to a split. Moving off the sidebar still hands over to VesnALIA's drag-to-split.
 
 ## 0.3.5 (2026-10-18)
 
 ### Fixed
 
-- The running spinner no longer keeps bb's compositor busy. It was an SVG image mask with a SMIL rotation that repainted on every frame, about 170 to 290 paints a second, and held the desktop compositor near 100% of a core; one shared timer now turns every running spinner in 12 steps a turn, and will-change keeps each step off the paint path.
-- In headless Chrome against the bb web UI with a scripted streaming agent, idle renderer CPU fell from 7.7% to 2.7% of a core and GPU from 6.5% to 2.0%, and streaming style time stayed within run-to-run noise of 0.3.4. Reduced motion keeps the glyph still.
+- The running spinner no longer keeps VesnALIA's compositor busy. It was an SVG image mask with a SMIL rotation that repainted on every frame, about 170 to 290 paints a second, and held the desktop compositor near 100% of a core; one shared timer now turns every running spinner in 12 steps a turn, and will-change keeps each step off the paint path.
+- In headless Chrome against the VesnALIA web UI with a scripted streaming agent, idle renderer CPU fell from 7.7% to 2.7% of a core and GPU from 6.5% to 2.0%, and streaming style time stayed within run-to-run noise of 0.3.4. Reduced motion keeps the glyph still.
 
 ## 0.3.4 (2026-10-18)
 
@@ -140,14 +140,14 @@ Notable changes to Switchboard, newest first. Releases are tagged `switchboard/v
 
 ### Fixed
 
-- The thread menu stays anchored to its row. A row hid its ⋯ button whenever it was not hovered or focused, and because bb's thread menu is portalled, takes focus and positions itself against that button, moving the pointer onto the menu collapsed the button to zero and sent the menu to the window's top-left corner. An open menu now keeps the trigger, the quick actions and the row highlight in place.
+- The thread menu stays anchored to its row. A row hid its ⋯ button whenever it was not hovered or focused, and because VesnALIA's thread menu is portalled, takes focus and positions itself against that button, moving the pointer onto the menu collapsed the button to zero and sent the menu to the window's top-left corner. An open menu now keeps the trigger, the quick actions and the row highlight in place.
 
 ## 0.1.0 (2026-10-17)
 
 ### Added
 
-- Switchboard, a sidebar thread list for supervising many parallel agent threads. Choose Switchboard under Settings → Appearance → Sidebar in each bb client; the plugin is listed in a new Sidebar category in the marketplace.
-- Threads appear as Pinned, then your bb sections, then Threads for unfiled roots, each section marked with a rail, tinted header or swatch by the `sectionColour` setting. Children stay under their parent even in another project or section, and a collapsed parent shows its most urgent hidden descendant.
+- Switchboard, a sidebar thread list for supervising many parallel agent threads. Choose Switchboard under Settings → Appearance → Sidebar in each VesnALIA client; the plugin is listed in a new Sidebar category in the marketplace.
+- Threads appear as Pinned, then your VesnALIA sections, then Threads for unfiled roots, each section marked with a rail, tinted header or swatch by the `sectionColour` setting. Children stay under their parent even in another project or section, and a collapsed parent shows its most urgent hidden descendant.
 - Five row states (Failed, Needs you, Running, Finished unread and Idle), with counts on collapsed groups, a filter box over title, project, section and branch, and clickable status chips. `/` focuses the filter and Escape clears its query and chips.
 - A status-lanes view lists every awake thread once under Failed, Needs you, Running, Unread or Idle, sorted by recent attention. Empty lanes are hidden, lanes collapse, and lanes have no drag or multi-selection.
 - Drag a thread above, below or into another thread, or onto a section header. `Alt+↑/↓` reorders among siblings, `Alt+→` nests under the previous sibling and `Alt+←` moves it out. Alt-click and Shift-click select families, and the selection bar moves, archives or snoozes them. Moves and archives offer Undo.
@@ -155,6 +155,6 @@ Notable changes to Switchboard, newest first. Releases are tagged `switchboard/v
 - Idle unpinned threads fade after `staleDays` (3 by default, 0 turns fading off) unless a descendant failed, needs you or is running. Archive stale threads… in a section menu confirms the stale-root and child counts, archives only that section's stale families and offers Undo.
 - A quiet root can be snoozed until `snoozeHour` tomorrow (09:00 local by default) from its Clock action or the selection bar. It leaves sections and lanes and returns through the Snoozed shelf, which shows wake times and a Wake button; new attention or a failed, waiting or running family member wakes it early.
 - The Archive button beside the view switch shows an Archived shelf, most recently archived first, that follows the filter box and loads older threads with Show more. Each archived row offers Unarchive.
-- Settings for `view`, `density` (`compact`, `default` for comfortable, `two-line`), `sectionColour`, `statusChips`, `needsYouShelf`, `showArchived`, `treeGuides`, `showBranch`, `showPullRequests`, `showAge`, `staleDays` and `snoozeHour`, changed in bb's plugin settings or with `bb plugin config switchboard set`.
+- Settings for `view`, `density` (`compact`, `default` for comfortable, `two-line`), `sectionColour`, `statusChips`, `needsYouShelf`, `showArchived`, `treeGuides`, `showBranch`, `showPullRequests`, `showAge`, `staleDays` and `snoozeHour`, changed in VesnALIA's plugin settings or with `alia plugin config switchboard set`.
 - Palette commands to focus the thread filter (`Mod+Alt+F`), go to the next thread that needs you (`Mod+Alt+J`), switch between sections and status lanes, and open New section.
-- Hints on the chips, the view switch, View options and a section's buttons. bb keeps parents, sections, pins and archives; Switchboard stores collapse state, manual order, section colours, sort modes and snoozes in its plugin store and publishes settings changes to every window.
+- Hints on the chips, the view switch, View options and a section's buttons. VesnALIA keeps parents, sections, pins and archives; Switchboard stores collapse state, manual order, section colours, sort modes and snoozes in its plugin store and publishes settings changes to every window.

@@ -86,27 +86,27 @@ const Tree = defineComponent({
   component: ({ props }) => {
     const [isOpen, flip] = useFlips();
     const nodes = buildTree(props.items);
-    if (nodes.length === 0) return <div className="bbui bbui-structure-tree" />;
+    if (nodes.length === 0) return <div className="aliaui aliaui-structure-tree" />;
     const branch = (list: TreeNode[], depth: number): ReactNode => (
-      <ul className="bbui-structure-branch">
+      <ul className="aliaui-structure-branch">
         {list.map((node) => {
           const open = node.children !== null && isOpen(node.key, true);
-          const name = <span className={cx("bbui-structure-name", node.mono && "bbui-mono")}>{node.label}</span>;
-          const note = node.note ? <span className="bbui-label bbui-structure-note">{node.note}</span> : null;
+          const name = <span className={cx("aliaui-structure-name", node.mono && "aliaui-mono")}>{node.label}</span>;
+          const note = node.note ? <span className="aliaui-label aliaui-structure-note">{node.note}</span> : null;
           return (
             <li key={node.key}>
               {node.children === null ? (
-                <div className="bbui-structure-row">
-                  <span className="bbui-structure-gap" />
+                <div className="aliaui-structure-row">
+                  <span className="aliaui-structure-gap" />
                   {name}
                   {note}
                 </div>
               ) : (
-                <button type="button" data-row className="bbui-structure-row" aria-expanded={open} onClick={() => flip(node.key)}>
-                  <ChevronRight {...ICON} className="bbui-structure-chev" />
+                <button type="button" data-row className="aliaui-structure-row" aria-expanded={open} onClick={() => flip(node.key)}>
+                  <ChevronRight {...ICON} className="aliaui-structure-chev" />
                   {name}
                   {note}
-                  {open ? null : <span className="bbui-label">{node.children.length}</span>}
+                  {open ? null : <span className="aliaui-label">{node.children.length}</span>}
                 </button>
               )}
               {open && node.children && node.children.length > 0 ? branch(node.children, depth + 1) : null}
@@ -116,7 +116,7 @@ const Tree = defineComponent({
       </ul>
     );
     return (
-      <div className="bbui bbui-structure-tree" onKeyDown={onRowKeys}>
+      <div className="aliaui aliaui-structure-tree" onKeyDown={onRowKeys}>
         {branch(nodes, 0)}
       </div>
     );
@@ -131,7 +131,7 @@ const JSON_CAP = 200;
 function JsonLeaf({ value }: { value: unknown }) {
   const kind = jsonKind(value);
   const text = kind === "string" ? JSON.stringify(value) : kind === "null" ? "null" : String(value);
-  return <span className={`bbui-structure-v bbui-structure-v-${kind}`}>{text}</span>;
+  return <span className={`aliaui-structure-v aliaui-structure-v-${kind}`}>{text}</span>;
 }
 
 const Json = defineComponent({
@@ -165,7 +165,7 @@ const Json = defineComponent({
           <button
             type="button"
             data-row
-            className="bbui-structure-row"
+            className="aliaui-structure-row"
             aria-expanded={container ? open : undefined}
             aria-current={selectedKey === id ? "true" : undefined}
             onClick={() => {
@@ -173,19 +173,19 @@ const Json = defineComponent({
               pick(path);
             }}
           >
-            {container ? <ChevronRight {...ICON} className="bbui-structure-chev" /> : <span className="bbui-structure-gap" />}
-            <span className="bbui-structure-key bbui-mono">{key}</span>
+            {container ? <ChevronRight {...ICON} className="aliaui-structure-chev" /> : <span className="aliaui-structure-gap" />}
+            <span className="aliaui-structure-key aliaui-mono">{key}</span>
             {container ? (
-              <span className="bbui-label">{open ? (kind === "array" ? "[" : "{") : jsonSummary(value)}</span>
+              <span className="aliaui-label">{open ? (kind === "array" ? "[" : "{") : jsonSummary(value)}</span>
             ) : (
               <JsonLeaf value={value} />
             )}
           </button>
           {open && entries.length > 0 ? (
-            <ul className="bbui-structure-branch">
+            <ul className="aliaui-structure-branch">
               {entries.slice(0, JSON_CAP).map(([k, v]) => row(k, v, [...path, k], depth + 1))}
               {entries.length > JSON_CAP ? (
-                <li className="bbui-label bbui-structure-more">{fmt(entries.length - JSON_CAP)} more not shown</li>
+                <li className="aliaui-label aliaui-structure-more">{fmt(entries.length - JSON_CAP)} more not shown</li>
               ) : null}
             </ul>
           ) : null}
@@ -205,13 +205,13 @@ const Json = defineComponent({
     const state = (what: "path" | "value") => (copied?.what === what ? (copied.ok ? "success" : "error") : undefined);
 
     return (
-      <div className="bbui bbui-structure-json">
+      <div className="aliaui aliaui-structure-json">
         <div onKeyDown={onRowKeys}>
-          <ul className="bbui-structure-branch">{row(label, root, [], 0)}</ul>
+          <ul className="aliaui-structure-branch">{row(label, root, [], 0)}</ul>
         </div>
         {selected ? (
-          <div className="bbui-structure-bar">
-            <code className="bbui-mono bbui-structure-path">{jsonPath(selected)}</code>
+          <div className="aliaui-structure-bar">
+            <code className="aliaui-mono aliaui-structure-path">{jsonPath(selected)}</code>
             <Button state={state("path")} onClick={() => copy("path")}>
               {copied?.what === "path" ? (copied.ok ? "Path copied" : "Copy failed") : "Copy path"}
             </Button>
@@ -220,7 +220,7 @@ const Json = defineComponent({
             </Button>
           </div>
         ) : (
-          <p className="bbui-label bbui-structure-hint">Select a row to copy its path or value.</p>
+          <p className="aliaui-label aliaui-structure-hint">Select a row to copy its path or value.</p>
         )}
       </div>
     );
@@ -239,11 +239,11 @@ const Diff = defineComponent({
     const path = diffPath(patch, props.language);
     const { added, removed } = diffStats(patch);
     return (
-      <figure className="bbui bbui-structure-diff">
-        <figcaption className="bbui-structure-diffhead">
-          <span className="bbui-mono bbui-structure-path">{path}</span>
-          <span className="bbui-label">
-            <span className="bbui-structure-added">+{fmt(added)}</span> <span className="bbui-structure-removed">-{fmt(removed)}</span>
+      <figure className="aliaui aliaui-structure-diff">
+        <figcaption className="aliaui-structure-diffhead">
+          <span className="aliaui-mono aliaui-structure-path">{path}</span>
+          <span className="aliaui-label">
+            <span className="aliaui-structure-added">+{fmt(added)}</span> <span className="aliaui-structure-removed">-{fmt(removed)}</span>
           </span>
         </figcaption>
         {/* A half-written patch misparses: draw it once the block is complete. */}
@@ -274,7 +274,7 @@ function Picture({ loaded, alt, height = 180 }: { loaded: Loaded<string>; alt: s
       errorTitle={`${alt || "The image"} could not be shown`}
       skeleton={<Skeleton height={height} />}
     >
-      {(src) => <img className="bbui-structure-img" src={src} alt={alt} draggable={false} />}
+      {(src) => <img className="aliaui-structure-img" src={src} alt={alt} draggable={false} />}
     </LoadedView>
   );
 }
@@ -287,7 +287,7 @@ function WebLink({ url, className, children }: { url: URL; className?: string; c
     if (navigate.openUrl(url.href)) event.preventDefault();
   };
   return (
-    <a className={cx("bbui-structure-link", className)} href={url.href} onClick={open} rel="noreferrer">
+    <a className={cx("aliaui-structure-link", className)} href={url.href} onClick={open} rel="noreferrer">
       {children}
     </a>
   );
@@ -301,9 +301,9 @@ function Segmented<T extends string>({ label, value, options, onChange, disabled
   disabled?: boolean;
 }) {
   return (
-    <div className="bbui-structure-seg" role="group" aria-label={label}>
+    <div className="aliaui-structure-seg" role="group" aria-label={label}>
       {options.map((o) => (
-        <button key={o.value} type="button" className="bbui-btn" aria-pressed={o.value === value} disabled={disabled} onClick={() => onChange(o.value)}>
+        <button key={o.value} type="button" className="aliaui-btn" aria-pressed={o.value === value} disabled={disabled} onClick={() => onChange(o.value)}>
           {o.label}
         </button>
       ))}
@@ -338,7 +338,7 @@ function Wipe({ under, over, overLabel, underLabel, disabled }: { under: string;
   };
   return (
     <div
-      className="bbui-structure-stage"
+      className="aliaui-structure-stage"
       data-dragging={dragging || undefined}
       onPointerDown={(event) => {
         if (disabled || event.button !== 0) return;
@@ -350,10 +350,10 @@ function Wipe({ under, over, overLabel, underLabel, disabled }: { under: string;
       onPointerUp={() => setDragging(false)}
       onPointerCancel={() => setDragging(false)}
     >
-      <img className="bbui-structure-img" src={under} alt={underLabel} draggable={false} />
-      <img className="bbui-structure-img bbui-structure-over" src={over} alt={overLabel} draggable={false} style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
+      <img className="aliaui-structure-img" src={under} alt={underLabel} draggable={false} />
+      <img className="aliaui-structure-img aliaui-structure-over" src={over} alt={overLabel} draggable={false} style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
       <div
-        className="bbui-structure-handle"
+        className="aliaui-structure-handle"
         style={{ left: `${pos}%` }}
         role="slider"
         tabIndex={disabled ? -1 : 0}
@@ -383,13 +383,13 @@ const Compare = defineComponent({
     // Hooks per image need a fixed count: the first eight are read, which covers any sensible comparison.
     const loaded = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => useImage(items[i]?.src));
     const count = Math.min(items.length, 8);
-    if (count === 0) return <div className="bbui bbui-structure-compare" />;
+    if (count === 0) return <div className="aliaui aliaui-structure-compare" />;
     const candidate = clamp(pick, 1, Math.max(1, count - 1));
     const ref = loaded[0]!;
     const cand = loaded[candidate]!;
     const pair = count > 1 && ref.state === "ready" && cand.state === "ready" ? [ref.value, cand.value] : null;
     const pairFallback = (
-      <div className="bbui-structure-grid">
+      <div className="aliaui-structure-grid">
         <Picture loaded={ref} alt={labels[0]!} />
         <Picture loaded={cand} alt={labels[candidate]!} />
       </div>
@@ -397,11 +397,11 @@ const Compare = defineComponent({
     let stage: ReactNode;
     if (mode === "side" || count < 2) {
       stage = (
-        <div className="bbui-structure-grid">
+        <div className="aliaui-structure-grid">
           {items.slice(0, count).map((_, i) => (
-            <figure key={i} className="bbui-structure-shot">
+            <figure key={i} className="aliaui-structure-shot">
               <Picture loaded={loaded[i]!} alt={labels[i]!} />
-              <figcaption className="bbui-label">
+              <figcaption className="aliaui-label">
                 {labels[i]}
                 {i === 0 && count > 1 && labels[0] !== "Reference" ? ", reference" : ""}
               </figcaption>
@@ -413,7 +413,7 @@ const Compare = defineComponent({
       stage = pair ? (
         <>
           <Wipe over={pair[0]!} under={pair[1]!} overLabel={labels[0]!} underLabel={labels[candidate]!} disabled={streaming} />
-          <p className="bbui-label bbui-structure-legend">
+          <p className="aliaui-label aliaui-structure-legend">
             <span>{labels[0]}</span>
             <span>{labels[candidate]}</span>
           </p>
@@ -425,12 +425,12 @@ const Compare = defineComponent({
       const shown = showReference ? 0 : candidate;
       stage = pair ? (
         <>
-          <button type="button" className="bbui-structure-stage bbui-structure-flip" disabled={streaming} onClick={() => setShowReference((v) => !v)}>
-            <img className="bbui-structure-img" src={pair[showReference ? 0 : 1]} alt={labels[shown]} draggable={false} />
+          <button type="button" className="aliaui-structure-stage aliaui-structure-flip" disabled={streaming} onClick={() => setShowReference((v) => !v)}>
+            <img className="aliaui-structure-img" src={pair[showReference ? 0 : 1]} alt={labels[shown]} draggable={false} />
           </button>
-          <div className="bbui-structure-legend">
-            <span className="bbui-label" aria-live="polite">
-              Showing <strong className="bbui-structure-strong">{labels[shown]}</strong>
+          <div className="aliaui-structure-legend">
+            <span className="aliaui-label" aria-live="polite">
+              Showing <strong className="aliaui-structure-strong">{labels[shown]}</strong>
             </span>
             <Button disabled={streaming} onClick={() => setShowReference((v) => !v)}>
               Show {labels[showReference ? candidate : 0]}
@@ -442,9 +442,9 @@ const Compare = defineComponent({
       );
     }
     return (
-      <div className="bbui bbui-structure-compare">
+      <div className="aliaui aliaui-structure-compare">
         {count > 1 ? (
-          <div className="bbui-structure-tools">
+          <div className="aliaui-structure-tools">
             <Segmented<Mode>
               label="Compare mode"
               value={mode}
@@ -494,15 +494,15 @@ const Hotspots = defineComponent({
     const current = points[clamp(selected, 0, Math.max(0, points.length - 1))];
     const active = current ? points.indexOf(current) : -1;
     return (
-      <figure className="bbui bbui-structure-hotspots">
-        <div className="bbui-structure-canvas">
+      <figure className="aliaui aliaui-structure-hotspots">
+        <div className="aliaui-structure-canvas">
           <Picture loaded={image} alt={`Image with ${points.length} numbered points`} height={220} />
           {image.state === "ready"
             ? points.map((p, i) => (
                 <button
                   key={i}
                   type="button"
-                  className="bbui-structure-pin"
+                  className="aliaui-structure-pin"
                   style={{ left: `${percent(p.x)}%`, top: `${percent(p.y)}%` }}
                   aria-pressed={i === active}
                   aria-label={`${i + 1}: ${str(p.title)}`}
@@ -515,11 +515,11 @@ const Hotspots = defineComponent({
             : null}
         </div>
         {current ? (
-          <figcaption className="bbui-structure-detail" aria-live="polite">
-            <span className="bbui-head">
-              <span className="bbui-structure-num">{active + 1}</span> {str(current.title)}
+          <figcaption className="aliaui-structure-detail" aria-live="polite">
+            <span className="aliaui-head">
+              <span className="aliaui-structure-num">{active + 1}</span> {str(current.title)}
             </span>
-            {str(current.text) ? <Markdown content={str(current.text)} className="bbui-structure-md" /> : null}
+            {str(current.text) ? <Markdown content={str(current.text)} className="aliaui-structure-md" /> : null}
           </figcaption>
         ) : null}
       </figure>
@@ -540,24 +540,24 @@ const Sources = defineComponent({
       typeof item === "string" ? { url: item } : { url: str(item?.url), title: str(item?.title), note: str(item?.note) },
     );
     return (
-      <ol className="bbui bbui-structure-sources">
+      <ol className="aliaui aliaui-structure-sources">
         {links.map((link, i) => {
           const url = webUrl(link.url);
           const title = link.title?.trim();
           return (
-            <li key={i} className="bbui-structure-source">
-              <span className="bbui-label bbui-structure-index">{i + 1}</span>
-              <div className="bbui-structure-sourcebody">
+            <li key={i} className="aliaui-structure-source">
+              <span className="aliaui-label aliaui-structure-index">{i + 1}</span>
+              <div className="aliaui-structure-sourcebody">
                 {url ? (
                   <WebLink url={url}>
                     <span>{title || shortUrl(url)}</span>
-                    <ArrowUpRight {...ICON} className="bbui-structure-out" />
+                    <ArrowUpRight {...ICON} className="aliaui-structure-out" />
                   </WebLink>
                 ) : (
-                  <span className="bbui-structure-bad">{title || link.url}</span>
+                  <span className="aliaui-structure-bad">{title || link.url}</span>
                 )}
-                <span className="bbui-label">{url ? (title ? domainOf(url) : null) : "Not a web address, so it is not linked"}</span>
-                {link.note ? <span className="bbui-label">{link.note}</span> : null}
+                <span className="aliaui-label">{url ? (title ? domainOf(url) : null) : "Not a web address, so it is not linked"}</span>
+                {link.note ? <span className="aliaui-label">{link.note}</span> : null}
               </div>
             </li>
           );
@@ -598,37 +598,37 @@ const Entity = defineComponent({
     const url = webUrl(props.url);
     const name = props.name ?? "";
     return (
-      <article className="bbui bbui-well bbui-structure-entity">
+      <article className="aliaui aliaui-well aliaui-structure-entity">
         {props.image ? (
-          <div className="bbui-structure-thumb">
+          <div className="aliaui-structure-thumb">
             <Picture loaded={image} alt={name} height={96} />
           </div>
         ) : null}
-        <div className="bbui-structure-entitybody">
-          <header className="bbui-structure-entityhead">
-            <h3 className="bbui-head bbui-structure-title">{name}</h3>
+        <div className="aliaui-structure-entitybody">
+          <header className="aliaui-structure-entityhead">
+            <h3 className="aliaui-head aliaui-structure-title">{name}</h3>
             {kind ? (
-              <span className="bbui-label bbui-structure-kind">
+              <span className="aliaui-label aliaui-structure-kind">
                 <kind.Icon {...ICON} />
                 {kind.label}
               </span>
             ) : null}
           </header>
           {facts.length > 0 ? (
-            <dl className="bbui-structure-facts">
+            <dl className="aliaui-structure-facts">
               {facts.map(([label, value]) => (
-                <div key={label} className="bbui-structure-fact">
-                  <dt className="bbui-label">{label}</dt>
+                <div key={label} className="aliaui-structure-fact">
+                  <dt className="aliaui-label">{label}</dt>
                   <dd>{factValue(value)}</dd>
                 </div>
               ))}
             </dl>
           ) : null}
-          {props.note ? <Markdown content={props.note} className="bbui-structure-md" /> : null}
+          {props.note ? <Markdown content={props.note} className="aliaui-structure-md" /> : null}
           {url ? (
-            <WebLink url={url} className="bbui-structure-entitylink">
+            <WebLink url={url} className="aliaui-structure-entitylink">
               <span>{domainOf(url)}</span>
-              <ArrowUpRight {...ICON} className="bbui-structure-out" />
+              <ArrowUpRight {...ICON} className="aliaui-structure-out" />
             </WebLink>
           ) : null}
         </div>

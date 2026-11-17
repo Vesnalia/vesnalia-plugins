@@ -131,7 +131,7 @@ export function checkConnection(values: Values, keys: ProxmoxKeys, defaults: Pro
   }
   const tokenId = text(values, keys.tokenId);
   if (!tokenId) problem(keys.tokenId, "Set the Proxmox API token ID.");
-  else if (!/^[^\s@!=]+@[^\s@!=]+![^\s@!=]+$/.test(tokenId)) problem(keys.tokenId, "Use a token ID like bbbox@pve!plugin.");
+  else if (!/^[^\s@!=]+@[^\s@!=]+![^\s@!=]+$/.test(tokenId)) problem(keys.tokenId, "Use a token ID like aliabox@pve!plugin.");
   const tokenSecret = text(values, keys.tokenSecret);
   if (!tokenSecret) problem(keys.tokenSecret, "Set the Proxmox API token secret.");
   const fingerprintText = text(values, keys.tlsFingerprint);
@@ -144,7 +144,7 @@ export function checkConnection(values: Values, keys: ProxmoxKeys, defaults: Pro
   const node = text(values, keys.node) || null;
   if (node && !/^[A-Za-z0-9][A-Za-z0-9.-]*$/.test(node)) problem(keys.node, "Use the node's name as Proxmox shows it.");
   const pool = text(values, keys.pool, defaults.pool);
-  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(pool)) problem(keys.pool, "Use a Proxmox pool name such as bbbox.");
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(pool)) problem(keys.pool, "Use a Proxmox pool name such as aliabox.");
   return { apiUrl, tokenId, tokenSecret, caCertificate, tlsFingerprint, node, pool };
 }
 

@@ -6,7 +6,7 @@
 // and otherwise a GitHub remote means GitHub issues. But a repository can
 // have both (every beads repository pushed to GitHub does), and the owner
 // decided that such a repository says which one it uses in a small
-// checked-in file (bead-bb-c9l.1), so that the choice travels with the
+// checked-in file (bead-alia-c9l.1), so that the choice travels with the
 // code and is the same for everyone who clones it.
 //
 // Design notes:

@@ -26,8 +26,8 @@ dataset by user only, so it serves one restore at a time.
 
 ## Context
 
-A pool box is a user, `bbx-<generation>`, on a machine lent whole, or an
-iOS slot user, `bbd-<n>`, on a Mac shared by slots. The user has no root,
+A pool box is a user, `aliax-<generation>`, on a machine lent whole, or an
+iOS slot user, `aliad-<n>`, on a Mac shared by slots. The user has no root,
 except on Linux machines with a whole-machine reset, whose boxes get Docker
 and sudo. The reset removes the user and every file it owns. So almost
 everything a box without root can change is in its home folder.
@@ -92,7 +92,7 @@ Mac the login keychain and the keychain folder named by the Mac's hardware
 UUID, which would not unlock for the new user. It keeps the user's SSH
 keys, `gh` token and other files, as 070 says of every fork. No file named
 the source user's GeneratedUID, but files name the source's home path:
-`/Users/bbx-1` in Photos and CoreSpotlight plists, and on Linux any virtual
+`/Users/aliax-1` in Photos and CoreSpotlight plists, and on Linux any virtual
 environment, shell history or tool that stores absolute paths. A fork's
 home path is always new, as its user is new.
 
@@ -196,7 +196,7 @@ machine snapshot hook <operation> <command> ...    runs the operator's hook, sec
 - **Release.** The reset deletes every snapshot of the user before it
   removes the user, and its "nothing left" check gains the snapshots
   folder. Today's reset would leave btrfs snapshots behind unnoticed:
-  they survive `rm -rf`, and the check looks only at `/home/bbx-*`.
+  they survive `rm -rf`, and the check looks only at `/home/aliax-*`.
 - **New homes on Linux.** The helper makes each new box home a subvolume or
   a dataset where the homes' filesystem allows. A box made before that has
   a plain folder, and its plan says why it takes no snapshots.
@@ -304,7 +304,7 @@ project only. No cloud was called in the spike.
   what the machine found, and the words say both.
 - **The proof** runs before a machine's offer goes live, and again when
   the helper or hook changes: a take, a change, a restore and a delete on a
-  scratch user, `bbbox-probe`, made and removed by the helper. It runs only
+  scratch user, `aliabox-probe`, made and removed by the helper. It runs only
   while no box holds the machine, during the reset, before the generation
   moves on. For a hook, the proof is
   `check-hook.sh`'s checks on a scratch snapshot. A machine whose proof

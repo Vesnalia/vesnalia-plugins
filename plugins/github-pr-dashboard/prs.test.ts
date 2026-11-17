@@ -457,9 +457,9 @@ test("commits come newest first, with CI and the commit you last reviewed", () =
   const d = toDetail({
     ...rawDetail,
     viewerLatestReview: { commit: { oid: "aaaaaaa1" } },
-    history: { totalCount: 120, nodes: [commit("aaaaaaa1", "SUCCESS", "dev"), commit("bbbbbbb2", "FAILURE", null)] },
+    history: { totalCount: 120, nodes: [commit("aaaaaaa1", "SUCCESS", "dev"), commit("aliabbbbb2", "FAILURE", null)] },
   });
-  assert.deepEqual(d.commits.map((c) => [c.shortOid, c.ci, c.author]), [["bbbbbbb", "failing", "Dev Name"], ["aaaaaaa", "passing", "dev"]]);
+  assert.deepEqual(d.commits.map((c) => [c.shortOid, c.ci, c.author]), [["aliabbbbb", "failing", "Dev Name"], ["aaaaaaa", "passing", "dev"]]);
   assert.equal(d.commitCount, 120);
   assert.equal(d.myReviewOid, "aaaaaaa1");
   assert.deepEqual(toDetail(rawDetail).commits, []);

@@ -4,12 +4,12 @@
 # A request counts toward the last user message sent before it. Helper transcripts are left out.
 import argparse, collections, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from paired import EPOCH, bb, session_ids, transcripts
+from paired import EPOCH, alia, session_ids, transcripts
 from prices import usd
 from sources import claude, when
 
 def user_starts(thread):
-    log = json.loads(bb("thread", "log", thread, "--all", "--json"))
+    log = json.loads(alia("thread", "log", thread, "--all", "--json"))
     return [when(e["createdAt"]) for e in log
             if e["type"] == "client/turn/requested" and e["data"].get("initiator") == "user"]
 

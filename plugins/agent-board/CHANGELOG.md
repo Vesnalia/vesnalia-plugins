@@ -14,12 +14,12 @@
   expandable results. Preserve the indeterminate running strip and reduced motion.
 - Fix timeline scrolling and add incremental earlier-history loading, stable
   event merging, preserved scroll position, reconnect gap bridging and retries.
-- Add release discovery and a review/confirm flow for BB-eligible updates.
+- Add release discovery and a review/confirm flow for ALIA-eligible updates.
   Out-of-range and pinned sources remain advisory; source ranges are never widened.
 - Correct stale release and upgrade documentation.
 
 No storage migration or reset is required. Existing `^0.7.0` selectors include
-this release. Earlier-history loading depends on BB retention and source APIs;
+this release. Earlier-history loading depends on VesnALIA retention and source APIs;
 optional Fleet and Redteam history remains bounded. See
 [daily monitoring](docs/daily-workflow.md) and
 [release validation](docs/validation-0.7.1.md).
@@ -49,13 +49,13 @@ optional Fleet and Redteam history remains bounded. See
 - Patch Hono, Undici and source-map-js development dependencies; the updated graph audits clean.
 - Prebundle the large icon data dependency in Vitest without relaxing hook limits or mocking the UI.
 
-No storage migration or settings reset is required. BB >=0.40 and SDK >=0.4.21
-remain declared; BB 0.46.0 is recommended. See [upgrade notes](docs/upgrade-0.7.0.md)
+No storage migration or settings reset is required. VesnALIA >=0.40 and SDK >=0.4.21
+remain declared; VesnALIA 0.46.0 is recommended. See [upgrade notes](docs/upgrade-0.7.0.md)
 and [release convention](docs/release-convention.md). Version 0.7.0 was published on 12 October 2026.
 
 ## 0.6.1 — first public beta
 
-- Fix managed Git installation when BB omits development dependencies: keep the
+- Fix managed Git installation when VesnALIA omits development dependencies: keep the
   shared RPC contract SDK import type-only while preserving schema inference.
 - 0.6.0 remained an unpublished release candidate.
 

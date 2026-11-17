@@ -67,7 +67,7 @@ export type ServiceDeps = {
   catalog?: () => Promise<Catalog | null>;
   /** Known skill names (global, project, VesnALIA global) for the unknown-skill warning; null skips the check. */
   skills?: (projectId: string) => Promise<SkillsCatalog | null>;
-  /** Graph Studio's RPC bridge (BBP-30) for the unknown-graph warning and crew_graph_run; null disables both. */
+  /** Graph Studio's RPC bridge (ALIAP-30) for the unknown-graph warning and crew_graph_run; null disables both. */
   graphsRpc?: GraphsRpc | null;
   readText?: (path: string) => Promise<string>;
   newId?: () => string;
@@ -79,7 +79,7 @@ export type ServiceDeps = {
   onMessages?: () => void;
   /** Merges and rebases; default is plain git on this machine. */
   git?: GitBackend;
-  /** Git for worktrees on other hosts (BBP-14); defaults to the "not available" stub. */
+  /** Git for worktrees on other hosts (ALIAP-14); defaults to the "not available" stub. */
   remoteGit?: RemoteGitFactory;
   /** The VesnALIA Tasks plugin; null = `done`/`comment:` dependencies and labels are not checked. */
   tasks?: TasksPort | null;
@@ -139,7 +139,7 @@ export function createCrewService(deps: ServiceDeps) {
     },
   });
   /**
-   * BBP-87: a member's open human question is stale once the crew's own task
+   * ALIAP-87: a member's open human question is stale once the crew's own task
    * is done — there is no per-question task link (`MessageRow` has none), so
    * this closes every open question of the member, an approximation that
    * holds as long as a crew works one task at a time (`spec.task`).
@@ -245,7 +245,7 @@ export function createCrewService(deps: ServiceDeps) {
     channel,
     integration,
     dependencies,
-    /** The VesnALIA Tasks plugin, for callers that need more than `dependencies`' own facade (e.g. the overview's label-task edges, BBP-84). */
+    /** The VesnALIA Tasks plugin, for callers that need more than `dependencies`' own facade (e.g. the overview's label-task edges, ALIAP-84). */
     tasks: deps.tasks ?? null,
     flush,
     log,
@@ -253,9 +253,9 @@ export function createCrewService(deps: ServiceDeps) {
     directory: (projectId: string) => buildDirectory(store, models, projectId),
     graphs: {
       /**
-       * Run a graph-studio graph to completion for crew_graph_run (BBP-30),
+       * Run a graph-studio graph to completion for crew_graph_run (ALIAP-30),
        * recording it in `graph_runs` as it starts and as its status changes
-       * (BBP-31), linked to the member and crew that started it. Rejects when
+       * (ALIAP-31), linked to the member and crew that started it. Rejects when
        * no graphsRpc is configured.
        */
       run(
@@ -481,7 +481,7 @@ export function createCrewService(deps: ServiceDeps) {
           `Crew ${crew.name} was not deleted: ${failed.length} thread(s) failed (${failed.map((result) => `${result.threadId}: ${result.error}`).join("; ")}). Nothing was removed from the database; run the delete again.`,
         );
       }
-      // BBP-31: graph run worker threads are graph-studio's own threads, not
+      // ALIAP-31: graph run worker threads are graph-studio's own threads, not
       // VesnALIA children of the member's thread, so `deleteTree` above never finds
       // them — look them up and delete them explicitly.
       if (mode === "delete") {

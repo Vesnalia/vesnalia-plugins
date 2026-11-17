@@ -748,7 +748,7 @@ export function registerTools(alia: AliaPluginApi, app: AliaBox, options: { drai
     presentation: { label: { pending: "Granting permissions", completed: "Granted permissions" } },
     parameters: z.object({
       box: boxParam,
-      program: z.string().min(1).describe("The app's path, such as /Users/bbx-3/Applications/Probe.app, or a program's full path in the box."),
+      program: z.string().min(1).describe("The app's path, such as /Users/aliax-3/Applications/Probe.app, or a program's full path in the box."),
       permissions: z.array(z.enum(GRANT_PERMISSIONS)).min(1).describe("The permissions to grant."),
       target: z.string().optional().describe("For automation: the bundle ID of the app the program sends Apple events to, such as com.apple.finder."),
     }),

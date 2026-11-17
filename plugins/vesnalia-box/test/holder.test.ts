@@ -185,23 +185,23 @@ test("on Windows, which has no sleep, the held process is Node waiting for ever 
 test("the host entry holds a process with the call's variables, kept until they change, with a lease on its worker", { skip: process.platform !== "linux" && "reads /proc" }, async (t) => {
   const harness = experimental_createHostEntryHarness(hostEntry({ access: { command: ["sleep", "300"] } }));
   t.after(() => harness.experimental_dispose());
-  const saved = process.env.BBBOX_TEST_TOKEN;
-  t.after(() => (saved === undefined ? delete process.env.BBBOX_TEST_TOKEN : (process.env.BBBOX_TEST_TOKEN = saved)));
+  const saved = process.env.ALIABOX_TEST_TOKEN;
+  t.after(() => (saved === undefined ? delete process.env.ALIABOX_TEST_TOKEN : (process.env.ALIABOX_TEST_TOKEN = saved)));
 
   // VesnALIA's worker puts the daemon's current variables in process.env for each call.
-  process.env.BBBOX_TEST_TOKEN = "value-one";
-  const first = await harness.experimental_call("access", { names: ["BBBOX_TEST_TOKEN"] });
+  process.env.ALIABOX_TEST_TOKEN = "value-one";
+  const first = await harness.experimental_call("access", { names: ["ALIABOX_TEST_TOKEN"] });
   assert.equal(first.started, true);
-  assert.equal(environ(first.pid!).get("BBBOX_TEST_TOKEN"), "value-one");
+  assert.equal(environ(first.pid!).get("ALIABOX_TEST_TOKEN"), "value-one");
   assert.equal(harness.experimental_getRetainedWorkerLeaseCount(), 1);
 
-  const again = await harness.experimental_call("access", { names: ["BBBOX_TEST_TOKEN"] });
+  const again = await harness.experimental_call("access", { names: ["ALIABOX_TEST_TOKEN"] });
   assert.deepEqual(again, { started: false, pid: first.pid, missing: [] }, "the same values keep the same process");
 
-  process.env.BBBOX_TEST_TOKEN = "value-two";
-  const changed = await harness.experimental_call("access", { names: ["BBBOX_TEST_TOKEN"] });
+  process.env.ALIABOX_TEST_TOKEN = "value-two";
+  const changed = await harness.experimental_call("access", { names: ["ALIABOX_TEST_TOKEN"] });
   assert.equal(changed.started, true);
-  assert.equal(environ(changed.pid!).get("BBBOX_TEST_TOKEN"), "value-two");
+  assert.equal(environ(changed.pid!).get("ALIABOX_TEST_TOKEN"), "value-two");
   assert.ok(await gone(first.pid!), "the old process ends once the new one runs");
   assert.equal(harness.experimental_getRetainedWorkerLeaseCount(), 1, "one lease, however many calls");
 
@@ -242,10 +242,10 @@ test("a call that brings no GH_TOKEN, as on a new machine VesnALIA has not given
 test("the host entry's access says which of the names its call did not bring", async (t) => {
   const harness = experimental_createHostEntryHarness(hostEntry({ access: { command: ["sleep", "300"] } }));
   t.after(() => harness.experimental_dispose());
-  const saved = process.env.BBBOX_TEST_TOKEN;
-  delete process.env.BBBOX_TEST_TOKEN;
-  t.after(() => (saved === undefined ? delete process.env.BBBOX_TEST_TOKEN : (process.env.BBBOX_TEST_TOKEN = saved)));
-  assert.deepEqual((await harness.experimental_call("access", { names: ["PATH", "BBBOX_TEST_TOKEN"] })).missing, ["BBBOX_TEST_TOKEN"]);
-  process.env.BBBOX_TEST_TOKEN = "value";
-  assert.deepEqual((await harness.experimental_call("access", { names: ["PATH", "BBBOX_TEST_TOKEN"] })).missing, []);
+  const saved = process.env.ALIABOX_TEST_TOKEN;
+  delete process.env.ALIABOX_TEST_TOKEN;
+  t.after(() => (saved === undefined ? delete process.env.ALIABOX_TEST_TOKEN : (process.env.ALIABOX_TEST_TOKEN = saved)));
+  assert.deepEqual((await harness.experimental_call("access", { names: ["PATH", "ALIABOX_TEST_TOKEN"] })).missing, ["ALIABOX_TEST_TOKEN"]);
+  process.env.ALIABOX_TEST_TOKEN = "value";
+  assert.deepEqual((await harness.experimental_call("access", { names: ["PATH", "ALIABOX_TEST_TOKEN"] })).missing, []);
 });

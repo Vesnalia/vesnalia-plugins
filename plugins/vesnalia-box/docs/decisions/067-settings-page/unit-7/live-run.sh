@@ -20,11 +20,11 @@ phase() {
   echo "run $RUN $1: $?" | tee -a $SHOTS/summary.log
 }
 rm -rf $DATA $DATA.log
-docker images --format '{{.Repository}}:{{.Tag}}' | grep '^bbbox/' | xargs -r docker rmi -f > /dev/null
+docker images --format '{{.Repository}}:{{.Tag}}' | grep '^aliabox/' | xargs -r docker rmi -f > /dev/null
 sudo systemctl stop docker.socket docker
 sudo mv /usr/bin/docker /usr/bin/docker.hidden
 start_alia
-BBDATA=$DATA $HOME/bbc.sh plugin install $HOME/alia-box --yes >> $SHOTS/run$RUN.log 2>&1
+ALIADATA=$DATA $HOME/aliac.sh plugin install $HOME/alia-box --yes >> $SHOTS/run$RUN.log 2>&1
 sleep 8
 phase missing
 sudo mv /usr/bin/docker.hidden /usr/bin/docker

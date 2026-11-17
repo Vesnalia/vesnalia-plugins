@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exact BB 0.45 Pi command completion and native-menu repair; no cache mutation."""
+"""Exact ALIA 0.45 Pi command completion and native-menu repair; no cache mutation."""
 import hashlib
 import json
 import os
@@ -7,10 +7,10 @@ import shutil
 import sys
 from pathlib import Path
 
-# Reference installation; point BB_PI_HOST_ARTIFACT at another provider-pi host.js.
+# Reference installation; point ALIA_PI_HOST_ARTIFACT at another provider-pi host.js.
 TARGET = Path(os.environ.get(
-    'BB_PI_HOST_ARTIFACT',
-    '/home/ubuntu/.bb-server/app/node_modules/bb-app/server/dist/builtin-plugins/provider-pi/dist/host.js',
+    'ALIA_PI_HOST_ARTIFACT',
+    '/home/ubuntu/.alia-server/app/node_modules/alia-app/server/dist/builtin-plugins/provider-pi/dist/host.js',
 ))
 EDITS = (
     ('await t.requestOk(n,r);return}catch(a)',
@@ -18,7 +18,7 @@ EDITS = (
     ('then(async()=>o.pending.queuedText!==null?(this.dropRunSettlement(),null):(this.resolvePendingInputConsumption(o.pending),await a),l=>',
      'then(async l=>{if(l?.disposition==="handled"&&!this.isCompacting&&o.pending.queuedText===null){let u=await this.getState();if(u.isStreaming!==!0){this.isProcessing=!1;this.dropRunSettlement();this.resolvePendingInputConsumption(o.pending);return{}}}return o.pending.queuedText!==null?(this.dropRunSettlement(),null):(this.resolvePendingInputConsumption(o.pending),await a)},l=>'),
     ('return{skills:tb({skills:[...n].sort().map(o=>({path:o,origin:"user",shape:"skills"}))},{warn:console.warn}).answer.skills}}s(ib,"resolvePiNativeRoots")',
-     'const{createHash:bbHash}=await import("node:crypto");const bbRoot=qe.join(e.homeDir,".pi","bb-commands");let bbCommands=[],bbSkills=[];let bbKeys=e.cwd?[qe.join("projects",bbHash("sha256").update(e.cwd).digest("hex")+".json"),"global.json"]:["global.json"];for(const bbKey of bbKeys){try{const bbData=JSON.parse(await hR(qe.join(bbRoot,bbKey),"utf8"));if(!/^[a-f0-9]{64}$/.test(bbData.snapshot))continue;bbCommands.push({path:qe.join(bbRoot,"catalog",bbData.snapshot),origin:"user",shape:"commands"});if(Array.isArray(bbData.skillRoots))for(const bbSkill of bbData.skillRoots.slice(0,32))if(typeof bbSkill?.path==="string"&&qe.isAbsolute(bbSkill.path)&&(bbSkill.origin==="user"||bbSkill.origin==="project")&&(bbSkill.origin!=="project"||bbKey!=="global.json"))bbSkills.push({path:bbSkill.path,origin:bbSkill.origin,shape:"skills"});break}catch{}}return tb({skills:[...bbSkills,...[...n].sort().map(o=>({path:o,origin:"user",shape:"skills"}))],commands:bbCommands},{warn:console.warn}).answer}s(ib,"resolvePiNativeRoots")'),
+     'const{createHash:aliaHash}=await import("node:crypto");const aliaRoot=qe.join(e.homeDir,".pi","alia-commands");let aliaCommands=[],aliaSkills=[];let aliaKeys=e.cwd?[qe.join("projects",aliaHash("sha256").update(e.cwd).digest("hex")+".json"),"global.json"]:["global.json"];for(const aliaKey of aliaKeys){try{const aliaData=JSON.parse(await hR(qe.join(aliaRoot,aliaKey),"utf8"));if(!/^[a-f0-9]{64}$/.test(aliaData.snapshot))continue;aliaCommands.push({path:qe.join(aliaRoot,"catalog",aliaData.snapshot),origin:"user",shape:"commands"});if(Array.isArray(aliaData.skillRoots))for(const aliaSkill of aliaData.skillRoots.slice(0,32))if(typeof aliaSkill?.path==="string"&&qe.isAbsolute(aliaSkill.path)&&(aliaSkill.origin==="user"||aliaSkill.origin==="project")&&(aliaSkill.origin!=="project"||aliaKey!=="global.json"))aliaSkills.push({path:aliaSkill.path,origin:aliaSkill.origin,shape:"skills"});break}catch{}}return tb({skills:[...aliaSkills,...[...n].sort().map(o=>({path:o,origin:"user",shape:"skills"}))],commands:aliaCommands},{warn:console.warn}).answer}s(ib,"resolvePiNativeRoots")'),
     ('s(()=>ib({homeDir:kV(),env:process.env}),"resolveNativeRoots")',
      's(n=>ib({homeDir:kV(),env:process.env,cwd:n.cwd}),"resolveNativeRoots")'),
 )
@@ -26,9 +26,9 @@ EDITS = (
 
 def patch_source(source: str) -> str:
     # Migrate the exact earlier catalog adapter, which did not import skill roots.
-    legacy_menu = EDITS[2][1].replace('let bbCommands=[],bbSkills=[];', 'let bbCommands=[];').replace(
-        'if(Array.isArray(bbData.skillRoots))for(const bbSkill of bbData.skillRoots.slice(0,32))if(typeof bbSkill?.path==="string"&&qe.isAbsolute(bbSkill.path)&&(bbSkill.origin==="user"||bbSkill.origin==="project")&&(bbSkill.origin!=="project"||bbKey!=="global.json"))bbSkills.push({path:bbSkill.path,origin:bbSkill.origin,shape:"skills"});', '').replace(
-        'skills:[...bbSkills,...[...n].sort().map(o=>({path:o,origin:"user",shape:"skills"}))]',
+    legacy_menu = EDITS[2][1].replace('let aliaCommands=[],aliaSkills=[];', 'let aliaCommands=[];').replace(
+        'if(Array.isArray(aliaData.skillRoots))for(const aliaSkill of aliaData.skillRoots.slice(0,32))if(typeof aliaSkill?.path==="string"&&qe.isAbsolute(aliaSkill.path)&&(aliaSkill.origin==="user"||aliaSkill.origin==="project")&&(aliaSkill.origin!=="project"||aliaKey!=="global.json"))aliaSkills.push({path:aliaSkill.path,origin:aliaSkill.origin,shape:"skills"});', '').replace(
+        'skills:[...aliaSkills,...[...n].sort().map(o=>({path:o,origin:"user",shape:"skills"}))]',
         'skills:[...n].sort().map(o=>({path:o,origin:"user",shape:"skills"}))')
     if source.count(legacy_menu) == 1:
         source = source.replace(legacy_menu, EDITS[2][1], 1)
@@ -40,7 +40,7 @@ def patch_source(source: str) -> str:
         if source.count(after) == 1 and before not in source:
             continue
         if source.count(before) != 1 or after in source:
-            raise ValueError('Incompatible BB Pi bridge; no files changed. Review the command completion patch for this BB version.')
+            raise ValueError('Incompatible ALIA Pi bridge; no files changed. Review the command completion patch for this ALIA version.')
         source = source.replace(before, after, 1)
     return source
 
@@ -52,22 +52,22 @@ def main():
     try:
         metadata = json.loads(meta_path.read_text())
     except (OSError, ValueError) as error:
-        raise ValueError('Unreadable BB host metadata; no files changed.') from error
+        raise ValueError('Unreadable ALIA host metadata; no files changed.') from error
     original = candidate
     for before, after in EDITS:
         original = original.replace(after, before, 1)
     digest = hashlib.sha256(candidate.encode()).hexdigest()
     valid_digests = {hashlib.sha256(text.encode()).hexdigest() for text in (source, original)}
     if not isinstance(metadata, dict) or metadata.get('pluginId') != 'provider-pi' or metadata.get('artifactDigest') not in valid_digests:
-        raise ValueError('Incompatible BB host metadata; no files changed.')
+        raise ValueError('Incompatible ALIA host metadata; no files changed.')
     if candidate == source and metadata['artifactDigest'] == digest:
-        print('BB Pi command completion patch already active.')
+        print('ALIA Pi command completion patch already active.')
         return
     for path in (TARGET, meta_path):
-        backup = path.with_name(path.name + '.before-bb-slash-completion')
+        backup = path.with_name(path.name + '.before-alia-slash-completion')
         if not backup.exists():
             shutil.copy2(path, backup)
-        revision_backup = path.with_name(path.name + '.before-bb-slash-completion-' + metadata['artifactDigest'][:12])
+        revision_backup = path.with_name(path.name + '.before-alia-slash-completion-' + metadata['artifactDigest'][:12])
         if not revision_backup.exists():
             shutil.copy2(path, revision_backup)
     if candidate != source:

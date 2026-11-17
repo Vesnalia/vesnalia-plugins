@@ -20,7 +20,7 @@
  * being involved or even aware. The directive is gone entirely, renderer
  * included — nothing this plugin shows can be changed by what a model says.
  *
- * The frame is `.bbx-stack-card` — a copy of the host's PromptStackCard driven
+ * The frame is `.aliax-stack-card` — a copy of the host's PromptStackCard driven
  * by the host's own CSS variables. We draw it ourselves rather than take
  * `chrome: "card"` because the host mounts plugin banners under a
  * `display: contents` wrapper, and the stack spaces itself with `space-y-2`;
@@ -134,7 +134,7 @@ const XcodeActivityBannerLoaded = memo(function XcodeActivityBannerLoaded({
   return (
     <section
       aria-label="Xcode activity"
-      className={cn("bbx-stack-card bbx-tinted", statusClass(dominant(runs).status))}
+      className={cn("aliax-stack-card aliax-tinted", statusClass(dominant(runs).status))}
       style={{ minHeight: PROMPT_STACK_CARD_ROW_HEIGHT }}
     >
       {shown.map((run, index) => (

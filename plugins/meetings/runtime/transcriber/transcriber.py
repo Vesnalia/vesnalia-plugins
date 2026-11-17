@@ -1,4 +1,4 @@
-"""Meeting transcriber for bb-plugin-meetings (docs/dev/DESIGN.md §4.4-§4.6, §5).
+"""Meeting transcriber for alia-plugin-meetings (docs/dev/DESIGN.md §4.4-§4.6, §5).
 
 Reads a meeting directory written by the bot runner, splits speech with Silero
 VAD (sherpa-onnx), transcribes every piece with the local GigaAM server,

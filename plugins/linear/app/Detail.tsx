@@ -143,8 +143,8 @@ function DetailBody({
     // where the rule teaches itself, by naming both teams and the way out.
     return (
       <div className="space-y-3 p-4">
-        <div className="bbl-triage bbl-notice px-3 py-2" role="status">
-          <p className="bbl-text text-sm">{result.message}</p>
+        <div className="alial-triage alial-notice px-3 py-2" role="status">
+          <p className="alial-text text-sm">{result.message}</p>
         </div>
         <p className="text-sm text-muted-foreground">
           Bind teams from the Linear panel, or on the command line:{" "}
@@ -212,19 +212,19 @@ function IssueBody({
   return (
     <div
       className={`${toneClass(detail.tone)} flex h-full flex-col`}
-      style={detail.stateColor === null ? undefined : ({ "--bbl": detail.stateColor } as CSSProperties)}
+      style={detail.stateColor === null ? undefined : ({ "--alial": detail.stateColor } as CSSProperties)}
     >
       {/* The body scrolls inside a fixed cap and the composer is pinned
           outside the scroller — a control that scrolls out of its own panel is
           one you have to hunt for. */}
-      <div className="bbl-scroller flex-1 overflow-y-auto">
+      <div className="alial-scroller flex-1 overflow-y-auto">
         {/*
           The identifier bar is sticky and the only thing in the pane that is.
           Scrolled forty comments down, "which issue am I in" is the one
           question the pane must never make you scroll back up to answer.
         */}
-        <header className="bbl-section sticky top-0 z-10 flex items-center gap-2 px-4 py-2">
-          <span className="bbl-text font-mono text-[11px] tabular-nums">
+        <header className="alial-section sticky top-0 z-10 flex items-center gap-2 px-4 py-2">
+          <span className="alial-text font-mono text-[11px] tabular-nums">
             {detail.identifier}
           </span>
           {detail.teamName === "" ? null : (
@@ -314,13 +314,13 @@ function IssueBody({
             {detail.labels.map((label) => (
               <span
                 key={label.id}
-                className="bbl-label inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px]"
+                className="alial-label inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px]"
                 // Inline rather than a class: the workspace picks this hue at
                 // runtime, and there is no class name for a colour nobody knew
                 // about at build time.
-                style={label.color === null ? undefined : { "--bbl-label": label.color } as React.CSSProperties}
+                style={label.color === null ? undefined : { "--alial-label": label.color } as React.CSSProperties}
               >
-                <span className="bbl-label-dot size-1.5 shrink-0 rounded-full" aria-hidden />
+                <span className="alial-label-dot size-1.5 shrink-0 rounded-full" aria-hidden />
                 {label.name}
               </span>
             ))}
@@ -366,7 +366,7 @@ function IssueBody({
                 <li
                   key={child.id}
                   className={`${toneClass(child.tone)} flex items-center gap-2.5 rounded-md px-1 py-1`}
-                  style={child.glyph.color === null ? undefined : ({ "--bbl": child.glyph.color } as CSSProperties)}
+                  style={child.glyph.color === null ? undefined : ({ "--alial": child.glyph.color } as CSSProperties)}
                 >
                   <StateGlyph tone={child.tone} glyph={child.glyph} />
                   <span className="w-[4.75rem] shrink-0 truncate font-mono text-[11px] tabular-nums text-muted-foreground">
@@ -463,7 +463,7 @@ function StatePicker({
           <DropdownMenuItem
             key={option.id}
             className={toneClass(option.tone)}
-            style={option.glyph.color === null ? undefined : ({ "--bbl": option.glyph.color } as CSSProperties)}
+            style={option.glyph.color === null ? undefined : ({ "--alial": option.glyph.color } as CSSProperties)}
             onSelect={() => onChange({ id: issueId, stateId: option.id })}
           >
             <StateGlyph tone={option.tone} glyph={option.glyph} />
@@ -996,7 +996,7 @@ function Relations({
                   <button
                     type="button"
                     className={`${toneClass(relation.tone)} flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-1 py-1 text-left hover:bg-state-hover`}
-                    style={relation.glyph.color === null ? undefined : ({ "--bbl": relation.glyph.color } as CSSProperties)}
+                    style={relation.glyph.color === null ? undefined : ({ "--alial": relation.glyph.color } as CSSProperties)}
                     onClick={() => onOpen(relation.identifier)}
                   >
                     <StateGlyph tone={relation.tone} glyph={relation.glyph} />
@@ -1138,7 +1138,7 @@ function CustomerRequests({ requests }: { requests: DetailView["customerRequests
           const content = (
             <>
               <span
-                className={`${request.priority >= 3 ? "bbl-danger" : request.priority >= 2 ? "bbl-triage" : "bbl-neutral"} bbl-glyph`}
+                className={`${request.priority >= 3 ? "alial-danger" : request.priority >= 2 ? "alial-triage" : "alial-neutral"} alial-glyph`}
                 title={`Priority ${String(request.priority)}`}
               >
                 <Icon name="AlertTriangle" className="size-4" aria-hidden />
@@ -1350,7 +1350,7 @@ function CommentComposer({
           ) : mentionCandidates.length === 0 ? (
             <p className="px-2 py-1.5 text-xs text-muted-foreground">No matching people.</p>
           ) : (
-            <ul className="bbl-scroller max-h-48 overflow-y-auto">
+            <ul className="alial-scroller max-h-48 overflow-y-auto">
               {mentionCandidates.map((candidate, index) => (
                 <li key={candidate.id}>
                   <button

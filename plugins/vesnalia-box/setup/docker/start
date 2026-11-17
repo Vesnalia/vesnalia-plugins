@@ -1,12 +1,12 @@
 #!/bin/bash
-# bb-box: a Docker box's main process, run as root under docker-init (bb-box
+# alia-box: a Docker box's main process, run as root under docker-init (alia-box
 # creates each box with --init). It does at each start what systemd and the
 # template's units do in a Proxmox LXC box, then waits until `docker stop`.
 #
-# - Clears what a hard stop leaves behind: BB's daemon lock and PID file, and
-#   X's lock for :99. bb-box runs BB's bootstrap again after each start, which
-#   starts BB's daemon (017).
-# - In a box with Docker (BBBOX_DOCKERD=1), listens on Docker's socket, so
+# - Clears what a hard stop leaves behind: ALIA's daemon lock and PID file, and
+#   X's lock for :99. alia-box runs ALIA's bootstrap again after each start, which
+#   starts ALIA's daemon (017).
+# - In a box with Docker (ALIABOX_DOCKERD=1), listens on Docker's socket, so
 #   the first docker command starts Docker's daemon, as docker.socket does
 #   in an LXC box (041). A box with containers starts it at once, so their
 #   restart policies work.
@@ -15,17 +15,17 @@
 #   their units do. In a Wayland desktop box (048), Sway is the display and
 #   the session, and Cua Driver, wayvnc and Selkies (060) start each time it
 #   is up and stop with it.
-# - Then writes /run/bb-box/ready, which bb-box waits for, once Docker's
+# - Then writes /run/alia-box/ready, which alia-box waits for, once Docker's
 #   socket is the docker group's. /run is a tmpfs, so the file is new at each
 #   start.
 #
-# Installed as /usr/local/sbin/bb-box-start by setup/docker/Dockerfile.
+# Installed as /usr/local/sbin/alia-box-start by setup/docker/Dockerfile.
 set -u
 user=box
 home=/home/$user
 uid=$(id -u "$user")
-run=/run/bb-box
-log() { echo "bb-box-start: $*" >&2; }
+run=/run/alia-box
+log() { echo "alia-box-start: $*" >&2; }
 cd "$home" || exit 1
 
 # On `docker stop`, stop everything this script started, then exit.
@@ -37,18 +37,18 @@ stop() {
 }
 trap stop TERM INT
 
-if [ -x /usr/local/sbin/bb-box-identity ] && ! /usr/local/sbin/bb-box-identity boot --value "${BBBOX_IDENTITY:-}"; then
+if [ -x /usr/local/sbin/alia-box-identity ] && ! /usr/local/sbin/alia-box-identity boot --value "${ALIABOX_IDENTITY:-}"; then
   log "the identity reset failed, so the box starts nothing and never says it is ready"
   exit 1
 fi
 
-/usr/local/libexec/bb-box/fork-hold &
+/usr/local/libexec/alia-box/fork-hold &
 if ! wait $!; then
   log "the fork's hold failed, so the box starts nothing and never says it is ready"
   exit 1
 fi
 
-rm -f "$home"/.bb-machines/*/daemon.lock.lock "$home"/.bb-machines/*/install-daemon.pid
+rm -f "$home"/.alia-machines/*/daemon.lock.lock "$home"/.alia-machines/*/install-daemon.pid
 rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
 install -d -m 0755 -o "$user" -g "$user" "$run"
 install -d -m 0700 -o "$user" -g "$user" "/run/user/$uid"
@@ -61,12 +61,12 @@ set -a
 [ ! -r /etc/environment ] || . /etc/environment
 set +a
 box_env=(HOME="$home" USER="$user" LOGNAME="$user" SHELL=/bin/bash LANG=C.UTF-8 PATH="$PATH")
-[ -z "${BBBOX_GPU_CARD:-}" ] || box_env+=(CUDA_VISIBLE_DEVICES="$BBBOX_GPU_CARD" NVIDIA_VISIBLE_DEVICES="$BBBOX_GPU_CARD")
+[ -z "${ALIABOX_GPU_CARD:-}" ] || box_env+=(CUDA_VISIBLE_DEVICES="$ALIABOX_GPU_CARD" NVIDIA_VISIBLE_DEVICES="$ALIABOX_GPU_CARD")
 as_box() { setpriv --reuid="$user" --regid="$user" --init-groups env -i "${box_env[@]}" "$@"; }
 # Runs a command again a second after it exits, as Restart=always does.
 keep() { while :; do "$@"; sleep 1; done; }
 
-if [ "${BBBOX_DOCKERD:-0}" = 1 ]; then
+if [ "${ALIABOX_DOCKERD:-0}" = 1 ]; then
   # On cgroup v2, move this container's processes into a child group, so
   # dockerd can make groups of its own beside it, as Docker's dind image does.
   if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
@@ -98,37 +98,37 @@ if [ "${BBBOX_DOCKERD:-0}" = 1 ]; then
   keep docker_socket >>/var/log/dockerd.log 2>&1 &
 fi
 
-if [ -x /usr/local/libexec/bb-box/display ]; then
+if [ -x /usr/local/libexec/alia-box/display ]; then
   # The system D-Bus, for the session's services that look for it.
   install -d -m 0755 /run/dbus
   keep dbus-daemon --system --nofork --nopidfile &
-  /usr/local/libexec/bb-box/vnc-password "$user"
+  /usr/local/libexec/alia-box/vnc-password "$user"
   set -a
   # shellcheck disable=SC1091
-  [ ! -r /etc/bb-box/desktop.env ] || . /etc/bb-box/desktop.env
+  [ ! -r /etc/alia-box/desktop.env ] || . /etc/alia-box/desktop.env
   set +a
   display_env=(DISPLAY_MODE="${DISPLAY_MODE:-cpu}" DISPLAY_GEOMETRY="${DISPLAY_GEOMETRY:-1920x1080}" VNC_AUTH="${VNC_AUTH:-password}")
   bus_env=(XDG_RUNTIME_DIR="/run/user/$uid" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus")
-  if [ -r /etc/bb-box/sway.conf ]; then
+  if [ -r /etc/alia-box/sway.conf ]; then
     # The Wayland desktop (048), on the CPU. Sway's display script writes
     # display.env once Sway is up: WAYLAND_DISPLAY, SWAYSOCK and the session's
     # XDG_ variables, which Cua Driver and wayvnc take.
     keep as_box env "${bus_env[@]}" dbus-daemon --session --address="unix:path=/run/user/$uid/bus" --nofork --nopidfile &
-    in_session() { as_box env "${bus_env[@]}" sh -c 'set -a; . /run/bb-box/display.env; set +a; exec "$@"' sh "$@"; }
+    in_session() { as_box env "${bus_env[@]}" sh -c 'set -a; . /run/alia-box/display.env; set +a; exec "$@"' sh "$@"; }
     # wayvnc, again 100 ms after it exits: display resize ends it to take a
     # new size when no viewer is connected, and waits for the next one, and
     # display vnc ends it when it loses Sway.
     stream() {
       while :; do
-        in_session env "VNC_AUTH=${VNC_AUTH:-password}" sh -c '/usr/local/libexec/bb-box/display vnc-config &&
-          exec /usr/local/libexec/bb-box/display vnc'
+        in_session env "VNC_AUTH=${VNC_AUTH:-password}" sh -c '/usr/local/libexec/alia-box/display vnc-config &&
+          exec /usr/local/libexec/alia-box/display vnc'
         sleep 0.1
       done
     }
     # Selkies' video of Sway (060), again a second after it exits, as its unit does.
     video() {
       while :; do
-        as_box env "${bus_env[@]}" /usr/local/libexec/bb-box/selkies
+        as_box env "${bus_env[@]}" /usr/local/libexec/alia-box/selkies
         sleep 1
       done
     }
@@ -136,9 +136,9 @@ if [ -x /usr/local/libexec/bb-box/display ]; then
     # exits, as their units do in an LXC box.
     wayland() {
       local sway cua= vnc= selkies=
-      as_box env "${display_env[@]}" "${bus_env[@]}" /usr/local/libexec/bb-box/display &
+      as_box env "${display_env[@]}" "${bus_env[@]}" /usr/local/libexec/alia-box/display &
       sway=$!
-      if as_box /usr/local/libexec/bb-box/display wait; then
+      if as_box /usr/local/libexec/alia-box/display wait; then
         in_session env CUA_DRIVER_RS_ENABLE_WAYLAND=1 CUA_DRIVER_RS_TELEMETRY_ENABLED=false \
           CUA_DRIVER_RS_UPDATE_CHECK=false cua-driver serve --no-overlay &
         cua=$!
@@ -156,22 +156,22 @@ if [ -x /usr/local/libexec/bb-box/display ]; then
   else
     # The NVIDIA Container Toolkit brings the host driver's own userspace, so
     # it always matches; the display still takes the CPU when the GPU is full.
-    if [ "${BBBOX_GPU:-0}" = 1 ] && [ -r /sys/module/nvidia/version ]; then
-      cat /sys/module/nvidia/version >/usr/share/bb-box/nvidia-version
+    if [ "${ALIABOX_GPU:-0}" = 1 ] && [ -r /sys/module/nvidia/version ]; then
+      cat /sys/module/nvidia/version >/usr/share/alia-box/nvidia-version
       display_env[0]=DISPLAY_MODE=auto
       # A box with Docker is privileged and sees every GPU on the host, so
-      # BBBOX_GPU_ID names the one placed, for Xorg and the display (#283).
+      # ALIABOX_GPU_ID names the one placed, for Xorg and the display (#283).
       # The display takes the CPU when that GPU cannot be found.
-      if [ -n "${BBBOX_GPU_ID:-}" ]; then
-        if bus=$(/usr/local/libexec/bb-box/gpu-bus-id "$BBBOX_GPU_ID"); then
+      if [ -n "${ALIABOX_GPU_ID:-}" ]; then
+        if bus=$(/usr/local/libexec/alia-box/gpu-bus-id "$ALIABOX_GPU_ID"); then
           display_env+=(GPU_BUS_ID="$bus")
         else
           display_env[0]=DISPLAY_MODE=cpu
-          log "the display takes the CPU, as Xorg cannot be pointed at GPU $BBBOX_GPU_ID"
+          log "the display takes the CPU, as Xorg cannot be pointed at GPU $ALIABOX_GPU_ID"
         fi
       fi
     fi
-    keep as_box env "${display_env[@]}" /usr/local/libexec/bb-box/display &
+    keep as_box env "${display_env[@]}" /usr/local/libexec/alia-box/display &
     session_env=(DISPLAY=:99 XAUTHORITY="$run/Xauthority" XDG_RUNTIME_DIR="/run/user/$uid"
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" XDG_SESSION_TYPE=x11
       XDG_CURRENT_DESKTOP=XFCE XDG_SESSION_DESKTOP=xfce)
@@ -179,8 +179,8 @@ if [ -x /usr/local/libexec/bb-box/display ]; then
     keep as_box env "${session_env[@]}" dbus-daemon --session --address="unix:path=/run/user/$uid/bus" --nofork --nopidfile &
     # The session, and Cua Driver with it, each time the display is up.
     session() {
-      as_box /usr/local/libexec/bb-box/display wait || return
-      as_box env "${session_env[@]}" sh -c 'set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
+      as_box /usr/local/libexec/alia-box/display wait || return
+      as_box env "${session_env[@]}" sh -c 'set -a; [ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a
         CUA_DRIVER_RS_TELEMETRY_ENABLED=false CUA_DRIVER_RS_UPDATE_CHECK=false cua-driver serve --no-overlay &
         cua=$!
         xfce4-session
@@ -189,12 +189,12 @@ if [ -x /usr/local/libexec/bb-box/display ]; then
     keep session &
     # Selkies' stream of :99, each time the display is up.
     stream() {
-      as_box /usr/local/libexec/bb-box/display wait || return
-      as_box /usr/local/libexec/bb-box/selkies
+      as_box /usr/local/libexec/alia-box/display wait || return
+      as_box /usr/local/libexec/alia-box/selkies
     }
     keep stream &
   fi
-  as_box /usr/local/libexec/bb-box/display wait || log "the display did not come up"
+  as_box /usr/local/libexec/alia-box/display wait || log "the display did not come up"
   for _ in $(seq 1 100); do
     [ -S "$home/.cache/cua-driver/cua-driver.sock" ] && break
     sleep 0.1
@@ -203,7 +203,7 @@ fi
 
 # Docker's socket is the docker group's about 10 ms after it starts. Until
 # then the box user's docker commands are refused, so ready waits for it.
-if [ "${BBBOX_DOCKERD:-0}" = 1 ]; then
+if [ "${ALIABOX_DOCKERD:-0}" = 1 ]; then
   socket_ready() { [ "$(stat -c %G:%a /run/docker.sock 2>/dev/null)" = docker:660 ]; }
   for _ in $(seq 1 500); do
     socket_ready && break

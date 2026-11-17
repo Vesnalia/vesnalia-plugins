@@ -379,7 +379,7 @@ type SlotState =
 
 interface Slot {
   readonly host: string;
-  readonly user: string;                       // bbd-<generation>, a standard user, hidden, in _developer
+  readonly user: string;                       // aliad-<generation>, a standard user, hidden, in _developer
   readonly generation: number;
   readonly device: { readonly model: string; readonly udid: string } | null;
   readonly state: SlotState;

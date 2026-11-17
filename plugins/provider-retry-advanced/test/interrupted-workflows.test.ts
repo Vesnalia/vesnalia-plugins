@@ -409,12 +409,12 @@ describe("review cases: failed sends, several workflows, cancel", () => {
     const id = "thr_ab";
     workflowRun(t.core, id, "A", "wf_aaaa0000-00a");
     t.core.startTurn(id, { input: [{ type: "text", text: "Also B", mentions: [] }], execution: OPUS_ULTRACODE });
-    t.core.startWorkflowRun(id, "B", "wf_bbbb0000-00b");
+    t.core.startWorkflowRun(id, "B", "wf_aliabb0000-00b");
     await t.scan();
     t.core.interruptTurn(id, "host-daemon-restarted");
     t.core.settleBackgroundTasks(id);
     await t.scan(); // core retry first
-    const b = t.core.startWorkflowRun(id, "B", "wf_bbbb0000-00b", "wf_bbbb0000-00b"); // the agent resumes only B
+    const b = t.core.startWorkflowRun(id, "B", "wf_aliabb0000-00b", "wf_aliabb0000-00b"); // the agent resumes only B
     t.core.completeTurn(id);
     expect(entry(await t.scan(), id)).toBeUndefined(); // B still running: wait
     t.core.closeBackgroundTask(id, b, "completed");
@@ -422,7 +422,7 @@ describe("review cases: failed sends, several workflows, cancel", () => {
     expect(t.delivered(id)).toHaveLength(1);
     const text = JSON.stringify(t.delivered(id)[0]!.data.input);
     expect(text).toContain("wf_aaaa0000-00a");
-    expect(text).not.toContain("wf_bbbb0000-00b");
+    expect(text).not.toContain("wf_aliabb0000-00b");
   });
 
   it("an independent same-name workflow does not count as resuming a run whose id is unknown", async () => {
@@ -457,13 +457,13 @@ describe("review cases: failed sends, several workflows, cancel", () => {
     t.core.addThread({ id, providerId: "claude-code" });
     t.core.startTurn(id, { input: [{ type: "text", text: "Two reviews", mentions: [] }], execution: OPUS_ULTRACODE });
     t.core.startWorkflowRun(id, "review", "wf_aaaa1111-001");
-    t.core.startWorkflowRun(id, "review", "wf_bbbb2222-002");
+    t.core.startWorkflowRun(id, "review", "wf_aliabb2222-002");
     t.core.completeTurn(id);
     await t.scan();
     t.core.settleBackgroundTasks(id);
     // A system turn resumes only the second run by id, and it finishes.
     t.core.startTurn(id, { input: [{ type: "text", text: "Callback", mentions: [] }], execution: OPUS_ULTRACODE, initiator: "system" });
-    const resumed = t.core.startWorkflowRun(id, "review", "wf_bbbb2222-002", "wf_bbbb2222-002");
+    const resumed = t.core.startWorkflowRun(id, "review", "wf_aliabb2222-002", "wf_aliabb2222-002");
     t.core.completeTurn(id);
     await t.scan();
     t.core.closeBackgroundTask(id, resumed, "completed");
@@ -471,7 +471,7 @@ describe("review cases: failed sends, several workflows, cancel", () => {
     expect(t.delivered(id)).toHaveLength(1);
     const text = JSON.stringify(t.delivered(id)[0]!.data.input);
     expect(text).toContain("wf_aaaa1111-001");
-    expect(text).not.toContain("wf_bbbb2222-002");
+    expect(text).not.toContain("wf_aliabb2222-002");
   });
 
   it("asks again about a run that was resumed and then killed by a second restart", async () => {

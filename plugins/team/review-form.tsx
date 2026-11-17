@@ -1,4 +1,4 @@
-// bbt-iwi.2 — review & acceptance card for a team work package.
+// aliat-iwi.2 — review & acceptance card for a team work package.
 // Standalone component for the parent to integrate into the Team panel's
 // task detail (app.tsx stays untouched):
 //   <ReviewForm projectId={projectId} team={team} task={task} language={language} onChanged={refresh} />

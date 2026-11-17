@@ -1763,19 +1763,19 @@ export class ProxmoxQemuBackend implements Backend {
       const keys = await this.#keys();
       if (keys.publicKey) {
         notes.push(`The template must accept this SSH key in C:\\ProgramData\\ssh\\administrators_authorized_keys: ${keys.publicKey}`);
-        // build.sh puts BBBOX_SSH_KEY in the template, so a key alia-box made is one it lacks.
+        // build.sh puts ALIABOX_SSH_KEY in the template, so a key alia-box made is one it lacks.
         if (keys.generated) {
           warn(
             SSH_KEY_CHECK,
             `${PRODUCT} made a key, which a template from build.sh does not accept; its public key is below.`,
-            "Paste BBBOX_SSH_KEY, the key build.sh put in the template, here or in Proxmox LXC's settings. Or add the public key below to the template.",
+            "Paste ALIABOX_SSH_KEY, the key build.sh put in the template, here or in Proxmox LXC's settings. Or add the public key below to the template.",
           );
         } else pass(SSH_KEY_CHECK, `From ${PRODUCT}'s settings; its public key is below.`);
       } else {
-        fail(SSH_KEY_CHECK, `ssh-keygen cannot read the SSH private key in ${PRODUCT}'s settings.`, "Paste the whole of BBBOX_SSH_KEY, the private key build.sh put in the template.");
+        fail(SSH_KEY_CHECK, `ssh-keygen cannot read the SSH private key in ${PRODUCT}'s settings.`, "Paste the whole of ALIABOX_SSH_KEY, the private key build.sh put in the template.");
       }
     } catch (error) {
-      fail(SSH_KEY_CHECK, message(error), `Check the SSH private key in ${PRODUCT}'s settings: paste the whole of BBBOX_SSH_KEY, the private key build.sh put in the template.`);
+      fail(SSH_KEY_CHECK, message(error), `Check the SSH private key in ${PRODUCT}'s settings: paste the whole of ALIABOX_SSH_KEY, the private key build.sh put in the template.`);
     }
 
     const ok = checks.every((check) => check.status !== "fail");

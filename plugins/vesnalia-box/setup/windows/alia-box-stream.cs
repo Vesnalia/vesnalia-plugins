@@ -1,18 +1,18 @@
-// bb-box-stream.exe: a Windows box's desktop as H.264 video, for the panel's
+// alia-box-stream.exe: a Windows box's desktop as H.264 video, for the panel's
 // video client (060), as setup/ssh-pool/mac-stream.swift is a Mac's. It
-// speaks the subset of Selkies' WebSocket protocol that bb-box's relay and the
+// speaks the subset of Selkies' WebSocket protocol that alia-box's relay and the
 // panel use:
 //
-//   bb-box-stream.exe serve     captures and serves, in box's desktop session
-//   bb-box-stream.exe connect   joins stdin and stdout to the server, starting
+//   alia-box-stream.exe serve     captures and serves, in box's desktop session
+//   alia-box-stream.exe connect   joins stdin and stdout to the server, starting
 //                               it first through its scheduled task
-//   bb-box-stream.exe test      captures for 3 s and encodes a key frame,
+//   alia-box-stream.exe test      captures for 3 s and encodes a key frame,
 //                               saying each step, in the desktop session
-//   bb-box-stream.exe pointer   says whether the pointer is in the captured
+//   alia-box-stream.exe pointer   says whether the pointer is in the captured
 //                               image, in the desktop session, for check.ps1
 //
-// The server listens on the named pipe bb-box-stream, which only box can open.
-// bb-box's relay opens each connection with `connect` over box's SSH, which
+// The server listens on the named pipe alia-box-stream, which only box can open.
+// alia-box's relay opens each connection with `connect` over box's SSH, which
 // carries an HTTP upgrade and then WebSocket frames. The task, which the
 // image's first logon and its refresh register, starts the server in box's
 // desktop session, where the screen and the input are; SSH's session has
@@ -30,7 +30,7 @@
 // clipboard as the very bytes it came as, never encoded again.
 //
 // C# 5, for the compiler in .NET Framework 4.8, which every Windows 11 has:
-//   csc /optimize /unsafe /platform:x64 /r:System.Drawing.dll /r:System.Windows.Forms.dll bb-box-stream.cs
+//   csc /optimize /unsafe /platform:x64 /r:System.Drawing.dll /r:System.Windows.Forms.dll alia-box-stream.cs
 // On arm64, AnyCPU with a manifest that lets it run natively (install-stream.ps1).
 
 using System;
@@ -49,8 +49,8 @@ using System.Text;
 using System.Threading;
 
 static class Program {
-  public const string PIPE = "bb-box-stream";
-  public const string TASK = "bb-box-stream";
+  public const string PIPE = "alia-box-stream";
+  public const string TASK = "alia-box-stream";
   /** A client whose writes fall this far behind gets no frames until it has caught up, then a key frame. */
   public const int BEHIND_BYTES = 16 << 20;
   /** How long the screen is still before the last frame is encoded again, to sharpen it. */
@@ -67,7 +67,7 @@ static class Program {
   public static uint MaskFloatingPoint() { return _controlfp(0x8001F, 0x8001F); }
 
   public static void Log(string text) {
-    Console.Error.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " bb-box-stream: " + text);
+    Console.Error.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " alia-box-stream: " + text);
   }
 
   /** One frame captured and encoded, saying each step: for a check, in the desktop session. */
@@ -83,7 +83,7 @@ static class Program {
       Console.WriteLine("3 s: " + frames + " frames, " + capture.ReleaseFaults + " ReleaseFrame faults");
       byte[] frame = capture.WithPointer();
       Console.WriteLine("pointer drawn");
-      string png = Path.Combine(Path.GetTempPath(), "bb-box-stream-test.png");
+      string png = Path.Combine(Path.GetTempPath(), "alia-box-stream-test.png");
       GCHandle pin = GCHandle.Alloc(frame, GCHandleType.Pinned);
       try { using (Bitmap bitmap = new Bitmap(capture.Width, capture.Height, capture.Width * 4, PixelFormat.Format32bppRgb, pin.AddrOfPinnedObject())) bitmap.Save(png, ImageFormat.Png); } finally { pin.Free(); }
       Console.WriteLine("saved " + png);
@@ -140,7 +140,7 @@ static class Program {
     if (mode == "serve") return new Server().Run();
     if (mode == "test") return SelfTest();
     if (mode == "pointer") return PointerTest();
-    Console.Error.WriteLine("usage: bb-box-stream.exe serve|connect|test|pointer");
+    Console.Error.WriteLine("usage: alia-box-stream.exe serve|connect|test|pointer");
     return 2;
   }
 }
@@ -157,11 +157,11 @@ static class Connect {
       while (pipe == null && waited.ElapsedMilliseconds < 15000) pipe = Open(500);
     }
     if (pipe == null) {
-      Program.Log("the server did not start: see %LOCALAPPDATA%\\bb-box\\stream.log");
+      Program.Log("the server did not start: see %LOCALAPPDATA%\\alia-box\\stream.log");
       return 1;
     }
     Stream input = Console.OpenStandardInput(), output = Console.OpenStandardOutput();
-    string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "bb-box");
+    string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "alia-box");
     if (File.Exists(Path.Combine(folder, "trace"))) trace = new StreamWriter(Path.Combine(folder, "connect-" + Process.GetCurrentProcess().Id + ".log")) { AutoFlush = true };
     Thread down = new Thread(() => { Pump(pipe, output, "out"); Environment.Exit(0); });
     down.IsBackground = true;
@@ -215,7 +215,7 @@ class Client {
   public volatile bool WantsVideo;
   /** Its frames were dropped: it gets none until a key frame. */
   public volatile bool NeedsKey = true;
-  /** Whether it asked where the pointer is (BB_POINTER_FOLLOW): bb-box draws it for people watching (#865). */
+  /** Whether it asked where the pointer is (ALIA_POINTER_FOLLOW): alia-box draws it for people watching (#865). */
   public volatile bool FollowsPointer;
 
   public Client(int id, Stream stream) { Id = id; this.stream = stream; }
@@ -464,7 +464,7 @@ static class Input {
     KeyEvent(vk.Value, down);
   }
 
-  /** A character as itself, whatever key would type it, as bb-box sends one QEMU's VNC server would type otherwise (cd, cu). */
+  /** A character as itself, whatever key would type it, as alia-box sends one QEMU's VNC server would type otherwise (cd, cu). */
   public static void Character(int codePoint, bool down) {
     int keysym = 0x1000000 | codePoint;
     if (down) typed.Add(keysym); else typed.Remove(keysym);
@@ -553,8 +553,8 @@ class Capture : IDisposable {
   /** How often ReleaseFrame failed within, for the log. */
   public int ReleaseFaults;
 
-  /** BB_STREAM_CAPTURE: gdi, or texture to read Desktop Duplication's image through a staging texture. For tests. */
-  static readonly string Mode = Environment.GetEnvironmentVariable("BB_STREAM_CAPTURE") ?? "";
+  /** ALIA_STREAM_CAPTURE: gdi, or texture to read Desktop Duplication's image through a staging texture. For tests. */
+  static readonly string Mode = Environment.GetEnvironmentVariable("ALIA_STREAM_CAPTURE") ?? "";
   bool systemMemory;
   delegate int MapSurface(IntPtr self, IntPtr rect);
 
@@ -617,7 +617,7 @@ class Capture : IDisposable {
       // On the Basic Display adapter the image is in system memory, which a staging texture's copy reads as black.
       // Its duplicated image is also now and then torn while a page scrolls, part of one frame and part of the next,
       // where GDI's copy of the screen is whole (060), so the frame only says the screen changed, and GDI copies it,
-      // once the frame is released. BB_STREAM_CAPTURE=map copies the duplicated image instead.
+      // once the frame is released. ALIA_STREAM_CAPTURE=map copies the duplicated image instead.
       if (Marshal.ReadInt64(info, 0) != 0 && systemMemory && Mode != "texture" && Mode != "map") {
         fromScreen = true;
       } else if (Marshal.ReadInt64(info, 0) != 0 && systemMemory && Mode != "texture") {
@@ -712,13 +712,13 @@ class Capture : IDisposable {
   }
 
   /**
-   * Where the pointer's hot spot is, in the desktop's pixels, as bb-box's BB_POINTER,<x>,<y>; BB_POINTER, while it is
+   * Where the pointer's hot spot is, in the desktop's pixels, as alia-box's ALIA_POINTER,<x>,<y>; ALIA_POINTER, while it is
    * hidden (#865).
    */
   public static string PointerAt() {
     CURSORINFO cursor = new CURSORINFO { size = Marshal.SizeOf(typeof(CURSORINFO)) };
-    if (!GetCursorInfo(ref cursor) || (cursor.flags & 1) == 0) return "BB_POINTER,";
-    return "BB_POINTER," + (cursor.at.x - GetSystemMetrics(76)) + "," + (cursor.at.y - GetSystemMetrics(77));
+    if (!GetCursorInfo(ref cursor) || (cursor.flags & 1) == 0) return "ALIA_POINTER,";
+    return "ALIA_POINTER," + (cursor.at.x - GetSystemMetrics(76)) + "," + (cursor.at.y - GetSystemMetrics(77));
   }
 
   /** A cursor's shape as Selkies' cursor message, its image as PNG and its hot spot, for the panel to show on the browser's pointer; null when it cannot be read. */
@@ -957,7 +957,7 @@ class Server {
   int nextClient;
   DateTime lastClientAt = DateTime.UtcNow;
   volatile bool keyAsked = true;
-  /** Whether the video draws the pointer in, as bb-box's BB_CURSOR last said: not while a person holds control, whose browser shows its shape. */
+  /** Whether the video draws the pointer in, as alia-box's ALIA_CURSOR last said: not while a person holds control, whose browser shows its shape. */
   volatile bool showsCursor = true;
   /** The pointer's shape as Selkies' cursor message, as last sent, for each new client. */
   volatile string cursorMessage;
@@ -995,7 +995,7 @@ class Server {
       }
     }) { IsBackground = true }.Start();
     // Where the pointer is, to the clients that follow it, when it moves: a video that comes from elsewhere, as a Windows
-    // VM's from QEMU on its Mac, has no pointer in it, so bb-box draws it for people watching (#865).
+    // VM's from QEMU on its Mac, has no pointer in it, so alia-box draws it for people watching (#865).
     new Thread(() => {
       while (true) {
         Thread.Sleep(33);
@@ -1037,7 +1037,7 @@ class Server {
         client.Text("MODE websockets");
         string shape = cursorMessage;
         if (shape != null) client.Text(shape);
-        bool trace = File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "bb-box", "trace"));
+        bool trace = File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "alia-box", "trace"));
         for (string text; (text = client.NextText()) != null; ) {
           if (trace) Program.Log("client " + client.Id + ": " + (text.Length > 60 ? text.Substring(0, 60) : text));
           if (text.Length > 0) Handle(text, client);
@@ -1101,18 +1101,18 @@ class Server {
       case "kr":
         Input.Post(Input.ReleaseKeys);
         break;
-      // bb-box: a character as itself, for a key QEMU's VNC server would type otherwise.
+      // alia-box: a character as itself, for a key QEMU's VNC server would type otherwise.
       case "cd": case "cu":
         int codePoint = Field(fields, 1);
         bool pressed = verb == "cd";
         Input.Post(() => { clipboard.WaitPasted(5000); Input.Character(codePoint, pressed); });
         break;
-      // bb-box: says when the messages before it are handled, so a key QEMU takes after a character cannot overtake it.
-      case "BB_PING":
-        if (fields.Length > 1) Input.Post(() => client.Text("BB_PONG," + fields[1]));
+      // alia-box: says when the messages before it are handled, so a key QEMU takes after a character cannot overtake it.
+      case "ALIA_PING":
+        if (fields.Length > 1) Input.Post(() => client.Text("ALIA_PONG," + fields[1]));
         break;
-      // bb-box: where the pointer is, now and as it moves, for a video that has none in it (#865).
-      case "BB_POINTER_FOLLOW":
+      // alia-box: where the pointer is, now and as it moves, for a video that has none in it (#865).
+      case "ALIA_POINTER_FOLLOW":
         client.FollowsPointer = true;
         client.Text(pointerMessage ?? Capture.PointerAt());
         break;
@@ -1124,8 +1124,8 @@ class Server {
         int wheel = Field(fields, 3), notches = Field(fields, 4);
         Input.Post(() => Input.Wheel(wheel, notches));
         break;
-      case "BB_CURSOR":
-        // bb-box: the pointer out of the video while a person holds control, whose browser shows its shape.
+      case "ALIA_CURSOR":
+        // alia-box: the pointer out of the video while a person holds control, whose browser shows its shape.
         bool on = Field(fields, 1) != 0;
         if (on != showsCursor) { showsCursor = on; keyAsked = true; Program.Log("the pointer is " + (on ? "in" : "out of") + " the video"); }
         break;

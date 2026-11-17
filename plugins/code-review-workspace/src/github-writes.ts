@@ -150,7 +150,7 @@ const REFUSALS: { kind: string; match: RegExp; error: string | ((text: string, a
   // unverified (H2): the pending-review conflict
   { kind: "pending-review", match: /pending review/i, error: "You have an unsent review on this PR on GitHub, and GitHub allows one at a time. Submit or discard it on GitHub, then try again." },
   // unverified (H2): a Comment review with an empty body
-  { kind: "body-required", match: /\bbody\b.*\b(blank|required|missing|empty)|\b(blank|missing|empty)\b.*\bbody\b/i, error: "GitHub needs a summary for this review. Add a line, then post again." },
+  { kind: "body-required", match: /\aliaody\b.*\b(blank|required|missing|empty)|\b(blank|missing|empty)\b.*\aliaody\b/i, error: "GitHub needs a summary for this review. Add a line, then post again." },
   // unverified (H2): a comment outside the diff, and whether it fails the whole review
   { kind: "outside-diff", match: /must be part of the (diff|same hunk)|could not be resolved|diff_hunk/i, error: "GitHub couldn't place a comment: its line isn't part of the PR's changes, so nothing was posted. Move it into the summary, then post again." },
   // unverified (H2): reviews and merges on a closed or merged PR

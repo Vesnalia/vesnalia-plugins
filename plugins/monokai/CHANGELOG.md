@@ -1,16 +1,16 @@
-# @smsunarto/bb-plugin-monokai
+# @smsunarto/alia-plugin-monokai
 
 ## 0.3.2
 
 ### Patch Changes
 
-- 3da36f5: Support bb 0.40. The engines floor moves to the tested bb release (`>=0.40.0 <1.0.0`) and the plugin is built against plugin SDK 0.4.21.
+- 3da36f5: Support VesnALIA 0.40. The engines floor moves to the tested VesnALIA release (`>=0.40.0 <1.0.0`) and the plugin is built against plugin SDK 0.4.21.
 
 ## 0.3.1
 
 ### Patch Changes
 
-- 1432728: Support bb 0.39. The engines range is no longer pinned to one minor: it now floors at the tested bb release and excludes only the next major (`>=0.39.0 <1.0.0`), so future bb minors load without a plugin update. Built against plugin SDK 0.4.8.
+- 1432728: Support VesnALIA 0.39. The engines range is no longer pinned to one minor: it now floors at the tested VesnALIA release and excludes only the next major (`>=0.39.0 <1.0.0`), so future VesnALIA minors load without a plugin update. Built against plugin SDK 0.4.8.
 
 ## 0.3.0
 
@@ -18,10 +18,10 @@
 
 - 36c1a79: Paint the syntax tokens. Diffs and file previews were the one surface the
   palette could not reach — Shiki writes an inline style on every span inside a
-  shadow root — so they stayed on bb's `pierre-dark` while everything around them
-  was Monokai. bb 0.38 added `bb.themes[].codeTheme`, which picks the Shiki theme
+  shadow root — so they stayed on VesnALIA's `pierre-dark` while everything around them
+  was Monokai. VesnALIA 0.38 added `alia.themes[].codeTheme`, which picks the Shiki theme
   instead of trying to restyle its output, and the plugin now ships one:
-  `themes/bb-monokai-code.json`, the same TextMate layer as the Cursor Monokai
+  `themes/alia-monokai-code.json`, the same TextMate layer as the Cursor Monokai
   editor theme. Pink machinery, cyan structure, green callables, yellow literals,
   purple constants, gray commentary, white for everything else.
 
@@ -33,9 +33,9 @@
 
 ### Patch Changes
 
-- 55e968e: Fix the code fences in chat messages, which were still bb's blue, red and
-  green. The theme sets the sugar-high variables on `.dark .bb-code-highlight`,
-  and so does bb — from a chunk that only loads once a thread is open. Equal
+- 55e968e: Fix the code fences in chat messages, which were still VesnALIA's blue, red and
+  green. The theme sets the sugar-high variables on `.dark .alia-code-highlight`,
+  and so does VesnALIA — from a chunk that only loads once a thread is open. Equal
   specificity, later sheet wins, so the palette held until the first thread
   opened and lost from then on. Repeating the class outranks it.
 
@@ -47,8 +47,8 @@
 
 ### Minor Changes
 
-- b3ed493: Require bb 0.38 and take the SDK types from the published `@get-bb/plugin-sdk`
-  package. `engines.bb` is now `>=0.38.0 <0.39.0`, so an older bb no longer
+- b3ed493: Require VesnALIA 0.38 and take the SDK types from the published `@vesnalia/plugin-sdk`
+  package. `engines.alia` is now `>=0.38.0 <0.39.0`, so an older VesnALIA no longer
   installs these plugins.
 
   Agent Proxy gains a `routingStrategy` setting (`round-robin`, `fill-first`, or

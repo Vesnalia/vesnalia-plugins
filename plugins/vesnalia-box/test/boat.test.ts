@@ -103,13 +103,13 @@ test("an acquire claims the box before boat makes anything, forks the kind's tem
   assert.equal(made.forkedFrom, templates.linux);
   assert.equal(made.type, "small");
   assert.equal(made.ttlSeconds, 30 * 60);
-  assert.equal(made.idempotencyKey, "bbbox-inst1-b1");
+  assert.equal(made.idempotencyKey, "aliabox-inst1-b1");
   assert.deepEqual(made.labels, { [LABELS.install]: "inst1", [LABELS.backend]: "boat", [LABELS.box]: "b1", [LABELS.thread]: "thr_1", [LABELS.name]: "box-b1", [LABELS.kind]: "linux", [LABELS.created]: String(Date.parse("2030-01-01T00:00:00Z")) });
   assert.equal(made.name, sandboxName(box("b1")));
   assert.equal(fake.calls.find((call) => call.path.endsWith("/fork"))?.body.noEnv, true, "a box never gets the account's secrets");
   assert.equal(fake.calls.find((call) => call.path.endsWith("/fork"))?.body.monitoring, false, "boat keeps no process log of a box, which costs it CPU");
   assert.deepEqual(guest.data, { box: "b1", sandbox: made.id });
-  assert.equal(guest.ref, "bbbox-b1");
+  assert.equal(guest.ref, "aliabox-b1");
   assert.deepEqual(guest.size, { cores: 2, memoryMiB: 4096, diskGiB: 51 });
   assert.deepEqual(recorded.steps, ["fork", "ready", "ssh", "settle"]);
   const transports = await backend.transports(guest, "linux");
@@ -205,7 +205,7 @@ test("release deletes the sandbox with boat's confirmation, and again is nothing
 test("a sandbox that names another box or install is not this guest", async () => {
   const { fake, backend } = setup();
   const other = fake.add({ labels: { [LABELS.install]: "inst2", [LABELS.box]: "b1" } });
-  const guest: Guest = { ref: "bbbox-b1", host: null, address: null, size: null, data: { box: "b1", sandbox: other.id } };
+  const guest: Guest = { ref: "aliabox-b1", host: null, address: null, size: null, data: { box: "b1", sandbox: other.id } };
   assert.equal(await backend.power(guest), null);
   await backend.release(guest, { resetting: async () => {}, timing: () => {} });
   assert.equal(other.state, "ready");

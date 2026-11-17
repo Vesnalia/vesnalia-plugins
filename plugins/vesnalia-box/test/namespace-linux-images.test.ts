@@ -34,7 +34,7 @@ function setup(options: { failBuild?: boolean; slowBuild?: boolean; app?: () => 
     linuxImageScript: (target, key, aliaUrl) =>
       options.failBuild
         ? `cat > ${received}; echo "step 1" >&2; echo "build.sh: no space left" >&2; exit 1`
-        : `cat > ${received}; printf '%s %s\\n' ${target} '${aliaUrl}' >> ${received}.calls; ${options.slowBuild ? `while [ ! -e ${finishBuild} ]; do sleep 0.02; done; ` : ""}echo "nscr.io/ws1/bbbox/${target}:${key}"`,
+        : `cat > ${received}; printf '%s %s\\n' ${target} '${aliaUrl}' >> ${received}.calls; ${options.slowBuild ? `while [ ! -e ${finishBuild} ]; do sleep 0.02; done; ` : ""}echo "nscr.io/ws1/aliabox/${target}:${key}"`,
   });
   const backend = make();
   const building = async () => {
@@ -49,7 +49,7 @@ test("a Linux image is built once in a Linux instance of its own, from VesnALIA 
   const signal = new AbortController().signal;
   const [first, second] = await Promise.all([backend.linuxImages.forBox("linux", signal), backend.linuxImages.forBox("linux", signal)]);
   assert.equal(first.ref, second.ref, "two boxes asking at once share one build");
-  assert.match(first.ref, /^nscr\.io\/ws1\/bbbox\/linux:[0-9a-f]{12}-aaaaaaaaaaaa$/);
+  assert.match(first.ref, /^nscr\.io\/ws1\/aliabox\/linux:[0-9a-f]{12}-aaaaaaaaaaaa$/);
   assert.equal(readFileSync(received, "utf8"), "the setup scripts", "the setup scripts go to the instance on its input");
   assert.equal(readFileSync(`${received}.calls`, "utf8"), "linux https://bb.example\n");
   const created = fake.calls.filter((call) => call.method === "CreateInstance");
@@ -57,7 +57,7 @@ test("a Linux image is built once in a Linux instance of its own, from VesnALIA 
   const instance = [...fake.instances.values()][0]!;
   assert.equal(instance.shape.os, "linux");
   assert.deepEqual([instance.shape.virtualCpu, instance.shape.memoryMegabytes], [8, 16384]);
-  assert.deepEqual(instance.labels, { "bbbox-install": "inst1", "bbbox-backend": "namespace", "bbbox-role": "image-build", "bbbox-target": "linux" });
+  assert.deepEqual(instance.labels, { "aliabox-install": "inst1", "aliabox-backend": "namespace", "aliabox-role": "image-build", "aliabox-target": "linux" });
   assert.equal(instance.status, "DESTROYED");
   assert.equal(await backend.linuxImages.whyBuild("linux"), null);
   await backend.linuxImages.forBox("linux", signal);
@@ -104,7 +104,7 @@ test("a box released while its image builds, the only one waiting, stops the bui
   assert.equal(await backend.linuxImages.record("desktop"), undefined);
   finish();
   const next = await backend.linuxImages.forBox("desktop", new AbortController().signal);
-  assert.match(next.ref, /^nscr\.io\/ws1\/bbbox\/desktop:/);
+  assert.match(next.ref, /^nscr\.io\/ws1\/aliabox\/desktop:/);
   assert.equal(fake.calls.filter((call) => call.method === "CreateInstance").length, 2);
 });
 
@@ -118,7 +118,7 @@ test("two boxes share one build, and one released while it builds leaves the bui
   await assert.rejects(first, /released/);
   assert.equal(backend.linuxImages.building("desktop"), true, "the other box still waits for it");
   finish();
-  assert.match((await second).ref, /^nscr\.io\/ws1\/bbbox\/desktop:/);
+  assert.match((await second).ref, /^nscr\.io\/ws1\/aliabox\/desktop:/);
   assert.equal(fake.calls.filter((call) => call.method === "CreateInstance").length, 1);
 });
 
@@ -191,11 +191,11 @@ test("with the tailnet on, a build machine joins it with a one-off key of its ow
     readyTimeoutMs: 20_000,
     setupArchive: async () => Buffer.from("setup"),
     linuxTailscaleScript: ":",
-    linuxImageScript: (target, key) => (order.push(readFileSync(log, "utf8").includes("tailscale up") ? "built after joining" : "built before joining"), `cat >/dev/null; echo nscr.io/ws/bbbox/${target}:${key}`),
+    linuxImageScript: (target, key) => (order.push(readFileSync(log, "utf8").includes("tailscale up") ? "built after joining" : "built before joining"), `cat >/dev/null; echo nscr.io/ws/aliabox/${target}:${key}`),
   });
   disposed(backend);
   const image = await backend.linuxImages.forBox("linux", new AbortController().signal);
-  assert.match(image.ref, /^nscr\.io\/ws\/bbbox\/linux:/);
+  assert.match(image.ref, /^nscr\.io\/ws\/aliabox\/linux:/);
   assert.deepEqual(order, ["built after joining"]);
   assert.deepEqual(minted, ["VesnALIA Box Namespace build-linux"]);
   const calls = readFileSync(log, "utf8").trim().split("\n");
@@ -223,7 +223,7 @@ test("a reload while an image builds leaves the build running in its instance, a
   assert.ok(lines.includes(`Namespace: alia-box carries on with the desktop image build in instance ${instance!.id}, from its building step, which an earlier run of alia-box left.`));
   finish();
   for (let wait = 0; !(await next.linuxImages.record("desktop")) && wait < 500; wait++) await new Promise((resolve) => setTimeout(resolve, 10));
-  assert.match((await next.linuxImages.record("desktop"))!.ref, /^nscr\.io\/ws1\/bbbox\/desktop:/);
+  assert.match((await next.linuxImages.record("desktop"))!.ref, /^nscr\.io\/ws1\/aliabox\/desktop:/);
   assert.equal(fake.calls.filter((call) => call.method === "CreateInstance").length, 1, "the same instance, not a new one");
   for (let wait = 0; status() !== "DESTROYED" && wait < 200; wait++) await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(status(), "DESTROYED", "once the build ends, its instance goes");
@@ -235,7 +235,7 @@ test("a build instance no build of VesnALIA Box's follows, as one whose record w
   const instance = (id: string, createdAt: number) => ({
     id,
     status: "RUNNING" as const,
-    labels: { "bbbox-install": "inst1", "bbbox-role": "image-build", "bbbox-target": "linux" },
+    labels: { "aliabox-install": "inst1", "aliabox-role": "image-build", "aliabox-target": "linux" },
     shape: { os: "linux", machineArch: "amd64", virtualCpu: 8, memoryMegabytes: 16384, selectors: [] },
     uniqueTag: id,
     sshKeys: [],
@@ -255,7 +255,7 @@ test("a build instance no build of VesnALIA Box's follows, as one whose record w
 
 test("the detached build's progress reads its exit code, its image's name and the log from where it left off (#1032)", () => {
   assert.deepEqual(readBuildProgress("exit=\nref=\nstep 1\n", 0), { exitCode: null, ref: "", log: "step 1\n", nextByte: 7 });
-  assert.deepEqual(readBuildProgress("exit=0\nref=nscr.io/ws1/bbbox/linux:k\n", 7), { exitCode: 0, ref: "nscr.io/ws1/bbbox/linux:k", log: "", nextByte: 7 });
+  assert.deepEqual(readBuildProgress("exit=0\nref=nscr.io/ws1/aliabox/linux:k\n", 7), { exitCode: 0, ref: "nscr.io/ws1/aliabox/linux:k", log: "", nextByte: 7 });
   const start = startDetachedBuildScript("linux", "echo inner");
   assert.match(start, /\[ ! -e "\$d\/started" \] \|\| \{ cat >\/dev\/null; exit 0; \}/, "a second start does nothing");
   assert.match(start, /setsid nohup bash -c/);

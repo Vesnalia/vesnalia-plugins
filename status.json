@@ -8397,7 +8397,7 @@
     },
     "fixes": [],
     "problems": [
-      "сборка не проверялась"
+      "invalid manifest (alia): Invalid input: expected object, received undefined"
     ],
     "warnings": []
   },

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """claude-code-check — does this machine's Claude Code run the release's syns-pages bundle?
 
-What it does, in the release's checkout of synsdev/syns-bb-plugin (the bundle to match is HEAD's
+What it does, in the release's checkout of synsdev/syns-alia-plugin (the bundle to match is HEAD's
 `hosts/claude/bin/syns-pages.mjs`, the one the release's check built and found committed):
   1. update: `claude plugin marketplace update syns`, then `claude plugin update syns-pages@syns` (skipped with
      --no-update);
@@ -171,7 +171,7 @@ def fresh_install(claude, source, plugin_id, want):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--version", required=True, help="the version released")
-    ap.add_argument("--code", default=".", help="the release's checkout of synsdev/syns-bb-plugin (default .)")
+    ap.add_argument("--code", default=".", help="the release's checkout of synsdev/syns-alia-plugin (default .)")
     ap.add_argument("--claude", help="the Claude Code CLI (default: claude on PATH, else ~/.local/bin/claude, where its "
                                      "installer puts it and the runner's PATH does not reach)")
     ap.add_argument("--no-update", action="store_true", help="skip step 1 (read what is installed)")

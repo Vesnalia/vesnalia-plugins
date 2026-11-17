@@ -40,11 +40,11 @@ export function FloatingNotes() {
   // Editor font size for every surface, from settings.
   useEffect(() => {
     document.documentElement.style.setProperty(
-      "--bbnotes-editor-font-size",
+      "--alianotes-editor-font-size",
       `${config.fontSize}px`,
     );
     return () => {
-      document.documentElement.style.removeProperty("--bbnotes-editor-font-size");
+      document.documentElement.style.removeProperty("--alianotes-editor-font-size");
     };
   }, [config.fontSize]);
 

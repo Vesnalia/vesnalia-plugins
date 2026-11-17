@@ -137,7 +137,7 @@ export const TART_SETTINGS: Record<string, PluginSettingDescriptor> = {
     type: "string",
     label: "Tart: Macs",
     description:
-      `One line per Mac: a short name, a space, and the user ${PRODUCT} logs in as, as user@address, with :port when SSH is not on 22. For example mac1 bbbox-admin@192.0.2.20.`,
+      `One line per Mac: a short name, a space, and the user ${PRODUCT} logs in as, as user@address, with :port when SSH is not on 22. For example mac1 aliabox-admin@192.0.2.20.`,
     experimental_multiline: true,
     default: "",
   },
@@ -320,7 +320,7 @@ export function parseHosts(value: string): { hosts: TartHost[]; problems: string
     const [name, target, ...rest] = line.split(/\s+/);
     const match = /^([^@\s]+)@(\[[0-9a-fA-F:.]+\]|[^:@\s]+)(?::(\d+))?$/.exec(target ?? "");
     if (!name || !match || rest.length) {
-      problems.push(`Tart: line ${index + 1} of the Macs must be a name, a space and user@address, for example mac1 bbbox-admin@192.0.2.20.`);
+      problems.push(`Tart: line ${index + 1} of the Macs must be a name, a space and user@address, for example mac1 aliabox-admin@192.0.2.20.`);
       skipped.push(index + 1);
       continue;
     }

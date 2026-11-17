@@ -763,7 +763,7 @@ guest, whatever `gpu.conf` says. Nothing in alia-box reads its new lines yet.
 
   ```text
   helper alia-box-gpu 0.1.0 protocol 1 writes off pve-container 6.1.14 tested
-  serves bbbox
+  serves aliabox
   driver 580.142 since 1793450000
   card <uuid> pci 0000:21:00.0 minor 1 drm card2 renderD129
   remapped <uuid> was minor 0 drm card1 renderD128
@@ -874,7 +874,7 @@ the node has 5.40):
   `proxmox.gpu-report` passes ("The host reports 2 GPUs in VM 9190, written
   just now.") and both GPUs' room comes from the host.
 - `test/gpu-setup.test.ts`: 4 tests of `setup-gpu.sh` and
-  `setup-gpu-report.sh` under a temporary root (`BBBOX_ROOT`), as root as CI
+  `setup-gpu-report.sh` under a temporary root (`ALIABOX_ROOT`), as root as CI
   runs, with a fake `systemctl` that runs each unit's own `ExecStart`, so the
   helper runs as installed, with `--dry-run`. See "After the reviews".
 
@@ -992,7 +992,7 @@ holds for the program that stays installed. Nothing new is offered.
 
 - **Options.** `setup-gpu.sh [--pool <name>]... [--writes off]
   [--downgrade]` installs or upgrades; `setup-gpu.sh --remove` removes.
-  `--pool` adds a pool to those `gpu.conf` lists and `BBBOX_POOL`, and may
+  `--pool` adds a pool to those `gpu.conf` lists and `ALIABOX_POOL`, and may
   be given more than once. A name that cannot be a pool's is refused before
   anything changes; a pool not yet in `/etc/pve/user.cfg` is said.
   `--writes off` is taken. `--writes on` is refused, with words, before
@@ -1057,7 +1057,7 @@ holds for the program that stays installed. Nothing new is offered.
   nothing new writes on its next minute. Unit 2's installer, given a helper
   stopped by hand, waited 30 s, took it as failed and handed the report to
   the timer: seen under real systemd, below. The wait is read from
-  `BBBOX_GPU_REPORT_WAIT` in the process's environment only, never from
+  `ALIABOX_GPU_REPORT_WAIT` in the process's environment only, never from
   `alia-box.env`, and must be 1 to 9999 s.
 - **Removal** starts the timer and waits for its service to write the
   report before it stops the helper. If the timer cannot start or write, as
@@ -1188,7 +1188,7 @@ and so did the doctor's new tests.
 | Opus 2, Astra 3: a failed upgrade across a protocol change left a newer ledger, and the helper put back acted on nothing while the run said "with its ledger" | The backup keeps the ledger, copied again once the old helper stops. A rollback puts it back when the ledger's protocol is now newer than the old helper's, keeping the newer one beside. A fresh report must also be healthy | An upgrade to a protocol-2 copy that wrote its ledger while the installer waited. Before: the ledger stayed protocol 2, and the release before was refused |
 | Opus 1: a downgrade whose stop failed, or stopped but said it failed, said "Nothing was changed" | Any failed stop rolls back, and the helper runs again | Both kinds of failed stop. Before: the helper stayed stopped |
 | Opus 3: a handover with the timer already running left the stopped helper's lines in the report | The timer's service runs once after the helper stops, every time | The handover when the timer cannot be stopped. Before: the `helper` line stayed |
-| Opus 4: `BBBOX_GPU_REPORT_WAIT` could come from `alia-box.env`, unchecked | Read from the process's environment before `alia-box.env` is read, and checked as 1 to 9999 | `abc` in `alia-box.env`, and `abc`, 0, -5 and 10000 given. Before: the env file's value made the wait 0, and the install failed |
+| Opus 4: `ALIABOX_GPU_REPORT_WAIT` could come from `alia-box.env`, unchecked | Read from the process's environment before `alia-box.env` is read, and checked as 1 to 9999 | `abc` in `alia-box.env`, and `abc`, 0, -5 and 10000 given. Before: the env file's value made the wait 0, and the install failed |
 | Opus 5, Astra 6: with a report VM but no report and no helper, the fix named both units | The timer's fix, word for word as before, wherever there is no `helper` line | The whole check. Before: the fix differed |
 | Astra 4: a report dated ahead of VesnALIA's clock passed as fresh | A report dated a minute or more ahead fails, with the host's clock to check | A day and 60 s ahead fail, 30 s passes. Before: ok, "just now" |
 | Astra 5: a `helper` line whose protocol it cannot read hid the check | Any `helper alia-box-gpu` line makes the check, and one it cannot read fails | `protocol broken`. Before: no check |
@@ -1318,7 +1318,7 @@ or setting changes. Writes stay off in both of the helper's units.
   `setup-gpu.sh --writes on` is still refused.
 - **`setup-gpu.sh`** waits 30 s for this release's helper, which reports on
   its first pass, and still 75 s for a helper a rollback puts back, which
-  may write only on its one-minute heartbeat. `BBBOX_GPU_REPORT_WAIT` sets
+  may write only on its one-minute heartbeat. `ALIABOX_GPU_REPORT_WAIT` sets
   both, as before.
 
 ### What was run
@@ -3490,11 +3490,11 @@ offered before it.
   read, says so with the toolkit's fix.
 - **The container.** A GPU box gets `--device <its card's CDI name>`,
   `CUDA_VISIBLE_DEVICES` and `NVIDIA_VISIBLE_DEVICES` set to `GPU-<UUID>`,
-  `NVIDIA_DRIVER_CAPABILITIES=all`, and the labels `bbbox.gpu`,
-  `bbbox.gpu-card` and `bbbox.gpu-part` (the part it was made with). A
-  desktop still gets `BBBOX_GPU=1`, and `BBBOX_GPU_ID` when it can see every
+  `NVIDIA_DRIVER_CAPABILITIES=all`, and the labels `aliabox.gpu`,
+  `aliabox.gpu-card` and `aliabox.gpu-part` (the part it was made with). A
+  desktop still gets `ALIABOX_GPU=1`, and `ALIABOX_GPU_ID` when it can see every
   card: when privileged, or when its CDI name is `all`, where it is the
-  card's UUID. `BBBOX_GPU_CARD` names the card for the box's start script.
+  card's UUID. `ALIABOX_GPU_CARD` names the card for the box's start script.
 - **Every route.** The container's environment reaches `docker exec`:
   `box_run`, the box page's terminal and VesnALIA's daemon with what it starts.
   After the box is ready, alia-box writes the two variables into
@@ -3503,7 +3503,7 @@ offered before it.
   started from a clean environment gets them too. A desktop's launcher,
   `setup/docker/start`, starts its session and services (XFCE, Cua Driver,
   Selkies) from a clean environment, so it now adds both variables from
-  `BBBOX_GPU_CARD`, past the `NVIDIA_VISIBLE_DEVICES=void` a CDI spec may
+  `ALIABOX_GPU_CARD`, past the `NVIDIA_VISIBLE_DEVICES=void` a CDI spec may
   set; that needs desktop images built from this branch. Servers need no
   image change, so the gate uses production's images on the owner's host.
 - **The check after start**, after an acquire and after each start of a box
@@ -3601,7 +3601,7 @@ them:
 ### The rehearsal on a box with a fake card
 
 On a `linux` box with Docker 29.1.3, the real path with a card that is not
-there: `bbbox/linux:1` built from `setup/docker/build.sh linux`; a CDI spec in
+there: `aliabox/linux:1` built from `setup/docker/build.sh linux`; a CDI spec in
 `/etc/cdi` written as WSL's is, with only `nvidia.com/gpu=all`, giving two
 fake cards, a fake `nvidia-smi` and a fake `libcuda.so.1` (C, honouring
 `CUDA_VISIBLE_DEVICES`). Docker listed the device as soon as the file was
@@ -3663,7 +3663,7 @@ line, each failing its tests.
 | The card lock and reservations were a backend instance's, so two backends on one daemon could both take a card whole (Astra 2) | The lock, the reservations and the cards left out are the Docker daemon's, by its ID, shared by every instance on it; switched parts are in the backend's storage, which its instances share. Of two backends of the install on one daemon, only the one whose ID sorts first makes boxes; the other refuses, for each audience, and the doctor's new `docker.one-backend` fails on it and warns on the first |
 | A CUDA that found no device passed when `cuInit` returned 100 before its card was read (Astra 3) | CUDA's device answer is read whenever `nvidia-smi` lists the card, and a `cuInit` of 100 with the card listed is no device: both are a wrong card |
 | A fresh box that failed its check was refused, not made again on another card, and the results said the registry would retry, which it does not (Astra 6, Fable 2) | Within the acquire, the box is removed, its card left out for 10 minutes and its record moved, and it is placed and made once more on another card; when that fails too, or no card can take it, it is refused naming each card and why. The results' words are corrected |
-| The desktop's session and services lost both variables in the launcher's clean environment (Astra 4) | `setup/docker/start` adds them from `BBBOX_GPU_CARD`, which alia-box sets on every GPU box; `BBBOX_GPU_ID` is passed to a desktop that sees every card: privileged, or on `nvidia.com/gpu=all` (Fable) |
+| The desktop's session and services lost both variables in the launcher's clean environment (Astra 4) | `setup/docker/start` adds them from `ALIABOX_GPU_CARD`, which alia-box sets on every GPU box; `ALIABOX_GPU_ID` is passed to a desktop that sees every card: privileged, or on `nvidia.com/gpu=all` (Fable) |
 | The privileged-box words left out CPU desktops and were not in the New box form (Astra 5) | They come from the host's privilege and its cards, for every kind, with GPU boxes on or off: the `Cards` fact, `box_list` once per kind, and a line under Resources in the New box form for the provider a box would go to |
 | Devices named by index whose cards could not be read refused every GPU desktop (Fable 1) | They are kept by device: shared boxes go on them, with no CUDA variables and no check, as before this unit; whole, and a switch to whole, are refused on them |
 | A box with no GPU ran the probe (Fable) | The reach words come from `docker info`'s devices, so a box with no GPU never reads the cards |
@@ -3703,7 +3703,7 @@ this unit merges.
 alia-app@0.48.1` with no account, as a transient systemd unit, listening on
 127.0.0.1 only, with alia-box from a tarball of `dd6f4370` (without `docs/` and
 `site/`), enrolment and nightly images off, whole cards on, and a Docker
-backend on the distribution's own Docker socket, network `bbbox-gate`, GPU
+backend on the distribution's own Docker socket, network `aliabox-gate`, GPU
 boxes on and no desktop images, so nothing left the host. It used the
 images production's alia-box had built there that day, and built none. Every
 box was made, run, resized and released through the test VesnALIA's CLI, `alia box
@@ -3717,14 +3717,14 @@ did to a file, and each ended "done".
 | C3 (15:59) | The doctor as above, and no other backend of the test install on the daemon. `alia box kinds --json`: `linux` offers gpu none, shared and whole; card 0 with no box, 31,244 MiB free, free for a whole card; 1,024 MiB needed; the reach words on every kind offered |
 | D0 | The card 0 per cent busy, 944 MiB in use. No alia-box container on the daemon, of any install |
 | D1, a privileged box with no GPU | `alia box acquire linux --gpu none`, ready in 1.8 s: its status has the Cards line and no GPU line; Docker shows it privileged with no device request and no card label. Through `alia box run`, as root in the box, `/dev/dxg` (`crw-rw-rw-`) opened; no `libcuda` and no `CUDA_VISIBLE_DEVICES`: it can open the card, as the words say, though alia-box gave it none |
-| D2, a shared server | `alia box acquire linux --gpu shared`, ready in 3.0 s, with "gpu 0.3 s, card check 0.5 s": claim the card's UUID, shared, generation 1, granted. Status: "GPU: card 0, shared, NVIDIA GeForce RTX 5090, 32 GiB. Run nvidia-smi -i GPU-<UUID> to see it; every card on the host is listed." and the Cards line. Docker: privileged, a `cdi` request for `nvidia.com/gpu=all`, labels with the card and `shared`, and `CUDA_VISIBLE_DEVICES`, `NVIDIA_VISIBLE_DEVICES` and `BBBOX_GPU_CARD` set to the card. In it, `/etc/environment` had both variables, `nvidia-smi -L` listed the card, and `nvidia-smi -i "$NVIDIA_VISIBLE_DEVICES"` named it |
+| D2, a shared server | `alia box acquire linux --gpu shared`, ready in 3.0 s, with "gpu 0.3 s, card check 0.5 s": claim the card's UUID, shared, generation 1, granted. Status: "GPU: card 0, shared, NVIDIA GeForce RTX 5090, 32 GiB. Run nvidia-smi -i GPU-<UUID> to see it; every card on the host is listed." and the Cards line. Docker: privileged, a `cdi` request for `nvidia.com/gpu=all`, labels with the card and `shared`, and `CUDA_VISIBLE_DEVICES`, `NVIDIA_VISIBLE_DEVICES` and `ALIABOX_GPU_CARD` set to the card. In it, `/etc/environment` had both variables, `nvidia-smi -L` listed the card, and `nvidia-smi -i "$NVIDIA_VISIBLE_DEVICES"` named it |
 | D3, `box_run`'s route, the one load | `cuda-card.py load` through `alia box run`: CUDA's device 0 the card's UUID, one device, and "64 MiB allocated, set and freed on device 0, result 0", in 1.1 s. The card read four times a second, card-wide: 944 MiB in use before (median of 13), 946 at most during (12), 944 after. The 2 MiB is WSL's card-wide reading of a CUDA context and a 64 MiB load, which CUDA reported made, set and freed: under WSL that figure does not follow a box's allocation as it does on Linux. The load was under 1 GiB and 60 s either way |
 | D4, a terminal | The box page's terminal route, a WebSocket to the test VesnALIA, the box user's login shell: both variables the card's, and CUDA's device 0 the card |
 | D5, a service | Started detached through `sudo -i` from an environment without the variables, so only `/etc/environment`, through PAM, could give them: CUDA's device 0 the card, and the process ended. A login from an empty environment had `CUDA_VISIBLE_DEVICES` set to the card |
 | D6 | With `CUDA_VISIBLE_DEVICES` naming another UUID, CUDA returned 100 with no device: the variable picks the card |
 | D7, whole and the switch | The check: "GPU: shared → whole card 0 · Live", with the reach words. The switch, live in 0.8 s: "GPU: card 0, whole, ...". A shared acquire was refused before any container: "No card on <host> can take a shared GPU now: card 0 is <box>'s whole card (in thread ...)". `--gpu none --check` refused: "cannot lose card 0 on Docker: a container's devices are fixed when it is made". The doctor: "GPU 0 whole: Card 0 is <box>'s whole card, with no other box on it." Back to shared, live in 0.8 s |
 | D8 (16:00) | The test box released; the daemon's alia-box containers the same as at D0, none; none of the test install's left; the card 0 per cent busy, 944 MiB in use |
-| Clean-up (16:00) | No test container left; the unit stopped and nothing answering on its port; `bbbox-gate` and the test VesnALIA's folder removed; `/etc/cdi/nvidia.yaml` kept |
+| Clean-up (16:00) | No test container left; the unit stopped and nothing answering on its port; `aliabox-gate` and the test VesnALIA's folder removed; `/etc/cdi/nvidia.yaml` kept |
 
 The doctor also warned, as for any Docker host without it, that the host has
 no LXCFS, and that no nightly image rebuild had run on the test VesnALIA, whose
@@ -5465,7 +5465,7 @@ installed from this branch and enrolment and nightly images off. Docker 29.1.3
 in the same box was its Docker backend, with GPU boxes on, no desktop images,
 and two fake cards as units 11 and 14 had: a CDI spec with only
 `nvidia.com/gpu=all`, a fake `nvidia-smi` and a fake `libcuda.so.1`, each
-card an "NVIDIA RTX 4090 (fake)" of 24 GiB. `bbbox/linux:1` was built there
+card an "NVIDIA RTX 4090 (fake)" of 24 GiB. `aliabox/linux:1` was built there
 with `setup/docker/build.sh linux`. The lead added a Proxmox LXC backend on
 the lent pool, VMIDs 3240 to 3244, with `desktops-per-gpu` 2, whole cards
 off, and alia-box-gpu 0.4.3 with writes on. Everything on the settings page was

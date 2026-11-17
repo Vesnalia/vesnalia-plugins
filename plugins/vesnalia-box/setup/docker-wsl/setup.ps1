@@ -16,11 +16,11 @@
 param(
   [Parameter(Mandatory)] [string] $Key,
   # The distribution, and the Linux user alia-box logs in as.
-  [string] $Name = "bbdocker",
+  [string] $Name = "aliadocker",
   [string] $User = "box",
   # Windows' own OpenSSH keeps port 22.
   [int] $Port = 2222,
-  [string] $Path = "C:\WSL\bbdocker",
+  [string] $Path = "C:\WSL\aliadocker",
   # Memory for the whole WSL VM, such as 24GB. Empty keeps WSL's default:
   # half the PC's memory.
   [string] $Memory = "",

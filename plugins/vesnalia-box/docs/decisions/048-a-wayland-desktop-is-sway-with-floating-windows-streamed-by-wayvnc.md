@@ -194,7 +194,7 @@ the element's frame instead:
    `build.sh desktop <vmid> --cpu --wayland`, listed in the settings with
    its own templates. The doctor calls them "CPU Wayland desktop"
    templates.
-2. Docker: an image `bbbox/linux-desktop-wayland:1`, from the same
+2. Docker: an image `aliabox/linux-desktop-wayland:1`, from the same
    customize script. Its start script runs Sway, wayvnc and Cua as it runs
    the X11 desktop's.
 3. Tart on arm64 later, once Sway, wayvnc and Cua's arm64 build are
@@ -284,7 +284,7 @@ who wants GNOME itself may get `linux-desktop-gnome` later. It would:
 4. **`computer.ts`**: the click at an element's centre, with tests against
    a fake Cua.
 5. **Conformance**: the kind in the suite, with a resize and computer use.
-6. **Docker**: the `bbbox/linux-desktop-wayland:1` image and its offer.
+6. **Docker**: the `aliabox/linux-desktop-wayland:1` image and its offer.
 7. **Docs**: the architecture, the setup guides and the kinds table, with
    each PR.
 

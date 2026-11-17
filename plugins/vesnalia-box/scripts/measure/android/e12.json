@@ -30,7 +30,7 @@
   {
     "tool": "shell",
     "background": true,
-    "command": "adb shell am instrument -w -e seconds 8 bbbox.probe/.Holds",
+    "command": "adb shell am instrument -w -e seconds 8 aliabox.probe/.Holds",
     "out": "/tmp/holds.out"
   },
   {
@@ -45,7 +45,7 @@
   {
     "tool": "shell",
     "background": true,
-    "command": "adb shell am instrument -w -e seconds 8 bbbox.probe/.Plain",
+    "command": "adb shell am instrument -w -e seconds 8 aliabox.probe/.Plain",
     "out": "/tmp/plain.out"
   },
   {

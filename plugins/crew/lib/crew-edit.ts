@@ -1,4 +1,4 @@
-// Edits behind the fullscreen crew editor (BBP-80). Same contract as
+// Edits behind the fullscreen crew editor (ALIAP-80). Same contract as
 // crewfile.ts: YAML text in, YAML text out, worked on the YAML document so
 // comments and the human's order survive. Validation stays with validateCrew.
 import YAML, { isMap, isSeq, type Document, type YAMLMap } from "yaml";

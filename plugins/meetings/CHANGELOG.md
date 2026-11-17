@@ -3,7 +3,7 @@
 ## 0.3.1 — 2026-10-27
 
 - **Deaf-bot guard.** When the meeting shows people speaking but the bot records digital silence (seen on Zoom on 2026-10-27: computer audio "connected", indicators busy, recording and every WebRTC track exactly zero), the bot notices within ~45 s and recovers by itself: it rejoins the meeting audio twice (Zoom: default speaker, "Leave Computer Audio", Join Audio), then reloads the meeting page and joins again, waiting room included, while ffmpeg keeps recording. Still deaf: a warning «Бот не слышит участников встречи…» with what was tried shows on the live card and the detail page, the requesting thread gets one message, and the audio rejoin repeats every 3 min. The warning clears when sound returns. Silent meetings, sticky indicators (screen share) and a lone bot never trigger it. Every decision is in `events.jsonl`; tuning via `speakerSelectors.deafGuard`.
-- `state.json` gains an optional `audioIssue`; `MeetingSummary` an optional `warning`; `bb meetings show`, `meetings_status` and `bb meetings api show/list` include it.
+- `state.json` gains an optional `audioIssue`; `MeetingSummary` an optional `warning`; `alia meetings show`, `meetings_status` and `alia meetings api show/list` include it.
 - Mock meeting: `deaf=rejoin|reload|forever`, a Zoom-like "More audio controls" menu, `speaker=other`, `silent=1`, `sticky=<name>`, `loops=N`; e2e scenarios `deaf-rejoin`, `deaf-reload`, `deaf-forever`, `deaf-silent`.
 - Deaf-bot guard hardening (review): a sticky indicator that flickers off and on (re-render, screen share) no longer counts as speaker changes; a sub-second burst on a WebRTC track no longer counts as recovered; an escalated episode that relapses warns again but keeps the 3-minute rejoin cadence; the Telemost/Meet/Jitsi media kick only restarts the meeting's live streams, never the page's file-backed UI sounds (Jitsi's ringing and chimes would have been recorded and faked a recovery); an overrunning Zoom audio rejoin is called off instead of clicking on in the background; the recording is measured in full across slow sampler ticks and always on whole samples; Zoom's Russian "Выйти из аудиоконференции" is no longer blocked by the meeting-control filter.
 - **Deaf-bot guard: capture mode.** The second way to an empty recording is caught too: the participants' WebRTC tracks carry sound (≥ -40 dBFS for ≥ 10 s of the 45 s window, the bot not alone) while `audio.pcm` stays below -80 dBFS throughout. It needs no speaking indicators, so it also works on Telemost, Meet and Jitsi. Same recovery ladder and warning, with its own text «Бот слышит участников, но звук не попадает в запись…»; such an episode counts as recovered only when the recording has sound again (the tracks had it all along). `audioIssue` gains an optional `reason` (`"deaf"` | `"capture"`). Tuning: `speakerSelectors.deafGuard.capture` (`"act"` default, `"log"`, `"off"`), `captureTrackLevel`, `captureSoundMs`. Replayed on all 14 real recordings: no action on any normal meeting, even with a 100 times lower track threshold, 0.5 s of sound and a 20 s window; the incident is handled exactly as before. Mock meeting `capture=rejoin|forever`, e2e scenario `deaf-capture`.
@@ -25,9 +25,9 @@
 - Keep independent recording profiles/audio sinks, preserve signed-in profiles across Zoom retries, and prohibit outgoing screen sharing while retaining the avatar camera and microphone.
 - Add compact settings, per-meeting recording/transcription/analysis options, avatar generation and failed-join retry.
 - Add five summary templates, custom template editing/copying, exact applied-rule snapshots, structured decisions/tasks/risks/chapters/follow-up, speech metrics and grounded cross-meeting Q&A.
-- Use the requesting BB agent by default; optionally configure an OpenAI-compatible analysis API. Model failures never produce a fabricated successful analysis.
-- Add portable MCP stdio through the official BB CLI, authenticated stateless HTTP MCP/REST, rotatable personal access tokens and signed completion webhooks with final transcript data and explicit truncation metadata.
-- Keep external-agent integrations on the same BB registry through the authenticated CLI and optional transport adapters.
+- Use the requesting VesnALIA agent by default; optionally configure an OpenAI-compatible analysis API. Model failures never produce a fabricated successful analysis.
+- Add portable MCP stdio through the official VesnALIA CLI, authenticated stateless HTTP MCP/REST, rotatable personal access tokens and signed completion webhooks with final transcript data and explicit truncation metadata.
+- Keep external-agent integrations on the same VesnALIA registry through the authenticated CLI and optional transport adapters.
 - Cancel pending analysis/delivery on unload or meeting deletion; audio-only completion never waits for ASR.
 - Add a compact recording-file import dialog and close speaker attribution at the stop request instead of after browser cleanup.
 
@@ -42,7 +42,7 @@
   - The **Бот** card sets the name participants see.
   - An uploaded avatar turns the bot's camera on: the avatar in a circle with the name, rendered on the recording machine.
   - Settings: `showAvatar`, `googleClientId`, `googleClientSecret`, `calendarOvertimeMinutes`.
-- **CLI.** `bb meetings google [sync|disconnect]`, `bb meetings bot`. The `bb meetings api` calendar action now includes Google.
+- **CLI.** `alia meetings google [sync|disconnect]`, `alia meetings bot`. The `alia meetings api` calendar action now includes Google.
 
 ## 0.1.0 — 2026-10-13
 
@@ -56,12 +56,12 @@ First release.
   TitaNet voice embeddings refine the speakers.
 - Live transcription with local GigaAM v3 (the `gigaam` plugin) and Silero
   VAD. The final transcript is ready 1–3 minutes after the meeting ends.
-- **Встречи** page in bb: join form, live view with remote control for
+- **Встречи** page in VesnALIA: join form, live view with remote control for
   captchas and sign-in, audio player, speakers with renaming, transcript with
   search, Markdown summary, and downloads (md, txt, srt, vtt, json, audio).
-- `bb meetings` CLI and 7 agent tools. The thread that started a recording
+- `alia meetings` CLI and 7 agent tools. The thread that started a recording
   gets a notification with a summary request when the meeting ends.
 - Optional Zoom account sign-in for the bot, ICS calendar auto-join,
   full-text search across all transcripts, and import of existing recordings.
-- `bb meetings doctor` / `setup` install the runtime. The per-version runtime
+- `alia meetings doctor` / `setup` install the runtime. The per-version runtime
   reinstalls itself automatically after plugin updates.

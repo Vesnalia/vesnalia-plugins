@@ -23,12 +23,12 @@ export function activityLabel(view: { activity: string; thread: string; needsYou
   return view.activity;
 }
 
-/** Running reads blue (BBP-95); the host's primary is neutral and already marks the selection. */
+/** Running reads blue (ALIAP-95); the host's primary is neutral and already marks the selection. */
 export const RUNNING = "var(--timeline-accent)";
 
 export type ReasonSeverity = "error" | "decision";
 
-/** BBP-95: only a real failure is red — everything else that waits on a human decision is amber. */
+/** ALIAP-95: only a real failure is red — everything else that waits on a human decision is amber. */
 const ERROR_REASONS: ReadonlySet<NeedsReason> = new Set(["error", "merge-conflict"]);
 
 export function reasonSeverity(reason: NeedsReason): ReasonSeverity {
@@ -92,7 +92,7 @@ export function topReasonLabel(reasons: readonly string[]): string | null {
  * Node colour by activity and needs-you reason, from the VesnALIA theme. A real
  * error wins over everything else; a reason that only waits on a human
  * decision (an approval, a ready merge request, a question) is amber, not
- * red (BBP-95).
+ * red (ALIAP-95).
  */
 export function activityTone(activity: string, reasons: readonly string[]): string {
   if (hasErrorReason(reasons)) return "var(--destructive)";
@@ -113,7 +113,7 @@ export function activityTone(activity: string, reasons: readonly string[]): stri
 /**
  * Colours per severity, written as var() with a fallback and color-mix() for
  * tints rather than named Tailwind classes (bg-warning/10, text-warning-text),
- * the pattern alia-plugin-aside uses for host tokens (BBP-95).
+ * the pattern alia-plugin-aside uses for host tokens (ALIAP-95).
  */
 export const SEVERITY_COLOR: Record<ReasonSeverity, string> = { error: "var(--destructive)", decision: "var(--warning)" };
 export const SEVERITY_TEXT_COLOR: Record<ReasonSeverity, string> = {

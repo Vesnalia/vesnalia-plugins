@@ -110,7 +110,7 @@ describe("claude skill plugins", () => {
       nameOf(
         ensureClaudeSkillPlugin({
           pluginsRoot,
-          root: { id: "global-skills:bbbb", path: second },
+          root: { id: "global-skills:aliabb", path: second },
         }),
       ),
     ).toBe(CLAUDE_SKILL_PLUGIN_NAME);
@@ -123,7 +123,7 @@ describe("claude skill plugins", () => {
     });
     const b = ensureClaudeSkillPlugin({
       pluginsRoot,
-      root: { id: "global-skills:bbbb", path: second },
+      root: { id: "global-skills:aliabb", path: second },
       takenNames,
     });
     expect(nameOf(a)).toBe(CLAUDE_SKILL_PLUGIN_NAME);

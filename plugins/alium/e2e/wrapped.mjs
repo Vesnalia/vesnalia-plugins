@@ -18,12 +18,12 @@ const js = (file) => stripTypeScriptTypes(source(file)).replaceAll('.ts"', '.js"
 
 const mono = "font: 16px/24px monospace; width: 20ch; margin: 0 0 24px";
 const page_html = `<!doctype html><html><body style="margin:24px;font:16px sans-serif">
-<p style="${mono}">aaaaaaaaaaaaaa <a id="wrapped" href="#w">bbbb cccc</a> dddd</p>
+<p style="${mono}">aaaaaaaaaaaaaa <a id="wrapped" href="#w">aliabb cccc</a> dddd</p>
 <p><a id="normal" href="#n">Normal link</a> <button id="button">Button</button></p>
 <p style="position:relative;width:max-content"><a id="covered" href="#c">Covered link</a>
   <span style="position:absolute;inset:-4px;background:#fdd"></span></p>
 <div id="box" style="${mono};height:24px;overflow:auto">
-  <p style="margin:0">aaaaaaaaaaaaaa <a id="scrolled" href="#s">bbbb cccc</a> dddd</p><p>filler</p><p>filler</p></div>
+  <p style="margin:0">aaaaaaaaaaaaaa <a id="scrolled" href="#s">aliabb cccc</a> dddd</p><p>filler</p><p>filler</p></div>
 <script type="module">
   import { createHints } from "/hints.js";
   import { buildCss, parseTheme } from "/style.js";
@@ -31,7 +31,7 @@ const page_html = `<!doctype html><html><body style="margin:24px;font:16px sans-
   style.textContent = buildCss(parseTheme(undefined), "");
   document.head.append(style);
   document.getElementById("box").scrollTop = 24;
-  // el.click() carries no coordinates; pointerdown carries the ones bbium aimed at.
+  // el.click() carries no coordinates; pointerdown carries the ones alium aimed at.
   window.clicks = [];
   let onTarget = false;
   document.addEventListener("pointerdown", (e) => {
@@ -75,7 +75,7 @@ try {
   check("fixture: links wrap, center misses", fixture.every((f) => f.lines === 2 && f.centerMisses), JSON.stringify(fixture));
 
   await page.keyboard.press("f");
-  const labels = await page.$$eval("[data-bbium-root] .bbium-hint", (ns) =>
+  const labels = await page.$$eval("[data-alium-root] .alium-hint", (ns) =>
     ns.filter((n) => n.style.display !== "none").map((n) => {
       const r = n.getBoundingClientRect();
       return { label: n.textContent, left: r.left, top: r.top };

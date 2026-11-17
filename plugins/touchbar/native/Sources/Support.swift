@@ -3,15 +3,15 @@ import AppKit
 enum NativeConfig {
     static var applicationSupport: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/BBTouchBar", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/AliaTouchBar", isDirectory: true)
     }
 
-    static var bbExecutable: String? {
-        if let explicit = ProcessInfo.processInfo.environment["BB_TOUCHBAR_BB_BIN"],
+    static var aliaExecutable: String? {
+        if let explicit = ProcessInfo.processInfo.environment["ALIA_TOUCHBAR_ALIA_BIN"],
            FileManager.default.isExecutableFile(atPath: explicit) {
             return explicit
         }
-        let pathFile = applicationSupport.appendingPathComponent("bb-path")
+        let pathFile = applicationSupport.appendingPathComponent("alia-path")
         if let configured = try? String(contentsOf: pathFile, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !configured.isEmpty,
@@ -20,16 +20,16 @@ enum NativeConfig {
             return configured
         }
         let environment = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        let candidates = ["/usr/local/bin/bb", "/opt/homebrew/bin/bb"]
-            + environment.split(separator: ":").map { "\($0)/bb" }
+        let candidates = ["/usr/local/bin/alia", "/opt/homebrew/bin/alia"]
+            + environment.split(separator: ":").map { "\($0)/alia" }
         let found = candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-        if found == nil { NativeLog.info("bb executable not found") }
+        if found == nil { NativeLog.info("alia executable not found") }
         return found
     }
 
     static var debug: Bool {
         ["1", "true", "yes", "on"].contains(
-            ProcessInfo.processInfo.environment["BB_TOUCHBAR_DEBUG"]?.lowercased() ?? ""
+            ProcessInfo.processInfo.environment["ALIA_TOUCHBAR_DEBUG"]?.lowercased() ?? ""
         )
     }
 }
@@ -40,7 +40,7 @@ enum NativeLog {
         let directory = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let file = directory.appendingPathComponent("bb-touchbar.log")
+        let file = directory.appendingPathComponent("alia-touchbar.log")
         if !FileManager.default.fileExists(atPath: file.path) {
             FileManager.default.createFile(atPath: file.path, contents: nil)
         }
@@ -50,7 +50,7 @@ enum NativeLog {
     }()
 
     static func info(_ message: String) {
-        let line = Data("[bb-touchbar] \(message)\n".utf8)
+        let line = Data("[alia-touchbar] \(message)\n".utf8)
         lock.lock()
         defer { lock.unlock() }
         FileHandle.standardError.write(line)

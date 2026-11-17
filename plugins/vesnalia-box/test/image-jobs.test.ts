@@ -202,19 +202,19 @@ test("a failed image is tried again once VesnALIA's app changes, and an image wa
   assert.deepEqual(full.pending, [1], "room for a build box beside the trial box");
 
   // A backend that builds without a box, as Docker's build script does, needs room for the trial box alone.
-  const docker = backend("docker", [build("bbbox/linux:1", "linux", record(10))], { full: "The host has 2 GiB of memory free.", boxless: true });
+  const docker = backend("docker", [build("aliabox/linux:1", "linux", record(10))], { full: "The host has 2 GiB of memory free.", boxless: true });
   const alone = await jobs([docker.backend]).job.refreshAll();
   assert.deepEqual([alone.lines[0]!.outcome, alone.lines[0]!.detail], ["waiting", "no room for its trial box: The host has 2 GiB of memory free."]);
   assert.deepEqual(docker.pending, [0]);
 
   // A backend with room for its boxes but not to build, as a host short of disk where it builds, waits too, saying why (053).
-  const disk = backend("microsandbox", [build("bbbox/linux:1-arm64", "linux-arm64", record(10))], { boxless: true, short: "The Mac has 37 GiB free where msb keeps its images." });
+  const disk = backend("microsandbox", [build("aliabox/linux:1-arm64", "linux-arm64", record(10))], { boxless: true, short: "The Mac has 37 GiB free where msb keeps its images." });
   const short = jobs([disk.backend]);
   const skipped = await short.job.refreshAll();
   assert.deepEqual([skipped.lines[0]!.outcome, skipped.lines[0]!.detail], ["waiting", "no room for its build: The Mac has 37 GiB free where msb keeps its images."]);
   assert.deepEqual(short.refreshed, []);
   assert.equal(skipped.ok, true, "waiting is not failing");
-  assert.match((await short.job.checks()).find((one) => one.id === "images.microsandbox/bbbox/linux:1-arm64")!.detail, /waited: no room for its build: The Mac has 37 GiB free where msb keeps its images\. It waits for the next night\.$/);
+  assert.match((await short.job.checks()).find((one) => one.id === "images.microsandbox/aliabox/linux:1-arm64")!.detail, /waited: no room for its build: The Mac has 37 GiB free where msb keeps its images\. It waits for the next night\.$/);
 });
 
 test("the failures the settings page's Status lists: each standard image whose last rebuild failed, with its kind, on a backend that is on; waiting is not failing, and a rebuild that passes clears it", async () => {
@@ -222,7 +222,7 @@ test("the failures the settings page's Status lists: each standard image whose l
   const on = { backends: [lxc.backend] };
   const { job, storage } = jobs(on.backends, { fail: ["9101"] });
   await job.refreshAll();
-  await storage.set("images/state/docker/bbbox/linux:1", { at: NOW, ok: false, reason: "a backend since removed", build: null, seconds: 1, output: [], from: "x" });
+  await storage.set("images/state/docker/aliabox/linux:1", { at: NOW, ok: false, reason: "a backend since removed", build: null, seconds: 1, output: [], from: "x" });
   await storage.set("images/state/proxmox-lxc/9103", { at: NOW, ok: false, waiting: true, reason: "no room", build: null, seconds: 0, output: [], from: "x" });
   assert.deepEqual(await job.failures(), [{ name: "proxmox-lxc/9101", backend: "proxmox-lxc", kind: "linux-desktop-cpu", at: NOW + 60_000, reason: "The new build failed the kind's check: docker FAIL" }]);
   const passing = new ImageJobs({

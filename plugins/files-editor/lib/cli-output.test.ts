@@ -50,15 +50,15 @@ describe("clipLinesForCli", () => {
 
   it("drops whole lines rather than cutting one in half", () => {
     // "aaaa\n" is 5 bytes, so only the first fits in 9.
-    const result = clipLinesForCli(["aaaa", "bbbb", "cccc"], 9);
+    const result = clipLinesForCli(["aaaa", "aliabb", "cccc"], 9);
     expect(result.text).toBe("aaaa\n");
     expect(result.omitted).toBe(2);
   });
 
   it("counts each line's newline against the budget", () => {
     // Exactly 10 bytes of payload + 2 newlines needs 12.
-    expect(clipLinesForCli(["aaaaa", "bbbbb"], 11).omitted).toBe(1);
-    expect(clipLinesForCli(["aaaaa", "bbbbb"], 12).omitted).toBe(0);
+    expect(clipLinesForCli(["aaaaa", "aliabbb"], 11).omitted).toBe(1);
+    expect(clipLinesForCli(["aaaaa", "aliabbb"], 12).omitted).toBe(0);
   });
 
   it("measures bytes, not characters", () => {

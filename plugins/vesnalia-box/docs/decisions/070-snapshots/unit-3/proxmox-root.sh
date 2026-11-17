@@ -3,11 +3,11 @@ set -euo pipefail
 usage() {
   cat >&2 <<'TEXT'
 The root steps of 070 unit 3's live check, on the Proxmox node. Each acts
-only on the VMIDs in BBBOX_VMIDS whose guests carry the tag
-install.<BBBOX_INSTALL> (alia-box's boxes, held copies and earlier guests all
+only on the VMIDs in ALIABOX_VMIDS whose guests carry the tag
+install.<ALIABOX_INSTALL> (alia-box's boxes, held copies and earlier guests all
 do), and on snapshots that install labelled.
 
-  live: BBBOX_VMIDS="3240 3241" BBBOX_INSTALL=<id> proxmox-root.sh <command> <vmid> [snapshot]
+  live: ALIABOX_VMIDS="3240 3241" ALIABOX_INSTALL=<id> proxmox-root.sh <command> <vmid> [snapshot]
 
   lock <vmid>
       leaves <vmid> locked (rollback), as a rollback task that died does (gate G7)
@@ -44,23 +44,23 @@ do), and on snapshots that install labelled.
 TEXT
   exit 2
 }
-[ $# -ge 2 ] && [ -n "${BBBOX_VMIDS:-}" ] && [ -n "${BBBOX_INSTALL:-}" ] || usage
+[ $# -ge 2 ] && [ -n "${ALIABOX_VMIDS:-}" ] && [ -n "${ALIABOX_INSTALL:-}" ] || usage
 command=$1
 vmid=$2
-[[ " $BBBOX_VMIDS " == *" $vmid "* ]] || { echo "VMID $vmid is not in BBBOX_VMIDS: $BBBOX_VMIDS" >&2; exit 2; }
+[[ " $ALIABOX_VMIDS " == *" $vmid "* ]] || { echo "VMID $vmid is not in ALIABOX_VMIDS: $ALIABOX_VMIDS" >&2; exit 2; }
 node=$(hostname)
 type=lxc
 tool=pct
 [ -e "/etc/pve/nodes/$node/qemu-server/$vmid.conf" ] && { type=qemu; tool=qm; }
 tags=$($tool config "$vmid" | sed -n 's/^tags: //p')
-[[ ";$tags;" == *";install.$BBBOX_INSTALL;"* ]] || { echo "guest $vmid does not carry the tag install.$BBBOX_INSTALL: $tags" >&2; exit 2; }
+[[ ";$tags;" == *";install.$ALIABOX_INSTALL;"* ]] || { echo "guest $vmid does not carry the tag install.$ALIABOX_INSTALL: $tags" >&2; exit 2; }
 
 ours() {
   local name=$1
-  [[ $name =~ ^bbsn[a-z2-7]{12}$ ]] || { echo "not one of alia-box's snapshot names: $name" >&2; exit 2; }
+  [[ $name =~ ^aliasn[a-z2-7]{12}$ ]] || { echo "not one of alia-box's snapshot names: $name" >&2; exit 2; }
   local label
   label=$(pvesh get "/nodes/$node/$type/$vmid/snapshot/$name/config" --output-format json | jq -r '.description // ""')
-  [[ $label =~ ^alia-box\ install\ ${BBBOX_INSTALL}\ box\ [^\ ]+\ snapshot\ sn[a-z2-7]{12}($|\ kept) ]] || { echo "not a snapshot of install $BBBOX_INSTALL: $label" >&2; exit 2; }
+  [[ $label =~ ^alia-box\ install\ ${ALIABOX_INSTALL}\ box\ [^\ ]+\ snapshot\ sn[a-z2-7]{12}($|\ kept) ]] || { echo "not a snapshot of install $ALIABOX_INSTALL: $label" >&2; exit 2; }
 }
 
 case $command in

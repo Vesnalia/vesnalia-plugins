@@ -105,7 +105,7 @@ export type RuntimeHost = {
   onNodeStart(nodeId: string): Promise<string>;
   /**
    * Agent nodes: the worker thread already attached to this attempt, when a
-   * new driver took the run over while that worker was still alive (BBP-20).
+   * new driver took the run over while that worker was still alive (ALIAP-20).
    * The runtime then awaits it instead of spawning. Null = spawn as usual.
    */
   adoptedThread?(nodeRunId: string): string | null;

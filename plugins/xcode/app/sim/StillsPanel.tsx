@@ -51,7 +51,7 @@ export function StillsPanel({
   const [showRekeyOnly, setShowRekeyOnly] = useState(false);
 
   if (!isOnboarded) return <>{onboarding}</>;
-  if (summary === null) return <div className="bbxs-skeleton m-4 h-40" aria-hidden />;
+  if (summary === null) return <div className="aliaxs-skeleton m-4 h-40" aria-hidden />;
 
   const running = summary.status === "running";
   const missing = summary.rows.filter((row) => row.status === "missing" || row.status === "errored");
@@ -80,7 +80,7 @@ export function StillsPanel({
             {summary.progress?.total == null ? (
               // Indeterminate when the manifest gave no denominator, because a
               // determinate bar would be inventing one.
-              <div className="bbxs-comet h-1 w-full rounded-full" aria-label="Rendering" />
+              <div className="aliaxs-comet h-1 w-full rounded-full" aria-label="Rendering" />
             ) : (
               <Progress
                 value={(summary.progress.done / Math.max(1, summary.progress.total)) * 100}
@@ -95,7 +95,7 @@ export function StillsPanel({
       {running ? (
         <div className="flex-1" />
       ) : (
-        <div className="bbxs-scroll min-h-0 flex-1 space-y-5 p-4">
+        <div className="aliaxs-scroll min-h-0 flex-1 space-y-5 p-4">
           {summary.truncation !== null ? (
             <p className="rounded-md border p-3 text-sm text-balance">{summary.truncation.sentence}</p>
           ) : null}

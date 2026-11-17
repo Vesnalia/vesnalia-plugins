@@ -29,8 +29,8 @@ test("parseThermal rejects empty, foreign and out-of-range output", () => {
 
 test("parseThreadId prefers ALIA_THREAD_ID from the environment", () => {
   const command =
-    "/usr/local/bin/node /Users/me/.vesnalia/worktrees/thr_aaaaaaaaaa/app/x.js TERM=xterm ALIA_THREAD_ID=thr_bbbbbbbbbb HOME=/Users/me";
-  assert.equal(parseThreadId(command), "thr_bbbbbbbbbb");
+    "/usr/local/bin/node /Users/me/.vesnalia/worktrees/thr_aaaaaaaaaa/app/x.js TERM=xterm ALIA_THREAD_ID=thr_aliabbbbbbbb HOME=/Users/me";
+  assert.equal(parseThreadId(command), "thr_aliabbbbbbbb");
 });
 
 test("parseThreadId falls back to a worktree or workspace path in argv", () => {
@@ -71,7 +71,7 @@ const PS = [
   "  200   100  12.5  2048 1:02.50 Mon Sep  8 14:04:23 2026 /Users/me/.local/bin/claude --verbose HOME=/Users/me ALIA_THREAD_ID=thr_aaaaaaaaaa",
   "  300   200  80.0  2048 1:02.50 Mon Sep  8 14:04:23 2026 /bin/zsh -c npx tsc",
   "  301   300  40.0  2048 1:02.50 Mon Sep  8 14:04:23 2026 node /repo/node_modules/.bin/tsc",
-  "  400   100   5.0  2048 1:02.50 Mon Sep  8 14:04:23 2026 /Users/me/.local/bin/claude ALIA_THREAD_ID=thr_bbbbbbbbbb",
+  "  400   100   5.0  2048 1:02.50 Mon Sep  8 14:04:23 2026 /Users/me/.local/bin/claude ALIA_THREAD_ID=thr_aliabbbbbbbb",
   "  500     1  33.3  2048 1:02.50 Mon Sep  8 14:04:23 2026 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "garbage line",
   "",
@@ -106,7 +106,7 @@ test("children inherit the nearest ancestor's thread", () => {
   const threads = groupByThread(rows, attribution);
   assert.deepEqual(threads, [
     { threadId: "thr_aaaaaaaaaa", cpuPercent: 132.5, rssBytes: 3 * 2048 * 1024, processCount: 3 },
-    { threadId: "thr_bbbbbbbbbb", cpuPercent: 5, rssBytes: 2048 * 1024, processCount: 1 },
+    { threadId: "thr_aliabbbbbbbb", cpuPercent: 5, rssBytes: 2048 * 1024, processCount: 1 },
   ]);
   assert.deepEqual(
     topUnattributed(rows, attribution, 5).map((row) => row.name),

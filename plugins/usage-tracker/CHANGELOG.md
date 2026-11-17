@@ -16,13 +16,13 @@
   instead of the number of additional providers.
 - Show Claude Code usage resets (the weekly session reset plus granted
   resets) for the Claude login stored on the server machine, read-only.
-- Build against bb-app 0.48.0 and plugin SDK 0.6.94, which the host entry needs.
+- Build against alia-app 0.48.0 and plugin SDK 0.6.94, which the host entry needs.
 - Probe `agy` at most once per refresh interval, including after a failed
   probe, instead of spawning it again on every usage poll.
 
 ## 0.1.16 - 2026-10-26
 
-- Keep the usage details card visible on bb 0.47.1+, where the sidebar
+- Keep the usage details card visible on VesnALIA 0.47.1+, where the sidebar
   footer's new `clip-path` hid the card that opens above it.
 - Add an opt-in DeepSeek provider that reads the DeepSeek API balance with a
   secret API key or `DEEPSEEK_API_KEY`, and shows budget consumption against a
@@ -37,7 +37,7 @@
 ## 0.1.14 - 2026-09-28
 
 - Disable process-default Codex reset actions when displaying pooled accounts.
-- Preserve unknown activity when BB cannot read thread counts.
+- Preserve unknown activity when VesnALIA cannot read thread counts.
 - Serialize pooled account switches, restore prior state after failures, and
   queue refreshes requested during an active load.
 
@@ -87,7 +87,7 @@ All notable changes to Usage Tracker are documented here.
 ### Added
 
 - Show Grok and OpenCode usage with independent settings, provider details,
-  and their BB provider marks.
+  and their VesnALIA provider marks.
 - Summarize larger provider sets with the highest usage and a `+N` count, with
   a click-open provider overview, and color usage yellow from 80% and red from
   95%.
@@ -126,7 +126,7 @@ All notable changes to Usage Tracker are documented here.
 
 ### Fixed
 
-- Read the current BB provider keys for Claude Code and Cursor while preserving
+- Read the current VesnALIA provider keys for Claude Code and Cursor while preserving
   compatibility with legacy keys, and isolate an omitted provider instead of
   failing the complete usage snapshot.
 - Show and retain every additional provider usage window after the canonical
@@ -137,8 +137,8 @@ All notable changes to Usage Tracker are documented here.
 
 ### Changed
 
-- Migrated development types to the pinned `@get-bb/plugin-sdk` development
-  dependency and raised the minimum BB version to 0.38.
+- Migrated development types to the pinned `@vesnalia/plugin-sdk` development
+  dependency and raised the minimum VesnALIA version to 0.38.
 
 ## 0.1.1 - 2026-08-12
 

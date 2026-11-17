@@ -18,7 +18,7 @@
 - Scheduler allocation now validates the exact repository/ref on the target
   host, peels it to a commit, and binds worktree creation to that SHA. Invalid
   tuples stay pending and are durably suppressed until the ref changes or an
-  operator explicitly runs `bb ultragoal revalidate <item-id>`; operational
+  operator explicitly runs `alia ultragoal revalidate <item-id>`; operational
   host failures remain retryable.
 - Failed, deleted, aborted, and explicitly released workers immediately return
   their slice to the ready queue, clear retry suppression, and trigger a
@@ -50,7 +50,7 @@
   A lifecycle-scoped stylesheet gives durable UltraGoal roots an always-present
   pill beside the thread title without mutating host nodes; the selector
   guarantees one pill per root across live reloads. UltraGoal workers and
-  verifiers are created with BB's supported hidden-thread visibility,
+  verifiers are created with VesnALIA's supported hidden-thread visibility,
   while ordinary non-UltraGoal subagents remain in the standard thread tree.
 - The pane action uses the valid `ListTodo` host icon. Documentation now
   discloses repository effects, local data access, approval defaults, and the
@@ -79,7 +79,7 @@
 
 - Ask the repository whether a slice's branch still adds work, instead of
   reading it out of an error message. 0.25.3 tried to spot an already-merged
-  slice by matching "already up to date" in the failure text, and bb never
+  slice by matching "already up to date" in the failure text, and VesnALIA never
   passes git's own words through — it reports `HTTP 502: git merge --squash
   <branch> failed` and nothing more. So that fix was inert: 22 no-op merges in
   one hour were still recorded as failures, and after 0.26.0 they would have
@@ -110,7 +110,7 @@
 
 - A slice whose work is already on the base branch is recorded as INTEGRATED,
   not failed. `git merge --squash` exits non-zero when there is nothing to
-  stage, and bb surfaces that as `HTTP 502: git merge --squash <branch>
+  stage, and VesnALIA surfaces that as `HTTP 502: git merge --squash <branch>
   failed` — so a no-op merge was indistinguishable from a real conflict. On a
   live goal 15 of 17 recorded "failures" were `Already up to date. (nothing to
   squash)`, meaning the provenance table built to answer "did this land?" was
@@ -233,7 +233,7 @@
   points at the evidence as the contract, and says plainly when no check
   command was filed, because a slice without one can be closed with nothing
   verifying it.
-- `bb ultragoal finding` says the same thing at filing time, and names the
+- `alia ultragoal finding` says the same thing at filing time, and names the
   command to attach a check afterwards. The filer is the only person who knows
   what would have proved the defect gone.
 
@@ -293,7 +293,7 @@
 
 ## 0.20.0
 
-- `bb ultragoal exec` shows and sets which provider and model workers and
+- `alia ultragoal exec` shows and sets which provider and model workers and
   verifiers run on. The pin was only reachable from the right-pane Settings, so
   nothing on the CLI ever revealed it — a goal ran ninety-nine workers on a
   provider nobody intended and the first sign was an exhausted quota. A pin
@@ -367,7 +367,7 @@
 
 ## 0.17.29
 
-- `bb ultragoal release <item> --hold` returns a slice AND keeps the scheduler
+- `alia ultragoal release <item> --hold` returns a slice AND keeps the scheduler
   off it until the item is edited. Releasing alone was not enough: the
   scheduler picked the slice back up within seconds, under the same brief that
   was wrong, so four separate re-scopings in one session started fresh workers
@@ -379,7 +379,7 @@
 
 ## 0.17.28
 
-- `bb ultragoal item --new` creates a plan item with no finding behind it.
+- `alia ultragoal item --new` creates a plan item with no finding behind it.
   An outside orchestrator could file a defect and get a slice for free, but
   release-gate work — a test that fails only under the full suite, a broken
   check command, CI wiring — is not a product defect, and minting a finding to
@@ -398,20 +398,20 @@
   the tidiness it buys — and only when every finding that ever pointed at the
   item is resolved, nobody holds it, and it is still pending. An item no
   finding ever pointed at is never touched: a declared deliverable exists on
-  its own terms. `bb ultragoal item <id> --remove` applies the same rule by
+  its own terms. `alia ultragoal item <id> --remove` applies the same rule by
   hand for rows orphaned before this shipped.
 
 ## 0.17.26
 
 - An external orchestrator can now reconcile a plan, not just add to it.
-  `bb ultragoal finding` let an auditor outside the goal file defects, but
+  `alia ultragoal finding` let an auditor outside the goal file defects, but
   every follow-through — correcting an item's scope, sharpening its check,
   closing a finding whose fix landed in someone else's slice — needed a tool
   only threads inside the goal have. So triage arrived as prose asking the root
   to retype it, and the register drifted from the code: two findings sat open
   against surfaces already guarded on main.
-  `bb ultragoal item <id>` edits a work item's step, files and check, and
-  `bb ultragoal resolve <finding-id>` closes a finding with evidence. Item
+  `alia ultragoal item <id>` edits a work item's step, files and check, and
+  `alia ultragoal resolve <finding-id>` closes a finding with evidence. Item
   status stays uneditable — completion carries per-defect evidence rules, and a
   flag that skipped them would be the shortest path around the whole contract —
   and, like `requires`, an item already in progress is refused rather than
@@ -431,7 +431,7 @@
   and nothing was a floor, so a slice closed as soon as its linked defects were
   attested whether or not it produced the artifact it was scoped to produce.
   A declared audit script was never written and its slice still closed clean.
-  `bb ultragoal requires <item-id> <paths>` sets the floor: the worker's brief
+  `alia ultragoal requires <item-id> <paths>` sets the floor: the worker's brief
   names the paths, and completion is refused unless the report carries a
   `DELIVERABLE:` line per path with nonempty proof, on the same terms as
   `DEFECT_COVERAGE`. Opt-in, so an item that declares nothing behaves exactly
@@ -450,7 +450,7 @@
 
 ## 0.17.22
 
-- New `bb ultragoal brief` sets standing rules that every worker on a goal
+- New `alia ultragoal brief` sets standing rules that every worker on a goal
   inherits, instead of the orchestrator retyping them into each slice. The rules
   it forgot were the expensive ones: a critical concurrency fix landed with
   ninety-five lines of code and no committed regression because its reproduction
@@ -461,7 +461,7 @@
 
 ## 0.17.21
 
-- The 0.17.20 token table never actually got created. `bb.storage.migrate`
+- The 0.17.20 token table never actually got created. `alia.storage.migrate`
   records progress by array INDEX, so the statement was first added mid-array —
   landing on an index already marked applied — and even once appended it did not
   apply on reload, leaving every accounting pulse throwing "no such table".
@@ -499,7 +499,7 @@ Four failures an independent review found on 0.17.18 despite 112/112 green.
   host-read failure. The pass now confirms each candidate's host directly and
   fails closed when it cannot: `finishedWorkerRetirements` is split into
   `finishedWorkerRetirementCandidates` plus `retirementPermittedByHost`.
-- `bb ultragoal release` validates every target before mutating any of them, so
+- `alia ultragoal release` validates every target before mutating any of them, so
   an item held by several rows can no longer be half-released. It also rejects
   `starting` hosts and verifier ids, neither of which it previously refused.
 - `--own-slice` normalizes DECLARED fix files, not just the fallback. Scopes are
@@ -522,9 +522,9 @@ Four failures an independent review found on 0.17.18 despite 112/112 green.
   file when no `--fix-files` are declared. The scheduler serializes overlapping
   work through `item.files` alone, so an empty scope silently opted the slice out
   of that guard and allowed a second worker into the same file.
-- New `bb ultragoal release <worker-thread-id|item-id>`. An orchestrator that
+- New `alia ultragoal release <worker-thread-id|item-id>`. An orchestrator that
   deliberately stops a worker had no supported way to get the slice back:
-  `bb thread stop` leaves the host `idle`, not `stopped`, so the durable row is
+  `alia thread stop` leaves the host `idle`, not `stopped`, so the durable row is
   never retired, the item stays `in_progress` and held, `reclaimOrphanInProgress`
   refuses to demote a held item, and the capacity fence keeps counting the row.
   Release retires the row, returns the slice to `pending` and restaffs. It
@@ -541,7 +541,7 @@ Four failures an independent review found on 0.17.18 despite 112/112 green.
   finding id, status pass, nonempty proof — and a bare sentinel with no coverage
   lines still closes nothing. The worker brief now documents the fallback, and
   the parser is renamed `parseDefectCoverageEvidence` because both roles use it.
-- `bb ultragoal finding --own-slice` mints a dedicated work item for a filed
+- `alia ultragoal finding --own-slice` mints a dedicated work item for a filed
   defect instead of coalescing it into an older item that happens to share one
   file. Coalescing is right for keeping two workers out of the same file and
   wrong for a distinct blocker with its own reproduction and done-check. The
@@ -574,7 +574,7 @@ Four failures an independent review found on 0.17.18 despite 112/112 green.
   different items. Spawn failures restore pending work, and every returned
   item ID is verified before staffing or logging.
 - Root-capacity triggers fence late INSERT/UPDATE calls from a pre-reload plugin
-  generation. If its BB child already exists, active-event and repeated-tree
+  generation. If its VesnALIA child already exists, active-event and repeated-tree
   discovery immediately stop and tombstone the unowned child and return its
   optimistic work item to pending.
 - Generated migration artifacts such as
@@ -680,7 +680,7 @@ Large-goal prompt and plan scaling (field case: OpenBooks at 192 work items and
   after restart without double-minting.
 - The primary pane labels Work items and Defects separately, reports assigned
   and awaiting-assignment defects accurately, and explains why totals differ.
-- Added restartable `bb ultragoal transfer-root <source> <target> [--dry-run]`:
+- Added restartable `alia ultragoal transfer-root <source> <target> [--dry-run]`:
   strict preflight, a durable phase journal, one IMMEDIATE transaction for all
   root-owned plugin state, source archive before live-worker reparent, preserved
   provider pins/settings/tokens/cursors, and exactly-once target wake.
@@ -706,7 +706,7 @@ Large-goal prompt and plan scaling (field case: OpenBooks at 192 work items and
 
 OpenCode ghost-turn recovery (field case: openbooks `thr_rdmh8waewz`):
 
-- After a wedged-root stop, compact and continue are both `turn.submit`. OpenCode can still hold the previous turn after BB marks the thread error, so every recovery attempt failed with "A turn is already active" and the goal stayed blocked.
+- After a wedged-root stop, compact and continue are both `turn.submit`. OpenCode can still hold the previous turn after VesnALIA marks the thread error, so every recovery attempt failed with "A turn is already active" and the goal stayed blocked.
 - Starting a new turn now accepts idle/error/stopped threads. Error roots are stopped and waited out before compact or continue. A leftover-turn error settles and retries once.
 - Compact finishes (or is skipped) before resume, so continue cannot collide with the compact turn.
 - The progress pulse still revives blocked goals whose reason is a transient `turn.submit` / "already active" failure. Previously those sat blocked forever after `thread.failed`.
@@ -741,7 +741,7 @@ Containment after a live openbooks runaway (35-wide crew, 95-finding mill, 41 No
 
 ## 0.17.3
 
-- Repeated root deaths trigger context compaction: a root that needs reviving more than once is usually drowning in its own session (turn submission fails under giant-context load — the openbooks root died three times in an hour at 800M+ tokens). The second and later revivals request bb's thread compaction before resuming.
+- Repeated root deaths trigger context compaction: a root that needs reviving more than once is usually drowning in its own session (turn submission fails under giant-context load — the openbooks root died three times in an hour at 800M+ tokens). The second and later revivals request VesnALIA's thread compaction before resuming.
 
 ## 0.17.2
 
@@ -756,7 +756,7 @@ Containment after a live openbooks runaway (35-wide crew, 95-finding mill, 41 No
 Completion is a report, not a status label:
 
 - Completion now REQUIRES a delivery summary — what shipped, where it lives (URLs, final HEAD SHA, deploy state), and how it was verified. It is stored durably on the goal.
-- The pane renders a completion report when a goal finishes: a check header with the objective, a stats grid (slices delivered, findings fixed, decisions answered, workers, tokens, duration), the delivery summary as Markdown, and the full Delivered list. `bb ultragoal status` prints the summary.
+- The pane renders a completion report when a goal finishes: a check header with the objective, a stats grid (slices delivered, findings fixed, decisions answered, workers, tokens, duration), the delivery summary as Markdown, and the full Delivered list. `alia ultragoal status` prints the summary.
 
 ## 0.16.4
 
@@ -798,7 +798,7 @@ Slice completion is a formal tool call, not a text sentinel:
 
 External auditors are first-class finding sources:
 
-- New CLI: `bb ultragoal finding "<title>" --file <path[:line]> --evidence "<proof>" [--fix-files a,b] [--check <cmd>]` files a finding directly from outside the goal — scheduled audit bots and humans no longer depend on the orchestrator noticing a handoff message. Same fingerprint dedupe, auto fix slice, scheduler staffing, and completion gate as the report_finding tool (both now share one registration path).
+- New CLI: `alia ultragoal finding "<title>" --file <path[:line]> --evidence "<proof>" [--fix-files a,b] [--check <cmd>]` files a finding directly from outside the goal — scheduled audit bots and humans no longer depend on the orchestrator noticing a handoff message. Same fingerprint dedupe, auto fix slice, scheduler staffing, and completion gate as the report_finding tool (both now share one registration path).
 - Orchestrator contract: inbound defect reports and audit handoffs from ANY thread, automation, or human are work, not FYI — each defect becomes report_finding immediately with a visible acknowledgment. (Field case: a scheduled read-only audit thread messaged five serious defects — including a P0 payment-amount bug — and the root let them scroll by; only owner messages were first-class before.)
 
 ## 0.13.1
@@ -831,13 +831,13 @@ Clicking a Now row opens the worker's chat history right in the pane — the dri
 
 ## 0.11.1
 
-- Restaffed workers are pointed at their predecessor's slice branch (bb names worker branches after the item id), so a continuation checks out or cherry-picks the furthest prior work instead of redoing the slice in a fresh worktree. (Field case: a provider upgrade made every pre-upgrade session unresumable — steering them died instantly; the three-strike retire converges such zombies onto fresh sessions, and continuations must inherit the stranded branch work.)
+- Restaffed workers are pointed at their predecessor's slice branch (VesnALIA names worker branches after the item id), so a continuation checks out or cherry-picks the furthest prior work instead of redoing the slice in a fresh worktree. (Field case: a provider upgrade made every pre-upgrade session unresumable — steering them died instantly; the three-strike retire converges such zombies onto fresh sessions, and continuations must inherit the stranded branch work.)
 
 ## 0.11.0
 
 Worker execution is pinned — changing the composer's model can no longer hijack a goal's crew:
 
-- bb's spawn API drops provider/model fields that carry no provenance and re-derives them from the project's stored defaults, which track the composer. When the user switched the composer to Codex to start a manual thread, every subsequently scheduled worker spawned as Codex instead of the goal's model. All plugin spawns (workers and verifiers) now pass executionInputSources: explicit, so the requested execution always survives.
+- VesnALIA's spawn API drops provider/model fields that carry no provenance and re-derives them from the project's stored defaults, which track the composer. When the user switched the composer to Codex to start a manual thread, every subsequently scheduled worker spawned as Codex instead of the goal's model. All plugin spawns (workers and verifiers) now pass executionInputSources: explicit, so the requested execution always survives.
 - Resolution order for a worker's execution: spawn_agent's model arg, then the goal's Worker-model pin, then the goal thread's own provider (inherit — the default).
 - Settings panel gains a "Worker model" control beside the verifier's: Inherit (goal thread's provider/model) or Pin with the same provider/model picker.
 
@@ -849,8 +849,8 @@ Finished workers release their provider runtime. Every completed slice left its 
 
 Owner decisions moved from a sidebar card to the native center-pane question surface:
 
-- request_decision now raises a real pending interaction in the user's thread (bb.ui.requestInput + a plugin pending-interaction renderer): question, consequences, clickable option buttons, a custom-answer field, and "Dismiss for now". Clicking an answer resolves the durable decision and wakes the orchestrator with it.
-- Interactions cap at one hour, so a keeper re-raises the card until the decision is answered (dismissal stops the nagging for the session; the decision stays open and answerable via bb ultragoal decide, which also aborts any live card). Cards survive plugin/server restarts via the pulse sweep.
+- request_decision now raises a real pending interaction in the user's thread (alia.ui.requestInput + a plugin pending-interaction renderer): question, consequences, clickable option buttons, a custom-answer field, and "Dismiss for now". Clicking an answer resolves the durable decision and wakes the orchestrator with it.
+- Interactions cap at one hour, so a keeper re-raises the card until the decision is answered (dismissal stops the nagging for the session; the decision stays open and answerable via VesnALIA ultragoal decide, which also aborts any live card). Cards survive plugin/server restarts via the pulse sweep.
 - The right-pane "Needs you" section is deleted — the status card and state response keep reporting open decisions.
 
 ## 0.10.0
@@ -858,8 +858,8 @@ Owner decisions moved from a sidebar card to the native center-pane question sur
 Owner decisions are first-class ("Needs you"). A parked decision was one sentence inside one progress note, then buried under poll turns — invisible to the person it waited on:
 
 - New request_decision / resolve_decision tools: anything only the owner can decide (irreversible actions, spend, scope, preference calls) becomes a durable decision record — deduplicated by question, never re-asked, never assumed.
-- The pane opens with a "Needs you" section: question, context, options, and the exact answer command. `bb ultragoal status` prints NEEDS YOU lines; the state response returns openDecisions.
-- `bb ultragoal decide <decision_id> <answer>` records the answer, wakes the orchestrator with it (event-gated continuation counts it as an event), and steers it to act.
+- The pane opens with a "Needs you" section: question, context, options, and the exact answer command. `alia ultragoal status` prints NEEDS YOU lines; the state response returns openDecisions.
+- `alia ultragoal decide <decision_id> <answer>` records the answer, wakes the orchestrator with it (event-gated continuation counts it as an event), and steers it to act.
 - Open decisions block completion, like open findings. The orchestrator keeps working everything that does not depend on the answer.
 - Templates: orchestrators route owner calls through request_decision with one visible chat note; workers escalate owner-only questions instead of guessing.
 
@@ -939,7 +939,7 @@ Provenance over heuristics — structural facts replace string classifiers:
 - Restaffing is one rule in one place: any in_progress slice unheld past the stale window is restaffed by the scheduler, whatever its origin — the special-cased "rescue only while the root is blocked" branch is deleted. Pending slices still require the DAG contract; legacy plans keep model staffing.
 - The prose done-report fallback is provenance-gated: workers spawned through the plugin's contract must report ULTRAGOAL_DONE; prose interpretation remains only for native/discovered workers that never received the contract.
 - Twin-item fix: a discovered worker's prompt-source claim re-links an open slice whose previous workers are all dead, instead of minting a duplicate item (orchestrators respawn died natives under the same title, which put two live workers on the same work).
-- New CLI: `bb ultragoal workers <0-16>` sets the goal's concurrent worker slots.
+- New CLI: `alia ultragoal workers <0-16>` sets the goal's concurrent worker slots.
 
 ## 0.5.0
 
@@ -950,28 +950,28 @@ The model plans, deterministic code schedules. Research synthesis across Anthrop
 - **Streaming findings queue.** Hunt/audit workers call the new report_finding tool per confirmed defect — fingerprint-deduplicated across sweeps (same file + same defect = same finding) — and each fresh finding auto-creates a ready, file-scoped fix slice that the scheduler staffs while the hunt continues. This kills the serial "fix whatever the hunt proves" tail. Open findings hard-block completion; resolve_finding (with evidence) handles non-defects, and completed repair work closes its findings automatically.
 - **Attestation-grade reports.** Worker briefs demand evidence — commit SHAs and the slice's check output — and inject the slice's scope and done-check into the spawn prompt. ULTRAGOAL_DONE without evidence is a claim, not a completion.
 - **Work-related humorous names.** Plugin-spawned workers derive their display names from the slice's own text ("Captain Suites", "The Idempotency Reckoning") instead of a generic pool, and the orchestrator guidance asks for the same.
-- Pane: Up next shows a "blocked" chip for slices with unmet deps; Settings gains a Worker slots input; the header shows the slot count; `bb ultragoal pane` includes findings counts.
+- Pane: Up next shows a "blocked" chip for slices with unmet deps; Settings gains a Worker slots input; the header shows the slot count; `alia ultragoal pane` includes findings counts.
 
 ## 0.4.11
 
 Now is verified against the provider's own subagent lifecycle, and stalls get healed instead of displayed:
 
-- Task calls pair to OpenCode's part state by call id (bb's toolCall id equals OpenCode's callID), making the provider store the liveness authority. This kills two phantom-row bugs: OpenCode rewrites the tool name on completion (so bb-side scans left every finished task dangling open), and killed subagents never emit a completion at all. Running task rows are titled from the call's own description.
+- Task calls pair to OpenCode's part state by call id (VesnALIA's toolCall id equals OpenCode's callID), making the provider store the liveness authority. This kills two phantom-row bugs: OpenCode rewrites the tool name on completion (so alia-side scans left every finished task dangling open), and killed subagents never emit a completion at all. Running task rows are titled from the call's own description.
 - Completed task reports are harvested: a finished subagent's final report (returned to the parent task call) closes its slice when it says done, instead of waiting minutes for the orchestrator's todo list to catch up while it is blocked inside the next task call.
 - Stalled workers are nudged: a worker that goes idle holding an open slice without reporting gets a direct follow-up to resume, finish, and report.
 - Abandoned slices are rescued: when a slice's worker died and the root turn is blocked on open task calls (so the orchestrator cannot re-staff), UltraGoal spawns a rescue worker through the same machinery as spawn_agent, with error cleanup and retry cooldown. When the root is free, staffing stays with the orchestrator.
 - Fuzzy title-to-item linking: provider-paraphrased task titles ("Wave 2c hunt: org-scoping sweep") link to their plan items by token overlap, so a running slice cannot also sit in Up next.
 - "Orchestrator" attribution only applies while the root turn runs free; a root blocked on task calls is not hand-working other slices. A slice with a known holder is never attributed to the orchestrator.
 - OpenCode token accounting sums the whole session tree — task subagents run as child sessions whose usage was previously invisible.
-- New debug command: `bb ultragoal pane` dumps the exact sidebar projection as JSON.
+- New debug command: `alia ultragoal pane` dumps the exact sidebar projection as JSON.
 
 ## 0.4.10
 
-- Live native subagents are named from the provider's own lifecycle store. OpenCode records every task subagent as a child session (with its real title) in opencode.db the moment it starts, so running task rows now show that title instead of an anonymous "Subagent task" — even when bb never materializes a thread for the subagent. A named row whose title matches an open plan item links to it, so the same slice can't render twice.
+- Live native subagents are named from the provider's own lifecycle store. OpenCode records every task subagent as a child session (with its real title) in opencode.db the moment it starts, so running task rows now show that title instead of an anonymous "Subagent task" — even when VesnALIA never materializes a thread for the subagent. A named row whose title matches an open plan item links to it, so the same slice can't render twice.
 
 ## 0.4.9
 
-- New workers register the moment their thread starts. bb's thread.active lifecycle event now triggers immediate crew registration for goal-tree children, so a freshly spawned subagent renders as a named worker right away instead of flashing through anonymous "Subagent task" rows until the next discovery poll.
+- New workers register the moment their thread starts. VesnALIA's thread.active lifecycle event now triggers immediate crew registration for goal-tree children, so a freshly spawned subagent renders as a named worker right away instead of flashing through anonymous "Subagent task" rows until the next discovery poll.
 - A slice with a known holder is always attributed to that worker. "Orchestrator" is reserved for slices no worker ever claimed while the root turn is running — it can no longer steal a slice whose worker just went idle awaiting close.
 
 ## 0.4.8
@@ -997,7 +997,7 @@ Now is verified against the provider's own subagent lifecycle, and stalls get he
 ## 0.4.3
 
 - Token accounting works on every provider, not just Cursor. Usage is read straight from each provider's own session store — OpenCode's opencode.db message tokens, Claude Code's ~/.claude/projects JSONL usage lines, Codex's rollout total_token_usage — keyed by the thread's provider session id, on top of the existing Cursor readers. Goals orchestrated by OpenCode/Claude/Codex no longer sit at "Tokens 0".
-- Providers with no local store fall back to bb's context-window usage snapshot instead of freezing at zero.
+- Providers with no local store fall back to VesnALIA's context-window usage snapshot instead of freezing at zero.
 
 ## 0.4.2
 
@@ -1061,7 +1061,7 @@ Architecture consolidation: rows are projected liveness, semantics are structure
 ## 0.3.1
 
 - Approval gates on the goal tree are bypassed: workers and verifiers spawn with full permissions, steering and follow-ups carry full permissions, and any approval interaction that still appears (command, file change, permission, plan) is auto-resolved within seconds, session-wide when the provider allows it. User questions still reach the user.
-- Workers fork as plugin-origin children, so bb no longer posts "needs help" / active-child notifications into the root chat; crew state lives in the UltraGoal pane.
+- Workers fork as plugin-origin children, so VesnALIA no longer posts "needs help" / active-child notifications into the root chat; crew state lives in the UltraGoal pane.
 - Now lists every open in-progress slice again (plus any live agent without a slice), so the Now count always reconciles with the done/total counter.
 
 ## 0.3.0
@@ -1099,11 +1099,11 @@ Architecture consolidation: rows are projected liveness, semantics are structure
 
 ## 0.2.1
 
-- Register only `bb ultragoal` so a leftover `bb goal` command cannot block startup.
+- Register only `alia ultragoal` so a leftover `alia goal` command cannot block startup.
 
 ## 0.2.0
 
-- The plugin is UltraGoal: `/ultragoal`, `bb ultragoal`, plugin id `ultragoal`.
+- The plugin is UltraGoal: `/ultragoal`, `alia ultragoal`, plugin id `ultragoal`.
 - Now titles drop leftover `NEXT: shipped` wrappers so the current slice stays visible.
 
 ## 0.1.6
@@ -1145,4 +1145,4 @@ Architecture consolidation: rows are projected liveness, semantics are structure
 - Orchestrator root with named hidden workers and plan items; sidebar stays a single Goal row.
 - Optional second-model verification after each worker returns.
 - Per-goal Settings: verify, verifier model, progress chat, auto-continue, token budget.
-- `bb goal` CLI for status, set, edit, pause, resume, and clear.
+- `alia goal` CLI for status, set, edit, pause, resume, and clear.

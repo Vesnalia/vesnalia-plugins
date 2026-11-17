@@ -45,7 +45,7 @@ function volumes(fake: FakeDockerHost): string[] {
 }
 
 function keepTags(fake: FakeDockerHost): string[] {
-  return images(fake).filter((name) => name.startsWith("bbbox-kept/"));
+  return images(fake).filter((name) => name.startsWith("aliabox-kept/"));
 }
 
 function writeTree(root: string, files: Readonly<Record<string, string>>): void {
@@ -56,7 +56,7 @@ function writeTree(root: string, files: Readonly<Record<string, string>>): void 
 }
 
 async function readyDockerBox(state: World, fake: FakeDockerHost): Promise<BoxRecord> {
-  fake.withIdentityReset("bbbox/linux:1", 9);
+  fake.withIdentityReset("aliabox/linux:1", 9);
   const made = await state.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: BY_COMMAND });
   const box = (await state.boxes.settled(made))!;
   assert.equal(box.state, "ready", box.error ?? "");
@@ -110,7 +110,7 @@ test("Docker keeps nothing when the engine refuses the keep tag", async () => {
   assert.deepEqual(keepTags(fake), []);
 });
 
-const KEEP_TAG_REMOVALS = "^bbbox-kept/";
+const KEEP_TAG_REMOVALS = "^aliabox-kept/";
 
 async function interruptedKeepChange(state: World, fake: FakeDockerHost, from: string, to: string) {
   const box = await readyDockerBox(state, fake);
@@ -212,7 +212,7 @@ test("Docker forks a kept snapshot after its box's release into one of the perso
 
   assert.equal(fork.state, "ready", fork.error ?? "");
   const container = fork.guest!.ref;
-  assert.ok(fake.inspect(container).Config.Env.includes(`BBBOX_IDENTITY=${fork.id}`));
+  assert.ok(fake.inspect(container).Config.Env.includes(`ALIABOX_IDENTITY=${fork.id}`));
   assert.equal(readFileSync(join(fake.home(container), "work.txt"), "utf8"), "before the take");
   assert.match(readFileSync(join(fake.identityRoot(container), "var/lib/alia-box/identity-resets"), "utf8"), /ALIA machines removed: host_source/, "its boot reset ran");
   assert.equal(state.store.operation(answer.operation.id)?.state, "done");
@@ -432,7 +432,7 @@ function keptCheckOf(report: { readonly checks: readonly { readonly id: string; 
 
 test("Keep and the doctor say what a kept snapshot of a large image with a tiny change takes that nothing else shares, up to its whole size, and its whole size once its image is refreshed", async () => {
   const fake = fakeDockerHost();
-  writeFileSync(join(fake.root, "image-sizes.json"), JSON.stringify({ "bbbox/linux:1": 795_407_487 }));
+  writeFileSync(join(fake.root, "image-sizes.json"), JSON.stringify({ "aliabox/linux:1": 795_407_487 }));
   fake.set({ snapshotLayerBytes: 126_976, snapshotVolumeKiB: 4 });
   const state = dockerWorld(fake);
   const box = await readyDockerBox(state, fake);
@@ -442,7 +442,7 @@ test("Keep and the doctor say what a kept snapshot of a large image with a tiny 
   await state.snapshots.keep(COMMAND, standing(box), taken.id, { days: 30 });
   await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
   const released = keptCheckOf(await dockerOf(state).doctor());
-  dockerOn(fake, "image", "rm", "bbbox/linux:1");
+  dockerOn(fake, "image", "rm", "aliabox/linux:1");
   const refreshed = keptCheckOf(await dockerOf(state).doctor());
 
   assert.match(keepCostWords(check), /nothing is copied then\. It takes about 1 MB of \S+ Docker's disk that no other image or container there uses, and up to 796 MB if what it shares is deleted\.$/);
@@ -451,7 +451,7 @@ test("Keep and the doctor say what a kept snapshot of a large image with a tiny 
 });
 
 async function keptLargeImageForkedAfterRelease(state: World, fake: FakeDockerHost) {
-  writeFileSync(join(fake.root, "image-sizes.json"), JSON.stringify({ "bbbox/linux:1": 795_407_487 }));
+  writeFileSync(join(fake.root, "image-sizes.json"), JSON.stringify({ "aliabox/linux:1": 795_407_487 }));
   fake.set({ snapshotLayerBytes: 126_976, snapshotVolumeKiB: 4 });
   const box = await readyDockerBox(state, fake);
   const taken = (await state.snapshots.take(COMMAND, box, standing(box), { name: "kept one" })).snapshot!;
@@ -534,7 +534,7 @@ const KEEP_OFF_PARTS = [
 for (const { provider, why, options } of KEEP_OFF_PARTS) {
   test(`the Docker engine ${provider} makes for its boxes offers no Keep, says why, and writes no keep tag`, async () => {
     const fake = fakeDockerHost();
-    fake.withIdentityReset("bbbox/linux:1", 9);
+    fake.withIdentityReset("aliabox/linux:1", 9);
     const backend = new DockerBackend(dockerConfig(), testContext(new MemoryStorage(), INSTALL, { id: "fake" }), options(fake.binary));
     const box = { boxId: "bxkeepoffaaaaa", threadId: THREAD, name: "keep-off", kind: "linux", size: { cores: 2, memoryMiB: 4096, diskGiB: null }, createdAt: START };
     const guest: Guest = await backend.acquire(box as never, null, { claim: async () => {}, starting: async () => {}, timing: () => {} }, AbortSignal.timeout(10_000));

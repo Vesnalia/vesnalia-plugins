@@ -211,7 +211,7 @@ const BACKENDS: readonly BackendConfig[] = [
       url: "https://192.0.2.10:8006/api2/json",
       node: "pve-1",
       "tls-fingerprint": "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89",
-      "token-id": "bbbox@pve!plugin",
+      "token-id": "aliabox@pve!plugin",
       "token-secret": secret(true),
       "ssh-private-key": secret(true),
       "linux-templates": "9100",
@@ -284,7 +284,7 @@ export function healthyChecks(backend: BackendConfig): Health {
           ok("node", "Node", "Boxes run on pve-1."),
           ok("memory", "Node memory", "186 GiB of 251 GiB free."),
           ok("sizes", "Box sizes", "pve-1 holds every kind at its default size."),
-          ok("pool", "Resource pool", "bbbox exists, and the token has its rights."),
+          ok("pool", "Resource pool", "aliabox exists, and the token has its rights."),
           ok("t9100", "Linux template 9100", "Standard image built 24 October, 4 days ago."),
           ok("t9101", "GPU desktop template 9101", "Standard image built 24 October, on GPU-0a1b2c3d."),
           ok("t9103", "CPU desktop template 9103", "Standard image built 24 October."),
@@ -308,10 +308,10 @@ export function healthyChecks(backend: BackendConfig): Health {
       };
     case "docker":
       return backend.id === "docker"
-        ? { summary: "Docker 29.8 on docker-1", checkedAt: at, checks: [ok("daemon", "Docker", "29.8.2 on docker-1, 32 cores, 64 GiB."), ok("images", "Images", "bbbox/linux:1, bbbox/linux-desktop:1 and bbbox/linux-desktop-wayland:1 are built."), ok("network", "Network", "bbbox exists.")] }
-        : { summary: "Docker 29.8 on pc-1", checkedAt: at, checks: [ok("relay", "VesnALIA machine pc-1", "Connected; Docker answers through VesnALIA."), ok("daemon", "Docker", "29.8.1, 16 cores, 93 GiB."), ok("images", "Images", "bbbox/linux:1 is built.")] };
+        ? { summary: "Docker 29.8 on docker-1", checkedAt: at, checks: [ok("daemon", "Docker", "29.8.2 on docker-1, 32 cores, 64 GiB."), ok("images", "Images", "aliabox/linux:1, aliabox/linux-desktop:1 and aliabox/linux-desktop-wayland:1 are built."), ok("network", "Network", "aliabox exists.")] }
+        : { summary: "Docker 29.8 on pc-1", checkedAt: at, checks: [ok("relay", "VesnALIA machine pc-1", "Connected; Docker answers through VesnALIA."), ok("daemon", "Docker", "29.8.1, 16 cores, 93 GiB."), ok("images", "Images", "aliabox/linux:1 is built.")] };
     case "microsandbox":
-      return { summary: "msb 0.7.7 on mac-1", checkedAt: at, checks: [ok("host", "Host mac-1", "Answers over SSH; macOS on Apple silicon."), ok("msb", "msb", "0.7.7, installed by alia-box."), ok("images", "Images", "bbbox/linux:1-arm64 is imported.")] };
+      return { summary: "msb 0.7.7 on mac-1", checkedAt: at, checks: [ok("host", "Host mac-1", "Answers over SSH; macOS on Apple silicon."), ok("msb", "msb", "0.7.7, installed by alia-box."), ok("images", "Images", "aliabox/linux:1-arm64 is imported.")] };
     case "proxmox-qemu":
       return { summary: "Proxmox VE 9.2 on pve-1", checkedAt: at, checks: [ok("api", "Proxmox API", "Uses Proxmox LXC's connection."), ok("t9104", "Windows template 9104", "Built 20 October."), ok("t9105", "Linux template 9105", "Built 24 October; /dev/kvm off."), ok("t9106", "Android template 9106", "Built 22 October; Pixel 8 and Pixel Fold booted once.")] };
     case "hetzner":
@@ -359,7 +359,7 @@ export const DOCKER_MACHINES: readonly DockerMachine[] = [
 export const STANDARD_IMAGES: readonly StandardImage[] = [
   { name: "Linux template 9100", backend: "Proxmox LXC on pve-1", age: "4 days", due: null, last: "Rebuilt last night", lastState: "refreshed" },
   { name: "GPU desktop template 9101", backend: "Proxmox LXC on pve-1", age: "4 days", due: null, last: "Rebuilt last night", lastState: "refreshed" },
-  { name: "bbbox/linux:1", backend: "Docker on docker-1", age: "9 days", due: "over a week old", last: "Waited last night: docker-1 had no room", lastState: "waiting" },
+  { name: "aliabox/linux:1", backend: "Docker on docker-1", age: "9 days", due: "over a week old", last: "Waited last night: docker-1 had no room", lastState: "waiting" },
   { name: "alia-box-macos", backend: "Tart on mac-1", age: "16 days", due: "macOS 26.1 is out", last: "Failed last night: Tart could not clone it, as mac-1's disk was full", lastState: "failed" },
   { name: "Windows template 9104", backend: "Proxmox QEMU on pve-1", age: "8 days", due: null, last: "Skipped last night: built within the week", lastState: "skipped" },
 ];

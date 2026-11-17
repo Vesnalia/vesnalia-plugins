@@ -64,11 +64,11 @@ export const PATH_GUARDED_COMMANDS = ["rm", "chown", "chmod"];
 
 export const PRIVILEGED_COMMANDS = [...ROOT_RUNNERS, ...HOST_CHANGING_COMMANDS, ...Object.keys(READ_OR_CHANGE_COMMANDS)];
 
-export const OWNED_FOLDERS_VARIABLE = "BBBOX_FAKE_OWNS";
+export const OWNED_FOLDERS_VARIABLE = "ALIABOX_FAKE_OWNS";
 
 const SERVICE_MANAGERS = new Set(["systemctl", "loginctl", "launchctl"]);
 
-export const GUARD_FOLDER_PREFIX = "bbbox-test-guard-";
+export const GUARD_FOLDER_PREFIX = "aliabox-test-guard-";
 
 const STUBS_FOLDER = "host-stubs";
 const RECORD_FILE = "host-stubs.log";
@@ -334,7 +334,7 @@ let stubsForThisProcess = null;
 
 export function hostStubsRootForThisProcess() {
   if (stubsForThisProcess) return stubsForThisProcess;
-  const root = mkdtempSync(join(tmpdir(), "bbbox-test-stubs-"));
+  const root = mkdtempSync(join(tmpdir(), "aliabox-test-stubs-"));
   process.once("exit", () => rmSync(root, { recursive: true, force: true }));
   stubsForThisProcess = root;
   return root;

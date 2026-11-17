@@ -5,7 +5,7 @@
 # named "origin".
 #
 # Why: the owner wants every commit backed up and available off this machine
-# without anyone, person or agent, having to remember to push (bead-bb-bfi).
+# without anyone, person or agent, having to remember to push (bead-alia-bfi).
 # A hook does this for every commit, whoever makes it; a written rule would
 # only cover agents that follow it.
 #
@@ -15,8 +15,8 @@
 #   files in that directory are managed by beads; this one is ours, and beads
 #   has no post-commit hook of its own to collide with.
 # - Plain sh, like the hooks beside it. The house default for scripts is
-#   Babashka, but on this machine the name `bb` is the BB app's command, not
-#   Babashka, so a `bb` script here would run the wrong program.
+#   Babashka, but on this machine the name `alia` is the ALIA app's command, not
+#   Babashka, so a `alia` script here would run the wrong program.
 # - A failed push never fails the commit: git ignores a post-commit hook's
 #   exit status anyway, and the hook says plainly that the commit is local
 #   only, so it can be pushed later with `git push`.

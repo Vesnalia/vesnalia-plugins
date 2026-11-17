@@ -37,7 +37,7 @@ test("the example settings read the setup guide's token file and key, and parse"
       "# VesnALIA Box plugin: Proxmox API access. Secret: keep 0600.",
       "PROXMOX_API_URL=https://192.0.2.10:8006/api2/json",
       "PROXMOX_NODE=pve",
-      "PROXMOX_TOKEN_ID=bbbox@pve!plugin",
+      "PROXMOX_TOKEN_ID=aliabox@pve!plugin",
       "PROXMOX_TOKEN_SECRET=s3cret",
       `PROXMOX_TLS_SHA256_FINGERPRINT=${FINGERPRINT}`,
       "",
@@ -125,7 +125,7 @@ test("the smoke test reports an unknown kind without making a box", async () => 
 test("a smoke run first releases what an earlier smoke run left, and leaves other installs' guests alone", async () => {
   const { proxmox, values, drivers, lines, log } = fakes();
   const guest = (vmid: number, tags: string) =>
-    proxmox.guests.set(vmid, { vmid, name: `left-${vmid}`, pool: "bbbox", status: "running", template: false, config: { tags } });
+    proxmox.guests.set(vmid, { vmid, name: `left-${vmid}`, pool: "aliabox", status: "running", template: false, config: { tags } });
   guest(9900, "alia-box;install.smoke;box.box_left;thread.smoke;kind.linux;template.9000");
   guest(9801, "alia-box;install.other;box.box_theirs;thread.thr_x;kind.linux;template.9000");
   const result = await smoke(values, { kind: "linux", command: "true", drivers, log });

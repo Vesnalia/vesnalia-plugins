@@ -52,7 +52,7 @@ trial account showed:
 
 ## Decision
 
-1. **A box is one sandbox.** `Guest.ref` is `bbbox-` and the box's ID, known
+1. **A box is one sandbox.** `Guest.ref` is `aliabox-` and the box's ID, known
    from the claim, before the sandbox exists; the sandbox's ID (`bx_` and 8
    letters, which boat never reuses) is `Guest.data.sandbox`. Its labels name
    the install, the box, the thread, the box's name and kind, and when it was

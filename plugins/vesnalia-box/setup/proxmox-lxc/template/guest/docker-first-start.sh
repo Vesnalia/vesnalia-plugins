@@ -1,10 +1,10 @@
 #!/bin/bash
 set -u
-limit_ms=${BBBOX_DOCKER_START_LIMIT_MS:-2000}
-deadline_ms=${BBBOX_DOCKER_START_DEADLINE_MS:-30000}
-systemd_run_dir=${BBBOX_SYSTEMD_RUN_DIR:-/run/systemd/system}
-docker_socket=${BBBOX_DOCKER_SOCKET:-/run/docker.sock}
-docker_pid_file=${BBBOX_DOCKER_PID_FILE:-/var/run/docker.pid}
+limit_ms=${ALIABOX_DOCKER_START_LIMIT_MS:-2000}
+deadline_ms=${ALIABOX_DOCKER_START_DEADLINE_MS:-30000}
+systemd_run_dir=${ALIABOX_SYSTEMD_RUN_DIR:-/run/systemd/system}
+docker_socket=${ALIABOX_DOCKER_SOCKET:-/run/docker.sock}
+docker_pid_file=${ALIABOX_DOCKER_PID_FILE:-/var/run/docker.pid}
 docker_units=(docker.service containerd.service)
 kill_grace_ms=1000
 poll_every_s=0.05

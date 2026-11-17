@@ -2,46 +2,46 @@
 /* Maps, media and sandbox (web.tsx). Tokens from kit.css only; see DESIGN.md. */
 
 /* Map: the frame keeps the logical 640 by 360 view's aspect, so tiles and pins sit in percent. */
-.bbui-web-map {
+.aliaui-web-map {
   margin: 0;
   display: grid;
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   container-type: inline-size;
 }
-.bbui-web-map-body {
+.aliaui-web-map-body {
   display: grid;
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
   align-items: start;
 }
-.bbui-web-map-body > * { min-width: 0; }
+.aliaui-web-map-body > * { min-width: 0; }
 @container (min-width: 600px) {
-  .bbui-web-map-body { grid-template-columns: minmax(0, 1fr) 220px; }
-  .bbui-web-list { max-height: 340px; overflow-y: auto; }
+  .aliaui-web-map-body { grid-template-columns: minmax(0, 1fr) 220px; }
+  .aliaui-web-list { max-height: 340px; overflow-y: auto; }
 }
-.bbui-web-frame {
+.aliaui-web-frame {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
 }
-.bbui-web-frame > .bbui-skeleton { position: absolute; inset: 0; }
-.bbui-web-frame > .bbui-skeleton > span { height: 100% !important; border-radius: 0; }
-.bbui-web-tile {
+.aliaui-web-frame > .aliaui-skeleton { position: absolute; inset: 0; }
+.aliaui-web-frame > .aliaui-skeleton > span { height: 100% !important; border-radius: 0; }
+.aliaui-web-tile {
   position: absolute;
   display: block;
   max-width: none;
   user-select: none;
   pointer-events: none;
 }
-.bbui-web-route {
+.aliaui-web-route {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
-.bbui-web-line {
+.aliaui-web-line {
   fill: none;
   stroke-width: 2;
   stroke-linejoin: round;
@@ -49,208 +49,208 @@
   vector-effect: non-scaling-stroke;
 }
 /* One route per day, in a fixed accent lightness ramp. */
-.bbui-web-series-0 { --bbui-web-series: var(--bbui-accent); }
-.bbui-web-series-1 { --bbui-web-series: color-mix(in oklch, var(--bbui-accent) 78%, var(--bbui-surface)); }
-.bbui-web-series-2 { --bbui-web-series: color-mix(in oklch, var(--bbui-accent) 56%, var(--bbui-surface)); }
-.bbui-web-series-3 { --bbui-web-series: color-mix(in oklch, var(--bbui-accent) 38%, var(--bbui-surface)); }
-.bbui-web-line { stroke: var(--bbui-web-series); }
-.bbui-web-swatch {
+.aliaui-web-series-0 { --aliaui-web-series: var(--aliaui-accent); }
+.aliaui-web-series-1 { --aliaui-web-series: color-mix(in oklch, var(--aliaui-accent) 78%, var(--aliaui-surface)); }
+.aliaui-web-series-2 { --aliaui-web-series: color-mix(in oklch, var(--aliaui-accent) 56%, var(--aliaui-surface)); }
+.aliaui-web-series-3 { --aliaui-web-series: color-mix(in oklch, var(--aliaui-accent) 38%, var(--aliaui-surface)); }
+.aliaui-web-line { stroke: var(--aliaui-web-series); }
+.aliaui-web-swatch {
   display: inline-block;
   width: 12px;
   height: 2px;
-  background: var(--bbui-web-series);
+  background: var(--aliaui-web-series);
 }
 
-.bbui-web-pin {
+.aliaui-web-pin {
   appearance: none;
   position: absolute;
   transform: translate(-50%, -50%);
   min-width: 22px;
   height: 22px;
-  padding: 0 var(--bbui-s1);
-  border: 1px solid var(--bbui-accent);
-  border-radius: var(--bbui-r-control);
-  background: var(--bbui-surface);
-  color: var(--bbui-ink);
-  font: var(--bbui-tiny);
+  padding: 0 var(--aliaui-s1);
+  border: 1px solid var(--aliaui-accent);
+  border-radius: var(--aliaui-r-control);
+  background: var(--aliaui-surface);
+  color: var(--aliaui-ink);
+  font: var(--aliaui-tiny);
   font-weight: 560;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   outline: 2px solid transparent;
   outline-offset: 2px;
-  transition: background-color var(--bbui-micro) var(--bbui-ease-out), color var(--bbui-micro) var(--bbui-ease-out);
+  transition: background-color var(--aliaui-micro) var(--aliaui-ease-out), color var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-web-pin::before { content: ""; position: absolute; inset: -11px; } /* 44px hit area */
-.bbui-web-pin:focus-visible { outline-color: var(--bbui-ring); transition: none; }
-.bbui-web-pin:active { transform: translate(-50%, calc(-50% + 1px)); }
-.bbui-web-pin[aria-pressed="true"] { background: var(--bbui-accent); color: var(--bbui-action-ink); z-index: 1; }
+.aliaui-web-pin::before { content: ""; position: absolute; inset: -11px; } /* 44px hit area */
+.aliaui-web-pin:focus-visible { outline-color: var(--aliaui-ring); transition: none; }
+.aliaui-web-pin:active { transform: translate(-50%, calc(-50% + 1px)); }
+.aliaui-web-pin[aria-pressed="true"] { background: var(--aliaui-accent); color: var(--aliaui-action-ink); z-index: 1; }
 @media (hover: hover) {
-  .bbui-web-pin:hover { background: var(--bbui-accent-soft); }
-  .bbui-web-pin[aria-pressed="true"]:hover { background: var(--bbui-accent); }
+  .aliaui-web-pin:hover { background: var(--aliaui-accent-soft); }
+  .aliaui-web-pin[aria-pressed="true"]:hover { background: var(--aliaui-accent); }
 }
 
-.bbui-web-list {
+.aliaui-web-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--bbui-s1);
+  gap: var(--aliaui-s1);
 }
-.bbui-web-day {
+.aliaui-web-day {
   display: flex;
   align-items: center;
-  gap: var(--bbui-s2);
-  padding: var(--bbui-s2) var(--bbui-s2) var(--bbui-s1);
-  font: var(--bbui-head);
+  gap: var(--aliaui-s2);
+  padding: var(--aliaui-s2) var(--aliaui-s2) var(--aliaui-s1);
+  font: var(--aliaui-head);
 }
-.bbui-web-place {
+.aliaui-web-place {
   appearance: none;
   display: flex;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
   width: 100%;
   min-height: 32px;
-  padding: var(--bbui-s1) var(--bbui-s2);
+  padding: var(--aliaui-s1) var(--aliaui-s2);
   border: 0;
-  border-radius: var(--bbui-r-control);
+  border-radius: var(--aliaui-r-control);
   background: transparent;
-  color: var(--bbui-ink);
-  font: var(--bbui-text);
+  color: var(--aliaui-ink);
+  font: var(--aliaui-text);
   text-align: left;
   cursor: pointer;
   outline: 2px solid transparent;
   outline-offset: 0;
-  transition: background-color var(--bbui-micro) var(--bbui-ease-out);
+  transition: background-color var(--aliaui-micro) var(--aliaui-ease-out);
 }
-.bbui-web-place:focus-visible { outline-color: var(--bbui-ring); transition: none; }
-.bbui-web-place:active { transform: translateY(1px); }
-.bbui-web-place:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-.bbui-web-place[aria-pressed="true"] { background: var(--bbui-accent-soft); }
+.aliaui-web-place:focus-visible { outline-color: var(--aliaui-ring); transition: none; }
+.aliaui-web-place:active { transform: translateY(1px); }
+.aliaui-web-place:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.aliaui-web-place[aria-pressed="true"] { background: var(--aliaui-accent-soft); }
 @media (hover: hover) {
-  .bbui-web-place:not(:disabled):hover { background: var(--bbui-well); }
-  .bbui-web-place[aria-pressed="true"]:hover { background: var(--bbui-accent-soft); }
+  .aliaui-web-place:not(:disabled):hover { background: var(--aliaui-well); }
+  .aliaui-web-place[aria-pressed="true"]:hover { background: var(--aliaui-accent-soft); }
 }
-.bbui-web-num {
+.aliaui-web-num {
   flex: none;
   min-width: 18px;
-  font: var(--bbui-head);
-  color: var(--bbui-muted);
+  font: var(--aliaui-head);
+  color: var(--aliaui-muted);
   font-variant-numeric: tabular-nums;
 }
-.bbui-web-place-text {
+.aliaui-web-place-text {
   display: grid;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.bbui-web-tour {
+.aliaui-web-tour {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
 
-.bbui-web-credit {
-  font: var(--bbui-tiny);
-  color: var(--bbui-muted);
+.aliaui-web-credit {
+  font: var(--aliaui-tiny);
+  color: var(--aliaui-muted);
   overflow-wrap: anywhere;
 }
-.bbui-web-credit a {
+.aliaui-web-credit a {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.bbui-web-credit a:focus-visible { outline: 2px solid var(--bbui-ring); outline-offset: 2px; border-radius: var(--bbui-r-control); }
+.aliaui-web-credit a:focus-visible { outline: 2px solid var(--aliaui-ring); outline-offset: 2px; border-radius: var(--aliaui-r-control); }
 
 /* ImageSearch and the Map's place photo. */
-.bbui-web-photo {
+.aliaui-web-photo {
   margin: 0;
   display: grid;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
-.bbui-web-photo-frame {
+.aliaui-web-photo-frame {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
 }
-.bbui-web-photo[data-aspect="square"] .bbui-web-photo-frame,
-.bbui-web-photo-frame[data-aspect="square"] { aspect-ratio: 1; max-width: 420px; }
-.bbui-web-photo[data-aspect="tall"] .bbui-web-photo-frame,
-.bbui-web-photo-frame[data-aspect="tall"] { aspect-ratio: 3 / 4; max-width: 360px; }
-.bbui-web-photo-frame > img {
+.aliaui-web-photo[data-aspect="square"] .aliaui-web-photo-frame,
+.aliaui-web-photo-frame[data-aspect="square"] { aspect-ratio: 1; max-width: 420px; }
+.aliaui-web-photo[data-aspect="tall"] .aliaui-web-photo-frame,
+.aliaui-web-photo-frame[data-aspect="tall"] { aspect-ratio: 3 / 4; max-width: 360px; }
+.aliaui-web-photo-frame > img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.bbui-web-photo-frame > .bbui-skeleton { position: absolute; inset: 0; }
-.bbui-web-photo-frame > .bbui-skeleton > span { height: 100% !important; border-radius: 0; }
+.aliaui-web-photo-frame > .aliaui-skeleton { position: absolute; inset: 0; }
+.aliaui-web-photo-frame > .aliaui-skeleton > span { height: 100% !important; border-radius: 0; }
 
 /* App: the frame is sized to its page by the bridge. */
-.bbui-web-app {
+.aliaui-web-app {
   margin: 0;
   display: grid;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
-.bbui-web-frame-app {
+.aliaui-web-frame-app {
   display: block;
   width: 100%;
   border: 0;
   background: transparent;
 }
-.bbui-web-source {
+.aliaui-web-source {
   margin: 0;
   max-height: 240px;
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.bbui-web-details > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
-.bbui-web-details > summary:focus-visible { outline: 2px solid var(--bbui-ring); border-radius: var(--bbui-r-control); }
-.bbui-web-confirm {
+.aliaui-web-details > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.aliaui-web-details > summary:focus-visible { outline: 2px solid var(--aliaui-ring); border-radius: var(--aliaui-r-control); }
+.aliaui-web-confirm {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
-.bbui-web-confirm > .bbui-label { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
-.bbui-web-note { margin: 0; overflow-wrap: anywhere; }
+.aliaui-web-confirm > .aliaui-label { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.aliaui-web-note { margin: 0; overflow-wrap: anywhere; }
 
 /* Shader. */
-.bbui-web-shader {
+.aliaui-web-shader {
   margin: 0;
   display: grid;
-  gap: var(--bbui-s2);
+  gap: var(--aliaui-s2);
 }
-.bbui-web-canvas {
+.aliaui-web-canvas {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: var(--bbui-r-well);
-  background: var(--bbui-well);
+  border-radius: var(--aliaui-r-well);
+  background: var(--aliaui-well);
   touch-action: none;
 }
-.bbui-web-canvas-wait { opacity: 0.55; }
-.bbui-web-shader-bar {
+.aliaui-web-canvas-wait { opacity: 0.55; }
+.aliaui-web-shader-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--bbui-s3);
+  gap: var(--aliaui-s3);
 }
-.bbui-web-errors {
+.aliaui-web-errors {
   margin: 0;
-  padding-left: var(--bbui-s4);
+  padding-left: var(--aliaui-s4);
   display: grid;
-  gap: var(--bbui-s1);
+  gap: var(--aliaui-s1);
 }
-.bbui-web-code-line {
+.aliaui-web-code-line {
   display: block;
-  margin-top: var(--bbui-s1);
-  color: var(--bbui-ink);
+  margin-top: var(--aliaui-s1);
+  color: var(--aliaui-ink);
   overflow-wrap: anywhere;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bbui-web-pin, .bbui-web-place { transition: none; }
+  .aliaui-web-pin, .aliaui-web-place { transition: none; }
 }

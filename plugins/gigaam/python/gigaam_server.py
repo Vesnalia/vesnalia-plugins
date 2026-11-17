@@ -1,4 +1,4 @@
-"""GigaAM v3 speech-to-text server used by bb-plugin-gigaam.
+"""GigaAM v3 speech-to-text server used by alia-plugin-gigaam.
 
 The plugin's host entry installs this file into its data directory and runs it
 with the plugin-managed Python environment. It can also run on its own:
@@ -118,7 +118,7 @@ def parse_args() -> argparse.Namespace:
         "--parent-pid",
         type=int,
         default=0,
-        help="Exit when this process is gone (set by the bb plugin)",
+        help="Exit when this process is gone (set by the alia plugin)",
     )
     return parser.parse_args()
 
@@ -137,7 +137,7 @@ def find_ffmpeg() -> str:
 
 
 def watch_parent(parent_pid: int) -> None:
-    """Exit if the bb host worker that started us disappears."""
+    """Exit if the alia host worker that started us disappears."""
 
     def loop() -> None:
         while True:

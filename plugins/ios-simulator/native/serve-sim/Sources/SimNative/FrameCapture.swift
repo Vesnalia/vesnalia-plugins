@@ -1,4 +1,4 @@
-// Modified for BB iOS Simulator: polls framebuffer changes for headless capture.
+// Modified for ALIA iOS Simulator: polls framebuffer changes for headless capture.
 // Based on serve-sim 0.1.48 (Apache-2.0); see ../../LICENSE and ../../PROVENANCE.md.
 import Foundation
 import CoreVideo
@@ -224,7 +224,7 @@ actor FrameCapture {
         )
     }
 
-    /// bb patch: the headless iOS 27 simulator posts frame callbacks
+    /// alia patch: the headless iOS 27 simulator posts frame callbacks
     /// unreliably (stalls of 200 ms and more mid-animation), so poll the
     /// framebuffer seed at a high rate. A non-forced `captureFrame()` costs
     /// one IOSurfaceGetSeed when nothing changed, so this is cheap, and it

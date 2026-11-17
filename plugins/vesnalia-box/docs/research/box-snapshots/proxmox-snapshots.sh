@@ -11,7 +11,7 @@ step() { local label=$1; shift; local t; t=$(now); "$@" >/dev/null; echo "TIME $
 
 storage_lines() {
   lvs --noheadings --units g -o vg_name,lv_name,lv_size,data_percent,origin,pool_lv 2>/dev/null |
-    grep -E "vm-($LXC|$VM|$SPARE)-|snap_vm-($LXC|$VM)-|bbsnap" || true
+    grep -E "vm-($LXC|$VM|$SPARE)-|snap_vm-($LXC|$VM)-|aliasnap" || true
   lvs --noheadings --units g -o vg_name,lv_name,lv_size,data_percent -S 'lv_attr=~^t' 2>/dev/null || true
 }
 show_storage() { echo "STORAGE $1:"; storage_lines | sed 's/^/  /'; }
@@ -44,7 +44,7 @@ show_storage "after the LXC snapshot"
 step "lxc write 1 GiB after the snapshot" in_lxc 'head -c 1024M /dev/urandom > /home/box/after.bin && echo after > /home/box/after-marker && sync'
 show_storage "after writing 1 GiB in the LXC"
 
-step "lxc clone of the snapshot (full) to $SPARE" pct clone "$LXC" "$SPARE" --snapname s1 --hostname bbsnap-fork --full 1
+step "lxc clone of the snapshot (full) to $SPARE" pct clone "$LXC" "$SPARE" --snapname s1 --hostname aliasnap-fork --full 1
 pct set "$SPARE" --delete net0,tags,description >/dev/null
 show_storage "after the LXC full clone"
 step "lxc start the clone, no network" pct start "$SPARE"
@@ -54,9 +54,9 @@ step "lxc destroy the clone" pct destroy "$SPARE" --purge 1
 SNAPLV=$(lvs --noheadings -o lv_name 2>/dev/null | awk '{print $1}' | grep -E "^snap_vm-$LXC-disk-0_s1$" || true)
 if [ -n "$SNAPLV" ]; then
   VG=$(lvs --noheadings -o vg_name -S "lv_name=$SNAPLV" | awk '{print $1}')
-  step "lxc thin snapshot of the snapshot (what a linked fork would be)" lvcreate -s -n bbsnap-thin-fork "$VG/$SNAPLV" -kn -ay
+  step "lxc thin snapshot of the snapshot (what a linked fork would be)" lvcreate -s -n aliasnap-thin-fork "$VG/$SNAPLV" -kn -ay
   show_storage "with the thin fork"
-  step "lxc remove the thin fork" lvremove -fy "$VG/bbsnap-thin-fork"
+  step "lxc remove the thin fork" lvremove -fy "$VG/aliasnap-thin-fork"
 else
   echo "NOTE: no LVM-thin snapshot volume for the LXC; skipped the thin fork."
 fi
@@ -90,7 +90,7 @@ echo "VM status after mem1 rollback: $(qm status "$VM")"
 wait_vm "after mem1 rollback"
 echo "VM after mem1 rollback: $(in_vm 'uptime -s; ls /dev/shm/ram.bin /home/box/after-marker 2>&1 | tr "\n" " "')"
 
-step "vm clone of disk1 (full) to $SPARE" qm clone "$VM" "$SPARE" --snapname disk1 --name bbsnap-fork --full 1
+step "vm clone of disk1 (full) to $SPARE" qm clone "$VM" "$SPARE" --snapname disk1 --name aliasnap-fork --full 1
 NET=$(qm config "$SPARE" | sed -nE 's/^net0: (.*)$/\1/p')
 qm set "$SPARE" --net0 "$NET,link_down=1" --delete tags,description >/dev/null
 show_storage "after the VM full clone"

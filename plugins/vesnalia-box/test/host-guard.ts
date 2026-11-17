@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { GUARD_FOLDER_PREFIX, READ_OR_CHANGE_COMMANDS, SYSTEM_PATH, isTestMade, privilegedToolsOn } from "./host-stubs.mjs";
 
-export const GUARD_RECORD_VARIABLE = "BBBOX_TEST_GUARD_RECORD";
+export const GUARD_RECORD_VARIABLE = "ALIABOX_TEST_GUARD_RECORD";
 const GUARD_EXIT_CODE = 97;
 
 const SPAWNERS = ["spawn", "spawnSync", "execFile", "execFileSync", "exec", "execSync", "fork"] as const;

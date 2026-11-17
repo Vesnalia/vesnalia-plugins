@@ -526,10 +526,10 @@ table.kinds tr:last-child td { border-bottom: 0; }
         <div class="fgrid">
           <label class="field">API URL <input class="input" value="https://192.0.2.10:8006"></label>
           <label class="field">Node <input class="input" value="pve"></label>
-          <label class="field">API token ID <input class="input" value="bbbox@pve!plugin"></label>
+          <label class="field">API token ID <input class="input" value="aliabox@pve!plugin"></label>
           <label class="field"><span>API token secret <span class="chip">secret</span> <span class="chip">not set</span></span><input class="input" type="password" placeholder="Paste the secret"></label>
           <label class="field">TLS fingerprint <input class="input" value="AB:CD:EF:…"></label>
-          <label class="field">Resource pool <input class="input" value="bbbox"></label>
+          <label class="field">Resource pool <input class="input" value="aliabox"></label>
         </div>
         <div class="label" style="margin-top:16px">Templates</div>
         <div class="fgrid">
@@ -542,7 +542,7 @@ table.kinds tr:last-child td { border-bottom: 0; }
         <div class="row" style="margin-top:12px; gap:8px"><button class="btn primary sm7">Save</button><button class="btn outline sm7">Check</button></div>
         <div class="checks">
           <div class="check"><svg class="icon s ok"><use href="#i-circle-check"/></svg><div><span class="fg">Proxmox API</span> <span class="muted">Proxmox VE 9.2 on pve</span></div></div>
-          <div class="check"><svg class="icon s ok"><use href="#i-circle-check"/></svg><div><span class="fg">Token rights</span> <span class="muted">VM.Allocate, VM.Clone, VM.Config.*, VM.PowerMgmt on /pool/bbbox</span></div></div>
+          <div class="check"><svg class="icon s ok"><use href="#i-circle-check"/></svg><div><span class="fg">Token rights</span> <span class="muted">VM.Allocate, VM.Clone, VM.Config.*, VM.PowerMgmt on /pool/aliabox</span></div></div>
           <div class="check"><svg class="icon s bad"><use href="#i-x"/></svg><div><span class="fg">Template 9101</span> <span class="muted">has no tag build:…, so warm boxes cannot be checked against it.</span><div class="fix">Fix: run <code>build.sh desktop</code> again; it tags the template.</div></div></div>
           <div class="check"><svg class="icon s warn-i"><use href="#i-alert"/></svg><div><span class="fg">Memory</span> <span class="muted">pve has 6 GiB free; 4 GiB is kept back, so one Linux box fits.</span></div></div>
           <div class="check"><svg class="icon s subtle"><use href="#i-minus"/></svg><div><span class="muted">SSH into a box: skipped, since a template check failed.</span></div></div>

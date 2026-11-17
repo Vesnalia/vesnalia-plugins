@@ -14,7 +14,7 @@ const boxes: SampleBox[] = [
     name: "proud-crane",
     badges: ["Desktop", "Container"],
     desktop: true,
-    status: "Ready in 0.8 s · BB machine in 4.6 s · 4 cores · 8 GiB",
+    status: "Ready in 0.8 s · ALIA machine in 4.6 s · 4 cores · 8 GiB",
     facts: [
       ["Kind", "Linux desktop"],
       ["Provider", "Docker"],
@@ -26,7 +26,7 @@ const boxes: SampleBox[] = [
     name: "clear-comet",
     badges: ["microVM"],
     desktop: false,
-    status: "Ready in 1.4 s · BB machine in 9.2 s · 2 cores · 4 GiB · 32 GiB",
+    status: "Ready in 1.4 s · ALIA machine in 9.2 s · 2 cores · 4 GiB · 32 GiB",
     facts: [
       ["Kind", "Linux"],
       ["Provider", "microsandbox"],
@@ -132,9 +132,9 @@ const mostBoxes = 4;
 
 
   const menuSays: Record<string, (name: string) => string> = {
-    snapshot: (name) => `In BB, this saves ${name}'s disk as a snapshot you can restore with an undo.`,
-    resize: (name) => `In BB, this gives ${name} more cores, memory or disk, live where its backend can.`,
-    fork: (name) => `In BB, this makes a fresh box from ${name}'s snapshot, with its own identity.`,
+    snapshot: (name) => `In ALIA, this saves ${name}'s disk as a snapshot you can restore with an undo.`,
+    resize: (name) => `In ALIA, this gives ${name} more cores, memory or disk, live where its backend can.`,
+    fork: (name) => `In ALIA, this makes a fresh box from ${name}'s snapshot, with its own identity.`,
   };
 
   function startPanel(panel: HTMLElement): void {
@@ -176,7 +176,7 @@ const mostBoxes = 4;
         row.toggleAttribute("data-open", !facts.hidden);
       });
       row.querySelectorAll<HTMLButtonElement>("[data-act]").forEach((button) =>
-        button.addEventListener("click", () => say(`In BB, this opens ${name}'s ${button.dataset.act} in a tab.`)),
+        button.addEventListener("click", () => say(`In ALIA, this opens ${name}'s ${button.dataset.act} in a tab.`)),
       );
       rowMenu.attach(row.querySelector<HTMLButtonElement>("[data-menu-for]")!, row);
     };
@@ -184,7 +184,7 @@ const mostBoxes = 4;
     const release = (row: HTMLElement) => {
       released = { row, after: row.nextElementSibling };
       row.remove();
-      note.replaceChildren(`Released ${row.dataset.box}. In BB, this deletes the box and its disk. `);
+      note.replaceChildren(`Released ${row.dataset.box}. In ALIA, this deletes the box and its disk. `);
       const undo = document.createElement("button");
       undo.type = "button";
       undo.className = "note-undo";
@@ -200,7 +200,7 @@ const mostBoxes = 4;
 
     const ready = (row: HTMLElement, seconds: string) => {
       row.querySelector(".piece-dot")!.setAttribute("data-state", "ready");
-      row.querySelector(".status-words")!.textContent = `Ready in ${seconds} s · BB machine in 3.9 s · 2 cores · 4 GiB`;
+      row.querySelector(".status-words")!.textContent = `Ready in ${seconds} s · ALIA machine in 3.9 s · 2 cores · 4 GiB`;
     };
 
     panel.querySelector<HTMLButtonElement>("[data-new-box]")!.addEventListener("click", () => {
@@ -218,7 +218,7 @@ const mostBoxes = 4;
       });
       list.append(row);
       wire(row);
-      say(`Making ${name}. In BB, a box is usually ready in seconds.`);
+      say(`Making ${name}. In ALIA, a box is usually ready in seconds.`);
       if (reducedMotion()) ready(row, "0.9");
       else setTimeout(() => ready(row, "0.9"), startingMs);
     });

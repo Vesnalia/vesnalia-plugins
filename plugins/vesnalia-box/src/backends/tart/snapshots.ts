@@ -229,7 +229,7 @@ scrub_disk() {
   [ "$_box" != "$_mac" ] && [ "$_box" != "$_dev" ] || { echo "The fork's disk names the Mac's own container, so VesnALIA Box changed nothing." >&2; scrub_end; return 1; }
   _data=$(diskutil apfs list "$_box" 2>/dev/null | awk '/APFS Volume Disk \(Role\)/ && /\(Data\)/ { print $6; exit }')
   case $_data in "$_box"s[0-9]*) ;; *) echo "The fork's disk has no Data volume in its own container." >&2; scrub_end; return 1 ;; esac
-  _mnt=$(mktemp -d "${"$"}{TMPDIR:-/tmp}/bbbox-fork.XXXXXX") || { scrub_end; return 1; }
+  _mnt=$(mktemp -d "${"$"}{TMPDIR:-/tmp}/aliabox-fork.XXXXXX") || { scrub_end; return 1; }
   diskutil mount -mountPoint "$_mnt" "$_data" >/dev/null 2>&1 || { echo "diskutil could not mount the fork's Data volume." >&2; rmdir "$_mnt"; _mnt=; scrub_end; return 1; }
   [ -d "$_mnt/Users" ] || { echo "The fork's Data volume has no Users folder." >&2; scrub_end; return 1; }
   for _f in "$_mnt"/Users/*/.alia-machines/* "$_mnt"/Users/*/.alia-machines/.set-aside/* "$_mnt"/private/var/root/.alia-machines/*; do

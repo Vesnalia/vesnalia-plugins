@@ -3,7 +3,7 @@
 // public thread routes, and the motion is observed in rendered pixels.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { alia, CAT_CANVAS, DANCING, driverProjects, openBB, openMaxwell, openTab, ROTATING, spawnDriver } from './harness.mjs';
+import { alia, CAT_CANVAS, DANCING, driverProjects, openALIA, openMaxwell, openTab, ROTATING, spawnDriver } from './harness.mjs';
 import { difference, freeze, sample } from './images.mjs';
 import { clickCat, waitForStarts } from './audio.mjs';
 import { assertDancing, assertRightToLeft, assertRpm, DANCE_PERIOD, frames, sceneTime, serveThreads, SETTLED, usage } from './motion.mjs';
@@ -54,7 +54,7 @@ async function rpm(page, expected, where) {
 test('rotation speed grows linearly from 24 rpm at an empty context to 120 rpm at a full one, right to left', async (t) => {
   const [a] = await threads(t);
   for (const reducedMotion of ['no-preference', 'reduce']) {
-    const { browser, page } = await openBB({ reducedMotion });
+    const { browser, page } = await openALIA({ reducedMotion });
     try {
       const served = await serveThreads(page);
       served.context(a, usage(0));
@@ -81,7 +81,7 @@ test('rotation speed grows linearly from 24 rpm at an empty context to 120 rpm a
 
 test('missing, failed and invalid readings keep the chat\'s last valid reading, or 24 rpm without one', async (t) => {
   const [a] = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     served.context(a, 'error');
@@ -105,7 +105,7 @@ test('missing, failed and invalid readings keep the chat\'s last valid reading, 
 
 test('compaction, a model change and clearing move the speed to the current fill, ignoring reads from before a clear', async (t) => {
   const [a] = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     served.context(a, usage(0.875));
@@ -142,7 +142,7 @@ test('compaction, a model change and clearing move the speed to the current fill
 
 test('a new reading during a speed change continues from the current motion', async (t) => {
   const [a] = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     served.context(a, usage(0));
@@ -171,7 +171,7 @@ test('readings never carry over between chats, tabs or agents, and a chat return
   const child = JSON.parse(await alia('thread', 'spawn', '--project', driverProjects()[0], '--provider', process.env.MAXWELL_DRIVER_PROVIDER ?? 'acp-maxwell-driver', '--parent-thread', a, '--prompt', 'ready', '--json')).id;
   t.after(() => alia('thread', 'archive', child).catch(() => {}));
   await alia('thread', 'wait', child, '--timeout', '60s');
-  const { browser, context, page } = await openBB();
+  const { browser, context, page } = await openALIA();
   try {
     const served = await serveThreads(context);
     served.context(a, usage(1));
@@ -218,7 +218,7 @@ test('readings never carry over between chats, tabs or agents, and a chat return
 
 test('reconnecting rereads the context it missed', async (t) => {
   const [a] = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     // While offline, the app's socket opens but reaches nothing.
@@ -262,7 +262,7 @@ test('reconnecting rereads the context it missed', async (t) => {
 
 test('Maxwell dances without an Aktywny czat, at a constant tempo with or without music, and rotates after the first message', async (t) => {
   const [a] = await threads(t);
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const served = await serveThreads(page);
     // New thread has no chat yet.

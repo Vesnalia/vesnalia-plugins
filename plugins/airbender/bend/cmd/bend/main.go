@@ -68,7 +68,7 @@ func main() {
 			command.Dir = dir
 			// The setup steps start bd this way (bd init, bd dolt push, bd sync):
 			// the same environment the adapter gives it, so that a first
-			// publish leaves no info branch either (bead-bb-7lb).
+			// publish leaves no info branch either (bead-alia-7lb).
 			command.Env = beads.Environment()
 			// Without a keyboard its standard input stays nothing.
 			if keyboard {

@@ -26,7 +26,7 @@ export interface TeamTask {
   decisions?: string;
   result?: string;
   dependencies?: TaskId[];
-  /** bbt-iwi.2: review submission + acceptance decisions, stored only in the selected tracker. */
+  /** aliat-iwi.2: review submission + acceptance decisions, stored only in the selected tracker. */
   review?: TaskReviewRecord;
 }
 
@@ -86,7 +86,7 @@ export interface TeamSnapshot {
 
 export type StatusTone = "running" | "idle" | "error" | "missing" | "other";
 
-/* ──────────────────────── Execution state (bbt-er6.5) ──────────────────────── */
+/* ──────────────────────── Execution state (aliat-er6.5) ──────────────────────── */
 
 /** Technical stage of a durable auto-continue request (KV, ids only). */
 export type AutoContinueStage =

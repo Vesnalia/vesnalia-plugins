@@ -57,9 +57,9 @@ export function RunDetail({
       ? (run.testFailed ?? 0) > 0
         ? {
             label: `${run.testFailed} of ${run.testTotal} tests failed`,
-            cls: "bbx-status-fail",
+            cls: "aliax-status-fail",
           }
-        : { label: `${run.testTotal} tests passed`, cls: "bbx-status-pass" }
+        : { label: `${run.testTotal} tests passed`, cls: "aliax-status-pass" }
       : null;
 
   return (
@@ -132,21 +132,21 @@ export function RunDetail({
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {run.errorCount > 0 ? (
             <Chip
-              cls="bbx-status-fail"
+              cls="aliax-status-fail"
               icon="CircleX"
               label={`${run.errorCount} error${run.errorCount === 1 ? "" : "s"}`}
             />
           ) : null}
           {run.warningCount > 0 ? (
             <Chip
-              cls="bbx-status-warn"
+              cls="aliax-status-warn"
               icon="AlertTriangle"
               label={`${run.warningCount} warning${run.warningCount === 1 ? "" : "s"}`}
             />
           ) : null}
           {run.analyzerCount > 0 ? (
             <Chip
-              cls="bbx-status-warn"
+              cls="aliax-status-warn"
               icon="Info"
               label={`${run.analyzerCount} analyzer`}
             />
@@ -160,14 +160,14 @@ export function RunDetail({
           ) : null}
           {recordedSnapshots > 0 ? (
             <Chip
-              cls="bbx-status-run"
+              cls="aliax-status-run"
               icon="Layers"
               label={`${recordedSnapshots} snapshot${recordedSnapshots === 1 ? "" : "s"} recorded`}
             />
           ) : null}
           {(run.testSkipped ?? 0) > 0 ? (
             <Chip
-              cls="bbx-status-muted"
+              cls="aliax-status-muted"
               icon="CircleDashed"
               label={`${run.testSkipped} skipped`}
             />
@@ -182,9 +182,9 @@ export function RunDetail({
             {findings.map((finding, index) => (
               <li
                 key={`f${index}`}
-                className="bbx-status-fail flex items-baseline gap-2 text-[11px]"
+                className="aliax-status-fail flex items-baseline gap-2 text-[11px]"
               >
-                <span className="bbx-text shrink-0 font-mono font-medium">
+                <span className="aliax-text shrink-0 font-mono font-medium">
                   {formatLocation(finding.filePath, finding.line) ?? "error"}
                 </span>
                 <span className="min-w-0 truncate text-muted-foreground">
@@ -195,9 +195,9 @@ export function RunDetail({
             {failedTests.map((test, index) => (
               <li
                 key={`t${index}`}
-                className="bbx-status-fail flex items-baseline gap-2 text-[11px]"
+                className="aliax-status-fail flex items-baseline gap-2 text-[11px]"
               >
-                <span className="bbx-text shrink-0 font-mono font-medium">
+                <span className="aliax-text shrink-0 font-mono font-medium">
                   {test.suite ? `${test.suite}/` : ""}
                   {test.name}
                 </span>
@@ -224,7 +224,7 @@ export function RunDetail({
                   statusClass(entry.status),
                 )}
               >
-                <span className="bbx-text shrink-0">{runStatusLabel(entry)}</span>
+                <span className="aliax-text shrink-0">{runStatusLabel(entry)}</span>
                 <span className="truncate">
                   {runTitle(entry)} · {kindLabel(entry.kind)}
                 </span>
@@ -283,7 +283,7 @@ function Chip({
     <span
       className={cn(
         cls,
-        "bbx-chip inline-flex h-[18px] items-center gap-1 rounded-full border px-1.5 text-[10px] font-medium",
+        "aliax-chip inline-flex h-[18px] items-center gap-1 rounded-full border px-1.5 text-[10px] font-medium",
       )}
     >
       <Icon name={icon} className="size-3" aria-hidden />

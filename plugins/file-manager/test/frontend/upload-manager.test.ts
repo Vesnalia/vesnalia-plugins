@@ -397,7 +397,7 @@ describe("happy path", () => {
     const ids = manager
       .enqueue([
         { file: makeFile("a.txt", "aaaa"), dirPath: DIR },
-        { file: makeFile("b.txt", "bbbbbbbb"), dirPath: DIR, relativeDir: "sub" },
+        { file: makeFile("b.txt", "aliabbbbbb"), dirPath: DIR, relativeDir: "sub" },
       ])
       .map((upload) => upload.id);
 
@@ -405,7 +405,7 @@ describe("happy path", () => {
 
     expect(server.tokenRequests).toBe(1);
     expect(server.committed.get(`${DIR}/a.txt`)).toBe("aaaa");
-    expect(server.committed.get(`${DIR}/sub/b.txt`)).toBe("bbbbbbbb");
+    expect(server.committed.get(`${DIR}/sub/b.txt`)).toBe("aliabbbbbb");
   });
 
   it("uploads a zero-byte file with no chunk requests at all", async () => {
@@ -605,7 +605,7 @@ describe("queue control", () => {
     const ids = manager
       .enqueue([
         { file: makeFile("a.txt", "aaaa"), dirPath: DIR },
-        { file: makeFile("b.txt", "bbbb"), dirPath: DIR },
+        { file: makeFile("b.txt", "aliabb"), dirPath: DIR },
       ])
       .map((upload) => upload.id);
 
@@ -667,7 +667,7 @@ describe("queue control", () => {
     const ids = manager
       .enqueue([
         { file: makeFile("a.txt", "aaaa"), dirPath: DIR },
-        { file: makeFile("b.txt", "bbbb"), dirPath: DIR },
+        { file: makeFile("b.txt", "aliabb"), dirPath: DIR },
         { file: makeFile("c.txt", "cccc"), dirPath: DIR },
       ])
       .map((upload) => upload.id);

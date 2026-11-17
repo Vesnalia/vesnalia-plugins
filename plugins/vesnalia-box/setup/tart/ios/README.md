@@ -22,7 +22,7 @@ macOS image, with:
   runs to set and read a slot's device's clipboard as the device server does
 - `device-host`, the helper that lends the VM's slots when it is a shared
   host ([064](../../../docs/decisions/064-ios-shared-hosts.md)), with two
-  slots made ahead, `bbd-i1` and `bbd-i2`, as below
+  slots made ahead, `aliad-i1` and `aliad-i2`, as below
 
 Each ios box is a clone of this image. Its device server, which alia-box
 delivers to the box, boots the device the box asked for, finds it by its
@@ -164,10 +164,10 @@ For a shared host it checks:
 | device-host | the helper is not installed, or does not run as root |
 | device-host daemons | `install` did not write the plists of `app.alia-box.device-host` and its held ports, or launchd has either loaded before `init` |
 | held ports free | anything listens at 3000, 4200, 5000, 5173, 8000, 8080, 8081 or 19000, on 127.0.0.1 or ::1: a dedicated box keeps them for its own servers |
-| carried slots | `bbd-i1` or `bbd-i2` is missing, not ready, its device not seeded, or booted |
+| carried slots | `aliad-i1` or `aliad-i2` is missing, not ready, its device not seeded, or booted |
 | slot uids | any file on the Data volume is owned by a UID from 80000 to 89999, or from 79990 to 79999 but the carried users' own |
-| slot clipboard | `bbd-i1`'s device, booted for the check, cannot have its clipboard set and read back intact through a launchd job in `bbd-i1`'s own session, with macOS's pasteboard server loaded there, as the device server sets it (F-17). The device is shut down again after |
-| slot keyboard | `bbd-i1`'s device, booted for the check, has a keyboard default that is not off, or slide to type's first-use tip not marked seen. A slot's first boot, its claim or its warm-up writes them as the image's devices have them (F-23). The device is shut down again after |
+| slot clipboard | `aliad-i1`'s device, booted for the check, cannot have its clipboard set and read back intact through a launchd job in `aliad-i1`'s own session, with macOS's pasteboard server loaded there, as the device server sets it (F-17). The device is shut down again after |
+| slot keyboard | `aliad-i1`'s device, booted for the check, has a keyboard default that is not off, or slide to type's first-use tip not marked seen. A slot's first boot, its claim or its warm-up writes them as the image's devices have them (F-23). The device is shut down again after |
 | disabled.plist kept | the image kept no runtime's `disabled.plist` |
 
 It builds a small app with a UI test, [`probe`](probe), for the last. Give
@@ -237,8 +237,8 @@ slots, so it does not close.
   carried slots, and accepts no carried slot's UID. It is closed while the
   Mac is lent whole.
 
-- **Slots.** Slot `n` is user `bbd-n` with UID 80000 plus `n`, from slot 1
-  to slot 9999, UID 89999; the carried slots are `bbd-i1` and `bbd-i2`, UIDs
+- **Slots.** Slot `n` is user `aliad-n` with UID 80000 plus `n`, from slot 1
+  to slot 9999, UID 89999; the carried slots are `aliad-i1` and `aliad-i2`, UIDs
   79991 and 79992. A UID is never given again while the host lives, and none
   wraps: `make` and `promise` refuse once a host has given slot 9999, with
   words to let its boxes go and set it up again. Each user is standard and hidden, in

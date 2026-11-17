@@ -2949,7 +2949,7 @@ worked.
   it. No helper changes.
 - **Checks.** `slot-clipboard.sh` sets and reads a device's clipboard the
   same way, as a given user, and says where. The iOS image's check runs it
-  on carried slot `bbd-i1`'s device. The pool's `mac-ios.sh` runs it as the
+  on carried slot `aliad-i1`'s device. The pool's `mac-ios.sh` runs it as the
   admin user, which has no desktop session, on a device made for the check
   and deleted after, and warns if it fails. It does not run on a Namespace
   host's start, which boxes wait for.
@@ -2961,7 +2961,7 @@ started again by launchd, so it ran as production runs it:
 
 | Slot | Before | After |
 | --- | --- | --- |
-| Pool's Mac, iOS 27.0, Xcode 27.0 | `pbcopy` and `pbpaste` exit 139; `computer_type` of `bbtest é✓` fails: "simctl could not set the device's clipboard" | `computer_type` of `bbtest ✓ 日本 é` arrives whole; the clipboard reads back what it held before; `box_run`'s own `pbcopy` and `pbpaste` work, UTF-8 intact |
+| Pool's Mac, iOS 27.0, Xcode 27.0 | `pbcopy` and `pbpaste` exit 139; `computer_type` of `aliatest é✓` fails: "simctl could not set the device's clipboard" | `computer_type` of `aliatest ✓ 日本 é` arrives whole; the clipboard reads back what it held before; `box_run`'s own `pbcopy` and `pbpaste` work, UTF-8 intact |
 | Namespace Mac, iOS 26.2, Xcode 26.1.1 | exit 139 | `✓`, `日本`, `abc✓` and `a✓b日本c` arrive; `box_run`'s own calls work. See the follow-up below |
 
 A job in the slot's domain took 0.13 to 0.17 s for a `pbcopy` or `pbpaste`
@@ -2976,9 +2976,9 @@ On production VesnALIA at main dd05f65, device server version 30, on 28 October
 
 | Box | What was checked | Result |
 | --- | --- | --- |
-| Shared slot, pool's Mac, iOS 27.0 | the panel's Copy to this computer, with `bbtest device copy ✓ 日本` on the device's clipboard | "Copied 23 characters from the iPhone 18 Pro", and the text came whole |
-| | the panel's Paste from this computer, into Safari's address field | "Pasted"; the field read `bbtest panel paste ✓ é 日本`, and the device's clipboard held its own text again after |
-| | `computer_type` of `bbtest ✓ 日本 é` | arrived whole |
+| Shared slot, pool's Mac, iOS 27.0 | the panel's Copy to this computer, with `aliatest device copy ✓ 日本` on the device's clipboard | "Copied 23 characters from the iPhone 18 Pro", and the text came whole |
+| | the panel's Paste from this computer, into Safari's address field | "Pasted"; the field read `aliatest panel paste ✓ é 日本`, and the device's clipboard held its own text again after |
+| | `computer_type` of `aliatest ✓ 日本 é` | arrived whole |
 | | `box_device` appearance dark; `box_run`'s own `pbcopy` and `pbpaste` | 0.3 s; both worked, UTF-8 intact |
 | Shared slot, Tart host, iOS 27.0 | `box_run`'s own `pbcopy` and `pbpaste` | worked from about 15 s after the device booted; before that, exit 60 (see below) |
 | | `computer_type` of `✓ 日本` | arrived whole |
@@ -2998,7 +2998,7 @@ the one measured there before it.
 ### The image's check line
 
 Run by hand on a dedicated Tart box cloned from the iOS image, as
-`alia-box-check-ios` will run it, on carried slot `bbd-i1`'s device:
+`alia-box-check-ios` will run it, on carried slot `aliad-i1`'s device:
 
 - **The device's pasteboard answers some seconds after it reports booted.**
   Just after `simctl bootstatus -b`, `pbcopy` exits 60, "Operation timed
@@ -3008,7 +3008,7 @@ Run by hand on a dedicated Tart box cloned from the iOS image, as
 - **Its words were lost.** A failure went to standard output, which the
   first set sent to `/dev/null`. Each failure now goes to standard error,
   which both callers keep.
-- With both fixes: "bbd-i1 set and read its device's clipboard, UTF-8
+- With both fixes: "aliad-i1 set and read its device's clipboard, UTF-8
   intact, in its own session, user/79991, with macOS's pasteboard server
   loaded there, in 1.4 s", in 7 s with the boot. The device was shut down
   after, the helper's status said the slot was ready and not booted, and
@@ -3022,9 +3022,9 @@ Run by hand on a dedicated Tart box cloned from the iOS image, as
   as the check now does.
 - **A paste can put in the clipboard's earlier text, or nothing.** On every
   kind of box, a dedicated one too, so it is not F-17's change: on a
-  dedicated Tart box, `a✓b日本c` arrived as `a ✓c` and `bbtest ✓ 日本 é` as
-  `bbtest é`; on a Namespace slot, `ab ✓` as `ab`; on a Tart host slot just
-  after a reboot, `bbtest ✓ 日本 é` as `bbtest bbtest tart host ✓ 日本`, the
+  dedicated Tart box, `a✓b日本c` arrived as `a ✓c` and `aliatest ✓ 日本 é` as
+  `aliatest é`; on a Namespace slot, `ab ✓` as `ab`; on a Tart host slot just
+  after a reboot, `aliatest ✓ 日本 é` as `aliatest aliatest tart host ✓ 日本`, the
   text the clipboard held before. A paste alone, such as `✓ 日本`, arrived
   each time. A 500 ms wait before the clipboard is put back, instead of
   100 ms, did not change it on Namespace. The likeliest cause is that
@@ -3253,14 +3253,14 @@ returned 10 to 11 ms after the device's log said "Successfully finished
 writing new snapshot to pasteboard". The app reads the pasteboard when it
 handles Cmd+V, and after a boot the device handles the key late. Caught in
 the device's log on a dedicated Tart box, 6 s after a reboot, as the
-agent's `computer_type` put `bbtest ✓ 日本 é` into the probe app's field:
+agent's `computer_type` put `aliatest ✓ 日本 é` into the probe app's field:
 
 | Time | What |
 | --- | --- |
 | 19.759 | the device holds `✓ 日本` |
 | 20.100 | the earlier text is back on the device, put back by the server 100 ms after the paste key |
 | 20.572 to 20.605 | the keyboard, shown for the first time since the boot, reads the pasteboard 6 times |
-| 20.848 | the app reads the pasteboard, and pastes `bbtest earlier clipboard` |
+| 20.848 | the app reads the pasteboard, and pastes `aliatest earlier clipboard` |
 
 On a device that had settled, the app read 0 to 52 ms after the key, so
 the 100 ms that E21 measured was enough there.
@@ -3271,7 +3271,7 @@ logs `deferFromSBWindowScene: adding rule` for it, and `invalidate` when
 it goes. It shows for about 2.55 s from about 50 ms after the app's read,
 so the server's hold on keys, 2.6 s from the paste key (E21), was enough.
 After a boot, the first notice came 450 ms after the read and went 3.1 s
-after the key. The keys typed at 2.6 s were lost: `bbtest ✓ 日本 é` lost
+after the key. The keys typed at 2.6 s were lost: `aliatest ✓ 日本 é` lost
 ` é` on the first paste after each of 3 reboots and server restarts. Each
 paste shows two notices, one for each of the app's two reads, the second
 at once after the first.
@@ -3337,15 +3337,15 @@ The clipboard held a test value first; test values only.
 
 | Check | Version 30 | This change |
 | --- | --- | --- |
-| Dedicated Tart box: `computer_type` of `bbtest ✓ 日本 é` into the probe app, 6 to 30 s after a reboot | `bbtest bbtest earlier clipboard`, 2 of 2 | whole, 1 of 1; the app read 47 ms after the key; the notice went 3.1 s after it |
+| Dedicated Tart box: `computer_type` of `aliatest ✓ 日本 é` into the probe app, 6 to 30 s after a reboot | `aliatest aliatest earlier clipboard`, 2 of 2 | whole, 1 of 1; the app read 47 ms after the key; the notice went 3.1 s after it |
 | Dedicated Tart box: 20 mixed texts in a row | | 20 of 20 whole, the clipboard put back each time |
 | Shared slot on a Tart host: the same 20 into Safari's address field, the first 40 s after the device started again | | 20 of 20 whole, the clipboard put back each time |
-| Shared slot: `computer_type` of `bbtest agent ✓ 日本 é naïve` into Safari | | whole, the clipboard put back |
+| Shared slot: `computer_type` of `aliatest agent ✓ 日本 é naïve` into Safari | | whole, the clipboard put back |
 | Shared slot: a reboot on a host a minute old | | the server waited 4.7 s more for accessibility and the pasteboard to answer; the next `computer_observe` read the whole Home Screen in 48 ms |
 | A set and its read-back | | 0.24 to 0.36 s on the slot, 0.25 to 0.34 s on the dedicated box |
 | The panel's `paste` request, from the request to its answer | 0.6 s | 1.2 to 1.6 s |
 
-The 20 texts were, in turn: `bbtest ✓ 日本 é`, `a✓b日本c`, `ab ✓`, `✓ 日本`,
+The 20 texts were, in turn: `aliatest ✓ 日本 é`, `a✓b日本c`, `ab ✓`, `✓ 日本`,
 `Grüße, 世界 — ok`, `naïve café ✓`, `日本語のテキスト` and `x→y ∑ 🙂 z`. In 6 of
 each 20, iOS added its smart-paste space (E21): `a ✓b 日本c` and
 `x →y ∑ 🙂 z`. Text with line feeds, CRLF and a decomposed é read back
@@ -3366,11 +3366,11 @@ socket, as before the deploy.
 | Box | Check | Result |
 | --- | --- | --- |
 | Shared slot on a Tart host made for it | the first `computer_observe` | the whole Home Screen, 14 elements, first time, in 39 ms. In the boot, two reads of the screen went unanswered, after 10.3 and 7.7 s; the server said the device booted only when the third answered, 20.4 s after the boot |
-| | `computer_type` of `bbtest after boot ✓ 日本 é` into Safari, at once after a reboot | arrived as `✓ 日本 é`: the device's first keyboard showed iOS's tip "Speed up your typing by sliding your finger across the letters", and the keys before the paste went to it. The paste arrived and the clipboard was put back |
+| | `computer_type` of `aliatest after boot ✓ 日本 é` into Safari, at once after a reboot | arrived as `✓ 日本 é`: the device's first keyboard showed iOS's tip "Speed up your typing by sliding your finger across the letters", and the keys before the paste went to it. The paste arrived and the clipboard was put back |
 | | the same, after the tip's Continue and another reboot | whole, the clipboard put back |
 | | 20 mixed texts in a row into Safari's address field | 20 of 20 whole, 5 with iOS's smart-paste space; the clipboard put back each time; no paste line in the server's log and no log stream left |
-| Dedicated Tart box | `computer_type` of `bbtest ✓ 日本 é` into the probe app, the device's first boot | whole, the earlier clipboard put back |
-| | `computer_type` of `bbtest reboot ✓ 日本 é`, at once after a reboot | whole, the earlier clipboard put back |
+| Dedicated Tart box | `computer_type` of `aliatest ✓ 日本 é` into the probe app, the device's first boot | whole, the earlier clipboard put back |
+| | `computer_type` of `aliatest reboot ✓ 日本 é`, at once after a reboot | whole, the earlier clipboard put back |
 | | the same 20 mixed texts into the probe app | 20 of 20 whole, 5 with the smart-paste space; the clipboard put back each time; no log stream left |
 
 The server waited 8.3 s for the dedicated box's device to answer after
@@ -3559,8 +3559,8 @@ and autocorrect, smart punctuation and predictions on too.
   boots its device before a claim. A write that fails there is left for
   the next warm-up, and the claim goes on.
 - **The image's check covers a carried slot's device.** The new line
-  `slot keyboard` boots `bbd-i1`'s device, reads its keyboard defaults as
-  `bbd-i1` with the image devices' own check, and shuts it down again.
+  `slot keyboard` boots `aliad-i1`'s device, reads its keyboard defaults as
+  `aliad-i1` with the image devices' own check, and shuts it down again.
 - `device-host` is version 6.
 
 Tests: a slot's first boot writes the seven defaults on its device, once;
@@ -3637,9 +3637,9 @@ test values only:
 
 | Check | Version 32 | This change |
 | --- | --- | --- |
-| A text with a paste into the page, Chrome just started | `ab ✓ 日本` arrived as `ab `, and `✓1` to `✓5` as their digits only | `bbtest ✓ 日本 é` whole |
-| 13 mixed texts in 3 calls, 18 pastes among keys: `naïve`, `naïve café ✓`, `a✓b日本c`, `Grüße, 世界 — ok`, `x→y ∑ 🙂 z`, `ab ✓`, `q✓w✓e✓r`, `bbtest ✓ 日本 é`, `né`, `ña`, `üb`, `日本語のテキスト`, `z✓` | | 13 of 13 whole and in order |
-| `bbtest ✓ 日本 é` into Chrome's address bar, a native field | | whole |
+| A text with a paste into the page, Chrome just started | `ab ✓ 日本` arrived as `ab `, and `✓1` to `✓5` as their digits only | `aliatest ✓ 日本 é` whole |
+| 13 mixed texts in 3 calls, 18 pastes among keys: `naïve`, `naïve café ✓`, `a✓b日本c`, `Grüße, 世界 — ok`, `x→y ∑ 🙂 z`, `ab ✓`, `q✓w✓e✓r`, `aliatest ✓ 日本 é`, `né`, `ña`, `üb`, `日本語のテキスト`, `z✓` | | 13 of 13 whole and in order |
+| `aliatest ✓ 日本 é` into Chrome's address bar, a native field | | whole |
 
 `computer_type`'s read of the field after each call gave the field's
 text.
@@ -3677,12 +3677,12 @@ version 6, on 29 October 2026, with test values only.
 
 | Box | Check | Result |
 | --- | --- | --- |
-| Shared slot on a Tart host made for the box: carried slot `bbd-i1` | its device's keyboard defaults, read with `simctl spawn ... defaults read` | none written: `DidShowContinuousPathIntroduction` and the rest missing |
-| | `computer_type` of `bbtest first keyboard ✓ 日本 é` into Safari's address field, the device's first keyboard | arrived as `✓ 日本 é`: the slide to type tip showed, with Continue, and took the keys before the paste |
+| Shared slot on a Tart host made for the box: carried slot `aliad-i1` | its device's keyboard defaults, read with `simctl spawn ... defaults read` | none written: `DidShowContinuousPathIntroduction` and the rest missing |
+| | `computer_type` of `aliatest first keyboard ✓ 日本 é` into Safari's address field, the device's first keyboard | arrived as `✓ 日本 é`: the slide to type tip showed, with Continue, and took the keys before the paste |
 | | the same slot's device shut down, the seven defaults written into its own preference files with `plutil` as the slot's user, booted again, the same `computer_type` | whole, with no tip |
 | | a device made for the check, the same writes while shut down, then booted | each default read back on the device as written |
 | android box, Pixel 8, Chrome 124, Chrome's first start | 7 mixed texts by `computer_type` into a test page, among them `naïve café`, `a✓b日本c`, `x→y ∑ 🙂 z` and `q✓w✓e✓r`, 13 pastes | all whole and in order; 13 paste events, and 13 "Chrome pasted from your clipboard" |
-| | the panel's Paste from this computer, in Helium, in a tab of its own whose `navigator.clipboard` was a stub holding a test value | one read of the stub; "Pasted"; the page got `bbtest panel paste ✓ 日本 é` whole; Copy to this computer then said the device's clipboard had no text, as before the paste |
+| | the panel's Paste from this computer, in Helium, in a tab of its own whose `navigator.clipboard` was a stub holding a test value | one read of the stub; "Pasted"; the page got `aliatest panel paste ✓ 日本 é` whole; Copy to this computer then said the device's clipboard had no text, as before the paste |
 
 ### F-23b: a carried slot claimed at once
 
@@ -3711,20 +3711,20 @@ right after the first keyboard opens.
 ### F-23b checked after the deploy
 
 On production VesnALIA at main 7431ca8, `device-host` version 7, on 29 October
-2026, on a new shared slot, carried slot `bbd-i1`, on a Tart host made
+2026, on a new shared slot, carried slot `aliad-i1`, on a Tart host made
 for the box, with test values only:
 
 | Check | Result |
 | --- | --- |
 | the device's keyboard defaults, read with `simctl spawn ... defaults read` | written: `DidShowContinuousPathIntroduction` 1, autocorrect and slide to type 0 |
 | `computer_type` into Safari's address field, the device's first keyboard, and again after the field was closed | no slide to type tip either time |
-| `computer_type` of ` bbtest again ✓ 日本 é` into the field once open | whole |
+| `computer_type` of ` aliatest again ✓ 日本 é` into the field once open | whole |
 
 ### Follow-up
 
 - **Keys typed as Safari's address field opens are lost or out of
-  order.** With the tip gone, `bbtest first keyboard ✓ 日本 é` still
-  arrived as `✓ 日本 é` on the first opening, and `bbtest second open ✓ 日本 é`
+  order.** With the tip gone, `aliatest first keyboard ✓ 日本 é` still
+  arrived as `✓ 日本 é` on the first opening, and `aliatest second open ✓ 日本 é`
   as `✓ 日本 éd open` on the second: the keys that went while the field
   moved up and its keyboard came in were lost, and some came after the
   paste. Text typed into the field once open arrived whole, as in F-21's
@@ -3735,8 +3735,8 @@ for the box, with test values only:
 
 Built on 29 October 2026, from F-23b's follow-up. `computer_type` into
 Safari's closed address field lost the keys before a paste, or put some
-after it: `bbtest first keyboard ✓ 日本 é` arrived as `✓ 日本 é`, and
-`bbtest second open ✓ 日本 é` as `✓ 日本 éd open`, on a shared slot,
+after it: `aliatest first keyboard ✓ 日本 é` arrived as `✓ 日本 é`, and
+`aliatest second open ✓ 日本 é` as `✓ 日本 éd open`, on a shared slot,
 through production.
 
 ### The cause
@@ -3780,7 +3780,7 @@ the field. Test values only.
 
 | Box | Before, through production | This change |
 | --- | --- | --- |
-| Shared slot on a Tart host made for the box, iPhone 18 Pro | lost the keys before the paste, 2 of 2 (F-23b's check) | `bbtest one`, `two` and `three ✓ 日本 é`: 3 of 3 whole and in order |
+| Shared slot on a Tart host made for the box, iPhone 18 Pro | lost the keys before the paste, 2 of 2 (F-23b's check) | `aliatest one`, `two` and `three ✓ 日本 é`: 3 of 3 whole and in order |
 | Dedicated Tart box, iPhone 18 Pro | 1 of 1 whole | 3 of 3 whole and in order |
 | Dedicated box, with the device server's old tree, which shows no keyboard | | 3 of 3 whole, each after the 5 s wait, with the words |
 | android box, Pixel 8, Chrome's address bar | 3 of 3 whole: Android gives the field the focus at once | 3 of 3 whole, no wait words |
@@ -3792,7 +3792,7 @@ shared slot, so the loss depends on timing, as the read above shows.
 
 On production VesnALIA at main a35f023, device server version 34, on 29
 October 2026, on a new shared slot on a Tart host made for the box,
-through production's `computer_type`, with test values only: `bbtest one`,
+through production's `computer_type`, with test values only: `aliatest one`,
 `two` and `three ✓ 日本 é` into Safari's closed address field, closed
 again with its Close button between them, arrived 3 of 3 whole and in
 order, with no words that the keyboard did not come. The keyboard's keys

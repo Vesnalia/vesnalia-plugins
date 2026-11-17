@@ -133,7 +133,7 @@ describe("the compiled stylesheet", () => {
     // this asserts it stayed that way.
     const css = readFileSync(DIST_CSS, "utf8");
     const scopeAt = css.indexOf("@scope");
-    const toneAt = css.indexOf(".bbxs-tone");
+    const toneAt = css.indexOf(".aliaxs-tone");
     expect(toneAt).toBeGreaterThan(-1);
     if (scopeAt === -1) return;
     // The authored block is appended after the scoped Tailwind output, so the

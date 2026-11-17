@@ -20,9 +20,9 @@ export function registerBrowserTools(alia: AliaPluginApi, register: Registrar) {
   }
 
   register("browser", {
-    name: "bbtools_browser_list",
+    name: "aliatools_browser_list",
     description:
-      "List VesnALIA's desktop browser instances and their open tabs (id, title, url). Use it before bbtools_browser_open / close / capture.",
+      "List VesnALIA's desktop browser instances and their open tabs (id, title, url). Use it before aliatools_browser_open / close / capture.",
     parameters: z.object({}),
     execute: async (_params, ctx) => {
       const threadId = requireThreadId(ctx);
@@ -43,13 +43,13 @@ export function registerBrowserTools(alia: AliaPluginApi, register: Registrar) {
   });
 
   register("browser", {
-    name: "bbtools_browser_open",
+    name: "aliatools_browser_open",
     description:
       "Open a URL in a new tab of VesnALIA's desktop browser. The tab belongs to the current thread and the user can watch or take it over.",
     parameters: z.object({
       url: z.string().describe("URL to open (http/https)."),
       hidden: z.boolean().optional().describe("Open without focusing the tab (default false)."),
-      instanceId: z.string().optional().describe("Browser instance id from bbtools_browser_list (default: first instance)."),
+      instanceId: z.string().optional().describe("Browser instance id from aliatools_browser_list (default: first instance)."),
     }),
     execute: async ({ url, hidden, instanceId }, ctx) => {
       const threadId = requireThreadId(ctx);
@@ -63,15 +63,15 @@ export function registerBrowserTools(alia: AliaPluginApi, register: Registrar) {
         url,
         presentation: hidden ? "hidden" : "reveal",
       });
-      return `Opened ${url} in tab ${res.tab.tabId} (instance ${instance.instanceId})${hidden ? ", hidden" : ""}. Use bbtools_browser_capture to screenshot it.`;
+      return `Opened ${url} in tab ${res.tab.tabId} (instance ${instance.instanceId})${hidden ? ", hidden" : ""}. Use aliatools_browser_capture to screenshot it.`;
     },
   });
 
   register("browser", {
-    name: "bbtools_browser_close",
+    name: "aliatools_browser_close",
     description: "Close a tab in VesnALIA's desktop browser.",
     parameters: z.object({
-      tabId: z.string().describe("Tab id from bbtools_browser_list."),
+      tabId: z.string().describe("Tab id from aliatools_browser_list."),
       instanceId: z.string().optional().describe("Browser instance id (default: first instance)."),
     }),
     execute: async ({ tabId, instanceId }, ctx) => {
@@ -84,11 +84,11 @@ export function registerBrowserTools(alia: AliaPluginApi, register: Registrar) {
   });
 
   register("browser", {
-    name: "bbtools_browser_capture",
+    name: "aliatools_browser_capture",
     description:
       "Screenshot a tab of VesnALIA's desktop browser and save it as a JPEG into the project workspace. Attach the file to view it.",
     parameters: z.object({
-      tabId: z.string().describe("Tab id from bbtools_browser_list."),
+      tabId: z.string().describe("Tab id from aliatools_browser_list."),
       path: z.string().optional().describe("Workspace-relative .jpg path (default: .alia-agent-toolbox/capture-<n>.jpg)."),
       instanceId: z.string().optional().describe("Browser instance id (default: first instance)."),
     }),

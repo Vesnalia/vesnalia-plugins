@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { chromium } from "playwright";
 
 const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "aliadata");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
-const aliaCli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "bbcli");
+const aliaCli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "aliacli");
 const projectDir = process.env.LIVE_PROJECT ?? join(process.env.HOME ?? "", "proj");
 const WAITS = "docker/alia-live/waits:1";
 const FAILS = "docker:second/alia-live/fails:1";

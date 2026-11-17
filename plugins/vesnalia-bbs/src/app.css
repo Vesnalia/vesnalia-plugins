@@ -3,7 +3,7 @@
 .bbs-terminal-page { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; padding: .5rem; gap: .5rem; box-sizing: border-box; background: var(--background, #151515); color: var(--foreground, #eee); overflow: hidden; }
 .bbs-terminal-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4rem .6rem; font: .75rem monospace; flex-wrap: wrap; }
 .bbs-terminal-toolbar > div { display: flex; gap: .35rem; }
-.bbs-terminal-frame.bbbbs-frame { flex: 1; width: 100%; min-height: 0; box-sizing: border-box; }
+.bbs-terminal-frame.aliabbs-frame { flex: 1; width: 100%; min-height: 0; box-sizing: border-box; }
 /* fit() sizes the viewport to the scaled grid, capped at the screen slot. */
 .bbs-terminal-viewport { position: relative; display: grid; }
 .bbs-terminal-stagebox { position: relative; overflow: hidden; }

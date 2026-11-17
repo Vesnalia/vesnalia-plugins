@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""test-verify — offline tests of verify/run, verify/run-scenarios and verify/scratch.py against stand-in `syns` and `bb`.
+"""test-verify — offline tests of verify/run, verify/run-scenarios and verify/scratch.py against stand-in `syns` and `alia`.
 
-What it does: puts small stand-in `syns` and `bb` programs first on PATH, before the system's programs but those
+What it does: puts small stand-in `syns` and `alia` programs first on PATH, before the system's programs but those
 `syspath.py` hides (a state file records every call and every repository made and deleted), then runs the real
 scripts through the failures a live run met: a scratch setup that fails after the repository was made, a start whose
 own delete failed, and a fresh session read before its first request. It also runs a whole scenario start on the
 stand-ins, the explicit inputs (the spec folder, the scenario log, the VERIFY file) and the checked delete. Nothing
-here talks to a server, a bb or the network.
+here talks to a server, a alia or the network.
 
 When it pays: whenever verify/run, verify/run-scenarios, verify/scratch.py or fragment-check change.
 When it does not: proving a release; that is verify/run itself.
@@ -65,7 +65,7 @@ if os.path.basename(sys.argv[0]) == "syns":
         st["repos"].pop(y["name"], None); st["deleted"].append(y["name"])
         done("deleted")
     done("", 0)
-# bb
+# alia
 if argv[:2] == ["project", "create"]:
     done("", 1, "project create refused") if "project" in fail else done(json.dumps({"id": "proj_fake"}))
 if argv[:2] == ["project", "delete"]:
@@ -103,7 +103,7 @@ class Fakes(unittest.TestCase):
         self.tmp = tempfile.mkdtemp(prefix="test-verify-")
         self.bin = os.path.join(self.tmp, "bin")
         os.makedirs(self.bin)
-        for n in ("syns", "bb"):
+        for n in ("syns", "alia"):
             p = os.path.join(self.bin, n)
             write(p, FAKE)
             os.chmod(p, 0o755)
@@ -185,11 +185,11 @@ class Fakes(unittest.TestCase):
         self.assertEqual(pull[2], repo)
         self.assertEqual(pull[3], os.path.join(run["checkouts"], "01-reading-list"))
         self.assertFalse(pull[3].startswith(out + os.sep), "a checkout outside the run's packets")
-        (spawn,) = self.calls("bb", "thread", "spawn")
+        (spawn,) = self.calls("alia", "thread", "spawn")
         self.assertEqual(spawn[spawn.index("--environment") + 1], pull[3])
         self.assertEqual(spawn[spawn.index("--project") + 1], "proj_fake")
         self.assertEqual(spawn[spawn.index("--permission-mode") + 1], "full")
-        self.assertEqual([c[3] for c in self.calls("bb", "thread", "wait")], ["thr_fake1"])
+        self.assertEqual([c[3] for c in self.calls("alia", "thread", "wait")], ["thr_fake1"])
         meta = json.loads(read(os.path.join(out, "01-reading-list", "meta.json")))
         self.assertEqual(meta["thread"], "thr_fake1")
         self.assertTrue(os.path.exists(os.path.join(out, "01-reading-list", "rubric.md")))
@@ -241,7 +241,7 @@ class Fakes(unittest.TestCase):
         os.makedirs(os.path.join(out, "01-reading-list"))
         write(os.path.join(out, "run.json"), {
             "run": "t-run", "started": "2026-11-07T10:00Z", "plugin": "0.0.1", "contract_hash": "abc", "code_head": "h",
-            "installed": "0.0.1", "thread_pages": "1", "cli": "syns 0.3.30", "bb": "bb 1",
+            "installed": "0.0.1", "thread_pages": "1", "cli": "syns 0.3.30", "alia": "alia 1",
             "repo": "tester/scratch-sbp-scn-x", "scenarios": {"01-reading-list": {"thread": "thr_fake1"}}})
         write(os.path.join(out, "01-reading-list", "grade.md"),
               "scenario  : 01\nmust      : 4/4\nshould    : 5/6\nred flags : none\nverdict   : pass\n")

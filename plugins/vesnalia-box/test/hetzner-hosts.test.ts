@@ -174,7 +174,7 @@ test("the sweep adopts the install's unclaimed host, as after lost storage, and 
   assert.deepEqual((await hosts.sweep()).deletedUnclaimedServers, ["alia-box-inst1-stray001"]);
   assert.equal(api.servers.has(stray.server.id), false);
   assert.deepEqual([...api.servers.values()].map((each) => each.name).sort(), ["alia-box-inst1-lost0001", "alia-box-other-h1", "docker-host-made-by-hand"]);
-  assert.ok(api.calls.filter((call) => call.method === "GET" && call.path === "/servers").every((call) => call.query.label_selector?.startsWith("bbbox-install=inst1")), "every list keeps to the install");
+  assert.ok(api.calls.filter((call) => call.method === "GET" && call.path === "/servers").every((call) => call.query.label_selector?.startsWith("aliabox-install=inst1")), "every list keeps to the install");
 });
 
 test("a record whose server was deleted in Hetzner's Console is dropped", async () => {

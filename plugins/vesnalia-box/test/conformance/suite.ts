@@ -1160,7 +1160,7 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
           it("recovers a take whose process was killed part way, with a new instance on its storage", { timeout: timeout * 2, skip: recovers }, async () => {
             const { guest, command } = need();
             await command.run(`echo before > "$HOME/${SNAPSHOT_FILE}" && head -c ${SLOW_TAKE_MIB}M /dev/urandom > "$HOME/${SLOW_TAKE_FILE}"`, { timeoutMs: 120_000, signal: signal() });
-            const storage = join(mkdtempSync(join(tmpdir(), "bbbox-conformance-")), "storage.json");
+            const storage = join(mkdtempSync(join(tmpdir(), "aliabox-conformance-")), "storage.json");
             const id = newSnapshotId((bytes) => randomBytes(bytes));
 
             const take = { id, box: box.boxId, memory: false, forkSafe: offer?.forkSafeFrom ?? 9 };
@@ -1203,7 +1203,7 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
             const copy = options.restoreCopy;
             const phase = copy ? "while it copied" : "after it named its new guest";
             for (let tries = 1; tries <= RESTORE_KILL_TRIES; tries++) {
-              const storage = join(mkdtempSync(join(tmpdir(), "bbbox-conformance-")), "storage.json");
+              const storage = join(mkdtempSync(join(tmpdir(), "aliabox-conformance-")), "storage.json");
               let claimedAt: number | null = null;
               const claimedLongEnough = async (claimed: Guest) => {
                 claimedAt ??= Date.now();

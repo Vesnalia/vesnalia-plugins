@@ -6,8 +6,8 @@ LC_ALL=C
 export PATH LC_ALL
 
 HERE=$(cd "$(dirname "$0")" && pwd)
-CLONE_TREE=${BBBOX_CLONE_TREE:-$HERE/clone-tree}
-STATE=${BBBOX_STATE:-/var/db/alia-box-spike}
+CLONE_TREE=${ALIABOX_CLONE_TREE:-$HERE/clone-tree}
+STATE=${ALIABOX_STATE:-/var/db/alia-box-spike}
 STORE=$STATE/home-snapshots
 LOGINWINDOW=/Library/Preferences/com.apple.loginwindow
 CONTRACT=1

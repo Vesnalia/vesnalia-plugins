@@ -8,7 +8,7 @@
 - Pinned comments on the canvas; Spec export (Markdown with annotated screenshots, element tree, interactions, notes) and React + Tailwind code export; «В чат: сверстай это».
 - Auto layout stacks (direction, gap, padding, alignment, hug/fill), constraints and per-device page views.
 - Text and colour styles with import from DESIGN.md; Sketch / Mockup fidelity switch; ⌘K command palette; layers search; minimap; history panel; first-run tour.
-- Publish a preview link served by BB; PDF, SVG and PNG exports; Excalidraw and SVG import.
+- Publish a preview link served by VesnALIA; PDF, SVG and PNG exports; Excalidraw and SVG import.
 - Version history with restore; faster canvas on large prototypes.
 
 ## 0.8.14 — 2026-10-18
@@ -33,7 +33,7 @@
 
 ### Added
 
-- Office Studio keeps your work: every change autosaves to the chat's files, and hiding the panel, switching chats or reloading BB brings back the same tool, document and view. A save status shows in the toolbar.
+- Office Studio keeps your work: every change autosaves to the chat's files, and hiding the panel, switching chats or reloading VesnALIA brings back the same tool, document and view. A save status shows in the toolbar.
 
 ### Changed
 
@@ -50,7 +50,7 @@
 
 - Office Studio **Slides**: a deck editor on the prototype engine with slide thumbnails, layout presets, a presenter mode, PNG and PowerPoint export and sending to the chat.
 - Prototype **Templates**: ready forms (sign-in, registration, checkout, card payment, feedback, search with filters, profile…) and interface blocks (header, sidebar, footer, product cards, pricing, table with pagination, dialogs…).
-- **Office Studio settings**: interface language (as in BB, Russian, English) for every tool, default screen size, grid, badges and brush.
+- **Office Studio settings**: interface language (as in VesnALIA, Russian, English) for every tool, default screen size, grid, badges and brush.
 
 ### Changed
 
@@ -105,13 +105,13 @@
 
 ### Changed
 
-- Spreadsheets: a cell with a link shows a chip like BB's chat links: the site's icon (GitHub, Figma, Notion, Slack, Telegram, YouTube, Google Docs and Drive; a globe for other sites) and the address without `https://`. A hyperlink with its own name keeps the name. Cmd/Ctrl+click opens it as before.
+- Spreadsheets: a cell with a link shows a chip like VesnALIA's chat links: the site's icon (GitHub, Figma, Notion, Slack, Telegram, YouTube, Google Docs and Drive; a globe for other sites) and the address without `https://`. A hyperlink with its own name keeps the name. Cmd/Ctrl+click opens it as before.
 
 ## 0.8.5 — 2026-10-17
 
 ### Added
 
-- Website on devices: a **Browser** button before the address goes back to the page in BB's Browser.
+- Website on devices: a **Browser** button before the address goes back to the page in VesnALIA's Browser.
 
 ## 0.8.4 — 2026-10-17
 
@@ -123,14 +123,14 @@
 
 ### Fixed
 
-- Screenshots of websites: the screenshot library loads from BB, not from the site the page's `<base>` points at.
+- Screenshots of websites: the screenshot library loads from VesnALIA, not from the site the page's `<base>` points at.
 
 ## 0.8.2 — 2026-10-16
 
 ### Added
 
 - Website on devices: a panel tab with an address bar that shows any web page in the same mockups as HTML files — compare, rotation, ruler and screenshots included. The plugin server fetches the page and its files, so sites that refuse to be framed still show; loopback, private and link-local addresses are refused.
-- A button beside BB's Browser address bar (BB 0.46+) opens the current page there.
+- A button beside VesnALIA's Browser address bar (VesnALIA 0.46+) opens the current page there.
 
 ## 0.8.1 — 2026-10-16
 
@@ -148,5 +148,5 @@
 - HTML layout viewer for `.html` and `.htm`: the page laid out at real device sizes inside realistic mockups. Phones show a notch, Dynamic Island or camera hole, a status bar and a home indicator. The iPad has a home button. Laptops and monitors have a browser window, the macOS menu bar or the Windows taskbar. The page gets only the viewport left by these bars.
 - Screens from StatCounter (Russia, September 2026) with their shares. Five main ones are marked ★: 360×800, 414×896, 768×1024, 1366×768 and 1920×1080.
 - Compare mode puts several devices side by side and picks the rows that show them largest in the panel. **★ Main screens only** selects the main set.
-- Rotating phones and tablets; a custom size with drag handles; a breakpoint ruler; scale to fit or 25–100 %; reload; opening in a new tab; full screen; BB's own preview with the source.
-- Screenshot of the devices into the chat as one PNG. Each sandboxed page draws itself after its scripts have run, with modern-screenshot. It works in any browser and in the BB app, without a screen-sharing prompt.
+- Rotating phones and tablets; a custom size with drag handles; a breakpoint ruler; scale to fit or 25–100 %; reload; opening in a new tab; full screen; VesnALIA's own preview with the source.
+- Screenshot of the devices into the chat as one PNG. Each sandboxed page draws itself after its scripts have run, with modern-screenshot. It works in any browser and in the VesnALIA app, without a screen-sharing prompt.

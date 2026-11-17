@@ -493,7 +493,7 @@ function parseWrapperJson(args: string): {
       typeof parsed[key] === "string" ? (parsed[key] as string) : null;
     let kind: RunKind = "unknown";
     if (/\btest\b/.test(args)) kind = "test";
-    else if (/\bbuild\b/.test(args)) kind = "build";
+    else if (/\aliauild\b/.test(args)) kind = "build";
     return {
       scheme: str("scheme"),
       container: str("workspacePath") ?? str("projectPath"),

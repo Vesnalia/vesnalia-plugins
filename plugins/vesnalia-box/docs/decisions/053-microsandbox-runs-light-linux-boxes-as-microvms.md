@@ -50,7 +50,7 @@ three hosts:
   with KVM nested under Hyper-V, on an AMD Ryzen 7.
 - **A Mac**: an M4 Max on macOS 27, with msb in a scratch folder.
 
-alia-box's images, `bbbox/linux:1` and `bbbox/linux-desktop:1`, were built
+alia-box's images, `aliabox/linux:1` and `aliabox/linux-desktop:1`, were built
 by `setup/docker/build.sh` and given to msb with `docker save` and
 `msb load`.
 
@@ -175,7 +175,7 @@ Over Tart, for Linux on a Mac:
 
 Measured on 7 October 2026 with msb 0.7.7, the backend as built (with
 each box's Docker disk made by alia-box, #568), and each backend's own flags
-as alia-box passes them: 2 cores, `bbbox/linux:1`. Not enrolled means alia-box's
+as alia-box passes them: 2 cores, `aliabox/linux:1`. Not enrolled means alia-box's
 steps to a ready box (create, the start script, the ready file) without
 VesnALIA's daemon; enrolled means through alia-box, until each box was a VesnALIA
 machine.
@@ -274,7 +274,7 @@ Spares on microsandbox are new boxes enrolled ahead, as on other backends
 
 A Proxmox LXC box with `/dev/kvm` passed in, as the spike's: KVM on bare
 metal, an AMD Threadripper PRO 9975WX, the box at 8 cores and 16 GiB. msb
-and Docker ran in the same box, with `bbbox/linux:1` and each backend's
+and Docker ran in the same box, with `aliabox/linux:1` and each backend's
 flags, as on the nested host.
 
 | 20 at once, not enrolled | msb, 4 GiB | msb, 2 GiB | Docker, 4 GiB | Docker, 2 GiB |
@@ -297,8 +297,8 @@ flags, as on the nested host.
 
 - msb's agent, `init.krun`, is PID 1 and runs the image's CMD,
   `alia-box-start`, as Docker's `--init` does. `/run/alia-box/ready` appeared
-  0.39 to 0.47 s after `msb run -d` for `bbbox/linux:1`, and 0.74 s after
-  it for `bbbox/linux-desktop:1`.
+  0.39 to 0.47 s after `msb run -d` for `aliabox/linux:1`, and 0.74 s after
+  it for `aliabox/linux-desktop:1`.
 - `--init /lib/systemd/systemd` makes systemd PID 1 instead. sshd and
   Docker's socket started; only `systemd-sysctl` failed.
 - `msb start` boots a stopped box without the CMD. Started through
@@ -346,9 +346,9 @@ and cgroup v2. It has no modules, IP_VS, WireGuard or AppArmor.
 
 | From the request to a box that answers | Time |
 | --- | --- |
-| msb on Linux, `bbbox/linux:1` | 0.39 to 0.47 s |
-| msb on Linux, 20 `bbbox/linux:1` boxes at once | 0.70 s median, all by 0.89 s |
-| msb on Linux, `bbbox/linux-desktop:1` | 0.74 s |
+| msb on Linux, `aliabox/linux:1` | 0.39 to 0.47 s |
+| msb on Linux, 20 `aliabox/linux:1` boxes at once | 0.70 s median, all by 0.89 s |
+| msb on Linux, `aliabox/linux-desktop:1` | 0.74 s |
 | msb on Linux, a flat ext4 root, copied | 1.2 to 3.2 s |
 | msb on the Mac, `msb create` of `ubuntu:24.04` | 0.35 s |
 | Docker on a local host ([031](031-docker-boxes-are-reached-through-docker-exec.md)) | 0.33 s; 0.62 s with Docker or a desktop |
@@ -361,7 +361,7 @@ and cgroup v2. It has no modules, IP_VS, WireGuard or AppArmor.
   kept.
 - `--cpus`, `--memory` and `--root-disk` set the size, which defaults to
   1 core, 512 MiB and 4 GiB. The root is sparse. `msb modify` resizes.
-- An idle `bbbox/linux` box held 92 to 120 MiB of the Linux host's memory,
+- An idle `aliabox/linux` box held 92 to 120 MiB of the Linux host's memory,
   and an idle desktop 1.26 GiB. A box that touched 2 GiB and freed it gave
   it back within 10 s. msb reserves nothing: 20 boxes of 2 GiB ran on a
   host of 16 GiB. On the Mac, 24 small VMs held about 390 MiB each, as

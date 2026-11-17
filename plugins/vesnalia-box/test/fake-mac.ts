@@ -146,7 +146,7 @@ export function runVmElsewhere(vm: string): Promise<void> {
 export function tartConfig(values: Record<string, unknown> = {}): TartConfig {
   const parsed = parseTartSettings({
     "tart-enabled": true,
-    "tart-hosts": `mac1 bbbox-admin@${FAKE_MAC}`,
+    "tart-hosts": `mac1 aliabox-admin@${FAKE_MAC}`,
     "tart-host-keys": `${FAKE_MAC} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests`,
     ...values,
   });

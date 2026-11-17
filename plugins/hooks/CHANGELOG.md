@@ -18,8 +18,8 @@ All notable changes to Hooks are documented here. The format follows
 
 - Browse templates by category, with the author and a performance and security score out of 100 (with a letter grade) taken from what each template runs.
 - Group marketplace listings by category, sort results, switch between card and list views, and browse catalog banners.
-- Report anonymous install counts for the BB Hooks Marketplace catalog, once the user agrees. BB asks on the first install from it and sends only the template id and version, with a proof-of-work challenge that makes fake counts expensive. No other catalog is ever reported. Change the answer with `bb hooks marketplace stats` or the `shareInstalls` setting.
-- Pass `BB_CLI` to command hooks when the server can resolve the `bb` binary.
+- Report anonymous install counts for the VesnALIA Hooks Marketplace catalog, once the user agrees. VesnALIA asks on the first install from it and sends only the template id and version, with a proof-of-work challenge that makes fake counts expensive. No other catalog is ever reported. Change the answer with `alia hooks marketplace stats` or the `shareInstalls` setting.
+- Pass `ALIA_CLI` to command hooks when the server can resolve the `alia` binary.
 
 ### Changed
 

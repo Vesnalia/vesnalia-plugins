@@ -67,7 +67,7 @@ export function StillsDirective({ attributes, source }: StillsDirectiveProps) {
   // host does for an unknown one — the message should never lose content.
   if (!valid) return <code className="text-xs">{source}</code>;
   if (failed) return <code className="text-xs">{source}</code>;
-  if (summary === null) return <div className="bbxs-skeleton h-24 w-full" aria-hidden />;
+  if (summary === null) return <div className="aliaxs-skeleton h-24 w-full" aria-hidden />;
 
   const changed = summary.rows.filter(
     (row) => row.status === "changed" || row.status === "layout-changed",
@@ -77,7 +77,7 @@ export function StillsDirective({ attributes, source }: StillsDirectiveProps) {
   const pruned = summary.lookId !== null && summary.rows.every((row) => row.frame === null);
 
   return (
-    <div className="bbxs-stack-card p-3">
+    <div className="aliaxs-stack-card p-3">
       <p className="text-sm font-medium text-balance">
         {summary.lookId === null ? "This look is gone." : summary.sentence}
       </p>
@@ -94,7 +94,7 @@ export function StillsDirective({ attributes, source }: StillsDirectiveProps) {
             <figure key={row.identity} className="w-24 shrink-0">
               {row.frame === null ? (
                 <div
-                  className="bbxs-skeleton w-full"
+                  className="aliaxs-skeleton w-full"
                   style={{ aspectRatio: "9 / 19.5" }}
                   aria-label="This frame is no longer on disk"
                 />

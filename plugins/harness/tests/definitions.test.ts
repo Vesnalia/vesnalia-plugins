@@ -101,7 +101,7 @@ describe("harness definitions", () => {
         maxCorrections: 2,
         artifactPolicy: "required",
       },
-      () => "aaaaaaaa-bbbb-cccc",
+      () => "aaaaaaaa-aliabb-cccc",
       10,
     );
     expect(created.kind).toBe("custom");

@@ -36,7 +36,7 @@
   had shrunk text below its real size and blurred it. The browser scales the
   picture while drawing it, so it is no longer compressed twice. With `ref`
   it shows a single element at the screen's full resolution, for small
-  print. Needs Browser Bridge for bb 0.2.1.
+  print. Needs Browser Bridge for VesnALIA 0.2.1.
 
 ## 0.5.0 - 2026-10-19
 
@@ -60,11 +60,11 @@
   `axe` and `xcrun simctl` rather than through its window.
 - **Agents see the plugin's name.** Their instructions open with "Desktop &
   Browser Agent", the skill is now `desktop-browser-agent` (was
-  `cua-computer-use`), and `bb cua` and the package description use the name
+  `cua-computer-use`), and `alia cua` and the package description use the name
   too.
 - **New plugin id `desktop-browser-agent`** (was `computer-use`), matching the
   name, and the repository is now
-  `github.com/qwadrox/bb-plugin-desktop-browser-agent`. bb treats it as a new
+  `github.com/qwadrox/bb-plugin-desktop-browser-agent`. VesnALIA treats it as a new
   plugin: remove `computer-use`, install this one, and set its settings again.
   Settings live at `/settings/plugins/desktop-browser-agent`. The description
   now says "computer use" and mentions the Chrome extension, so marketplace
@@ -101,13 +101,13 @@
   the agent's error links to it. With **Ask before sensitive actions** on,
   each upload asks with its paths. An extension too old for a tool now says
   to update it.
-- **Clearer wording in agent messages, approval cards and `bb cua browser`.**
+- **Clearer wording in agent messages, approval cards and `alia cua browser`.**
   Refusals name the **Agent tools** card and the **Offer `browser_*` tools
   (extension)** switch. Approval cards no longer repeat the tool name in their
   text, and an extension approval is titled "Allow agents in your browser?"
   and says it covers every `browser_*` tool in the thread. Activity rows read
   "the browser" throughout, and extension scrolling reads "Scrolling the page".
-  `bb cua browser` says "set up" and "not supported on this system", prints the
+  `alia cua browser` says "set up" and "not supported on this system", prints the
   Web Store id and the unpacked build id on separate lines, and shows the
   extension version as `v0.1.1`. A missing bridge tells the agent to press
   **Install bridge** in the **Browser extension** card.
@@ -116,11 +116,11 @@
   own** is disabled for providers without their own computer use. The
   **Browser extension** card shows setup steps only while setup is incomplete,
   and no longer repeats the connected browser.
-- **New look, closer to bb's own.** The icon is the agent's cursor with a
-  small "bb" name tag, the way shared apps label each person's cursor. The
-  plugin icon draws it in one colour; the Browser Bridge for bb extension
+- **New look, closer to VesnALIA's own.** The icon is the agent's cursor with a
+  small "VesnALIA" name tag, the way shared apps label each person's cursor. The
+  plugin icon draws it in one colour; the Browser Bridge for VesnALIA extension
   shows a muted violet cursor and a white tag on a dark graphite tile. The
-  extension's popup uses bb's neutral greys, follows the system's light or
+  extension's popup uses VesnALIA's neutral greys, follows the system's light or
   dark mode, and shows **Show the agent's cursor** as a switch. The agent's
   cursor in the page is muted violet instead of bright purple. The store has
   two re-rendered screenshots, the second showing the cursor on a form.
@@ -152,25 +152,25 @@
 
 ## 0.4.1 - 2026-10-16
 
-- **The plugin icon shows up.** bb draws plugin icons as a mask in the theme
+- **The plugin icon shows up.** VesnALIA draws plugin icons as a mask in the theme
   colour, so the 0.4.0 icon (a filled purple square) appeared as a blank
   tile. It is now a single-colour glyph.
 
 ## 0.4.0 - 2026-10-16
 
 - **New name and icon: Desktop & Browser Agent.** The plugin is listed in
-  the bb store apart from the older Computer Use plugin, so it needs its
+  the VesnALIA store apart from the older Computer Use plugin, so it needs its
   own name. The id stays `computer-use`, so installs, settings
   and the `/settings/plugins/computer-use` link keep working. The new icon is
   original artwork and replaces the one derived from Cua's logo.
 
-- **Optional browser extension.** Browser Bridge for bb
+- **Optional browser extension.** Browser Bridge for VesnALIA
   (`browser-extension/`, Chromium MV3) lets agents work in the tabs of your own browser
   in Brave, Chrome, Edge or Chromium, in background tabs, through the
   browser's debugger API, so Brave no longer needs Cua Driver's
   remote-debugging attach. Off by default: turn it on in the new **Browser
-  extension** card (or `bb cua browser on`), install the native messaging
-  bridge there (`bb cua browser install`), and add the extension from the
+  extension** card (or `alia cua browser on`), install the native messaging
+  bridge there (`alia cua browser install`), and add the extension from the
   [Chrome Web Store](https://chromewebstore.google.com/detail/aaidacbpcgjigclcoffjlcpnkmpnpgcc)
   (or load a local build unpacked; the bridge accepts both ids). New versions
   are published by the `publish-extension` workflow on an `extension-v*` tag.
@@ -185,13 +185,13 @@
   and downloads, attaching to a signed-in browser, and the code, kill,
   recording, extension and configuration tools wait for the user's approval
   in the thread: allow once, allow for the thread, or don't allow. Built on
-  `bb.ui.requestInput` with an `approve-tool` pending-interaction card; the
+  `alia.ui.requestInput` with an `approve-tool` pending-interaction card; the
   Agent tools list marks these tools "asks first".
-- **Routing mode appears once.** It was a declared setting, so bb's
+- **Routing mode appears once.** It was a declared setting, so VesnALIA's
   Configuration form showed a second `Routing mode` select above the plugin's
   own card. The mode now lives in plugin storage; set it in the Routing mode
-  card or with `bb cua mode`. A mode saved by 0.3.0 carries over.
-  `bb plugin config computer-use set mode …` no longer applies.
+  card or with `alia cua mode`. A mode saved by 0.3.0 carries over.
+  `alia plugin config computer-use set mode …` no longer applies.
 - **Browser refusals are no longer reported as missing permissions.** A
   refusal that mentioned the accessibility tree was turned into "blocked by a
   system permission" and cut short, hiding the driver's next step. Only
@@ -218,9 +218,9 @@ Outlook, Teams and a Brave window.
   recording, driver configuration and extension installs start off; an
   unreviewed tool is reachable through `cua_call` only if the driver marks it
   read-only. `cua_call` obeys the policy instead of bypassing it. New
-  **Agent tools** settings card, `bb cua expose`, and `bb cua tools`. The
+  **Agent tools** settings card, `alia cua expose`, and `alia cua tools`. The
   **Passthrough tools** setting is gone.
-- **Drift report.** `bb cua status`, `bb cua drift`, the machine checklist,
+- **Drift report.** `alia cua status`, `alia cua drift`, the machine checklist,
   and a line in agent instructions name the tools that differ from the tested
   driver.
 - **Pinned, checksum-verified installs.** Install and update target the tested
@@ -235,8 +235,8 @@ Outlook, Teams and a Brave window.
 - **Skill.** Rewritten from the upstream 0.36 skill pack: narrow reads,
   `run_steps` with `observe`, `since: "latest"`, verification at checkpoints,
   what to do when a tool is off, and when to stop and ask.
-- `bb cua call --json` replaces image data with its size so large screenshots
-  fit bb's CLI output limit.
+- `alia cua call --json` replaces image data with its size so large screenshots
+  fit VesnALIA's CLI output limit.
 
 ## 0.2.0 (never tagged)
 
@@ -261,7 +261,7 @@ Validated live against Cua Driver 0.28.2 on macOS.
   attaches when off. (`cua-driver mcp --grant` is refused while a daemon
   listens, so the grant belongs to the service.)
 - Update awareness: status reports the newest release, the machine checklist
-  offers **Update to vX…**, and `bb cua update --yes` stops the driver before
+  offers **Update to vX…**, and `alia cua update --yes` stops the driver before
   running the installer so the new binary is the one that restarts.
 - The skill covers 0.28 browser behavior: `input_route: "dom_event"` for
   background clicks on macOS, refusals returned as ordinary results, and
@@ -273,15 +273,15 @@ Validated live against Cua Driver 0.28.2 on macOS.
 
 - First release: 30 `cua_*` agent tools, `cua-computer-use` skill, per-provider
   routing (`prefer-native`, `cua-everywhere`, `off` plus overrides), driver
-  readiness per machine, `bb cua` CLI, multi-machine execution through the bb
+  readiness per machine, `alia cua` CLI, multi-machine execution through the VesnALIA
   host daemon and one persistent `cua-driver mcp` session per machine.
 - Opt-in installer and macOS permission request from the settings page and
-  the CLI (`bb cua install --yes`, `bb cua grant`); never runs without an
+  the CLI (`alia cua install --yes`, `alia cua grant`); never runs without an
   explicit confirmation.
 - Settings use separate cards for routing, provider overrides, machines, and
   Cua attribution. Secondary lists and commands are collapsible, and row
   details sit behind a hover `?` tooltip so every row stays on one line. The
-  tool list is available from `bb cua tools`.
+  tool list is available from `alia cua tools`.
 - The installer runs in a reopenable progress dialog with phase estimates,
   status animation, retry states, and expandable terminal output.
 - Machine setup is now an expandable checklist with install, service, and

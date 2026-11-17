@@ -1,4 +1,4 @@
-# Build output — bb rebuilds this from source on install (`bb plugin build .`).
+# Build output — alia rebuilds this from source on install (`alia plugin build .`).
 dist/
 
 # Dependencies.

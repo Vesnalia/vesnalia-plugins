@@ -121,7 +121,7 @@ try {
   await check('late callbacks cannot cross a native session switch', async () => {
     const directory = join(root, 'late'), h = harness(directory);
     h.start('stream'); await h.pending[0].emit({ type: 'copilot_usage', total_nano_aiu: '5' });
-    h.hooks.get('session_start')({ reason: 'new' }, { ...context, sessionManager: { getSessionId: () => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', getSessionFile: () => null } });
+    h.hooks.get('session_start')({ reason: 'new' }, { ...context, sessionManager: { getSessionId: () => 'aliabbbbbb-aliabb-4bbb-8bbb-aliabbbbbbbbbb', getSessionFile: () => null } });
     h.start('stream'); await h.pending[1].emit({ type: 'copilot_usage', total_nano_aiu: '8' });
     await h.pending[0].emit({ type: 'copilot_usage', total_nano_aiu: '999' });
     h.pending.forEach(call => call.finish({ stopReason: 'stop' })); await Promise.resolve();

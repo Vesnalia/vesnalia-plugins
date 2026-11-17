@@ -107,7 +107,7 @@ test("a Dockerfile: its last stage's RUN lines in order, ENV and ARG, USER as th
     "mkdir -p '/opt/app' && cd '/opt/app'",
     "# COPY requirements.txt .: a build has no checkout to copy from.",
     "'pip' 'install' 'uv'",
-    `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'\necho one\necho two\nBB_BOX_AS_USER`,
+    `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'\necho one\necho two\nALIA_BOX_AS_USER`,
     "echo back to root",
     "~/.local/bin/mise use --global 'python@3.11'  # Dockerfile FROM",
   );

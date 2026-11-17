@@ -56,7 +56,7 @@ test("an acquire claims the box before it makes the machine, labels it with its 
   assert.deepEqual(fake.calls.slice(0, 2).map((call) => call.method), ["GetConcurrency", "CreateInstance"], "the workspace's limits are read, then the machine made");
   const made = [...fake.instances.values()][0]!;
   assert.deepEqual(made.labels, { [LABELS.install]: "inst1", [LABELS.backend]: "namespace", [LABELS.box]: "b1", [LABELS.thread]: "thr_1", [LABELS.name]: "box-b1", [LABELS.kind]: "macos", [LABELS.created]: String(Date.parse("2030-01-01T00:00:00Z")) });
-  assert.equal(made.uniqueTag, "bbbox-inst1-b1");
+  assert.equal(made.uniqueTag, "aliabox-inst1-b1");
   assert.equal(made.deadline, now + KEEP_AHEAD_MS);
   assert.deepEqual(made.shape, { os: "macos", machineArch: "arm64", virtualCpu: 4, memoryMegabytes: 14336, selectors: [{ name: "macos.version", value: "26.x" }] });
   assert.equal(made.sshKeys.length, 1);
@@ -765,7 +765,7 @@ test("a Linux box or a box on a shared iOS host on Namespace has no macOS permis
   helperFlag("sip-off", true);
   const guest = await backend.acquire(box("b1"), null, hooks().hooks, new AbortController().signal);
   const linux = { ...guest, ref: "alia-box-b1" };
-  const slot = { ...guest, data: { ...guest.data, [NS_HOST_KEY]: "bbbox-inst1-host", slot: "s1" } };
+  const slot = { ...guest, data: { ...guest.data, [NS_HOST_KEY]: "aliabox-inst1-host", slot: "s1" } };
   const request = { program: "/Users/runner/bin/tool", permissions: ["accessibility"] as const };
 
   await assert.rejects(backend.grant!(linux, request), refusedAs(/^Only a macOS box has macOS permissions to grant: alia-box-b1 runs Linux\.$/));

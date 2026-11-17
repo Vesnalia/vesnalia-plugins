@@ -117,7 +117,7 @@ a downscaled screenshot.
 Settings and Chrome, an instrumentation test that uses UiAutomation and one
 that does not run beside the reads, and the tree server killed. E12 needs
 the probe app in `probe-app`, with two instrumentations,
-`bbbox.probe/.Holds` and `bbbox.probe/.Plain`: the first calls
+`aliabox.probe/.Holds` and `aliabox.probe/.Plain`: the first calls
 `getUiAutomation()` and reads the screen for `-e seconds`, the second only
 waits. Build and install it in the box with
 `setup/android/build-tree-server.sh --install-tools`, for the tools, then

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CAT, closeMaxwell, openBB, openMaxwell, baseURL } from './harness.mjs';
+import { CAT, closeMaxwell, openALIA, openMaxwell, baseURL } from './harness.mjs';
 import { freeze, pointOn, sample } from './images.mjs';
 import { assertContinuous, assertSilent, audio, clickCat, DURATION, MUSIC, position, ready, waitForStarts } from './audio.mjs';
 
@@ -15,7 +15,7 @@ function silentWav(milliseconds) {
 }
 
 test('only a click on the cat plays the bundled recording once, from the start, ignoring repeated clicks', async () => {
-  const { browser, context, page } = await openBB();
+  const { browser, context, page } = await openALIA();
   try {
     const external = [];
     const music = [];
@@ -73,7 +73,7 @@ test('only a click on the cat plays the bundled recording once, from the start, 
 });
 
 test('one tab-wide recording survives panel closes, thread changes and rendering failure', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const threadId = process.env.MAXWELL_THREAD_ID ?? process.env.ALIA_THREAD_ID;
     assert.ok(threadId, 'Set MAXWELL_THREAD_ID to an existing VesnALIA thread for acceptance tests');
@@ -109,7 +109,7 @@ test('one tab-wide recording survives panel closes, thread changes and rendering
 });
 
 test('a failed load or a refused play leaves the cat clickable for another try', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     let failures = 1;
     await page.route(MUSIC, (route) => failures-- > 0
@@ -124,7 +124,7 @@ test('a failed load or a refused play leaves the cat clickable for another try',
     await waitForStarts(page, 1);
   } finally { await browser.close(); }
 
-  const second = await openBB();
+  const second = await openALIA();
   try {
     const { page } = second;
     await openMaxwell(page);
@@ -147,7 +147,7 @@ test('a failed load or a refused play leaves the cat clickable for another try',
 });
 
 test('clicks hit the cat at every pose and panel size, and never the empty background', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     // A short recording lets every hit be observed as its own playback.
     await page.route(MUSIC, (route) => route.fulfill({ contentType: 'audio/wav', headers: { 'cache-control': 'no-store' }, body: silentWav(150) }));
@@ -176,7 +176,7 @@ test('clicks hit the cat at every pose and panel size, and never the empty backg
 });
 
 test('reloading the tab or disabling the plugin stops the music without resuming it', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   const plugin = (path) => page.request.post(`${baseURL}/api/v1/plugins${path}`);
   try {
     const start = async () => {

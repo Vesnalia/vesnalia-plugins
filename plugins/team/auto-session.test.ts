@@ -1,4 +1,4 @@
-// bbt-er6.4/6.5: acceptance auto-continue of the package queue and the real
+// aliat-er6.4/6.5: acceptance auto-continue of the package queue and the real
 // execution-state surfaced per role. Real Git (host entry) so checkpoints
 // verify; VesnALIA threads are deterministic SDK fixtures, no model calls.
 import { execFile } from "node:child_process";
@@ -344,7 +344,7 @@ async function setup(opts: { spawnFailures?: number; fallbacks?:ExecutionFallbac
   }
 }
 
-describe("авто-продолжение очереди после приёмки (bbt-er6.4)", () => {
+describe("авто-продолжение очереди после приёмки (aliat-er6.4)", () => {
   it("done без checkpoint: явное ожидание + уведомление исполнителю, не подделка", async () => {
     const fx = await setup();
     try {
@@ -484,7 +484,7 @@ describe("авто-продолжение очереди после приёмк
   });
 });
 
-describe("ротация контекста сессии (bbt-er6.8)", () => {
+describe("ротация контекста сессии (aliat-er6.8)", () => {
   it("смена binding при незавершённом intent сохраняет ошибку восстановления", async () => {
     const fx = await setup();
     try {
@@ -766,7 +766,7 @@ describe("ротация контекста сессии (bbt-er6.8)", () => {
   });
 });
 
-describe("execution-state роли (bbt-er6.5, чистая функция)", () => {
+describe("execution-state роли (aliat-er6.5, чистая функция)", () => {
   const task = (id: number | string, status: string) => ({ id, title: "t", status, note: null, createdAtMs: 0, updatedAtMs: 42, role: "dev" });
   it("приоритеты: failed-запрос важнее зависшего intent; intent описывает замену", () => {
     const failed = deriveExecutionState({
@@ -970,7 +970,7 @@ it("карточка: завершённая задача руководител
 });
 
 
-describe("resource quota continuation and grounded acceptance (bbt-iwi.6)",()=>{
+describe("resource quota continuation and grounded acceptance (aliat-iwi.6)",()=>{
  const backups=[{provider:"pi",model:"same-pool"},{provider:"opencode2",model:"approved/free",reasoningLevel:"low"}];
  it("continues the same task/environment with the approved independent model, then lead accepts evidence",async()=>{
   const fx=await setup({fallbacks:backups});try{

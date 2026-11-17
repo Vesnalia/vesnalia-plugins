@@ -1,4 +1,4 @@
-set -u; u=${1:-bbd-1}; H=/Users/$u; D=$H/.alia-box/device; v=${2:-13}
+set -u; u=${1:-aliad-1}; H=/Users/$u; D=$H/.alia-box/device; v=${2:-13}
 now() { python3 -c 'import time;print(time.time())'; }
 U0=$(xcrun simctl list devices -j | python3 -c 'import json,sys; print(next(d["udid"] for r in json.load(sys.stdin)["devices"].values() for d in r if d["name"]=="iPhone 18 Pro"))')
 N=$(sudo -u $u -H xcrun simctl list devices -j | python3 -c 'import json,sys; print(next(d["udid"] for r in json.load(sys.stdin)["devices"].values() for d in r if d["name"]=="iPhone 18 Pro"))')

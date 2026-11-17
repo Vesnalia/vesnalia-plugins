@@ -84,7 +84,7 @@ function knownXcode() {
 
 /** What machine-mac.sh's status adds, with Cua's grants only for `status grants`, and Xcode found again only for `status xcode`. */
 function macLines(extra) {
-  const user = flag("no-user") === null ? `bbx-${generation() ?? 0}` : "";
+  const user = flag("no-user") === null ? `aliax-${generation() ?? 0}` : "";
   let console = flag("console") ?? user;
   const after = Number(flag("console-after") ?? 0);
   if (after > 0) {
@@ -237,7 +237,7 @@ function claim(expected, extra) {
   if (flag("dirty")) quit(EXIT.dirty, `An earlier box left ${flag("dirty")}.`);
   if (extra === "docker" && mac) quit(EXIT.usage, "Boxes on a Mac have no Docker.");
   if (extra === "docker" && flag("hook") === null) quit(EXIT.dirty, "Docker is offered only where reset-machine restores the whole machine.");
-  const user = `bbx-${current}`;
+  const user = `aliax-${current}`;
   const text = ["install", "box", "thread", "name", "kind", "created"].map((name) => `${name}=${values[name] ?? ""}`);
   text.push(`generation=${current}`, `user=${user}`, `uid=${70000 + current}`);
   writeFileSync(join(state, "owner.new"), `${text.join("\n")}\n`);

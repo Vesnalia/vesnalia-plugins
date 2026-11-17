@@ -14,7 +14,7 @@ it("every mood is a 16×14 grid using only palette colours", () => {
 });
 
 it("draws rows as merged runs", () => {
-  expect(runs(["..oo", "bbb."])).toEqual([
+  expect(runs(["..oo", "aliab."])).toEqual([
     { x: 2, y: 0, w: 2, color: PALETTE.o },
     { x: 0, y: 1, w: 3, color: PALETTE.b },
   ]);

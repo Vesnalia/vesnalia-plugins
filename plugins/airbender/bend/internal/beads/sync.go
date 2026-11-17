@@ -6,9 +6,9 @@
 // holds the issues at all.
 //
 // Why: `bd init` leaves the issues on one computer, and the owner wants to
-// see what each sync did (bead-bb-6a9). The Airbender plugin used to do
+// see what each sync did (bead-alia-6a9). The Airbender plugin used to do
 // this; it moved here so that a repository syncs the same from a plain
-// terminal (bead-bb-c9l.16). Everything that knows beads' ways is in this
+// terminal (bead-alia-c9l.16). Everything that knows beads' ways is in this
 // file, so that nothing of them shows above the tracker layer.
 //
 // Design notes:
@@ -28,7 +28,7 @@
 //     position in it, what was sent is "not known", never guessed.
 //   - A remote that holds nothing is not synced with: `bd init` takes the
 //     git origin as the remote and pushes nothing, and `bd sync` pulls first
-//     and fails on such a remote, every time (bead-bb-fmr).
+//     and fails on such a remote, every time (bead-alia-fmr).
 //
 // Gotchas:
 //   - A journal position means nothing on another computer, and beads fails

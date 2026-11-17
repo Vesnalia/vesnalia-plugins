@@ -571,7 +571,7 @@ test("authorization code delivery is gated, serialized, and retry-safe", async (
             chunks: [
               {
                 dataBase64: Buffer.from(
-                  "ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito\nBB_CLAUDE_LOGIN_INPUT_READY\n",
+                  "ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito\nALIA_CLAUDE_LOGIN_INPUT_READY\n",
                 ).toString("base64"),
                 seq: 1,
               },
@@ -742,7 +742,7 @@ test("authorization return reopens the pending URL on the same host and operatio
           chunks: [
             {
               dataBase64: Buffer.from(
-                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nALIA_CLAUDE_LOGIN_INPUT_READY\n`,
               ).toString("base64"),
               seq: 1,
             },
@@ -894,7 +894,7 @@ test("authorization return settles before runtime release and keeps the host res
             {
               dataBase64: Buffer.from(
                 terminalId === "login_terminal"
-                  ? `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`
+                  ? `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nALIA_CLAUDE_LOGIN_INPUT_READY\n`
                   : "loggedIn=true\nauthMethod=claude.ai\napiProvider=firstParty\n",
               ).toString("base64"),
               seq: 1,
@@ -1065,7 +1065,7 @@ test("cancellation waits for an already-started authorization return helper", as
           chunks: [
             {
               dataBase64: Buffer.from(
-                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nALIA_CLAUDE_LOGIN_INPUT_READY\n`,
               ).toString("base64"),
               seq: 1,
             },
@@ -1202,7 +1202,7 @@ test("authorization return creates no second helper until uncertain cleanup is r
           chunks: [
             {
               dataBase64: Buffer.from(
-                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nALIA_CLAUDE_LOGIN_INPUT_READY\n`,
               ).toString("base64"),
               seq: 1,
             },

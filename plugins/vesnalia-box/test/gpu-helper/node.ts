@@ -11,7 +11,7 @@ const FAKE_PVE = new URL(".", import.meta.url).pathname;
 const HOLD_LOCK = new URL("./hold-config-lock.pl", import.meta.url).pathname;
 
 export const INSTALL = "4kq7";
-export const POOL = "bbbox";
+export const POOL = "aliabox";
 export const REPORT_VMID = 9190;
 
 export interface FakeCard {
@@ -425,7 +425,7 @@ export class FakeNode {
   }
 
   #env(extra: Readonly<Record<string, string>> = {}): NodeJS.ProcessEnv {
-    return { PATH: `${join(this.root, "bin")}:/usr/bin:/bin`, PERL5LIB: FAKE_PVE, BBBOX_GPU_ROOT: this.root, ...extra };
+    return { PATH: `${join(this.root, "bin")}:/usr/bin:/bin`, PERL5LIB: FAKE_PVE, ALIABOX_GPU_ROOT: this.root, ...extra };
   }
 
   runHelperAs(version: string): void {

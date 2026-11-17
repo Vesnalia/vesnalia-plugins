@@ -364,8 +364,8 @@ This will provide a `bool` value. However, this won't provide you with live upda
 ```objectivec
 // Credit to w0lf
 // Handles all of the incoming typing events
-ZKSwizzleInterface(BBH_IMMessageItem, IMMessageItem, NSObject)
-@implementation BBH_IMMessageItem
+ZKSwizzleInterface(ALIAH_IMMessageItem, IMMessageItem, NSObject)
+@implementation ALIAH_IMMessageItem
 
 - (BOOL)isCancelTypingMessage {
     // isCancelTypingMessage seems to also have some timing issues and adding a delay would fix this

@@ -81,7 +81,7 @@ describe("merge requests (human merges by default)", () => {
     await expect(service.integration.approve(merge.id)).rejects.toThrow("is rejected");
   });
 
-  it("BBP-87: a branch already fully contained in base (merged outside this flow) auto-closes as merged and drops off Needs you", async () => {
+  it("ALIAP-87: a branch already fully contained in base (merged outside this flow) auto-closes as merged and drops off Needs you", async () => {
     const { service, alpha, git, needs, store } = await twoCrews();
     const { merge } = await service.integration.request(alpha.crew, "core-lead@alpha");
     expect(await needs(alpha, "core-lead")).toContain("merge-request");
@@ -110,7 +110,7 @@ describe("merge requests (human merges by default)", () => {
   });
 });
 
-describe("human questions (BBP-87)", () => {
+describe("human questions (ALIAP-87)", () => {
   it("a question tied to this crew's own task auto-closes once the task is done", async () => {
     const { service, alpha, needs, tasks, store } = await twoCrews();
     const lead = alpha.members["core-lead"]!;

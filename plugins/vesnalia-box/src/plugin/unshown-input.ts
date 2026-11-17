@@ -175,7 +175,7 @@ export function unnamedProblems(problems: readonly Problem[]): Problem[] {
 }
 
 const QUOTED_BY_THE_SDK = ["unknown command", "unknown option", "invalid value", "unexpected argument"] as const;
-const WORD_MARK = "bbboxrefusedword";
+const WORD_MARK = "aliaboxrefusedword";
 
 type CliSpec = Parameters<typeof defineCli>[0];
 type Cli = ReturnType<typeof defineCli>;

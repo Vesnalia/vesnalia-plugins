@@ -7,18 +7,18 @@
 ### Added
 
 - **Waiting longest** in the Active sort picker puts the thread whose news has waited longest at the top. A thread joins the end when its turn finishes and then keeps its place: reading, renaming, or pinning it does not move it, unlike Recent activity.
-- **Snooze from the command palette.** bb's command palette (Cmd+K; press Escape if it opens on thread search) lists "BB Sidebar: Snooze this thread" for 1 hour, 5 hours, this evening, tomorrow morning, and next week, plus "BB Sidebar: Unsnooze this thread", whenever a thread is in view ("this evening" only until 18:00). The times are the default snooze shortcuts, not the ones you configured. A snooze or wake runs through the row menu's action, with its toast and Undo, and a command the row menu would not offer says why instead: the thread is working, needs you, has a queued message, or another plugin marks it as running, or it is already snoozed. A child thread drawn inside its parent's row has no snooze of its own: Snooze names the parent to snooze instead, and Unsnooze names it when the parent is the one snoozed. Settings → Keyboard can bind each command to a key.
+- **Snooze from the command palette.** VesnALIA's command palette (Cmd+K; press Escape if it opens on thread search) lists "VesnALIA Sidebar: Snooze this thread" for 1 hour, 5 hours, this evening, tomorrow morning, and next week, plus "VesnALIA Sidebar: Unsnooze this thread", whenever a thread is in view ("this evening" only until 18:00). The times are the default snooze shortcuts, not the ones you configured. A snooze or wake runs through the row menu's action, with its toast and Undo, and a command the row menu would not offer says why instead: the thread is working, needs you, has a queued message, or another plugin marks it as running, or it is already snoozed. A child thread drawn inside its parent's row has no snooze of its own: Snooze names the parent to snooze instead, and Unsnooze names it when the parent is the one snoozed. Settings → Keyboard can bind each command to a key.
 
 ### Changed
 
-- **Titles come from bb.** Regenerate title and the automatic naming of untitled threads now ask bb to generate the title, so they work with every AI service bb offers for thread titles, including services added by plugins such as OpenCode, and follow its Automatic order and fallback. bb writes the title from the thread's task, its latest messages and the agent's replies, in the task's language, instead of the sidebar's summary of the last three user messages, and may keep the current title when it still fits. The sidebar no longer runs its own bb cloud request or a hidden Codex helper. A rename made while bb is generating a title can be replaced by bb's title. Reported in [#36](https://github.com/yusuf8834/bb-sidebar/pull/36) by [@levkovalenko](https://github.com/levkovalenko).
-- Requires bb 0.49.0 or later, and is built against plugin SDK 0.6.132, the version in bb 0.49.0. Version 0.3.10 is the last release for bb 0.48.
-- **The Goal status is gone.** bb no longer reports goals, so the sidebar drops the Goal status label, its icon, and the goal count from the live work that keeps a thread from being parked or settled.
-- **A thread another plugin marks as running can no longer be parked, snoozed or settled from the sidebar.** When another plugin's status on a row has the running tone, such as "Waiting for CI", the card hides its Snooze and Settle buttons and the row menu leaves out Snooze, Park thread and Settle, as for a thread that is working. On a Parked, Snoozed or Settled row the menu offers only the way back, an Undo that would shelve the thread again is refused with a message, and settling a parent is refused while any thread in its tree carries such a status. Archive stays available. Only the sidebar knows: automatic settle and `bb sidebar` still treat the thread by its own state.
+- **Titles come from VesnALIA.** Regenerate title and the automatic naming of untitled threads now ask VesnALIA to generate the title, so they work with every AI service VesnALIA offers for thread titles, including services added by plugins such as OpenCode, and follow its Automatic order and fallback. VesnALIA writes the title from the thread's task, its latest messages and the agent's replies, in the task's language, instead of the sidebar's summary of the last three user messages, and may keep the current title when it still fits. The sidebar no longer runs its own VesnALIA cloud request or a hidden Codex helper. A rename made while VesnALIA is generating a title can be replaced by VesnALIA's title. Reported in [#36](https://github.com/yusuf8834/bb-sidebar/pull/36) by [@levkovalenko](https://github.com/levkovalenko).
+- Requires VesnALIA 0.49.0 or later, and is built against plugin SDK 0.6.132, the version in VesnALIA 0.49.0. Version 0.3.10 is the last release for VesnALIA 0.48.
+- **The Goal status is gone.** VesnALIA no longer reports goals, so the sidebar drops the Goal status label, its icon, and the goal count from the live work that keeps a thread from being parked or settled.
+- **A thread another plugin marks as running can no longer be parked, snoozed or settled from the sidebar.** When another plugin's status on a row has the running tone, such as "Waiting for CI", the card hides its Snooze and Settle buttons and the row menu leaves out Snooze, Park thread and Settle, as for a thread that is working. On a Parked, Snoozed or Settled row the menu offers only the way back, an Undo that would shelve the thread again is refused with a message, and settling a parent is refused while any thread in its tree carries such a status. Archive stays available. Only the sidebar knows: automatic settle and `alia sidebar` still treat the thread by its own state.
 - **A thread another plugin marks as running counts as working.** It moves to the Working shelf, is drawn on one line with the "compact working threads" display, and counts as working in its parent's child badge, which also keeps it in view while the parent's children are collapsed. An idle parent of such a child counts as a working tree ([#27](https://github.com/yusuf8834/bb-sidebar/pull/27) by [@febalist](https://github.com/febalist)).
 - **A thread whose machine is disconnected, or that has not started yet, no longer counts as working.** It stays on the Active shelf instead of the Working shelf and keeps its full card with the "compact working threads" display. It still cannot be parked or settled, and its "Working" duration carries on when the machine reconnects.
-- **A thread with an unsent draft shows what bb's own thread list shows.** A working thread with a draft that another plugin has marked, such as "Waiting for CI", shows that plugin's status instead of "Drafting". An unread thread that still has a background agent or command running shows "Drafting" with its duration when you leave a draft in it, instead of "Unread". A failed send still reads "Send failed" on the row, while its hover card now names the draft. A status this version of the sidebar does not know yet takes bb's draft status too, unless a message is waiting to send: then the row keeps reading "Queued".
-- **With both automatic-settle rules off, the five-minute check no longer lists every thread.** The check, and the one when the sidebar opens, read every unarchived thread in bb even when neither rule was on and nothing could move. With both rules off they now skip that read unless a thread the sidebar settled for you is still on the Settled shelf, since such a thread can still return to Active when it is pinned or starts working. The first check after bb starts the sidebar, and the first after you change an automatic-settle option, still look at every thread, so turning a rule off still brings its threads back. Nothing moves differently in the sidebar.
+- **A thread with an unsent draft shows what VesnALIA's own thread list shows.** A working thread with a draft that another plugin has marked, such as "Waiting for CI", shows that plugin's status instead of "Drafting". An unread thread that still has a background agent or command running shows "Drafting" with its duration when you leave a draft in it, instead of "Unread". A failed send still reads "Send failed" on the row, while its hover card now names the draft. A status this version of the sidebar does not know yet takes VesnALIA's draft status too, unless a message is waiting to send: then the row keeps reading "Queued".
+- **With both automatic-settle rules off, the five-minute check no longer lists every thread.** The check, and the one when the sidebar opens, read every unarchived thread in VesnALIA even when neither rule was on and nothing could move. With both rules off they now skip that read unless a thread the sidebar settled for you is still on the Settled shelf, since such a thread can still return to Active when it is pinned or starts working. The first check after VesnALIA starts the sidebar, and the first after you change an automatic-settle option, still look at every thread, so turning a rule off still brings its threads back. Nothing moves differently in the sidebar.
 
 ### Removed
 
@@ -34,34 +34,34 @@
 
 - **Settled threads are no longer checked for provider limits in the background.** Every 30 seconds, and after every burst of thread events, the sidebar looked up the limit state of every errored thread or thread with queued work, settled ones included, and on a long-used install nearly all of those are settled. Only threads off the Settled shelf are checked on that schedule now; a child counts as settled when its parent's row is. A settled thread is checked once when its hover card opens or when you open it, and its row shows the limit warning after that answer arrives, with the Continue control in place of the Un-settle button, for up to five minutes. Opening the card again within 30 seconds reuses the answer. Returning a thread to Active puts it back on the regular schedule. On a first start the sidebar now waits until it knows which threads are settled before it checks any; if that read fails, it tries again every 30 seconds.
 - **Settled threads' workspaces are no longer scanned for open ports in the background.** Every 30 seconds the server listed every unarchived thread to find their workspaces and scanned all of them, though on a long-used install most belong only to settled threads. The sidebar now names the workspaces of threads off the Settled shelf, and the server scans only those, without listing threads. A workspace shared with a live thread is still scanned. A settled thread's own workspace is scanned when its hover card opens or when you open the thread, and its row shows the port icon after that answer arrives, for up to five minutes; stopping a port from that card scans it again at once. A listener in a workspace nested inside a scanned one, such as a worktree inside a checkout, now always stays with its own workspace instead of showing under the enclosing one when nothing else claimed it.
-- **A thread the sidebar settled for you stays settled.** The five-minute check and the check when the sidebar opens now look only at threads that are not settled, and no longer ask GitHub about threads the sidebar settled itself. Before, every check looked their pull requests up again and could move a thread back to Active on its own, for example when its pull request was reopened or turned back into a draft. A settled thread now returns to Active when you return it, when it gets new activity, or when it is pinned, starts working, asks a question or has a message queued, as before. A thread settled because of its pull request or inactivity is looked at again after you change an automatic-settle option, and on the first check after bb starts the sidebar, so a rule you turned off still brings its threads back. If that check cannot finish, the next one runs it again, and a thread whose pull request GitHub PR Status could not report is checked again on each later pass until it answers. A parent whose own work is done now settles even when a settled child's pull request was reopened, since the child stays settled. Threads you settled yourself are unaffected.
+- **A thread the sidebar settled for you stays settled.** The five-minute check and the check when the sidebar opens now look only at threads that are not settled, and no longer ask GitHub about threads the sidebar settled itself. Before, every check looked their pull requests up again and could move a thread back to Active on its own, for example when its pull request was reopened or turned back into a draft. A settled thread now returns to Active when you return it, when it gets new activity, or when it is pinned, starts working, asks a question or has a message queued, as before. A thread settled because of its pull request or inactivity is looked at again after you change an automatic-settle option, and on the first check after VesnALIA starts the sidebar, so a rule you turned off still brings its threads back. If that check cannot finish, the next one runs it again, and a thread whose pull request GitHub PR Status could not report is checked again on each later pass until it answers. A parent whose own work is done now settles even when a settled child's pull request was reopened, since the child stays settled. Threads you settled yourself are unaffected.
 
 ### Fixed
 
 - **A settled row's port icon goes away when Clean or the settle prompt closes its ports.** After you had opened a settled thread's hover card, closing its ports with "Clean resources" in the Settled shelf's Clean dialog, or with "Close ports" on the prompt that follows Settle, stopped the process but left the port icon on the row for up to five minutes, or until you opened the card again after 30 seconds. The icon now goes as soon as the ports are closed, and the sidebar checks those workspaces one more time a second later, so a process that did not exit gets its icon back. Only the workspaces whose ports were closed are checked. A thread whose workspace is shared with a live thread lost its icon only at the next 30-second check; that workspace is now checked a second after the prompt closes its ports too.
-- **`bb sidebar list` puts a child thread on its parent's shelf, as the sidebar does.** The sidebar draws a child inside its parent's row, so a settled or snoozed parent takes its children with it, but `list` read each child's own row and could call one Active that the sidebar showed under Settled or Snoozed. This happened to children of a snoozed parent, since snoozing writes only the parent's row, and to children of trees settled before Settle covered whole trees. `list` now places every thread by the same rule as the sidebar, across projects before `--state`, the project filter and paging apply, and gives a child of a snoozed parent the parent's wake time. It also follows three more of the sidebar's rules: a pinned thread is Active unless you settled, snoozed or parked it yourself, a child's question brings its whole tree back to Active, and a thread snoozed until its scheduled Continue stays Snoozed even though bb counts that Continue as a queued message. `resume` on a child whose parent carries it now names that parent instead of reporting the child as already active.
-- **Children of a settled thread are settled on the server too.** The sidebar draws a child inside its settled parent, but some children had no settled row of their own, so cleanup and `bb sidebar` counted them as Active, and a workspace they shared with the parent was never cleaned up. That happened to children of trees settled before Settle covered whole trees whose own row left them Active (a snooze that had run out, or an earlier Return to Active), and to children that were archived when their tree settled and came back from the archive later. On the first automatic-settle pass after updating, every quiet child inside a settled tree is settled with that tree, once; nothing moves in the sidebar. A child with a live snooze, a park, work running, a question waiting, or activity newer than the settle keeps its own row. A thread restored from the archive into a settled tree is now settled with it, along with its children, instead of counting as Active.
-- **Project icons are found outside the usual root paths.** When none of the conventional paths has an icon, the sidebar now searches the project for `icon` and `logo` files the way the Homepage plugin does, so icons such as `apps/frontend/src/assets/img/favicon.ico`, `apps/web/public/favicons/apple-touch-icon.png` or `web/icons/Icon-512.png` show up instead of the letter tile. Only conventional filenames count, `node_modules`, `.git`, `dist`, `build` and `coverage` are skipped, and the matches are ranked by name, location, format and depth with the same scoring as Homepage. An image declared as `bb.branding.icon` or `bb.branding.logo.light` in the project's `package.json` is used before the conventional paths. An uploaded image or a path chosen in Settings still wins ([#31](https://github.com/yusuf8834/bb-sidebar/issues/31)).
-- **Projects without an icon are checked once an hour, not every ten minutes.** The sidebar kept asking for a missing project icon on a backoff that settled at every ten minutes, and each request searched the project again. It now asks once an hour after bb says a project has no icon, and still retries quickly when bb is starting or a host is unreachable. Picking or uploading an icon in Settings shows it at once as before; an icon file newly added to a project shows within the hour, or on reload.
-- **Open ports are checked every 30 seconds, not every 10.** The server already reuses a port scan for 30 seconds, so two of every three checks returned the same result. A port badge can now take up to about a minute to appear or go away, instead of about 40 seconds. Coming back to bb's window and stopping a port from the sidebar still check at once.
-- **A thread whose automatic title failed gets another try.** The sidebar names an untitled thread automatically, but any failure used up its one attempt, including a brief bb cloud error or a title helper that timed out, and the thread stayed untitled until you regenerated the title yourself. A failure that can pass is now tried again when the thread next becomes active or idle, up to three attempts in all. A thread that already has a title, has no message text or is no longer available is still tried once.
-- **The sidebar no longer keeps your Mac busy while threads work.** The working glyph, the activity glyphs for workflows, background agents and commands, plan mode and goals, and the "Working" shelf header now hold still, and the little typist in an empty Active plays for about four seconds and then rests. Any endless animation keeps Chromium redrawing bb's window at the display's refresh rate: on a 120 Hz MacBook Pro one 16px spinner kept bb and macOS's WindowServer near a full CPU core for as long as a thread worked, and a slower or stepped spin still cost about a third of that. A still spinner reads as frozen, so working threads now show a pulse in a box instead, in the same enclosed style as the failed and needs-you glyphs; the bare pulse stays the Active shelf's. It breathes gently, holding still most of the time the way T3 Code's status dot does, with every working row in step, which costs a few percent of a core instead of a full one; under reduced motion it holds still. The other glyphs keep their shapes and colours, and "Working · 5m" still shows how long a thread has run. Short-lived loading spinners still turn, and now hold still under reduced motion too ([get-bb/bb#7233](https://github.com/get-bb/bb/issues/7233)).
-- **"Working · 5m" survives a reload.** The sidebar no longer clears its record of when each thread started working while bb is still loading the thread list, so a reload or a failed load no longer restarts every duration from zero.
-- **A queued or failed send shows its glyph everywhere.** A child's row in the parent header's list and the thread's hover card drew nothing for a message waiting to send or one that failed to send; they now show bb's own glyph for it, as the card's "Queued" and "Send failed" labels already did.
-- **Statuses bb adds later still show.** When bb reports a status this version of the sidebar does not know yet, the row now draws bb's own glyph and label for it, held still like the sidebar's own glyphs, instead of showing nothing until the sidebar catches up.
-- **Project settings opens cleanly from the thread menu.** The item now links to bb's settings route, so bb's Home button leaves the settings page again instead of returning to it, and the thread's hover card no longer reopens in the window's top-left corner behind the settings page.
+- **`alia sidebar list` puts a child thread on its parent's shelf, as the sidebar does.** The sidebar draws a child inside its parent's row, so a settled or snoozed parent takes its children with it, but `list` read each child's own row and could call one Active that the sidebar showed under Settled or Snoozed. This happened to children of a snoozed parent, since snoozing writes only the parent's row, and to children of trees settled before Settle covered whole trees. `list` now places every thread by the same rule as the sidebar, across projects before `--state`, the project filter and paging apply, and gives a child of a snoozed parent the parent's wake time. It also follows three more of the sidebar's rules: a pinned thread is Active unless you settled, snoozed or parked it yourself, a child's question brings its whole tree back to Active, and a thread snoozed until its scheduled Continue stays Snoozed even though VesnALIA counts that Continue as a queued message. `resume` on a child whose parent carries it now names that parent instead of reporting the child as already active.
+- **Children of a settled thread are settled on the server too.** The sidebar draws a child inside its settled parent, but some children had no settled row of their own, so cleanup and `alia sidebar` counted them as Active, and a workspace they shared with the parent was never cleaned up. That happened to children of trees settled before Settle covered whole trees whose own row left them Active (a snooze that had run out, or an earlier Return to Active), and to children that were archived when their tree settled and came back from the archive later. On the first automatic-settle pass after updating, every quiet child inside a settled tree is settled with that tree, once; nothing moves in the sidebar. A child with a live snooze, a park, work running, a question waiting, or activity newer than the settle keeps its own row. A thread restored from the archive into a settled tree is now settled with it, along with its children, instead of counting as Active.
+- **Project icons are found outside the usual root paths.** When none of the conventional paths has an icon, the sidebar now searches the project for `icon` and `logo` files the way the Homepage plugin does, so icons such as `apps/frontend/src/assets/img/favicon.ico`, `apps/web/public/favicons/apple-touch-icon.png` or `web/icons/Icon-512.png` show up instead of the letter tile. Only conventional filenames count, `node_modules`, `.git`, `dist`, `build` and `coverage` are skipped, and the matches are ranked by name, location, format and depth with the same scoring as Homepage. An image declared as `alia.branding.icon` or `alia.branding.logo.light` in the project's `package.json` is used before the conventional paths. An uploaded image or a path chosen in Settings still wins ([#31](https://github.com/yusuf8834/bb-sidebar/issues/31)).
+- **Projects without an icon are checked once an hour, not every ten minutes.** The sidebar kept asking for a missing project icon on a backoff that settled at every ten minutes, and each request searched the project again. It now asks once an hour after VesnALIA says a project has no icon, and still retries quickly when VesnALIA is starting or a host is unreachable. Picking or uploading an icon in Settings shows it at once as before; an icon file newly added to a project shows within the hour, or on reload.
+- **Open ports are checked every 30 seconds, not every 10.** The server already reuses a port scan for 30 seconds, so two of every three checks returned the same result. A port badge can now take up to about a minute to appear or go away, instead of about 40 seconds. Coming back to VesnALIA's window and stopping a port from the sidebar still check at once.
+- **A thread whose automatic title failed gets another try.** The sidebar names an untitled thread automatically, but any failure used up its one attempt, including a brief VesnALIA cloud error or a title helper that timed out, and the thread stayed untitled until you regenerated the title yourself. A failure that can pass is now tried again when the thread next becomes active or idle, up to three attempts in all. A thread that already has a title, has no message text or is no longer available is still tried once.
+- **The sidebar no longer keeps your Mac busy while threads work.** The working glyph, the activity glyphs for workflows, background agents and commands, plan mode and goals, and the "Working" shelf header now hold still, and the little typist in an empty Active plays for about four seconds and then rests. Any endless animation keeps Chromium redrawing VesnALIA's window at the display's refresh rate: on a 120 Hz MacBook Pro one 16px spinner kept VesnALIA and macOS's WindowServer near a full CPU core for as long as a thread worked, and a slower or stepped spin still cost about a third of that. A still spinner reads as frozen, so working threads now show a pulse in a box instead, in the same enclosed style as the failed and needs-you glyphs; the bare pulse stays the Active shelf's. It breathes gently, holding still most of the time the way T3 Code's status dot does, with every working row in step, which costs a few percent of a core instead of a full one; under reduced motion it holds still. The other glyphs keep their shapes and colours, and "Working · 5m" still shows how long a thread has run. Short-lived loading spinners still turn, and now hold still under reduced motion too ([get-alia/alia#7233](https://github.com/get-bb/bb/issues/7233)).
+- **"Working · 5m" survives a reload.** The sidebar no longer clears its record of when each thread started working while VesnALIA is still loading the thread list, so a reload or a failed load no longer restarts every duration from zero.
+- **A queued or failed send shows its glyph everywhere.** A child's row in the parent header's list and the thread's hover card drew nothing for a message waiting to send or one that failed to send; they now show VesnALIA's own glyph for it, as the card's "Queued" and "Send failed" labels already did.
+- **Statuses VesnALIA adds later still show.** When VesnALIA reports a status this version of the sidebar does not know yet, the row now draws VesnALIA's own glyph and label for it, held still like the sidebar's own glyphs, instead of showing nothing until the sidebar catches up.
+- **Project settings opens cleanly from the thread menu.** The item now links to VesnALIA's settings route, so VesnALIA's Home button leaves the settings page again instead of returning to it, and the thread's hover card no longer reopens in the window's top-left corner behind the settings page.
 
 ## [0.3.9] - 2026-11-08
 
 ### Fixed
 
-- **Installing and updating from git works again.** 0.3.8 failed to install or update with `Could not resolve "cron-parser"`, because a package the server needs was listed only as a development dependency, which bb leaves out when it installs a plugin. Installs that stayed on 0.3.7 can update directly to this release ([#24](https://github.com/yusuf8834/bb-sidebar/issues/24)).
+- **Installing and updating from git works again.** 0.3.8 failed to install or update with `Could not resolve "cron-parser"`, because a package the server needs was listed only as a development dependency, which VesnALIA leaves out when it installs a plugin. Installs that stayed on 0.3.7 can update directly to this release ([#24](https://github.com/yusuf8834/bb-sidebar/issues/24)).
 
 ## [0.3.8] - 2026-11-07
 
 ### Added
 
-- **`bb sidebar`** lets agents manage threads from the bb CLI: `list`, `snooze`, `unsnooze`, `settle`, `park`, `resume`, `pin`, and `parent`. Each command acts on the calling thread unless `--thread` names another, follows the same rules as the sidebar's menus, and adds nothing to an agent's prompt until the agent looks the command up. `list` shows each thread's shelf and pages with `--limit` and `--offset` under any filter; `--json` returns `{ threads, total, offset, nextOffset }`.
+- **`alia sidebar`** lets agents manage threads from the VesnALIA CLI: `list`, `snooze`, `unsnooze`, `settle`, `park`, `resume`, `pin`, and `parent`. Each command acts on the calling thread unless `--thread` names another, follows the same rules as the sidebar's menus, and adds nothing to an agent's prompt until the agent looks the command up. `list` shows each thread's shelf and pages with `--limit` and `--offset` under any filter; `--json` returns `{ threads, total, offset, nextOffset }`.
 - **Provider-limit recovery.** A thread stopped by a usage limit keeps a warning in the sidebar with one click to send Continue 30 seconds after the limit resets. When the provider gives no reset time, you choose one. A scheduled Continue moves the thread to Snoozed until it is sent and can be cancelled from the row. Codex reset times are read from its limit message in the provider's timezone.
 - Pinned projects can be reordered by dragging, or with Alt+Left/Right, and keep their order after a reload.
 - A collapsed project or worktree group shows a small dot for each kind of news among its hidden threads: red for a failure, the "needs you" color for a question or approval, and green for finished work you have not read. Hovering the dots names the counts.
@@ -72,33 +72,33 @@
 - **Every project gets a header in the Project sort.** A project with one Active thread now shows the same collapsible project header as a project with several. Turn off "Group single-thread projects" in the Active sort picker to show such a thread as an ordinary card again; the choice is saved on this device.
 - **Project sort keeps each project in place.** A project's position in Active no longer follows its top thread, so settling, snoozing or running a thread, or a project dropping to one thread, no longer moves the project. A project new to the view starts at the top. Dragging a project or a lone thread at the top level moves the project, saved on this device; it no longer rewrites the manual thread order.
 - Titles in the hover card and its child-thread rows wrap to two lines instead of being cut off.
-- **Opening a thread from the sidebar keeps its Full Screen.** Thread rows, child-thread rows, and the hover card's subthreads are now real links that bb opens, so a thread you left in Full Screen comes back that way. Cmd/Ctrl-click opens the thread in a split, and middle-click or Shift-click opens it in a new window or tab. Child-thread rows open with Enter; Space no longer opens them.
-- Requires bb 0.48.0 or later, and is built against plugin SDK 0.6.94, the version in bb 0.48.0.
+- **Opening a thread from the sidebar keeps its Full Screen.** Thread rows, child-thread rows, and the hover card's subthreads are now real links that VesnALIA opens, so a thread you left in Full Screen comes back that way. Cmd/Ctrl-click opens the thread in a split, and middle-click or Shift-click opens it in a new window or tab. Child-thread rows open with Enter; Space no longer opens them.
+- Requires VesnALIA 0.48.0 or later, and is built against plugin SDK 0.6.94, the version in VesnALIA 0.48.0.
 
 ### Fixed
 
-- **Delete counts every thread it removes.** The delete confirmation now asks bb which threads go with the thread, so its count includes archived child threads and threads bb deletes along with it, not just the children shown in the sidebar.
+- **Delete counts every thread it removes.** The delete confirmation now asks VesnALIA which threads go with the thread, so its count includes archived child threads and threads VesnALIA deletes along with it, not just the children shown in the sidebar.
 
 ## [0.3.7] - 2026-10-23
 
 ### Added
 
-- **Notify parent** in a child thread's context menu chooses which of its turn outcomes wake the parent thread: every outcome, only when stuck (failed, interrupted, or waiting on an answer), or off. Forks don't show it, because bb never reports a fork's outcomes to its parent.
+- **Notify parent** in a child thread's context menu chooses which of its turn outcomes wake the parent thread: every outcome, only when stuck (failed, interrupted, or waiting on an answer), or off. Forks don't show it, because VesnALIA never reports a fork's outcomes to its parent.
 
 ### Changed
 
-- Requires bb 0.47.0 or later. Pull request badges, the hover card's pull request list, and automatic settling now read pull request status from bb's bundled GitHub PR Status plugin.
-- Jump shortcut hints (⌘1–9) come from bb, so they always match the row each shortcut opens and follow bb's styling and timing. Full cards, compact cards, and shelf rows also announce their jump key to screen readers while it is shown.
-- Titles with mentions (threads, projects, sections, files) show the names bb resolves, with bb's mention chips, in rows, labels, the parent picker, the Clean dialog, and settle errors. Renaming still edits the stored title, so mentions survive a rename.
+- Requires VesnALIA 0.47.0 or later. Pull request badges, the hover card's pull request list, and automatic settling now read pull request status from VesnALIA's bundled GitHub PR Status plugin.
+- Jump shortcut hints (⌘1–9) come from VesnALIA, so they always match the row each shortcut opens and follow VesnALIA's styling and timing. Full cards, compact cards, and shelf rows also announce their jump key to screen readers while it is shown.
+- Titles with mentions (threads, projects, sections, files) show the names VesnALIA resolves, with VesnALIA's mention chips, in rows, labels, the parent picker, the Clean dialog, and settle errors. Renaming still edits the stored title, so mentions survive a rename.
 - Settling no longer lists every thread to check each one before stopping its runtime or closing its terminals; it looks up only that thread.
 
 ### Removed
 
-- The in-list search view. bb moved thread search to its quick palette and no longer passes a query to thread list plugins, so this view could not appear.
+- The in-list search view. VesnALIA moved thread search to its quick palette and no longer passes a query to thread list plugins, so this view could not appear.
 
 ### Fixed
 
-- Automatic settling works again on bb 0.47. bb removed the pull request lookup the sidebar used, so every lookup failed and no thread with a workspace was settled, whether by a merged pull request or by inactivity. If GitHub PR Status is disabled or a machine is offline, those threads stay where they are rather than being settled without knowing whether a pull request is open.
+- Automatic settling works again on VesnALIA 0.47. VesnALIA removed the pull request lookup the sidebar used, so every lookup failed and no thread with a workspace was settled, whether by a merged pull request or by inactivity. If GitHub PR Status is disabled or a machine is offline, those threads stay where they are rather than being settled without knowing whether a pull request is open.
 
 ## [0.3.6] - 2026-10-21
 
@@ -136,30 +136,30 @@
 
 ### Added
 
-- Thread rows show statuses that other plugins set, such as a sandbox or drafts marker, the same way bb's own list does: bb's icon and color in place of a quieter status, with the thread's age beside it and the label in the hover card. Working, failed, needs-you, and send-failed statuses still take priority. Thanks @skillet07 (#20).
+- Thread rows show statuses that other plugins set, such as a sandbox or drafts marker, the same way VesnALIA's own list does: VesnALIA's icon and color in place of a quieter status, with the thread's age beside it and the label in the hover card. Working, failed, needs-you, and send-failed statuses still take priority. Thanks @skillet07 (#20).
 
 ## [0.3.2] - 2026-10-17
 
 ### Added
 
 - Compact all threads, a new Thread display choice in Sidebar layout that keeps every Pinned, Active, and Inactive thread on one line with its status, unread state, Woke marker, and children chip. Options keep pinned or woken threads as full cards. Thanks @dillonzq (#16) and @a-kras.
-- Group by worktree, an option under the Project sort in the Active sort picker, off by default. Inside each project, root threads that share a bb worktree are grouped under its branch. Groups can be collapsed and reordered by drag or Alt+Arrow keys. Threads alone in their worktree, threads in the project checkout, and child threads stay as before. Thanks @s-KaiNet (#9).
+- Group by worktree, an option under the Project sort in the Active sort picker, off by default. Inside each project, root threads that share a VesnALIA worktree are grouped under its branch. Groups can be collapsed and reordered by drag or Alt+Arrow keys. Threads alone in their worktree, threads in the project checkout, and child threads stay as before. Thanks @s-KaiNet (#9).
 - Snoozed, Parked, and Settled rows show the child-thread chip, and the chip expands their children, as on compact working rows. Settling a thread folds its children; expanding them again in Settled sticks.
 
 ### Fixed
 
 - On touch devices, opening the project picker or selecting a project no longer focuses the filter field, so the on-screen keyboard stays down. Tap the field to search.
-- On bb 0.46.1, Regenerate title reads the thread's earlier messages again instead of only the most recent ones.
+- On VesnALIA 0.46.1, Regenerate title reads the thread's earlier messages again instead of only the most recent ones.
 
 ### Changed
 
 - The Compact working threads switch in Sidebar layout is now the Thread display choice: Full cards, Compact working threads, or Compact all threads. Your current choice carries over.
 - The Active sort picker is now a menu with a check beside the current mode, so it can hold the Group by worktree option. Arrow keys move between modes, and Enter or a click closes it.
 - On phones and tablets, sidebar lists no longer animate rows into place. The animation kept measuring every row even when nothing moved.
-- Thread, project, and parent context menus use bb's menu text size and spacing.
+- Thread, project, and parent context menus use VesnALIA's menu text size and spacing.
 - The settings page no longer has a row of section links at the top. Sections still follow each other on one page under their own headings.
-- Thread hover cards show the model and reasoning effort on one line with bb's names, such as GPT 6.1 Sol Medium, instead of the raw model ID. Thanks @dillonzq.
-- Built against bb 0.46.1 and plugin SDK 0.6.49. bb 0.46.0 remains supported.
+- Thread hover cards show the model and reasoning effort on one line with VesnALIA's names, such as GPT 6.1 Sol Medium, instead of the raw model ID. Thanks @dillonzq.
+- Built against VesnALIA 0.46.1 and plugin SDK 0.6.49. VesnALIA 0.46.0 remains supported.
 
 ## [0.3.1] - 2026-10-14
 
@@ -182,7 +182,7 @@
 
 ### Changed
 
-- Requires bb 0.46.0 or newer for the SDK thread actions API.
+- Requires VesnALIA 0.46.0 or newer for the SDK thread actions API.
 - Settings move to a new storage format the first time the sidebar starts after updating. Existing values carry over automatically.
 - Grouped settings by sidebar layout, project appearance, thread behavior, child threads, and device. Section links jump to each group; project removal has its own management section at the bottom.
 - Settling a parent also settles its descendants, and waits until the whole tree is idle. New or resumed child activity reopens its ancestors.
@@ -191,7 +191,7 @@
 ### Fixed
 
 - The thread header's parent chip now follows the child icon style setting, showing the parent's provider glyph when selected and its color disc when the provider is unknown.
-- Sidebar notifications use BB's theme surfaces and button colors in dark and light mode.
+- Sidebar notifications use VesnALIA's theme surfaces and button colors in dark and light mode.
 - Delayed child events preserve newer Park and Snooze choices on their ancestors. Ancestor lookup failures no longer turn completed shelf moves into errors or skip automatic-settle cleanup.
 - Queued Settle cleanup rechecks activity, shelf state, pins and parentage before releasing resources, including after terminal lookups. Hidden descendants are included in tree checks.
 - Returning a parent to Active no longer adds permanent Active overrides to its descendants. Snapshot Undo ends after restoring the previous shelves, and failed Settle actions restore pins they removed.
@@ -199,7 +199,7 @@
 - Project colors refresh after reconnecting, and removing a project clears its custom color.
 - Undo after settling restores each child's previous shelf instead of marking every child explicitly Active. It preserves newer shelf choices and activity.
 - Trying automatic-settle options no longer reopens manually settled, parked, or snoozed parents when an old child returns from automatic settling. Appearance changes do not trigger settling, and evaluations discard outdated settings before changing threads.
-- Retained automatic title recovery for threads BB leaves unnamed, including first prompts shorter than five words. BB's [Codex stream fix](https://github.com/get-bb/bb/pull/4830) fixes completion handling but does not change that naming threshold. Successful BB titles, manual titles, and the selected AI title service are preserved.
+- Retained automatic title recovery for threads VesnALIA leaves unnamed, including first prompts shorter than five words. VesnALIA's [Codex stream fix](https://github.com/get-bb/bb/pull/4830) fixes completion handling but does not change that naming threshold. Successful VesnALIA titles, manual titles, and the selected AI title service are preserved.
 
 ## [0.2.34] - 2026-10-04
 
@@ -217,7 +217,7 @@
 
 ### Added
 
-- A thread with an unsent message in its composer shows **Draft** in place of its age, or **Drafting** while it works, as bb's own sidebar does. Failures, questions, unread results, and queued messages still take precedence.
+- A thread with an unsent message in its composer shows **Draft** in place of its age, or **Drafting** while it works, as VesnALIA's own sidebar does. Failures, questions, unread results, and queued messages still take precedence.
 - With the Working shelf on, Active shows an animated scene when every thread is working.
 
 ## [0.2.32] - 2026-10-04
@@ -236,7 +236,7 @@
 
 ### Fixed
 
-- Pinned threads keep bb's global pin order when grouped by project, and reordering places a pin between the right neighbours ([#6](https://github.com/yusuf8834/bb-sidebar/pull/6) by [@a-kras](https://github.com/a-kras)).
+- Pinned threads keep VesnALIA's global pin order when grouped by project, and reordering places a pin between the right neighbours ([#6](https://github.com/yusuf8834/bb-sidebar/pull/6) by [@a-kras](https://github.com/a-kras)).
 - Only root threads can be pinned. Assigning a different parent unpins a thread; choosing None keeps it pinned ([#6](https://github.com/yusuf8834/bb-sidebar/pull/6) by [@a-kras](https://github.com/a-kras)).
 - When a parent and child are in different projects, project filters and collapsed shelves keep the open thread or its nearest visible parent reachable ([#6](https://github.com/yusuf8834/bb-sidebar/pull/6) by [@a-kras](https://github.com/a-kras)).
 
@@ -248,15 +248,15 @@
 
 ### Fixed
 
-- Matched the development SDK to the stable BB build tools so the extension's SDK check passes in CI.
+- Matched the development SDK to the stable VesnALIA build tools so the extension's SDK check passes in CI.
 
 ## [0.2.30] - 2026-10-03
 
 ### Fixed
 
 - **Regenerate title** reuses the thread's workspace instead of creating a personal workspace that can stall during setup. Selecting Codex for thread titles now uses a lightweight Codex helper, including for threads running through a custom provider. Turning thread titles off disables regeneration.
-- An unnamed thread gets one background title recovery attempt after BB's initial naming request. Recovery follows the selected AI title service, respects Off, and preserves successful or manually edited titles. Codex recovery allows up to 45 seconds for its helper to finish. Attempts are remembered across plugin reloads, with at most two running at once. This provides recovery while [BB's Codex stream issue](https://github.com/get-bb/bb/issues/4828) is investigated.
-- Selecting **bb cloud** for sidebar title regeneration now sends the last three user messages to bb cloud through the public account RPC. Automatic tries services in BB's advertised order, with cloud first. Explicit selections keep the existing title on failure and never switch to another service. Unsupported services show an error.
+- An unnamed thread gets one background title recovery attempt after VesnALIA's initial naming request. Recovery follows the selected AI title service, respects Off, and preserves successful or manually edited titles. Codex recovery allows up to 45 seconds for its helper to finish. Attempts are remembered across plugin reloads, with at most two running at once. This provides recovery while [VesnALIA's Codex stream issue](https://github.com/get-bb/bb/issues/4828) is investigated.
+- Selecting **VesnALIA cloud** for sidebar title regeneration now sends the last three user messages to VesnALIA cloud through the public account RPC. Automatic tries services in VesnALIA's advertised order, with cloud first. Explicit selections keep the existing title on failure and never switch to another service. Unsupported services show an error.
 - Pull-request lookups run only while their thread card is visible in the sidebar ([#5](https://github.com/yusuf8834/bb-sidebar/pull/5) by [@amrtawfik160](https://github.com/amrtawfik160)). Initial automatic-settle evaluation is preserved.
 
 ### Contributors
@@ -295,14 +295,14 @@
 
 ### Changed
 
-- The settings page is reorganised to match bb's own: Shelves, Snooze, Automatic settle, Child threads, Projects, This device, and Experimental. Changes save as you make them, so there is no Save button: the section you changed shows **Saving…** and then **Saved**, or **Not saved** if the save failed. An invalid value shows why and is not saved. The hours and days for the inactive shelf and automatic settle appear only while their switch is on, the snooze shortcuts show the menu they produce, and one project picker serves both the project icon and removing a project.
+- The settings page is reorganised to match VesnALIA's own: Shelves, Snooze, Automatic settle, Child threads, Projects, This device, and Experimental. Changes save as you make them, so there is no Save button: the section you changed shows **Saving…** and then **Saved**, or **Not saved** if the save failed. An invalid value shows why and is not saved. The hours and days for the inactive shelf and automatic settle appear only while their switch is on, the snooze shortcuts show the menu they produce, and one project picker serves both the project icon and removing a project.
 - The right-click menu lists thread actions as Pin, Snooze, Park thread, Settle.
 
 ## [0.2.27] - 2026-10-01
 
 ### Added
 
-- A project without an icon shows a letter tile: its first letter on a colour picked from its name, so it looks the same on every machine. Common leading words such as `bb-` are skipped, so `bb-sidebar` shows **S**. The tile also shows while an icon is loading, in the hover card in place of the folder glyph, and in the Project icon settings preview.
+- A project without an icon shows a letter tile: its first letter on a colour picked from its name, so it looks the same on every machine. Common leading words such as `alia-` are skipped, so `alia-sidebar` shows **S**. The tile also shows while an icon is loading, in the hover card in place of the folder glyph, and in the Project icon settings preview.
 - A row shows **Send failed** when a queued message could not be sent, and **Queued** when a message is waiting to send on an otherwise quiet thread, such as a scheduled send. These rows used to show only their age. A failed send also counts as failed in a parent's child summary.
 - A pull request in GitHub's merge queue shows **In merge queue**.
 
@@ -316,15 +316,15 @@
 ### Fixed
 
 - Automatic settle no longer settles, or stops the runtime of, a thread that is still waiting on you or has live work: a question or approval, queued messages, a workflow, a background agent or command, plan mode, or a goal. It now uses the same rule as the sidebar's **Settle** action.
-- Automatic settle no longer settles a thread that is still serving a port from its workspace, such as a dev server. Settling stops the thread's runtime, which also stops processes its agent left running, and some providers do not tell bb about them. A thread whose machine cannot be checked is left alone until the next pass.
+- Automatic settle no longer settles a thread that is still serving a port from its workspace, such as a dev server. Settling stops the thread's runtime, which also stops processes its agent left running, and some providers do not tell VesnALIA about them. A thread whose machine cannot be checked is left alone until the next pass.
 - **Settle**, **Park**, and **Snooze** are no longer offered for a thread with a queued or failed message, or for an unread thread whose turn is still running. Settled, parked, and snoozed threads in either state return to Active.
-- **Regenerate title** works again on current bb, which no longer exposes the inference model it read. It now generates the title with the thread's own agent and model, at low reasoning.
+- **Regenerate title** works again on current VesnALIA, which no longer exposes the inference model it read. It now generates the title with the thread's own agent and model, at low reasoning.
 
 ## [0.2.26] - 2026-09-29
 
 ### Added
 
-- Holding Cmd (Ctrl off Mac) labels the first nine rows with bb's own shortcut hints, ⌘ 1 to ⌘ 9, in place of their status. They appear on the same hold delay as bb's hints and match the row each Cmd+digit shortcut opens.
+- Holding Cmd (Ctrl off Mac) labels the first nine rows with VesnALIA's own shortcut hints, ⌘ 1 to ⌘ 9, in place of their status. They appear on the same hold delay as VesnALIA's hints and match the row each Cmd+digit shortcut opens.
 - Each process in a hover card's **Workspace ports** list has a stop button. The first click arms it; a second click within four seconds stops the process.
 
 ### Changed
@@ -376,12 +376,12 @@
 
 ### Added
 
-- Show a spinner and "Loading threads…" while bb loads the thread list, instead of an empty list. It appears only if loading takes longer than 200 ms, so fast loads do not flicker.
-- The delete confirmation now names the thread and its project, and says how many child threads go with it, so a right-click delete in a busy list cannot be mistaken for another thread. The sidebar owns this dialog and deletes through bb's SDK instead of opening bb's generic "Delete thread?" prompt.
+- Show a spinner and "Loading threads…" while VesnALIA loads the thread list, instead of an empty list. It appears only if loading takes longer than 200 ms, so fast loads do not flicker.
+- The delete confirmation now names the thread and its project, and says how many child threads go with it, so a right-click delete in a busy list cannot be mistaken for another thread. The sidebar owns this dialog and deletes through VesnALIA's SDK instead of opening VesnALIA's generic "Delete thread?" prompt.
 
 ### Fixed
 
-- A project icon that failed to load once, for example while bb's host was still starting, no longer stays hidden until the sidebar reloads. The sidebar retries with backoff, and the server reports a read failure as temporary instead of caching it as "no icon".
+- A project icon that failed to load once, for example while VesnALIA's host was still starting, no longer stays hidden until the sidebar reloads. The sidebar retries with backoff, and the server reports a read failure as temporary instead of caching it as "no icon".
 
 ## [0.2.20] - 2026-09-21
 
@@ -398,7 +398,7 @@
 
 ### Fixed
 
-- Status colours follow bb's theme instead of the OS colour scheme, so a dark bb on a light OS (or the reverse) no longer shows low-contrast statuses or a light needs-you band.
+- Status colours follow VesnALIA's theme instead of the OS colour scheme, so a dark VesnALIA on a light OS (or the reverse) no longer shows low-contrast statuses or a light needs-you band.
 - On touch screens, Failed, Unread, and idle ages stay visible beside the snooze and settle actions instead of being hidden behind them.
 - A woken thread shows "Woke" beside its current status in cards and search results instead of replacing it.
 
@@ -498,7 +498,7 @@
 
 ### Added
 
-- Show monitoring runtimes as "Monitoring" on thread cards when BB reports that state.
+- Show monitoring runtimes as "Monitoring" on thread cards when VesnALIA reports that state.
 - Added compact hover cards to main, child, grandchild, snoozed, and settled threads, showing project, machine, branch, provider, model, and reasoning details.
 - Show project icons in hover cards when available, with a folder icon as fallback.
 
@@ -575,9 +575,9 @@
 
 ### Improved
 
-- Used bb's configured inference model and fallback through a temporary hidden helper, with cleanup after generation and protection for manual title changes.
+- Used VesnALIA's configured inference model and fallback through a temporary hidden helper, with cleanup after generation and protection for manual title changes.
 - Kept pending threads available instead of automatically settling them.
-- Aligned the development CLI with Plugin SDK 0.4.47. Requires bb 0.42.0 or later and Plugin SDK 0.4.47 or later.
+- Aligned the development CLI with Plugin SDK 0.4.47. Requires VesnALIA 0.42.0 or later and Plugin SDK 0.4.47 or later.
 
 ## [0.2.4] - 2026-08-30
 
@@ -619,7 +619,7 @@
 
 ### Fixed
 
-- Prevented inactive, snoozed, and settled threads from briefly appearing under Active when returning from Settings or restarting bb.
+- Prevented inactive, snoozed, and settled threads from briefly appearing under Active when returning from Settings or restarting VesnALIA.
 
 ## [0.2.0] - 2026-08-24
 
@@ -661,8 +661,8 @@
 
 ### Fixed
 
-- Corrected the package and plugin identity to `bb-sidebar`, matching the repository and marketplace entry.
-- Rebuilt frontend styles for the `bb-sidebar` scope so hover actions load correctly after installation.
+- Corrected the package and plugin identity to `alia-sidebar`, matching the repository and marketplace entry.
+- Rebuilt frontend styles for the `alia-sidebar` scope so hover actions load correctly after installation.
 - Removed the obsolete internal product name from source comments and release notes.
 
 ## [0.1.1] - 2026-08-24
@@ -680,7 +680,7 @@
 ### Fixed
 
 - Hid the extra Snooze dropdown chevron without changing menu behavior.
-- Fixed plugin stylesheet scoping after the BB Sidebar rename.
+- Fixed plugin stylesheet scoping after the VesnALIA Sidebar rename.
 
 ## [0.1.0] - 2026-08-23
 

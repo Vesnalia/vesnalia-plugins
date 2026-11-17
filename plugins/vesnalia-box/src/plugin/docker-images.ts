@@ -28,9 +28,9 @@ function imageRefs(images: readonly string[], targets: readonly string[]): strin
 
 /** What build.sh builds: its target, by the image it tags. */
 export const BUILT_IMAGES: Readonly<Record<string, "linux" | "desktop" | "desktop-wayland">> = {
-  [`bbbox/linux:${IMAGE_VERSION}`]: "linux",
-  [`bbbox/linux-desktop:${IMAGE_VERSION}`]: "desktop",
-  [`bbbox/linux-desktop-wayland:${IMAGE_VERSION}`]: "desktop-wayland",
+  [`aliabox/linux:${IMAGE_VERSION}`]: "linux",
+  [`aliabox/linux-desktop:${IMAGE_VERSION}`]: "desktop",
+  [`aliabox/linux-desktop-wayland:${IMAGE_VERSION}`]: "desktop-wayland",
 };
 
 /** The disk a machine needs free to build all three images, in GB, as build.sh checks before it starts. */

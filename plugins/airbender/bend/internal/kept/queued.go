@@ -7,10 +7,10 @@
 //
 // Why: asked for every command, a hosted tracker takes most of a second
 // each time and counts the requests. The owner: "bend command should write
-// local copy and sync asynchronously" (bead-bb-c9l.5). It was first built
+// local copy and sync asynchronously" (bead-alia-c9l.5). It was first built
 // inside the GitHub adapter; it is here, above the adapters and in bend's
 // common terms, so that it is written once for every such tracker
-// (bead-bb-c9l.15, the owner: "it replaces GH copy").
+// (bead-alia-c9l.15, the owner: "it replaces GH copy").
 //
 // Design notes:
 //   - A waiting change is what was asked of the tracker ("write the plan of
@@ -478,7 +478,7 @@ func withNote(notes, text string) string {
 // For a queued tracker it waits as a change of its own, "add this to the
 // notes", and is added to whatever the tracker holds when it is sent. It was
 // first queued as the whole notes written anew, which silently dropped a
-// note made elsewhere before the sync (bead-bb-c9l.10, found in review).
+// note made elsewhere before the sync (bead-alia-c9l.10, found in review).
 // Written straight through, the notes are read and written back at once.
 func (kept *Tracker) Note(id, text string) error {
 	if strings.TrimSpace(text) == "" {

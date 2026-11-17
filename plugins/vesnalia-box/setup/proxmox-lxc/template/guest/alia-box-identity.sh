@@ -4,13 +4,13 @@ umask 022
 
 readonly VERSION=9
 readonly MARKER_HEADER="alia-box identity 1"
-readonly VALUE_NAME=BBBOX_IDENTITY
+readonly VALUE_NAME=ALIABOX_IDENTITY
 readonly KNOWN_HOST_KEY_TYPES=" ed25519 ecdsa rsa "
 readonly UNIT=alia-box-identity.service
 readonly SETTLE_UNIT=alia-box-identity-settle.service
 readonly IDENTITY_USERS="ssh.service tailscaled.service user@.service alia-box-display.service alia-box-session.service alia-box-vnc.service alia-box-vnc-password.service alia-box-selkies.service"
 readonly GATED_UNITS="systemd-networkd.service NetworkManager.service ssh.service ssh.socket tailscaled.service user@.service docker.service docker.socket containerd.service alia-box-docker-containers.service alia-box-display.service alia-box-session.service alia-box-vnc.service alia-box-vnc-password.service alia-box-selkies.service alia-box-device-firewall.service"
-root=${BBBOX_IDENTITY_ROOT:-}
+root=${ALIABOX_IDENTITY_ROOT:-}
 marker=$root/etc/alia-box/identity
 armed=$root/var/lib/alia-box/identity-armed
 resets=$root/var/lib/alia-box/identity-resets
@@ -25,8 +25,8 @@ boot_value=$run/value
 held_network=$root/var/lib/alia-box/held-network
 network_dir=$root/etc/systemd/network
 net=$root/sys/class/net
-nic_wait_seconds=${BBBOX_IDENTITY_NIC_WAIT_SECONDS:-30}
-settle_seconds=${BBBOX_IDENTITY_SETTLE_SECONDS:-2}
+nic_wait_seconds=${ALIABOX_IDENTITY_NIC_WAIT_SECONDS:-30}
+settle_seconds=${ALIABOX_IDENTITY_SETTLE_SECONDS:-2}
 live_value=
 value_file=
 machine_from_provider=no

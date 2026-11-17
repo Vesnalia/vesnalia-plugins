@@ -4,7 +4,7 @@
  * `[[...]]` is not markdown syntax — the lezer tree never parses it — so a
  * ViewPlugin regex-scans the visible lines (via `scanWikiLinks`) and builds
  * decorations itself: the inner title renders as a link-styled pill
- * (`bbnotes-wikilink`) and the brackets are hidden except on lines touched
+ * (`alianotes-wikilink`) and the brackets are hidden except on lines touched
  * by the selection, mirroring the live-preview rule. Matches inside code
  * (fenced, indented, or inline) are left alone.
  *
@@ -91,10 +91,10 @@ function buildDecorations(view: EditorView): DecorationSet {
         if (inCode(state, from + 1)) continue;
         if (activeLines.has(line.number)) {
           // Active line: raw brackets stay visible, still styled as a pill.
-          decorations.push(Decoration.mark({ class: "bbnotes-wikilink" }).range(from, to));
+          decorations.push(Decoration.mark({ class: "alianotes-wikilink" }).range(from, to));
         } else {
           decorations.push(Decoration.replace({}).range(from, from + 2));
-          decorations.push(Decoration.mark({ class: "bbnotes-wikilink" }).range(from + 2, to - 2));
+          decorations.push(Decoration.mark({ class: "alianotes-wikilink" }).range(from + 2, to - 2));
           decorations.push(Decoration.replace({}).range(to - 2, to));
         }
       }
@@ -110,7 +110,7 @@ function handleMousedown(event: MouseEvent, view: EditorView): boolean {
   const config = view.state.facet(wikiLinkConfig);
   if (!config.onOpen) return false;
   const pill =
-    event.target instanceof HTMLElement ? event.target.closest(".bbnotes-wikilink") : null;
+    event.target instanceof HTMLElement ? event.target.closest(".alianotes-wikilink") : null;
   if (!pill || !view.dom.contains(pill)) return false;
 
   const pos = view.posAtDOM(pill);

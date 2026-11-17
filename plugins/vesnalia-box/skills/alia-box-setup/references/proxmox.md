@@ -25,7 +25,7 @@ to the host, then, as root there:
 
 ```sh
 mkdir -p /etc/alia-box && cp host/alia-box.env.example /etc/alia-box/alia-box.env
-# edit /etc/alia-box/alia-box.env: BBBOX_BRIDGE, BBBOX_GATEWAY_CIDR, BBBOX_STORAGE, BBBOX_ALIA_URL
+# edit /etc/alia-box/alia-box.env: ALIABOX_BRIDGE, ALIABOX_GATEWAY_CIDR, ALIABOX_STORAGE, ALIABOX_ALIA_URL
 host/setup-host.sh
 host/setup-network.sh
 template/build.sh linux 9100                 # 5 to 10 minutes each
@@ -39,7 +39,7 @@ host/setup-token.sh
 - `setup-token.sh` writes the token, the API URL, the node and the TLS
   fingerprint to `/root/alia-box/proxmox-token.env` on the host. It never
   prints the secret. Do not print that file either.
-- The templates accept the SSH key `BBBOX_SSH_KEY` names,
+- The templates accept the SSH key `ALIABOX_SSH_KEY` names,
   `/root/alia-box/ssh/id_ed25519` by default. alia-box must use that key.
 
 ## Get the token and key to alia-box without seeing them
@@ -62,7 +62,7 @@ to put the key there, or leave the key out and see below.
 grep '^PROXMOX_TOKEN_SECRET=' "$ALIA_THREAD_STORAGE/proxmox.env" | \
   alia box backend add proxmox-lxc \
     --field url=https://192.0.2.10:8006/api2/json --field node=pve \
-    --field token-id='bbbox@pve!plugin' --field tls-fingerprint=<fingerprint> \
+    --field token-id='aliabox@pve!plugin' --field tls-fingerprint=<fingerprint> \
     --field linux-templates=9100 --field desktop-cpu-templates=9103 \
     --secret token-secret=PROXMOX_TOKEN_SECRET --secrets-stdin \
     --secret-file ssh-private-key="$ALIA_THREAD_STORAGE/proxmox-key" --check

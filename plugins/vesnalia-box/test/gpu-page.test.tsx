@@ -37,7 +37,7 @@ function boxView(patch: Partial<BoxView> = {}): BoxView {
     arch: "x86_64",
     gpu: true,
     gpuPart: "shared",
-    claim: { card: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", part: "shared", generation: 1, answer: "granted" },
+    claim: { card: "aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee", part: "shared", generation: 1, answer: "granted" },
     requires: [],
     extras: [],
     docker: false,
@@ -75,7 +75,7 @@ function snapshot(): MonitorSnapshot {
     health: { status: "healthy", issues: [] },
     history: [],
     gpus: {
-      cards: [{ index: 1, uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", name: "NVIDIA RTX 4090", usagePercent: 40, memoryUsedBytes: 6 * 1024 ** 3, memoryTotalBytes: 24 * 1024 ** 3, temperatureC: 55, powerWatts: 80, powerLimitWatts: 450, shared: true, ownMemoryBytes: 2 * 1024 ** 3, ownProcesses: 1 }],
+      cards: [{ index: 1, uuid: "aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee", name: "NVIDIA RTX 4090", usagePercent: 40, memoryUsedBytes: 6 * 1024 ** 3, memoryTotalBytes: 24 * 1024 ** 3, temperatureC: 55, powerWatts: 80, powerLimitWatts: 450, shared: true, ownMemoryBytes: 2 * 1024 ** 3, ownProcesses: 1 }],
       processes: [{ pid: 3310, name: "python3", card: 1, memoryBytes: 2 * 1024 ** 3 }],
     },
   };
@@ -494,7 +494,7 @@ test("071 unit 14: a stopped shared box's words, and each notice", async () => {
   expect(card.textContent).not.toContain("Used");
   cleanup();
 
-  const wrong = "card 1, shared, NVIDIA RTX 4090, 24 GiB: nvidia-smi in it listed no card, not its card aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+  const wrong = "card 1, shared, NVIDIA RTX 4090, 24 GiB: nvidia-smi in it listed no card, not its card aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee";
   const userspace = "card 1, shared, NVIDIA RTX 4090, 24 GiB: nvidia-smi in it fails: its NVIDIA userspace is 570.86 and the host's driver 580.142";
   open(page(boxView({ facts: [{ label: "GPU", value: wrong }] })));
   expect((await screen.findByRole("region", { name: "On the wrong card" })).textContent).toMatch(/does not stop it/);
@@ -532,7 +532,7 @@ test("071 unit 14: the activity tiles and the GPU card agree on this box's use o
   reading.gpus = {
     cards: [
       { index: 0, uuid: "11111111-1111-1111-1111-111111111111", name: "NVIDIA RTX 4090", usagePercent: 90, memoryUsedBytes: 20 * GiB, memoryTotalBytes: 24 * GiB, temperatureC: 70, powerWatts: 200, powerLimitWatts: 450, shared: true, ownMemoryBytes: 0, ownProcesses: 0 },
-      { index: 1, uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", name: "NVIDIA RTX 4090", usagePercent: 40, memoryUsedBytes: 6 * GiB, memoryTotalBytes: 24 * GiB, temperatureC: 55, powerWatts: 80, powerLimitWatts: 450, shared: true, ownMemoryBytes: 2 * GiB, ownProcesses: 1 },
+      { index: 1, uuid: "aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee", name: "NVIDIA RTX 4090", usagePercent: 40, memoryUsedBytes: 6 * GiB, memoryTotalBytes: 24 * GiB, temperatureC: 55, powerWatts: 80, powerLimitWatts: 450, shared: true, ownMemoryBytes: 2 * GiB, ownProcesses: 1 },
     ],
     processes: [{ pid: 3310, name: "python3", card: 1, memoryBytes: 2 * GiB }],
   };

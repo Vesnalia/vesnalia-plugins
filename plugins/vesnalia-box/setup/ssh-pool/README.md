@@ -17,11 +17,11 @@ your machine, and can read what any user there can read.
 
 ## How it works
 
-- `setup.sh` makes an admin user on the machine, `bbbox-admin`. It accepts
+- `setup.sh` makes an admin user on the machine, `aliabox-admin`. It accepts
   only alia-box's SSH key, with no terminal or forwarding, and may run only
   alia-box's helper as root.
 - To lend the machine, alia-box asks the helper to claim it. The helper makes
-  a new user for the box, `bbx-<generation>`, which accepts alia-box's key.
+  a new user for the box, `aliax-<generation>`, which accepts alia-box's key.
   alia-box reaches the box as that user.
 - To reset the machine, the helper removes the box's user and everything it
   left, then adds 1 to the machine's reset generation.
@@ -141,7 +141,7 @@ These options are optional:
 | `--name <name>` | The machine's name in alia-box. By default, its host name |
 | `--address <host>` | How VesnALIA's server reaches it. By default, its first IP address |
 | `--port <port>` | sshd's port, if VesnALIA's server reaches it on another |
-| `--admin <user>` | The admin user's name. By default, `bbbox-admin` |
+| `--admin <user>` | The admin user's name. By default, `aliabox-admin` |
 | `--reset-hook <path>` | Your whole-machine reset, for Docker. See [Docker](#docker-on-the-pools-machines) |
 
 `setup.sh`:
@@ -161,7 +161,7 @@ example:
 ```text
 Add this line to the SSH host pool's machines setting. ...
 
-  build-1 bbbox-admin@192.0.2.21 linux
+  build-1 aliabox-admin@192.0.2.21 linux
 
 Add these lines to the SSH host pool's host keys setting:
 
@@ -170,7 +170,7 @@ Add these lines to the SSH host pool's host keys setting:
 
 Read any warnings at the end, and fix them before you go on.
 
-`setup.sh` never changes a user it did not make: if `bbbox-admin` already
+`setup.sh` never changes a user it did not make: if `aliabox-admin` already
 exists for something else, choose another name with `--admin`.
 
 #### If 2 alia-box installs lend the same machine
@@ -178,7 +178,7 @@ exists for something else, choose another name with `--admin`.
 Give `--key` once for each install's key:
 
 ```sh
-sudo sh ssh-pool/setup.sh --key "ssh-ed25519 AAAA... alia-box" --key "ssh-ed25519 BBBB... alia-box"
+sudo sh ssh-pool/setup.sh --key "ssh-ed25519 AAAA... alia-box" --key "ssh-ed25519 ALIABB... alia-box"
 ```
 
 `setup.sh` replaces the admin user's keys each time it runs, so give every
@@ -187,14 +187,14 @@ install's key whenever you run it again.
 #### If sshd lets only some users in
 
 If sshd has `AllowUsers` or `AllowGroups`, add the admin user and box users,
-and on a Mac that lends iOS slots the slot users, `bbd-*`, for example:
+and on a Mac that lends iOS slots the slot users, `aliad-*`, for example:
 
 ```text
-AllowUsers bbbox-admin bbx-* bbd-* alice
+AllowUsers aliabox-admin aliax-* aliad-* alice
 ```
 
-Without `bbd-*`, every ios box on the Mac fails as its slot is lent: "SSH
-as bbd-1 did not answer". `mac-ios.sh` warns of it. On a Mac, sshd reads
+Without `aliad-*`, every ios box on the Mac fails as its slot is lent: "SSH
+as aliad-1 did not answer". `mac-ios.sh` warns of it. On a Mac, sshd reads
 its settings at each new connection, so no restart is needed.
 
 Then reload sshd. `setup.sh` warns when it finds either setting.
@@ -206,7 +206,7 @@ route is `ssh -W` as the box user. A hardened `sshd_config` with
 
 ### 3. Set up each Mac
 
-A Mac lends its box a new standard user, `bbx-<generation>`, signed in at
+A Mac lends its box a new standard user, `aliax-<generation>`, signed in at
 the Mac's console. A `macos` box reaches it over SSH. A `macos-desktop` box
 gets the console's desktop too, through Screen Sharing, and computer use
 through Cua Driver. Decision
@@ -228,7 +228,7 @@ sudo sh alia-box-setup/ssh-pool/setup-mac.sh --key "ssh-ed25519 AAAA... alia-box
 It takes the same options as `setup.sh`, except `--reset-hook`.
 `setup-mac.sh`:
 
-- makes the admin user, `bbbox-admin`, hidden, which accepts only alia-box's
+- makes the admin user, `aliabox-admin`, hidden, which accepts only alia-box's
   keys and may run only the helper as root
 - installs the helper as `/usr/local/libexec/alia-box/machine`, and the box
   users' home template in `/usr/local/share/alia-box/home`
@@ -249,13 +249,13 @@ It takes the same options as `setup.sh`, except `--reset-hook`.
 - with Xcode, its iOS platform and `setup/tart/ios` beside it, sets up iOS
   slots with `mac-ios.sh`, as [below](#ios-slots-on-a-mac)
 - starts the Mac's reset generation at 0, in `/var/db/alia-box`, and makes
-  the first box user, `bbx-0`, the automatic login
+  the first box user, `aliax-0`, the automatic login
 
 It prints the line for the machines setting, the host keys, and steps for a
 person at the Mac or on Screen Sharing:
 
 ```text
-  mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop
+  mac-mini aliabox-admin@192.0.2.30 macos,macos-desktop
 ```
 
 1. Turn on Screen Sharing, allow all users, and leave the VNC password
@@ -276,7 +276,7 @@ screen capture: macOS 27 asks each new user, so the helper writes the
 approval for each box user it makes.
 
 If someone was signed in when you ran it, restart the Mac, so that it signs
-in `bbx-0`. Then add the line and host keys to alia-box, as for a Linux
+in `aliax-0`. Then add the line and host keys to alia-box, as for a Linux
 machine. Leave out `macos-desktop` if boxes should not get the Mac's
 desktop.
 
@@ -315,14 +315,14 @@ off its line to keep it for whole boxes.
   with Cisco's OpenH264, or with x264 built from its pinned source when run
   with `H264_WITH_X264=yes`. alia-box ships no x264 binary
 - for the newest iOS runtime, installs alia-box's slimming list and makes its
-  seed: a device made, booted and slimmed twice as `bbbox-admin`, whose
+  seed: a device made, booted and slimmed twice as `aliabox-admin`, whose
   store of disabled services must have every label of the list off. It
   takes a few minutes the first time, and is kept after
 - sets the helper up as a kept host, never deleted, closed until alia-box
   opens it
 - checks that a user with no desktop session, as a slot's user is, can set
   and read a device's clipboard as the device server does: on a device made
-  as `bbbox-admin` for the check and deleted after, through a launchd job in
+  as `aliabox-admin` for the check and deleted after, through a launchd job in
   the user's own session (F-17). If it cannot, it warns, as pasting into an
   ios box and copying from it would fail
 
@@ -330,7 +330,7 @@ It needs a slimming list for the Mac's iOS runtime, as the iOS image does
 ([Slimming](../tart/ios/README.md#slimming)). It prints the line with `ios`:
 
 ```text
-  mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop,ios
+  mac-mini aliabox-admin@192.0.2.30 macos,macos-desktop,ios
 ```
 
 To add slots to a Mac already in the pool, without running `setup-mac.sh`
@@ -344,10 +344,10 @@ sudo mkdir -m 700 /var/root/alia-box-backup
 sudo cp -p /usr/local/libexec/alia-box/machine /etc/sudoers.d/alia-box /var/root/alia-box-backup/
 sudo install -m 0755 alia-box-setup/ssh-pool/machine-mac.sh /usr/local/libexec/alia-box/machine.new
 sudo mv -f /usr/local/libexec/alia-box/machine.new /usr/local/libexec/alia-box/machine
-sudo sh alia-box-setup/ssh-pool/mac-ios.sh "$PWD/alia-box-setup/ssh-pool" bbbox-admin
+sudo sh alia-box-setup/ssh-pool/mac-ios.sh "$PWD/alia-box-setup/ssh-pool" aliabox-admin
 ```
 
-`bbbox-admin` is the admin user `/etc/sudoers.d/alia-box` names. Its rule
+`aliabox-admin` is the admin user `/etc/sudoers.d/alia-box` names. Its rule
 lets it run the helper with any arguments, so `machine slot` needs no new
 rule. To undo it, with `ios` off the Mac's line, every ios box there
 released and the doctor's `iOS slots` check showing none sweeping, put the
@@ -564,9 +564,9 @@ sets each up with `setup.sh`:
 - `bastion`, a jump host to `plain`
 
 ```sh
-sh setup/ssh-pool/test/rig.sh up /tmp/bbbox-rig
-npm run conformance -- --backend ssh-pool --settings /tmp/bbbox-rig/settings.json
-SSH_POOL_RIG=/tmp/bbbox-rig node --test --test-concurrency=1 test/ssh-pool-live.ts
+sh setup/ssh-pool/test/rig.sh up /tmp/aliabox-rig
+npm run conformance -- --backend ssh-pool --settings /tmp/aliabox-rig/settings.json
+SSH_POOL_RIG=/tmp/aliabox-rig node --test --test-concurrency=1 test/ssh-pool-live.ts
 sh setup/ssh-pool/test/rig.sh down
 ```
 
@@ -601,7 +601,7 @@ starting, which a pool cannot do.
 3. On the machine, remove what `setup.sh` added:
 
    ```sh
-   sudo userdel -r bbbox-admin
+   sudo userdel -r aliabox-admin
    sudo rm -rf /usr/local/libexec/alia-box /etc/sudoers.d/alia-box /etc/tmpfiles.d/alia-box.conf /var/lib/alia-box
    ```
 
@@ -614,11 +614,11 @@ starting, which a pool cannot do.
 4. Delete the box user, which is hidden. The first command lists it:
 
    ```sh
-   dscl . -list /Users | grep '^bbx-'
-   sudo sysadminctl -deleteUser bbx-3
+   dscl . -list /Users | grep '^aliax-'
+   sudo sysadminctl -deleteUser aliax-3
    ```
 
-   Here `bbx-3` stands for the name the first command prints.
+   Here `aliax-3` stands for the name the first command prints.
 5. With iOS slots, release every ios box on it first, wait for the
    doctor's `iOS slots` check to say none is sweeping, then stop the slots'
    daemons:
@@ -632,7 +632,7 @@ starting, which a pool cannot do.
 6. Remove what `setup-mac.sh` added:
 
    ```sh
-   sudo sysadminctl -deleteUser bbbox-admin
+   sudo sysadminctl -deleteUser aliabox-admin
    sudo launchctl bootout system/dev.alia-box.clear-alia-state
    sudo rm -rf /usr/local/libexec/alia-box /usr/local/share/alia-box /etc/sudoers.d/alia-box /Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist /var/db/alia-box
    ```
@@ -652,7 +652,7 @@ service.
 A machine goes out of service when:
 
 - its reset failed
-- an earlier box left something, such as a `bbx-` user
+- an earlier box left something, such as a `aliax-` user
 - its reset generation went back, for example after it was restored from
   an old backup
 

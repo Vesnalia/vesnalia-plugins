@@ -164,7 +164,7 @@ describe("Claude Code: the process against a daemon's control socket (R-X5)", ()
 
     expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: "notes", workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r3" })).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
     expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: "../elsewhere", workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r4" })).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
-    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: "bbbbbbbb-0000-0000-0000-000000000000", scope: null, workspace: null }, requestId: "r5" })).toMatchObject({ body: { ok: false, error: { reason: "no_repo" } } });
+    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: "aliabbbbbb-0000-0000-0000-000000000000", scope: null, workspace: null }, requestId: "r5" })).toMatchObject({ body: { ok: false, error: { reason: "no_repo" } } });
     expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: null, scope: null, workspace: null }, requestId: "r6" })).toMatchObject({ body: { ok: false, error: { reason: "no_repo" } } });
   });
 

@@ -2,8 +2,8 @@
 """run — verify the installed release cell by cell of the environment matrix (E1–E8), and write its VERIFY table.
 
 What it does, per flag (each flag is one cell; a cell it cannot cover here is written as not covered, with why):
-  --fixtures  E1  a private scratch repository and bb project, a fresh session there whose page is replaced by
-                  `verify/fixture.html`, read in bb's own headless browser over loopback until the fixture's
+  --fixtures  E1  a private scratch repository and alia project, a fresh session there whose page is replaced by
+                  `verify/fixture.html`, read in alia's own headless browser over loopback until the fixture's
                   `FIXTURE-RESULT` line; then the scratch repository and project are deleted (unless --keep). The
                   repository is made and deleted by `verify/scratch.py`, so a failure anywhere after its create still
                   deletes it
@@ -12,13 +12,13 @@ What it does, per flag (each flag is one cell; a cell it cannot cover here is wr
                   surface asks the owner for the device check
   --limits    E4  `verify/fragment-check` on the fresh session of --fixtures (or --thread): what it really received;
                   first waits (bounded) until that session's transcript holds its `prompt_snapshot`
-  --versions  E5  installed plugin = code version, bb and Thread Pages, the current CLI against the code's minimum CLI
+  --versions  E5  installed plugin = code version, alia and Thread Pages, the current CLI against the code's minimum CLI
   --modes     E6  the fixture again, its session in auto permission mode (E1 runs in full)
   --scenarios E7  reads the scenario log (--log): covered when a scenario run on this version's contract hash (over
                   --spec and the code's contract files) is logged (`verify/run-scenarios` runs them; it needs the
                   grader subagent, so it is its own step)
-  --upgrade   E8  prints the upgrade path; never installs on this bb: install over N-1 changes the plugin every
-                  session here uses, so it runs only on a bb made for it
+  --upgrade   E8  prints the upgrade path; never installs on this alia: install over N-1 changes the plugin every
+                  session here uses, so it runs only on a alia made for it
   --all           every flag above
   --write FILE    writes the rows into FILE, a VERIFY table (rows of cells not run this time are kept when the version
                   is the same, else written as not run)
@@ -28,8 +28,8 @@ remembered: a remote-reader break and a fragment cut by the host's cap reached u
 release looked at those cells.
 When it does not: in the middle of an edit; the code's own tests come first.
 
-How to run (python3, standard library; calls `syns`, `bb`, and the scripts beside it), from a clone of
-synsdev/syns-bb-plugin:
+How to run (python3, standard library; calls `syns`, `alia`, and the scripts beside it), from a clone of
+synsdev/syns-alia-plugin:
   python3 verify/run --all --code <code checkout> [--spec <spec folder> --log <scenario log>] [--write FILE] [--keep]
                      [--json]
   python3 verify/run --limits --thread <fresh thr_x> --code <path>
@@ -52,7 +52,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "sbp-verify"                          # scratch.py names the repository scratch-sbp-verify-<time>-<hex>
 SNAPSHOT_WAIT = 120                         # seconds a fresh session gets to send its first request
 CELLS = ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"]
-NAMES = {"E1": "loopback reader (fixture)", "E2": "remote reader over bb Connect", "E3": "WebKit / iPhone Safari",
+NAMES = {"E1": "loopback reader (fixture)", "E2": "remote reader over alia Connect", "E3": "WebKit / iPhone Safari",
          "E4": "host limits, fresh session", "E5": "host and CLI versions", "E6": "permission modes, sandbox",
          "E7": "fresh agent, neutral project", "E8": "upgrade from N-1"}
 FIX_PROMPT = "Reply with the single word ready, and do nothing else."
@@ -85,7 +85,7 @@ def triple(s):
 
 # ---- the scratch session the fixture runs in -----------------------------------------------------------------------
 class Scratch:
-    """A private scratch repository (`verify/scratch.py`), its checkout, a bb project on it, and sessions there;
+    """A private scratch repository (`verify/scratch.py`), its checkout, a alia project on it, and sessions there;
     `close()` deletes whatever `open()` made, also when `open()` itself failed half-way."""
 
     def __init__(self, keep):
@@ -105,20 +105,20 @@ class Scratch:
         finally:
             shutil.rmtree(seed, ignore_errors=True)
         self.name = self.repo.split("/", 1)[1]
-        proj = json.loads(must(["bb", "project", "create", "--name", self.name, "--root", self.folder, "--json"]))
+        proj = json.loads(must(["alia", "project", "create", "--name", self.name, "--root", self.folder, "--json"]))
         self.project = proj.get("id") or (proj.get("project") or {}).get("id")
         return self
 
     def session(self, mode):
         """A fresh session in the scratch folder: it answers one word; its page then becomes the fixture."""
-        out = must(["bb", "thread", "spawn", "--json", "--project", self.project, "--environment", self.folder,
+        out = must(["alia", "thread", "spawn", "--json", "--project", self.project, "--environment", self.folder,
                     "--permission-mode", mode, "--reasoning-level", "low", "--title", f"verify/run fixture ({mode})",
                     "--prompt", FIX_PROMPT])
         thr = json.loads(out)["id"]
         self.threads.append(thr)
         for _ in range(60):                   # until its first turn ended
             time.sleep(5)
-            st = json.loads(sh(["bb", "thread", "show", thr, "--json"])[1] or "{}")
+            st = json.loads(sh(["alia", "thread", "show", thr, "--json"])[1] or "{}")
             st = st.get("thread", st)
             if st.get("status") not in ("active", "pending") and not st.get("queuedMessageCount"):
                 break
@@ -131,29 +131,29 @@ class Scratch:
             return f"kept: {self.name} at {self.folder}, project {self.project}"
         import scratch
         for t in self.threads:
-            sh(["bb", "thread", "stop", t])
+            sh(["alia", "thread", "stop", t])
         rc, words = scratch.delete(self.repo, self.folder)
         rc2, err2 = 0, ""
         if self.project:
-            rc2, _, err2 = sh(["bb", "project", "delete", self.project, "--yes"])
+            rc2, _, err2 = sh(["alia", "project", "delete", self.project, "--yes"])
         return (f"deleted {self.name}: repository {'yes' if rc == 0 else 'NO: ' + words[:160]}, "
                 f"project {('yes' if rc2 == 0 else 'NO: ' + err2.strip()[:120]) if self.project else 'none made'}")
 
 
 def storage(thr):
-    base = os.path.dirname(os.environ.get("BB_THREAD_STORAGE", os.path.expanduser("~/.bb/thread-storage/x")))
+    base = os.path.dirname(os.environ.get("ALIA_THREAD_STORAGE", os.path.expanduser("~/.vesnalia/thread-storage/x")))
     return os.path.join(base, thr)
 
 
 def page_url(thr):
-    return f"{os.environ.get('BB_SERVER_URL', 'http://127.0.0.1:38886')}/api/v1/plugins/thread-pages/http/page?session={thr}"
+    return f"{os.environ.get('ALIA_SERVER_URL', 'http://127.0.0.1:38886')}/api/v1/plugins/thread-pages/http/page?session={thr}"
 
 
 def read_fixture(thr):
-    """Opens the page over loopback in bb's headless browser and reads #verdict in its frames until the result."""
-    machines = json.loads(must(["bb", "machine", "list", "--json"]))
+    """Opens the page over loopback in alia's headless browser and reads #verdict in its frames until the result."""
+    machines = json.loads(must(["alia", "machine", "list", "--json"]))
     host = next(m["id"] for m in machines if m.get("status") == "connected")
-    sess = json.loads(must(["bb", "browser-automation", "open", "--backend", "local", "--headless", "--machine",
+    sess = json.loads(must(["alia", "browser-automation", "open", "--backend", "local", "--headless", "--machine",
                             host, "--json"]))["id"]
     js_read = ("const p = await browser.getPage('main'); const out = [];"
                "for (const f of p.frames()) { try { const t = await f.evaluate(() => {"
@@ -165,17 +165,17 @@ def read_fixture(thr):
                " return [v.textContent].concat(bad, wait.slice(0, 1)).join('\\n'); });"
                " if (t) out.push(t); } catch (e) {} } return out.join('\\n');")
     try:
-        sh(["bb", "browser-automation", "run", sess, "--timeout", "60s", "--script",
+        sh(["alia", "browser-automation", "run", sess, "--timeout", "60s", "--script",
             f"const p = await browser.getPage('main'); await p.goto({json.dumps(page_url(thr))}); undefined"])
         text = ""
         for _ in range(12):
-            rc, out, _ = sh(["bb", "browser-automation", "run", sess, "--timeout", "30s", "--json", "--script",
+            rc, out, _ = sh(["alia", "browser-automation", "run", sess, "--timeout", "30s", "--json", "--script",
                              "await new Promise(r => setTimeout(r, 10000));" + js_read])
             text = (json.loads(out).get("text") or "") if rc == 0 and out.strip().startswith("{") else text
             if "FIXTURE-RESULT" in text:
                 break
     finally:
-        sh(["bb", "browser-automation", "close", sess])
+        sh(["alia", "browser-automation", "close", sess])
     m = re.search(r"FIXTURE-RESULT (\{.*\})", text)
     res = json.loads(m.group(1)) if m else None
     if res is not None:
@@ -223,7 +223,7 @@ def fixture_cell(scratch, mode, code):
 # ---- the other cells ----------------------------------------------------------------------------------------------
 def await_snapshot(thr, wait=None):
     """None once the session's transcript holds its `prompt_snapshot`, else why not after `wait` seconds. A fresh
-    session can end its first turn in bb before Claude Code wrote its first request: read too early, the transcript
+    session can end its first turn in alia before Claude Code wrote its first request: read too early, the transcript
     is absent or holds no snapshot, and a good release's E4 read as failed."""
     import runpy
     fc = runpy.run_path(os.path.join(HERE, "fragment-check"))
@@ -252,10 +252,10 @@ def limits_cell(thr, code):
 
 def versions_cell(code):
     pkg = json.load(open(os.path.join(code, "package.json")))
-    rc, out, _ = sh(["bb", "plugin", "list"])
+    rc, out, _ = sh(["alia", "plugin", "list"])
     inst = dict(re.findall(r"^(syns|thread-pages)@(\S+)", out, re.M))
     cli = sh(["syns", "--version"])[1].strip()
-    bbv = sh(["bb", "--version"])[1].strip()
+    aliav = sh(["alia", "--version"])[1].strip()
     # Since 0.9.0 one minimum CLI for every method, stated in the code's README ("the Syns CLI, X.Y.Z or later");
     # before it, each method's `minCli`.
     readme = open(os.path.join(code, "README.md")).read() if os.path.exists(os.path.join(code, "README.md")) else ""
@@ -271,7 +271,7 @@ def versions_cell(code):
         fails.append("the code states no minimum CLI (README \"Syns CLI, X.Y.Z or later\", or a method's minCli)")
     elif not triple(cli) or triple(cli) < triple(need):
         fails.append(f"CLI {cli} is older than the minimum {need}")
-    ev = (f"installed syns {inst.get('syns')} = code {pkg['version']}; bb {bbv} (engines {pkg.get('engines', {}).get('bb')}); "
+    ev = (f"installed syns {inst.get('syns')} = code {pkg['version']}; alia {aliav} (engines {pkg.get('engines', {}).get('alia')}); "
           f"Thread Pages {inst.get('thread-pages')}; current {cli}, minimum CLI {need}. An older CLI's refusal is "
           f"covered only by the code's tests: installing an older CLI on this machine is not done")
     return ("fail" if fails else "partly covered", ev + ("; FAIL: " + "; ".join(fails) if fails else ""))
@@ -295,7 +295,7 @@ def scenarios_cell(code, spec, log_path):
 
 
 def connect_cell(thr):
-    """The probe beside this script, on the session's page through this bb's Connect origin."""
+    """The probe beside this script, on the session's page through this alia's Connect origin."""
     cmd = [sys.executable, os.path.join(HERE, "connect-probe"), "--json"] + (["--session", thr] if thr else [])
     rc, out, err = sh(cmd)
     try:
@@ -308,11 +308,11 @@ def connect_cell(thr):
 
 WEBKIT = ("not covered", "the plugin adds no page UI of its own; a round that changes a fixture's page surface asks the "
           "owner for the iPhone check; no WebKit runner on this machine")
-UPGRADE_PATH = ("on a bb made for it, never this one: install syns at the previous tag "
-                "(`bb plugin install git:https://github.com/synsdev/syns-bb-plugin@v<N-1>`), run `verify/run --fixtures "
+UPGRADE_PATH = ("on a alia made for it, never this one: install syns at the previous tag "
+                "(`alia plugin install git:https://github.com/synsdev/syns-bb-plugin@v<N-1>`), run `verify/run --fixtures "
                 "--limits`, install the current tag over it, run them again and compare; a renamed method or reason "
                 "needs a migration note")
-UPGRADE = ("not covered", "installing over N-1 changes the plugin every session on this bb uses, so it is never run "
+UPGRADE = ("not covered", "installing over N-1 changes the plugin every session on this alia uses, so it is never run "
            "here; path: " + UPGRADE_PATH)
 
 
@@ -364,7 +364,7 @@ def writable(path):
 def write_verify(path, version, head, rows):
     old = old_rows(path, version)
     lines = ["---", f"version: {version}", f"head: {head}", f"updated: {now()}",
-             "source: \"verify/run in synsdev/syns-bb-plugin; one row per cell of the environment matrix\"", "---", "",
+             "source: \"verify/run in synsdev/syns-alia-plugin; one row per cell of the environment matrix\"", "---", "",
              f"# VERIFY — syns-pages {version}", "",
              "Written by `verify/run --write`; a row it did not run this time is kept from the last run on this "
              "version. Evidence is what the script saw; a cell not covered says why.", "",

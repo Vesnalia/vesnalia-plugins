@@ -164,7 +164,7 @@ A Linux box can tell when it is a copy of another box, such as a Proxmox clone. 
 
 ### How it works
 
-When a box is first ready, VesnALIA Box writes an identity marker in it, `/etc/alia-box/identity`. It holds the box's ID and the MAC addresses of the network cards its backend gives it. On Docker, microsandbox and boat.dev it holds a value VesnALIA Box sets on the box instead, the box's ID in `BBBOX_IDENTITY`, as Docker gives a container new MAC addresses at each start, and boat.dev a sandbox new ones on each machine it starts on. VesnALIA Box sets the box's own ID on every sandbox of the box, and a fork's own ID on the fork's, and boat.dev keeps it through a stop and start and a resize.
+When a box is first ready, VesnALIA Box writes an identity marker in it, `/etc/alia-box/identity`. It holds the box's ID and the MAC addresses of the network cards its backend gives it. On Docker, microsandbox and boat.dev it holds a value VesnALIA Box sets on the box instead, the box's ID in `ALIABOX_IDENTITY`, as Docker gives a container new MAC addresses at each start, and boat.dev a sandbox new ones on each machine it starts on. VesnALIA Box sets the box's own ID on every sandbox of the box, and a fork's own ID on the fork's, and boat.dev keeps it through a stop and start and a resize.
 
 At each start, before its network, SSH, Tailscale, Docker, its desktop and VesnALIA's daemon start, the box compares the marker with what it has:
 
@@ -260,7 +260,7 @@ alia box snapshot fork <box> <snapshot> [--as-machine] [--name <name>] [--check]
 
 On boat.dev a fork is a new sandbox made from the saved snapshot, with the fork's own ID as its identity value, so it resets at its first start. As boat.dev labels no sandbox made from a saved snapshot, VesnALIA Box makes one under a name of its own, stops it and copies it with the fork's labels, then deletes the first: 2 of boat.dev's starts, free within the plan's starts. A fork goes no further than its identity check until VesnALIA Box's check before it is handed over has passed: VesnALIA Box reads it as boat.dev's own user, and a fork whose boot says it has no marker is refused. Only then does the box user get in, does the fork join the tailnet, and get its access file. The check is the one above, with its marker naming its own value in place of MAC addresses; the address and the SSH host keys are boat.dev's. Its source's sandbox is not touched.
 
-On Docker a fork is a new container made from the snapshot's image, named `bbbox-<fork>-<8 hex>`, with the fork's own ID, name and labels, and the fork's own ID as its identity value, `BBBOX_IDENTITY`, from its container settings: a snapshot's image holds no value of its own. Its Docker data is a new volume copied from the snapshot's, made before the container. It is placed as a new box is, so it has no GPU of its source's: a Docker fork has none. Its first start runs its identity reset and nothing else, then holds: Docker inside it, its desktop and every container copied from its source wait, so nothing of its source's runs in it. VesnALIA Box's check reads it while it is held, as above, with its marker naming its own value in place of MAC addresses. Only when the check passes does VesnALIA Box release the hold and change its restart policy from `no` to `unless-stopped`, and the fork's services start. A fork that fails the check is released, its container and its Docker data with it, and its hold is never released. If VesnALIA Box stops while a fork is made, before its check has passed, the fork stays held, even if it starts again, until VesnALIA Box's next start deletes the container it had begun and makes the fork again. Its source's container is not touched.
+On Docker a fork is a new container made from the snapshot's image, named `aliabox-<fork>-<8 hex>`, with the fork's own ID, name and labels, and the fork's own ID as its identity value, `ALIABOX_IDENTITY`, from its container settings: a snapshot's image holds no value of its own. Its Docker data is a new volume copied from the snapshot's, made before the container. It is placed as a new box is, so it has no GPU of its source's: a Docker fork has none. Its first start runs its identity reset and nothing else, then holds: Docker inside it, its desktop and every container copied from its source wait, so nothing of its source's runs in it. VesnALIA Box's check reads it while it is held, as above, with its marker naming its own value in place of MAC addresses. Only when the check passes does VesnALIA Box release the hold and change its restart policy from `no` to `unless-stopped`, and the fork's services start. A fork that fails the check is released, its container and its Docker data with it, and its hold is never released. If VesnALIA Box stops while a fork is made, before its check has passed, the fork stays held, even if it starts again, until VesnALIA Box's next start deletes the container it had begun and makes the fork again. Its source's container is not touched.
 
 A Docker fork needs its source made from a Docker image built with the hold. A snapshot of a box made from an older image says why and never forks: rebuild the images with `setup/docker/build.sh`, make the box again and take a new snapshot.
 
@@ -385,11 +385,11 @@ VesnALIA Box knows the node restarted only from the node's own evidence: its upt
 
 Two cases need more from root on the node:
 
-- On LVM-thin, Proxmox rolls back by deleting the box's volume and making it again from the snapshot. A restart between the two leaves the box with no volume, and Proxmox's rollback cannot run again. VesnALIA Box's notice for a guest locked so gives the commands with the box's own names. Check for the volume, make it again from the snapshot if it is gone, then unlock the guest. For guest 214 on volume group `pve` and the snapshot `bbsn7kq2m6xa4pdq`:
+- On LVM-thin, Proxmox rolls back by deleting the box's volume and making it again from the snapshot. A restart between the two leaves the box with no volume, and Proxmox's rollback cannot run again. VesnALIA Box's notice for a guest locked so gives the commands with the box's own names. Check for the volume, make it again from the snapshot if it is gone, then unlock the guest. For guest 214 on volume group `pve` and the snapshot `aliasn7kq2m6xa4pdq`:
 
   ```sh
   lvs pve/vm-214-disk-0
-  lvcreate -kn -n vm-214-disk-0 -s pve/snap_vm-214-disk-0_bbsn7kq2m6xa4pdq
+  lvcreate -kn -n vm-214-disk-0 -s pve/snap_vm-214-disk-0_aliasn7kq2m6xa4pdq
   pct unlock 214
   ```
 
@@ -406,7 +406,7 @@ After its box's release, the only way to use a kept snapshot is to fork it. So K
 
 The **Keep dialog** asks for the date, the default chosen, and says what keeping costs on that backend before you confirm: on Proxmox, "If amber-fox is released, VesnALIA Box first copies this snapshot in full into a template that cannot start: up to about 38 s, and about 2.8 GB, at most 17 GB, on pve-1's local-lvm until 2026-11-30, at no charge." The space is the box's disk use now, where Proxmox says it (containers), and at most the snapshot's disk. When, at today's size, a release would find no room for that copy, or no free VMID, the dialog says so; it keeps the snapshot anyway, as the room may be there by then. On microsandbox nothing is copied: "If amber-fox is released, it stays where it is until 2026-11-30." It stays on the host at its whole size. On Docker nothing is copied either, and the dialog says what it takes: "It takes about 8 MB of Docker's disk that no other image or container there uses, and up to 3.0 GB if what it shares is deleted."
 
-The keep date is written on the provider first, in the snapshot's own label on Proxmox (`reset 7 kept 2026-11-30` in its description, with the version of the box's identity reset), then in VesnALIA Box's record. So a lost `snapshots.db` loses no keep: the snapshot is found again as kept, with its date and its version. Each change is recorded before the label is written; if VesnALIA Box stops between the two, its next sweep reads the label and settles the change before any expiry or release. boat.dev's saved snapshots take no labels and cannot be renamed, so there VesnALIA Box writes the date in its own storage for the backend, apart from `snapshots.db`, with what a fork of it needs: the version of the box's identity reset, and the box's kind and name. On microsandbox, whose snapshots' labels cannot change once taken, the keep date is a file of VesnALIA Box's beside `msb`'s snapshots, in the folder's `kept`. On Docker, whose image labels cannot change either, it is a tag on the snapshot's image, `bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, moved when the date changes: the new tag first, then the old one goes. A change cut short between the two can leave two tags for a while; VesnALIA Box's next maintenance leaves one, the date you asked for, or the later of the two if it lost its record of the change. If the provider refuses the label, nothing is kept. **Stop keeping** takes the date off the label and the record, and the snapshot goes with its box again.
+The keep date is written on the provider first, in the snapshot's own label on Proxmox (`reset 7 kept 2026-11-30` in its description, with the version of the box's identity reset), then in VesnALIA Box's record. So a lost `snapshots.db` loses no keep: the snapshot is found again as kept, with its date and its version. Each change is recorded before the label is written; if VesnALIA Box stops between the two, its next sweep reads the label and settles the change before any expiry or release. boat.dev's saved snapshots take no labels and cannot be renamed, so there VesnALIA Box writes the date in its own storage for the backend, apart from `snapshots.db`, with what a fork of it needs: the version of the box's identity reset, and the box's kind and name. On microsandbox, whose snapshots' labels cannot change once taken, the keep date is a file of VesnALIA Box's beside `msb`'s snapshots, in the folder's `kept`. On Docker, whose image labels cannot change either, it is a tag on the snapshot's image, `aliabox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, moved when the date changes: the new tag first, then the old one goes. A change cut short between the two can leave two tags for a while; VesnALIA Box's next maintenance leaves one, the date you asked for, or the later of the two if it lost its record of the change. If the provider refuses the label, nothing is kept. **Stop keeping** takes the date off the label and the record, and the snapshot goes with its box again.
 
 On the command line:
 
@@ -517,11 +517,11 @@ box was actually paused. The pause measurements above are from the design
 experiments in decision 082, not a promise for every disk.
 
 Snapshots stay on the box's Docker engine. Their images use
-`bbbox-snapshot/<install>/<box>:<snapshot>` and their Docker volumes use
-`bbbox-snapshot-<snapshot>-docker`. Labels identify the install, box and snapshot.
+`aliabox-snapshot/<install>/<box>:<snapshot>` and their Docker volumes use
+`aliabox-snapshot-<snapshot>-docker`. Labels identify the install, box and snapshot.
 A restart finds them again, with their keep dates, from the engine alone. A
 release deletes those nobody kept; a kept one stays, with its keep tag
-`bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, until VesnALIA Box deletes it after
+`aliabox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, until VesnALIA Box deletes it after
 its date (see [On Docker](#on-docker)). If another container uses a
 snapshot image, deleting the snapshot removes its tag and volume; Docker keeps
 the shared image layers until that container goes. The listed size is an estimate
@@ -533,7 +533,7 @@ a snapshot shares its image's layers in the same way.
 
 A restore flushes the box's writes, stops it at once, as a power cut would, and
 takes its undo from the stopped box: no pause, as nothing runs. It then makes a new container,
-`bbbox-<box>-<8 hex>`, from the snapshot's image, with the box's ID, name and
+`aliabox-<box>-<8 hex>`, from the snapshot's image, with the box's ID, name and
 labels, at the cores and memory the snapshot was taken at. A box with a GPU
 keeps the card and part it has now, read from the container being replaced, on
 every restore. If the box has a GPU but that container has none, VesnALIA Box refuses

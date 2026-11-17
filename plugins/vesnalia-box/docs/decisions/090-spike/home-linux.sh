@@ -5,10 +5,10 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 LC_ALL=C
 export PATH LC_ALL
 
-HOMES=${BBBOX_HOMES:-/home}
+HOMES=${ALIABOX_HOMES:-/home}
 STORE_NAME=.alia-box-snapshots
 STORE=$HOMES/$STORE_NAME
-ZFS_PARENT=${BBBOX_ZFS_PARENT:-}
+ZFS_PARENT=${ALIABOX_ZFS_PARENT:-}
 CONTRACT=1
 ID_BASE=70000
 EXIT_FAILED=1
@@ -59,7 +59,7 @@ homes_way() {
 why_not() {
   case $1 in
     none) echo "Box homes in $HOMES are on $(filesystem_of "$HOMES"), which neither clones nor snapshots. Put them on btrfs or ZFS." ;;
-    zfs-without-parent) echo "Box homes in $HOMES are on ZFS, but no dataset is set for them. Set BBBOX_ZFS_PARENT." ;;
+    zfs-without-parent) echo "Box homes in $HOMES are on ZFS, but no dataset is set for them. Set ALIABOX_ZFS_PARENT." ;;
     btrfs-not-subvolume) echo "The home is a plain folder on btrfs, made before homes were subvolumes. Release the box and make it again." ;;
   esac
 }

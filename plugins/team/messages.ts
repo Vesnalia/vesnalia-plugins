@@ -513,7 +513,7 @@ export function hasLeadPolicy(text: string, lang: Language): boolean {
 }
 
 /**
- * bbt-iwi.2: review/acceptance rules for executor sessions. loadRolePrompt does
+ * aliat-iwi.2: review/acceptance rules for executor sessions. loadRolePrompt does
  * not append it automatically; template authors embed it once (templates.ts
  * is owned by the roster worker, so the insertion is handed to the parent):
  *   `${prompt}\n\n${executorReviewPolicy(lang)}`

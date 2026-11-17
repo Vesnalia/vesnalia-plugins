@@ -4,7 +4,7 @@ dist/
 
 # Local agent and editor state
 .claude/
-.bb/
+.vesnalia/
 .vscode/
 .idea/
 

@@ -407,7 +407,7 @@ test("draftFields keeps an explicit empty where empty turns boxes off and the fi
   const fields = driverFields(dockerDriver, DRIVERS);
   const values = { "linux-image": "", "desktop-image": "", "wayland-desktop-image": "my/wayland:1", network: "" };
   assert.deepEqual(draftFields(values, fields, { "linux-image": "", "desktop-image": undefined as never }), { "linux-image": "", "wayland-desktop-image": "my/wayland:1" });
-  assert.deepEqual(draftFields(values, fields, { "linux-image": "bbbox/linux:1" }), { "linux-image": "", "wayland-desktop-image": "my/wayland:1" }, "a value cleared is saved as off");
+  assert.deepEqual(draftFields(values, fields, { "linux-image": "aliabox/linux:1" }), { "linux-image": "", "wayland-desktop-image": "my/wayland:1" }, "a value cleared is saved as off");
   assert.deepEqual(draftFields(values, fields), { "wayland-desktop-image": "my/wayland:1" }, "today's page with nothing stored sends what it sent before");
 });
 

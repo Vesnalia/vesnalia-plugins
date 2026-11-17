@@ -328,7 +328,7 @@ test("a box VesnALIA Box cannot read says the Monitor's words in Activity's fram
 
 test.each(["cached", "late"])("a %s reading never replaces a later fetch, even when the next guest clock is behind", async (arrival) => {
   forgetMonitorReadings();
-  const cardId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+  const cardId = "aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee";
   const early = "host-early-1428";
   const later = "host-later-1428";
   const earlierAt = "2026-11-10T08:32:10.000Z";

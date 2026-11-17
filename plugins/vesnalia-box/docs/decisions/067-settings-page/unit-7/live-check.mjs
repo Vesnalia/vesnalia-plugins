@@ -183,7 +183,7 @@ try {
     await open("");
     await page.getByRole("button", { name: "Open Proxmox LXC is not finished" }).click();
     await page.waitForURL(/#backend\/proxmox-lxc$/);
-    await page.getByRole("textbox", { name: "API token ID" }).fill("bbbox@pve!plugin");
+    await page.getByRole("textbox", { name: "API token ID" }).fill("aliabox@pve!plugin");
     await setSecret("API token secret", "00000000-made-up-0000-0000-000000000000");
     await page.getByRole("region", { name: /^Save Proxmox LXC/ }).getByRole("button", { name: "Save" }).click();
     const bar = await waitFor("the save", () => text(page.getByRole("region", { name: /^Save Proxmox LXC/ })), (value) => /Saved|Not saved/.test(value), 30);

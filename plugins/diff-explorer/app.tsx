@@ -19,9 +19,9 @@ type Rpc = ReturnType<typeof useRpc<typeof rpcContract>>;
 type Loaded = z.infer<(typeof rpcContract)["load"]["output"]>;
 
 // Model URIs are <scheme>://<panelId>/<absolute path>; the authority routes a model back to its panel.
-const OLD = "bbold";
-const NEW = "bbnew";
-const FILE = "bbfile";
+const OLD = "aliaold";
+const NEW = "alianew";
+const FILE = "aliafile";
 
 type PanelContext = {
   rpc: Rpc;

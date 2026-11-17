@@ -55,7 +55,7 @@ export function registerThreadTools(
   register: Registrar,
 ) {
   register("threads", {
-    name: "bbtools_threads_list",
+    name: "aliatools_threads_list",
     description:
       "List VesnALIA threads in the current project: id, title, status, provider, and activity. Use it to discover threads you can read or message.",
     parameters: z.object({
@@ -74,7 +74,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_get",
+    name: "aliatools_thread_get",
     description:
       "Read a VesnALIA thread's status, its latest assistant output, and any pending interaction. Use it to check what another thread (agent) is doing, produced, or waits for.",
     parameters: z.object({
@@ -98,7 +98,7 @@ export function registerThreadTools(
         const interactions = (await alia.sdk.threads.interactions.list({ threadId })) as unknown as InteractionRow[];
         const open = interactions.filter((i) => i.status === "pending");
         if (open.length > 0)
-          pending = `\n--- pending interaction ---\n${open.map(describeInteraction).join("\n")}\nAnswer with bbtools_thread_interaction_respond.`;
+          pending = `\n--- pending interaction ---\n${open.map(describeInteraction).join("\n")}\nAnswer with aliatools_thread_interaction_respond.`;
       } catch {
         // interaction listing is best-effort here; the dedicated tool reports errors
       }
@@ -107,7 +107,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_outline",
+    name: "aliatools_thread_outline",
     description:
       "Read a compact conversation outline of a VesnALIA thread: turn-by-turn role and preview. Use it to see what another thread (e.g. a child you spawned) discussed or concluded without pulling the full transcript.",
     parameters: z.object({
@@ -130,7 +130,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_send",
+    name: "aliatools_thread_send",
     description:
       "Send a text message to an existing VesnALIA thread. Use it to message another agent/thread directly to coordinate work, request an update, or hand off a result. A future sendAt queues the message instead of dispatching it now.",
     parameters: z.object({
@@ -161,7 +161,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_spawn",
+    name: "aliatools_thread_spawn",
     description:
       "Create a new VesnALIA thread (child of the current one). Use it to delegate parallel or background work to another agent thread. Defaults to the current thread's provider and environment; pass providerId/model to override.",
     parameters: z.object({
@@ -205,14 +205,14 @@ export function registerThreadTools(
         input: [{ type: "text", text: prompt, mentions: [] }],
         origin: "plugin",
       });
-      return `Spawned thread ${thread.id} in project ${ctx.projectId}. Use bbtools_thread_wait to wait for it to finish.`;
+      return `Spawned thread ${thread.id} in project ${ctx.projectId}. Use aliatools_thread_wait to wait for it to finish.`;
     },
   });
 
   register("threads", {
-    name: "bbtools_thread_wait",
+    name: "aliatools_thread_wait",
     description:
-      "Wait until a VesnALIA thread reaches a target status (by default idle or error). Use it after spawning or messaging a thread instead of polling bbtools_thread_get repeatedly.",
+      "Wait until a VesnALIA thread reaches a target status (by default idle or error). Use it after spawning or messaging a thread instead of polling aliatools_thread_get repeatedly.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
       waitFor: z
@@ -235,7 +235,7 @@ export function registerThreadTools(
         const thread = await alia.sdk.threads.get({ threadId });
         const elapsedS = Math.round((Date.now() - start) / 1000);
         if (targets.includes(thread.status)) {
-          return `Thread ${thread.id} (${threadTitle(thread)}) reached status ${thread.status} after ${elapsedS}s. Use bbtools_thread_get or bbtools_thread_outline to read the result.`;
+          return `Thread ${thread.id} (${threadTitle(thread)}) reached status ${thread.status} after ${elapsedS}s. Use aliatools_thread_get or aliatools_thread_outline to read the result.`;
         }
         if (Date.now() - start >= limit)
           return `Timed out after ${Math.round(limit / 1000)}s; thread ${threadId} is still ${thread.status}.`;
@@ -245,9 +245,9 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_interactions_list",
+    name: "aliatools_thread_interactions_list",
     description:
-      "List a VesnALIA thread's pending interactions: permission approvals, user questions, and plugin prompts. Use it to see what another thread waits for before answering with bbtools_thread_interaction_respond.",
+      "List a VesnALIA thread's pending interactions: permission approvals, user questions, and plugin prompts. Use it to see what another thread waits for before answering with aliatools_thread_interaction_respond.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
@@ -261,12 +261,12 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_interaction_respond",
+    name: "aliatools_thread_interaction_respond",
     description:
-      "Respond to a pending interaction on another VesnALIA thread: approve or deny a permission approval, answer a user question, or submit a value. Listing first with bbtools_thread_interactions_list is expected. This tool is disabled unless the plugin setting enableInteractionRespond is on.",
+      "Respond to a pending interaction on another VesnALIA thread: approve or deny a permission approval, answer a user question, or submit a value. Listing first with aliatools_thread_interactions_list is expected. This tool is disabled unless the plugin setting enableInteractionRespond is on.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
-      interactionId: z.string().describe("The interaction id from bbtools_thread_interactions_list."),
+      interactionId: z.string().describe("The interaction id from aliatools_thread_interactions_list."),
       decision: z
         .enum(["allow_once", "allow_for_session", "deny"])
         .optional()
@@ -305,7 +305,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_retry",
+    name: "aliatools_thread_retry",
     description:
       "Re-submit the failed turn of a VesnALIA thread that is in error status. Use it to restart work after fixing the cause of a failure.",
     parameters: z.object({
@@ -328,7 +328,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_stop",
+    name: "aliatools_thread_stop",
     description:
       "Stop a running VesnALIA thread (cancels its active turn). Use it to stop work you delegated to another thread, e.g. a runaway or no-longer-needed child thread.",
     parameters: z.object({
@@ -341,7 +341,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_archive",
+    name: "aliatools_thread_archive",
     description:
       "Archive a VesnALIA thread (hides it from the active list; reversible via unarchive). Use it to clean up finished child threads you spawned.",
     parameters: z.object({
@@ -354,7 +354,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_clear_context",
+    name: "aliatools_thread_clear_context",
     description:
       "Reset a VesnALIA thread's agent context while keeping its workspace and history. Use it on an idle thread that drifted off course before sending a fresh, focused prompt.",
     parameters: z.object({
@@ -367,7 +367,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_compact",
+    name: "aliatools_thread_compact",
     description:
       "Compact a VesnALIA thread's conversation to shrink its context window. Use it on a long-running thread that is still useful but heavy.",
     parameters: z.object({
@@ -380,7 +380,7 @@ export function registerThreadTools(
   });
 
   register("threads", {
-    name: "bbtools_thread_search",
+    name: "aliatools_thread_search",
     description:
       "Search across VesnALIA threads and messages for text. Use it to find past discussions instead of reading whole threads.",
     parameters: z.object({

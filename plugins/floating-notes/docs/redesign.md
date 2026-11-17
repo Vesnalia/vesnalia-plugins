@@ -87,7 +87,7 @@ the active line; headings sized; bold/italic/strikethrough/inline-code
 rendered; task checkboxes are clickable widgets; links `⌘`-clickable; list
 bullets and blockquote bars drawn; fenced code gets a quiet block background
 (no per-language highlight in v1); pasted images upload as attachments and
-render inline (`bbnote://attachment/<id>` resolved through a callback).
+render inline (`alianote://attachment/<id>` resolved through a callback).
 Autosave debounced 500 ms, flushed on blur/unmount. The component is
 self-contained and RPC-free: callbacks only (`onDocChange`, `onPasteImage`,
 `resolveAttachment`). Theme from VesnALIA CSS variables; `light-dark()` for

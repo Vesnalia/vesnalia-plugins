@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { NeedsReason } from "../lib/activity";
 import { activityTone, reasonCounts, reasonSeverity, topReasonLabel } from "../lib/topology";
 
-describe("reasonSeverity (BBP-95)", () => {
+describe("reasonSeverity (ALIAP-95)", () => {
   it("error only for a real failure: error, merge-conflict", () => {
     expect(reasonSeverity("error")).toBe("error");
     expect(reasonSeverity("merge-conflict")).toBe("error");
@@ -22,7 +22,7 @@ describe("reasonCounts", () => {
   });
 });
 
-describe("activityTone (BBP-95: red only for errors, amber for decisions)", () => {
+describe("activityTone (ALIAP-95: red only for errors, amber for decisions)", () => {
   it("a crew with only a ready merge request is amber, not red", () => {
     expect(activityTone("idle", ["merge-request"])).toBe("var(--warning)");
   });

@@ -42,7 +42,7 @@ const BOX_MADE: readonly Nic[] = [
   { name: "tailscale0", mac: "00:00:00:00:00:00", type: NONE, kind: "tun" },
 ];
 const FAKE_IP = tempDir("fake-ip");
-writeFileSync(join(FAKE_IP, "ip"), '#!/bin/sh\nexec cat "$BBBOX_IDENTITY_ROOT/ip-link.json"\n', { mode: 0o755 });
+writeFileSync(join(FAKE_IP, "ip"), '#!/bin/sh\nexec cat "$ALIABOX_IDENTITY_ROOT/ip-link.json"\n', { mode: 0o755 });
 const TEST_PATH = `${FAKE_IP}:${process.env.PATH}`;
 
 function linkInfo(nic: Nic, at: number): Record<string, unknown> {
@@ -109,7 +109,7 @@ function seedIdentity(root: string): void {
 
 function identity(root: string, args: readonly string[], options: { readonly waitSeconds?: number; readonly path?: string } = {}) {
   const ran = spawnSync("bash", [SCRIPT, ...args], {
-    env: { PATH: options.path ?? TEST_PATH, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_NIC_WAIT_SECONDS: String(options.waitSeconds ?? 0) },
+    env: { PATH: options.path ?? TEST_PATH, ALIABOX_IDENTITY_ROOT: root, ALIABOX_IDENTITY_NIC_WAIT_SECONDS: String(options.waitSeconds ?? 0) },
     encoding: "utf8",
   });
   return { code: ran.status, out: ran.stdout, err: ran.stderr };
@@ -360,7 +360,7 @@ test("a card that appears late is waited for; with none of the marker's cards an
   boot(root);
   written(root, "bxvm1", "device");
   setNics(root, [LOOP]);
-  const late = spawn("bash", [SCRIPT, "boot"], { env: { PATH: TEST_PATH, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_NIC_WAIT_SECONDS: "20" } });
+  const late = spawn("bash", [SCRIPT, "boot"], { env: { PATH: TEST_PATH, ALIABOX_IDENTITY_ROOT: root, ALIABOX_IDENTITY_NIC_WAIT_SECONDS: "20" } });
   let out = "";
   late.stdout.on("data", (chunk: Buffer) => (out += chunk.toString()));
   setTimeout(() => setNics(root, [LOOP, ens18]), 600);
@@ -579,16 +579,16 @@ test("every Linux build turns the reset on, including desktops; finalizing clear
   for (const unchecked of ["boat/template.sh", "boat/customize-sandbox.sh"]) assert.doesNotMatch(on(unchecked), /BOX_IDENTITY_RESET/, unchecked);
   assert.match(readFileSync(FINALIZE, "utf8"), /rm -f \/etc\/alia-box\/identity .*\/var\/lib\/alia-box\/identity-armed/);
   const start = readFileSync(DOCKER_START, "utf8");
-  const check = start.indexOf('alia-box-identity boot --value "${BBBOX_IDENTITY:-}"');
+  const check = start.indexOf('alia-box-identity boot --value "${ALIABOX_IDENTITY:-}"');
   assert.ok(check > 0 && check < start.indexOf("rm -f \"$home\"/.alia-machines/*/daemon.lock.lock") && check < start.indexOf(`touch "$run/ready"`), "a Docker box checks before it starts anything");
 });
 
 function settle(root: string, options: { readonly waitSeconds?: number; readonly path?: string } = {}) {
-  return spawn("bash", [SCRIPT, "settle"], { env: { PATH: options.path ?? TEST_PATH, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_NIC_WAIT_SECONDS: String(options.waitSeconds ?? 0), BBBOX_IDENTITY_SETTLE_SECONDS: "0.1" } });
+  return spawn("bash", [SCRIPT, "settle"], { env: { PATH: options.path ?? TEST_PATH, ALIABOX_IDENTITY_ROOT: root, ALIABOX_IDENTITY_NIC_WAIT_SECONDS: String(options.waitSeconds ?? 0), ALIABOX_IDENTITY_SETTLE_SECONDS: "0.1" } });
 }
 
 function waitFor(root: string, unit: string) {
-  return spawn("bash", [SCRIPT, "wait", unit], { env: { PATH: TEST_PATH, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_SETTLE_SECONDS: "0.1" } });
+  return spawn("bash", [SCRIPT, "wait", unit], { env: { PATH: TEST_PATH, ALIABOX_IDENTITY_ROOT: root, ALIABOX_IDENTITY_SETTLE_SECONDS: "0.1" } });
 }
 
 function ended(child: ReturnType<typeof spawn>): Promise<{ code: number | null; out: string }> {
@@ -837,9 +837,9 @@ test("settle reads the cards once, so a second reading that arrives with a new c
   const bin = tempDir("one-reading");
   writeFileSync(join(bin, "ip"), `#!/bin/sh
 n=0
-[ -f "$BBBOX_IDENTITY_ROOT/ip-calls" ] && n=$(cat "$BBBOX_IDENTITY_ROOT/ip-calls")
-printf '%s\\n' "$((n + 1))" > "$BBBOX_IDENTITY_ROOT/ip-calls"
-if [ "$n" -eq 0 ]; then cat "$BBBOX_IDENTITY_ROOT/ip-empty.json"; else cat "$BBBOX_IDENTITY_ROOT/ip-full.json"; fi
+[ -f "$ALIABOX_IDENTITY_ROOT/ip-calls" ] && n=$(cat "$ALIABOX_IDENTITY_ROOT/ip-calls")
+printf '%s\\n' "$((n + 1))" > "$ALIABOX_IDENTITY_ROOT/ip-calls"
+if [ "$n" -eq 0 ]; then cat "$ALIABOX_IDENTITY_ROOT/ip-empty.json"; else cat "$ALIABOX_IDENTITY_ROOT/ip-full.json"; fi
 `, { mode: 0o755 });
   const settled = await ended(settle(root, { path: `${bin}:${TEST_PATH}` }));
   assert.equal(settled.code, 0, settled.out);
@@ -894,7 +894,7 @@ function armedWithNetwork(nics: readonly Nic[] = [LOOP, LXC_ETH0], source = "eth
 }
 
 function bootAsync(root: string, waitSeconds: number) {
-  return spawn("bash", [SCRIPT, "boot"], { env: { PATH: TEST_PATH, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_NIC_WAIT_SECONDS: String(waitSeconds) } });
+  return spawn("bash", [SCRIPT, "boot"], { env: { PATH: TEST_PATH, ALIABOX_IDENTITY_ROOT: root, ALIABOX_IDENTITY_NIC_WAIT_SECONDS: String(waitSeconds) } });
 }
 
 test("version 7: an LXC box that starts with no card holds its network settings on disk before it waits, so a copy's card added later never comes up with its source's address, and a copy drops them once it resets", async () => {
@@ -1015,7 +1015,7 @@ function boatGuest(): string {
 
 function boatValue(root: string, value: string | null): void {
   mkdirSync(join(root, "run/ascii-secrets"), { recursive: true });
-  writeFileSync(join(root, BOAT_ENV), `export SOME_OTHER="kept apart"\n${value === null ? "" : `export BBBOX_IDENTITY="${value}"\n`}export LAST="x"\n`);
+  writeFileSync(join(root, BOAT_ENV), `export SOME_OTHER="kept apart"\n${value === null ? "" : `export ALIABOX_IDENTITY="${value}"\n`}export LAST="x"\n`);
 }
 
 test("version 8: enable can read the value from a file a provider writes, and leave the machine ID and SSH host keys to the provider; disable removes both settings, and a bad path is refused", () => {
@@ -1079,7 +1079,7 @@ test("version 8, boat: a value missing from the file never counts the box as a c
   rmSync(join(root, BOAT_ENV));
   const held = identity(root, ["boot"], { waitSeconds: 1 });
   assert.equal(held.code, 0);
-  assert.match(held.out, /not knowing yet whether this box is a copy: it has found no BBBOX_IDENTITY in \/run\/ascii-secrets\/env\.sh yet, so it cannot tell\. It removes nothing; SSH, Tailscale and ALIA's daemon wait while it looks again/);
+  assert.match(held.out, /not knowing yet whether this box is a copy: it has found no ALIABOX_IDENTITY in \/run\/ascii-secrets\/env\.sh yet, so it cannot tell\. It removes nothing; SSH, Tailscale and ALIA's daemon wait while it looks again/);
   assert.equal(status(root).boot, "unknown");
   assert.deepEqual(identityOf(root), before, "a slow start costs the box nothing");
   const settling = settle(root);
@@ -1105,7 +1105,7 @@ test("version 8, boat: a box that reset with no value to write unarms itself in 
   rmSync(join(root, BOAT_ENV));
   const ran = boot(root);
   assert.match(ran.out, /its identity marker is missing or unreadable/);
-  assert.match(ran.out, /found no BBBOX_IDENTITY in \/run\/ascii-secrets\/env\.sh to write a marker for, so it unarms this box until alia-box writes one at its next start/);
+  assert.match(ran.out, /found no ALIABOX_IDENTITY in \/run\/ascii-secrets\/env\.sh to write a marker for, so it unarms this box until alia-box writes one at its next start/);
   assert.doesNotMatch(ran.out, /no interface/);
   assert.equal(status(root).armed, "no");
 });
@@ -1120,14 +1120,14 @@ test("version 8 on Proxmox: with a plain enable, wait goes on at once when no ch
 test("version 8, boat: a value that is not a box ID, or sits on another variable's line, is no value", () => {
   const root = boatGuest();
   mkdirSync(join(root, "run/ascii-secrets"), { recursive: true });
-  for (const text of ['export BBBOX_IDENTITY="$(touch /tmp/x)"\n', 'export NOT_BBBOX_IDENTITY="bxsource1"\n', "export BBBOX_IDENTITY=\"BX-1\"\n"]) {
+  for (const text of ['export ALIABOX_IDENTITY="$(touch /tmp/x)"\n', 'export NOT_ALIABOX_IDENTITY="bxsource1"\n', "export ALIABOX_IDENTITY=\"BX-1\"\n"]) {
     writeFileSync(join(root, BOAT_ENV), text);
     boot(root);
     const wrote = identity(root, ["write", "--box", "bxsource1", "--source", "value"]);
     assert.equal(wrote.code, 3, text);
     assert.match(wrote.err, /this boot saw no value from alia-box/);
   }
-  writeFileSync(join(root, BOAT_ENV), "BBBOX_IDENTITY=bxsource1\n");
+  writeFileSync(join(root, BOAT_ENV), "ALIABOX_IDENTITY=bxsource1\n");
   boot(root);
   assert.equal(written(root, "bxsource1", "value"), "alia-box identity 1\nbox bxsource1\nsource value\nvalue bxsource1\n", "plain or exported, quoted or not");
 });

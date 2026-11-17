@@ -204,7 +204,7 @@ build_probe() {
   [ -n "$probe_built" ] && return 0
   probe_work=$(mktemp -d)
   cp -R "$share/ios/probe" "$probe_work/probe"
-  xcodebuild -project "$probe_work/probe/BBProbe.xcodeproj" -scheme BBProbe -destination "generic/platform=iOS Simulator" \
+  xcodebuild -project "$probe_work/probe/AliaProbe.xcodeproj" -scheme AliaProbe -destination "generic/platform=iOS Simulator" \
     -derivedDataPath "$probe_work/derived" build-for-testing -quiet >"$probe_work/build.log" 2>&1 || { tail -n 5 "$probe_work/build.log"; return 1; }
   probe_built=1
 }
@@ -213,9 +213,9 @@ uitest_launch_within() {
   udid=$1
   build_probe || { echo "the probe app did not build"; return 1; }
   log=$probe_work/test-$udid.log
-  xcodebuild test-without-building -project "$probe_work/probe/BBProbe.xcodeproj" -scheme BBProbe -destination "id=$udid" \
+  xcodebuild test-without-building -project "$probe_work/probe/AliaProbe.xcodeproj" -scheme AliaProbe -destination "id=$udid" \
     -derivedDataPath "$probe_work/derived" -collect-test-diagnostics never \
-    -only-testing:BBProbeUITests/BBProbeUITests/testLaunchAndTap >"$log" 2>&1 &
+    -only-testing:AliaProbeUITests/AliaProbeUITests/testLaunchAndTap >"$log" 2>&1 &
   stopped_after "$!" "$uitest_most_s"
   python3 -c '
 import re, sys
@@ -237,7 +237,7 @@ data=/System/Volumes/Data
 slot_uids_only_carried() {
   carried=
   for slot in i1 i2; do
-    uid=$(id -u "bbd-$slot" 2>/dev/null) && carried="$carried $uid"
+    uid=$(id -u "aliad-$slot" 2>/dev/null) && carried="$carried $uid"
   done
   sudo -n perl -MFile::Find -e '
 my ($root, @carried) = @ARGV;
@@ -260,13 +260,13 @@ carried_slots_ready() {
   for slot in i1 i2; do
     line=$(printf '%s\n' "$out" | awk -F '\t' -v s="slot=$slot" '$1 == s')
     [ -n "$line" ] || { echo "no carried slot $slot"; return 1; }
-    [ "$(printf '%s\n' "$line" | cut -f 3)" = "$(id -u "bbd-$slot" 2>/dev/null)" ] || { echo "bbd-$slot is not the carried slot $slot's user"; return 1; }
+    [ "$(printf '%s\n' "$line" | cut -f 3)" = "$(id -u "aliad-$slot" 2>/dev/null)" ] || { echo "aliad-$slot is not the carried slot $slot's user"; return 1; }
     [ "$(printf '%s\n' "$line" | cut -f 6)" = ready ] || { echo "carried slot $slot is $(printf '%s\n' "$line" | cut -f 6)"; return 1; }
     udid=$(printf '%s\n' "$line" | cut -f 12)
     sudo -n test -s "/private/var/tmp/com.apple.CoreSimulator.SimDevice.$udid/disabled.plist" || { echo "carried slot $slot's device $udid is not seeded"; return 1; }
     [ "$(printf '%s\n' "$line" | cut -f 13)" = 0 ] || { echo "carried slot $slot's device is booted"; return 1; }
   done
-  echo "bbd-i1 and bbd-i2 ready, each with its own seeded device, shut down"
+  echo "aliad-i1 and aliad-i2 ready, each with its own seeded device, shut down"
 }
 
 slot_clipboard="/usr/local/libexec/alia-box/slot-clipboard"
@@ -274,7 +274,7 @@ slot_clipboard="/usr/local/libexec/alia-box/slot-clipboard"
 as_slot() { (cd / && sudo -n launchctl asuser "$(id -u "$user")" sudo -n -H -u "$user" -- perl -e 'alarm shift; exec @ARGV' "$simctl_most_s" xcrun simctl "$@"); }
 
 carried_slot_clipboard_works() {
-  user=bbd-i1
+  user=aliad-i1
   udid=$(sudo -n "$helper" status 2>/dev/null | awk -F '\t' '$1 == "slot=i1" { print $12 }')
   [ -n "$udid" ] || { echo "no carried slot i1"; return 1; }
   as_slot boot "$udid" >/dev/null 2>&1
@@ -287,7 +287,7 @@ carried_slot_clipboard_works() {
 }
 
 carried_slot_keyboard_holds() {
-  user=bbd-i1
+  user=aliad-i1
   udid=$(sudo -n "$helper" status 2>/dev/null | awk -F '\t' '$1 == "slot=i1" { print $12 }')
   [ -n "$udid" ] || { echo "no carried slot i1"; return 1; }
   as_slot boot "$udid" >/dev/null 2>&1

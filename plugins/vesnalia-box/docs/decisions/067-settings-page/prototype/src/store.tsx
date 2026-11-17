@@ -223,7 +223,7 @@ interface Store extends State {
 
 const StoreContext = createContext<Store | null>(null);
 
-const KEPT = "bbbox-prototype-state";
+const KEPT = "aliabox-prototype-state";
 
 function keptState(): State | null {
   try {
@@ -377,7 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           doc,
           firstRun: { state: "built", step: BUILD_STEPS },
           setupDone: true,
-          live: { ...state.live, docker: { boxes: 0, offers: ["linux"], checking: false, changedRevision: revision, health: { summary: "Docker 29.8 on alia-1", checkedAt: Date.now(), checkedRevision: revision, checks: [{ id: "daemon", name: "Docker", status: "ok", detail: "29.8.2 on alia-1, VesnALIA's server." }, { id: "images", name: "Images", status: "ok", detail: "bbbox/linux:1 built just now." }] } } },
+          live: { ...state.live, docker: { boxes: 0, offers: ["linux"], checking: false, changedRevision: revision, health: { summary: "Docker 29.8 on alia-1", checkedAt: Date.now(), checkedRevision: revision, checks: [{ id: "daemon", name: "Docker", status: "ok", detail: "29.8.2 on alia-1, VesnALIA's server." }, { id: "images", name: "Images", status: "ok", detail: "aliabox/linux:1 built just now." }] } } },
         };
       });
     }, 600);
@@ -392,7 +392,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (result.ok) {
         update((state) => ({ ...state, live: { ...state.live, [backend.id]: { boxes: 0, offers: [], checking: false, changedRevision: result.revision, health: null, building: "Building its Linux image · step 2 of 9", aliaMachine: { name: machine.name, connected: true, facts: `Docker ${machine.docker} · ${machine.facts}` } } } }));
         setTimeout(() => {
-          update((state) => (state.live[backend.id] ? { ...state, live: { ...state.live, [backend.id]: { ...state.live[backend.id]!, building: undefined, offers: ["linux", "linux-desktop-cpu"], health: { summary: `Docker ${machine.docker} on ${machine.name}`, checkedAt: Date.now(), checkedRevision: result.revision, checks: [{ id: "relay", name: `VesnALIA machine ${machine.name}`, status: "ok", detail: "Connected; Docker answers through VesnALIA." }, { id: "images", name: "Images", status: "ok", detail: "bbbox/linux:1 built just now." }] } } } } : state));
+          update((state) => (state.live[backend.id] ? { ...state, live: { ...state.live, [backend.id]: { ...state.live[backend.id]!, building: undefined, offers: ["linux", "linux-desktop-cpu"], health: { summary: `Docker ${machine.docker} on ${machine.name}`, checkedAt: Date.now(), checkedRevision: result.revision, checks: [{ id: "relay", name: `VesnALIA machine ${machine.name}`, status: "ok", detail: "Connected; Docker answers through VesnALIA." }, { id: "images", name: "Images", status: "ok", detail: "aliabox/linux:1 built just now." }] } } } } : state));
         }, 4000);
       }
       return result;

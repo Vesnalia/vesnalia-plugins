@@ -209,7 +209,7 @@ export function openThreadAsTab({
 export function findHeader(): HTMLElement | null {
   const headers = [...document.querySelectorAll<HTMLElement>(HEADER_SELECTOR)];
   if (headers.length === 1) return headers[0]!;
-  return headers.find((header) => header.querySelector("[data-pane-header-focus-tab]") || header.querySelector(".bbp-tabs-host")) ?? null;
+  return headers.find((header) => header.querySelector("[data-pane-header-focus-tab]") || header.querySelector(".aliap-tabs-host")) ?? null;
 }
 
 export function locateThreadWindow(): HTMLElement | null {

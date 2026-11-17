@@ -371,7 +371,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
         >
           <div className="flex items-center gap-1">
             {/* The folder, then the branch it is on (bead-alia-ty5.3; the
-                user: "maybe tag branch:aaa-bbb-ccc next to the project
+                user: "maybe tag branch:aaa-aliab-ccc next to the project
                 path?"). Plain text in the path's own hand, no box: it used
                 to be a boxed tag in the epic band, where it looked like a
                 button beside Autopilot. The path gives way first when

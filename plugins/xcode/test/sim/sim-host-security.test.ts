@@ -235,7 +235,7 @@ describe("the allow list", () => {
   it("accepts a device-derived capability on both pixel codecs and nowhere else", async () => {
     const streamKey = "v".repeat(43);
     const capability = deriveStreamCapability(streamKey, UDID);
-    const other = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE";
+    const other = "AAAAAAAA-ALIABB-CCCC-DDDD-EEEEEEEEEEEE";
     const harness = await start(SECRET, streamKey, (res, req) => {
       if (req.url?.startsWith(`/helper/${UDID}/stream.avcc`)) {
         res.writeHead(200, { "Content-Type": "application/octet-stream" });

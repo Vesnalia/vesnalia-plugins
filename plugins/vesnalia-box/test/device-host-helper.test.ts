@@ -120,14 +120,14 @@ function alive(pid: number): boolean {
 }
 
 function installerLeftBy(host: FakeDeviceHost): { data: string; pid: number } {
-  const data = join(host.root, "Users/bbd-1/.alia-machines/alia.example.test");
+  const data = join(host.root, "Users/aliad-1/.alia-machines/alia.example.test");
   mkdirSync(data, { recursive: true });
   const pid = sleeper();
   writeFileSync(join(data, "install-daemon.pid"), `${pid}\n`);
   writeFileSync(join(data, "host-daemon-port"), "38889\n");
-  ownedByTheSlot(host, "/Users/bbd-1/.alia-machines", "alia.example.test", "alia.example.test/install-daemon.pid", "alia.example.test/host-daemon-port");
+  ownedByTheSlot(host, "/Users/aliad-1/.alia-machines", "alia.example.test", "alia.example.test/install-daemon.pid", "alia.example.test/host-daemon-port");
   host.add("processes", `${pid} 80001 node 1`);
-  writeFileSync(join(host.state, "commands", String(pid)), "/Users/bbd-1/.alia-machines/alia.example.test/npm/bin/alia-app host-daemon --supervise --host-daemon-port 38889\n");
+  writeFileSync(join(host.state, "commands", String(pid)), "/Users/aliad-1/.alia-machines/alia.example.test/npm/bin/alia-app host-daemon --supervise --host-daemon-port 38889\n");
   return { data, pid };
 }
 
@@ -182,22 +182,22 @@ test("keep-app copies the host's own VesnALIA app into the slots' home and every
   assert.equal(host.file(`${slots}/npm/lib/node_modules/alia-app/package.json`), '{"name":"alia-app"}\n');
   assert.equal(readlinkSync(join(host.root, slots, "npm/bin/alia")), "../lib/node_modules/alia-app/bin/alia.js", "a link inside the app is copied as a link");
   assert.equal(host.file(`${slots}/auth.json`), null, "nothing of the host user's own machine");
-  assert.equal(host.file("/Users/bbd-1/.alia-machines/alia.example.com/host-artifact.sha256"), `${digest}\n`, "the ready slot has it");
-  assert.ok(host.lines("owners").includes(`80001 ${host.data}/Users/bbd-1/.alia-machines/alia.example.com/host-artifact.sha256`), "owned by the slot's user");
-  assert.ok(!existsSync(join(host.root, "Users/bbd-2/.alia-machines/alia.example.com")), "the claimed slot is not touched");
+  assert.equal(host.file("/Users/aliad-1/.alia-machines/alia.example.com/host-artifact.sha256"), `${digest}\n`, "the ready slot has it");
+  assert.ok(host.lines("owners").includes(`80001 ${host.data}/Users/aliad-1/.alia-machines/alia.example.com/host-artifact.sha256`), "owned by the slot's user");
+  assert.ok(!existsSync(join(host.root, "Users/aliad-2/.alia-machines/alia.example.com")), "the claimed slot is not touched");
   assert.equal(host.status().values.get("alia-app"), digest);
   assert.equal(host.status().values.get("alia-app-kept"), "yes");
   made(host);
-  assert.equal(host.file("/Users/bbd-3/.alia-machines/alia.example.com/host-artifact.sha256"), `${digest}\n`, "a slot made after has it");
+  assert.equal(host.file("/Users/aliad-3/.alia-machines/alia.example.com/host-artifact.sha256"), `${digest}\n`, "a slot made after has it");
 
   const stale = host.run(["keep-app"], KEEP("d".repeat(64)));
   assert.equal(stale.status, 0, stale.stderr);
   assert.match(stale.stdout, /kept=no\nwhy=ALIA's app in \/Users\/admin is another build than d{64}\n$/);
   assert.ok(!existsSync(join(host.root, "usr/local/share/alia-box/slot-home/.alia-machines")), "the slots' home keeps no stale app");
-  assert.ok(!existsSync(join(host.root, "Users/bbd-1/.alia-machines/alia.example.com")), "nor the ready slot");
+  assert.ok(!existsSync(join(host.root, "Users/aliad-1/.alia-machines/alia.example.com")), "nor the ready slot");
   assert.equal(host.status().values.get("alia-app-kept"), "no");
   made(host);
-  assert.ok(!existsSync(join(host.root, "Users/bbd-4/.alia-machines")), "a new slot downloads it");
+  assert.ok(!existsSync(join(host.root, "Users/aliad-4/.alia-machines")), "a new slot downloads it");
 });
 
 test("keep-app takes a copy whose files keep the host user's UID and whose folders and links are root's, as a clone made as root is, then makes all of it root's, links too (F-9)", () => {
@@ -231,7 +231,7 @@ test("keep-app copies no link that is absolute or leaves the app, nothing writab
     assert.ok(!existsSync(join(host.root, "usr/local/share/alia-box/slot-home/.alia-machines")), what);
   }
   const host = quiet();
-  assert.equal(host.run(["keep-app"], "server=alia.example.com\ndigest=" + "c".repeat(64) + "\nfrom=/Users/bbd-1\n").status, 2);
+  assert.equal(host.run(["keep-app"], "server=alia.example.com\ndigest=" + "c".repeat(64) + "\nfrom=/Users/aliad-1\n").status, 2);
   assert.equal(host.run(["keep-app"], "server=../x\ndigest=" + "c".repeat(64) + "\nfrom=/Users/admin\n").status, 2);
 });
 
@@ -242,10 +242,10 @@ test("make gives a slot's home the VesnALIA app the slots' home keeps, owned by 
   writeFileSync(join(kept, "npm/lib/node_modules/alia-app/package.json"), '{"name":"alia-app"}\n');
   writeFileSync(join(kept, "host-artifact.sha256"), `${"b".repeat(64)}\n`);
   made(host);
-  assert.equal(host.file("/Users/bbd-1/.alia-machines/alia.example.com/host-artifact.sha256"), `${"b".repeat(64)}\n`);
-  assert.equal(host.file("/Users/bbd-1/.alia-machines/alia.example.com/npm/lib/node_modules/alia-app/package.json"), '{"name":"alia-app"}\n');
-  assert.ok(host.lines("owners").includes(`80001 ${host.data}/Users/bbd-1/.alia-machines/alia.example.com/host-artifact.sha256`), "the slot's user owns it");
-  assert.match(host.file("/Users/bbd-1/.zshenv")!, /export ALIA_PORT_BASE=20000/);
+  assert.equal(host.file("/Users/aliad-1/.alia-machines/alia.example.com/host-artifact.sha256"), `${"b".repeat(64)}\n`);
+  assert.equal(host.file("/Users/aliad-1/.alia-machines/alia.example.com/npm/lib/node_modules/alia-app/package.json"), '{"name":"alia-app"}\n');
+  assert.ok(host.lines("owners").includes(`80001 ${host.data}/Users/aliad-1/.alia-machines/alia.example.com/host-artifact.sha256`), "the slot's user owns it");
+  assert.match(host.file("/Users/aliad-1/.zshenv")!, /export ALIA_PORT_BASE=20000/);
 });
 
 test("make adds a slot as a new user with its own seeded device booted and its device server's daemon loaded", () => {
@@ -253,24 +253,24 @@ test("make adds a slot as a new user with its own seeded device booted and its d
   const slot = made(host);
   assert.deepEqual(
     ["slot", "user", "uid", "home", "model", "ports", "port_count"].map((key) => slot.get(key)),
-    ["1", "bbd-1", "80001", "/Users/bbd-1", "iPhone 18 Pro", "20000", "100"],
+    ["1", "aliad-1", "80001", "/Users/aliad-1", "iPhone 18 Pro", "20000", "100"],
   );
   assert.match(slot.get("took") ?? "", /^user \d+\.\d,device \d+\.\d,first-boot \d+\.\d,daemons \d+\.\d$/);
 
-  const user = host.user("bbd-1")!;
-  assert.deepEqual([user.UniqueID, user.IsHidden, user.RealName, user.NFSHomeDirectory], ["80001", "1", "alia-box bbd-1", "/Users/bbd-1"]);
-  assert.deepEqual([host.members("_developer"), host.members("com.apple.access_ssh")], [["bbd-1"], ["bbd-1"]]);
-  assert.ok(!host.members("admin").includes("bbd-1"), "a standard user, never admin");
-  const home = join(host.root, "Users/bbd-1");
+  const user = host.user("aliad-1")!;
+  assert.deepEqual([user.UniqueID, user.IsHidden, user.RealName, user.NFSHomeDirectory], ["80001", "1", "alia-box aliad-1", "/Users/aliad-1"]);
+  assert.deepEqual([host.members("_developer"), host.members("com.apple.access_ssh")], [["aliad-1"], ["aliad-1"]]);
+  assert.ok(!host.members("admin").includes("aliad-1"), "a standard user, never admin");
+  const home = join(host.root, "Users/aliad-1");
   assert.equal(statSync(home).mode & 0o777, 0o700);
-  const zshenv = host.file("/Users/bbd-1/.zshenv")!;
+  const zshenv = host.file("/Users/aliad-1/.zshenv")!;
   assert.match(zshenv, /path_helper/, "the pool's login PATH");
   assert.ok(zshenv.endsWith("export ALIA_PORT_BASE=20000 ALIA_PORT_COUNT=100\n"));
-  assert.equal(host.file("/Users/bbd-1/.alia-box/ports"), "base=20000\ncount=100\n");
-  assert.equal(host.file("/Users/bbd-1/.alia-box/device/host-managed"), "1\n");
-  assert.ok(host.lines("owners").includes(`80001 ${host.data}/Users/bbd-1/.zshenv`), "the home is the user's");
+  assert.equal(host.file("/Users/aliad-1/.alia-box/ports"), "base=20000\ncount=100\n");
+  assert.equal(host.file("/Users/aliad-1/.alia-box/device/host-managed"), "1\n");
+  assert.ok(host.lines("owners").includes(`80001 ${host.data}/Users/aliad-1/.zshenv`), "the home is the user's");
 
-  const devices = Object.entries(host.devices("bbd-1"));
+  const devices = Object.entries(host.devices("aliad-1"));
   assert.equal(devices.length, 1, "CoreSimulator's default devices deleted");
   const [udid, device] = devices[0]!;
   assert.equal(slot.get("udid"), udid);
@@ -284,16 +284,16 @@ test("make adds a slot as a new user with its own seeded device booted and its d
   const seedCopy = host.lines("owners").findIndex((line) => line.endsWith(`${store}/disabled.plist`));
   assert.ok(create >= 0 && boot > create && seedCopy >= 0, "made, then seeded, then booted");
 
-  assert.deepEqual(host.daemons(), ["app.alia-box.device.bbd-1"]);
-  const plist = host.file("/Library/LaunchDaemons/app.alia-box.device.bbd-1.plist")!;
-  assert.match(plist, /<key>UserName<\/key><string>bbd-1<\/string>/);
+  assert.deepEqual(host.daemons(), ["app.alia-box.device.aliad-1"]);
+  const plist = host.file("/Library/LaunchDaemons/app.alia-box.device.aliad-1.plist")!;
+  assert.match(plist, /<key>UserName<\/key><string>aliad-1<\/string>/);
   assert.match(plist, /<key>KeepAlive<\/key><true\/>/);
   assert.match(plist, /<key>ThrottleInterval<\/key><integer>1<\/integer>/);
   assert.match(plist, /<key>ALIA_PORT_BASE<\/key><string>20000<\/string>/);
   assert.match(plist, /until \[ -f "\$d\/current\/src\/device\/alia-box-device\.sh" \] &amp;&amp; \[ -f "\$d\/devices\.json" \]; do sleep 1; done; exec \/bin\/sh "\$d\/current\/src\/device\/alia-box-device\.sh" serve/);
 
   const status = host.slot("1")!;
-  assert.deepEqual([status.is, status.user, status.uid, status.carried, status.ports, status.booted, status.loaded, status.udid], ["ready", "bbd-1", 80001, false, 20000, true, true, udid]);
+  assert.deepEqual([status.is, status.user, status.uid, status.carried, status.ports, status.booted, status.loaded, status.udid], ["ready", "aliad-1", 80001, false, 20000, true, true, udid]);
   assert.equal(host.status().values.get("counted"), "1");
 
   const second = made(host);
@@ -310,7 +310,7 @@ test("make copies a device server into the slot when asked, so a ready slot's se
   symlinkSync("server/19", join(from, "current"));
   {
     made(host, "install=inst_a\nserver=/Users/person/.alia-box/device\n");
-    const device = "/Users/bbd-1/.alia-box/device";
+    const device = "/Users/aliad-1/.alia-box/device";
     assert.equal(host.file(`${device}/server/19/src/device/alia-box-device.sh`), "#!/bin/sh\n");
     assert.equal(host.file(`${device}/devices.json`), "{}\n");
     assert.equal(host.file(`${device}/choices.json`), '{"slim":true}\n');
@@ -347,7 +347,7 @@ test("a make cut short carries on from its recorded step, and a step that fails 
   host.flag("simctl-create-fails");
   const cut = host.run(["make"], "install=inst_a\nbox=box_a\n");
   assert.equal(cut.status, 1);
-  assert.equal(cut.stderr, "Making slot 1 failed at its device step: simctl did not make a iPhone 18 Pro on com.apple.CoreSimulator.SimRuntime.iOS-27-0 for bbd-1. Run it again to carry on from there.\n");
+  assert.equal(cut.stderr, "Making slot 1 failed at its device step: simctl did not make a iPhone 18 Pro on com.apple.CoreSimulator.SimRuntime.iOS-27-0 for aliad-1. Run it again to carry on from there.\n");
   assert.deepEqual([host.slot("1")?.is, host.slot("1")?.step, host.slot("1")?.for], ["making", "device", "box_a"]);
   host.flag("simctl-create-fails", false);
   const carried = host.run(["continue", "1"]);
@@ -359,9 +359,9 @@ test("a make cut short carries on from its recorded step, and a step that fails 
   assert.equal(twice.run(["make"]).status, 1);
   const again = twice.run(["continue", "1"]);
   assert.equal(again.status, 1);
-  assert.match(again.stderr, /^Making slot 1 failed at its first-boot step 2 times, so the slot is removed: simctl did not boot bbd-1's device /);
-  assert.equal(twice.user("bbd-1"), null);
-  assert.equal(existsSync(join(twice.root, "Users/bbd-1")), false);
+  assert.match(again.stderr, /^Making slot 1 failed at its first-boot step 2 times, so the slot is removed: simctl did not boot aliad-1's device /);
+  assert.equal(twice.user("aliad-1"), null);
+  assert.equal(existsSync(join(twice.root, "Users/aliad-1")), false);
   assert.deepEqual(twice.daemons(), []);
   await swept(twice);
   assert.deepEqual(twice.status().slots, [], "removed once swept");
@@ -371,10 +371,10 @@ test("a slot's first boot writes the image's keyboard defaults on its device, sl
   const host = fakeDeviceHost();
   const slot = made(host);
   const udid = slot.get("udid")!;
-  assert.deepEqual(keyboardDefaultsWritten(host, "bbd-1", udid), SLOT_KEYBOARD_DEFAULTS);
+  assert.deepEqual(keyboardDefaultsWritten(host, "aliad-1", udid), SLOT_KEYBOARD_DEFAULTS);
   assert.ok(host.file(`${HOST}/slots/1/keyboard-defaults`) !== null, "the slot keeps that they are written");
   assert.equal(internal(host, ["write_keyboard_defaults", "1"]).status, 0);
-  assert.deepEqual(keyboardDefaultsWritten(host, "bbd-1", udid), SLOT_KEYBOARD_DEFAULTS, "a later boot does not write them again");
+  assert.deepEqual(keyboardDefaultsWritten(host, "aliad-1", udid), SLOT_KEYBOARD_DEFAULTS, "a later boot does not write them again");
 });
 
 test("a carried slot made before F-23 gets the keyboard defaults at its claim, in its shut-down device's files, or at its warm-up (F-23)", async () => {
@@ -382,18 +382,18 @@ test("a carried slot made before F-23 gets the keyboard defaults at its claim, i
   assert.equal(host.run(["carry"]).status, 0);
   for (const id of ["i1", "i2"] as const) {
     const udid = host.slot(id)!.udid;
-    assert.deepEqual(keyboardDefaultsWritten(host, `bbd-${id}`, udid), SLOT_KEYBOARD_DEFAULTS, `carried slot ${id}`);
+    assert.deepEqual(keyboardDefaultsWritten(host, `aliad-${id}`, udid), SLOT_KEYBOARD_DEFAULTS, `carried slot ${id}`);
     rmSync(join(host.root, HOST, "slots", id, "keyboard-defaults"));
-    rmSync(join(host.state, "sims", `bbd-${id}`, `.${udid}.defaults`));
+    rmSync(join(host.state, "sims", `aliad-${id}`, `.${udid}.defaults`));
   }
   const first = host.slot("i1")!;
   assert.equal(first.booted, false, "a carried slot's device is shut down until a box or a warm-up boots it");
   assert.equal(host.run(["claim", "i1"], CLAIM()).status, 0);
-  assert.deepEqual(keyboardDefaultsInFiles(host, "bbd-i1", first.udid), [...SLOT_KEYBOARD_DEFAULTS].sort(), "written in the device's own files, before its device server boots it");
-  assert.deepEqual(keyboardDefaultsWritten(host, "bbd-i1", first.udid), [], "not through the device, which is not booted");
+  assert.deepEqual(keyboardDefaultsInFiles(host, "aliad-i1", first.udid), [...SLOT_KEYBOARD_DEFAULTS].sort(), "written in the device's own files, before its device server boots it");
+  assert.deepEqual(keyboardDefaultsWritten(host, "aliad-i1", first.udid), [], "not through the device, which is not booted");
   assert.ok(host.file(`${HOST}/slots/i1/keyboard-defaults`) !== null);
-  await host.until("bbd-i2 warmed", () => host.slot("i2")?.loaded === true && host.slot("i2")?.booted === true);
-  assert.deepEqual(keyboardDefaultsWritten(host, "bbd-i2", host.slot("i2")!.udid), SLOT_KEYBOARD_DEFAULTS);
+  await host.until("aliad-i2 warmed", () => host.slot("i2")?.loaded === true && host.slot("i2")?.booted === true);
+  assert.deepEqual(keyboardDefaultsWritten(host, "aliad-i2", host.slot("i2")!.udid), SLOT_KEYBOARD_DEFAULTS);
   assert.ok(host.file(`${HOST}/slots/i2/keyboard-defaults`) !== null);
 });
 
@@ -404,14 +404,14 @@ test("carry makes the image's two slots, each seeded and first booted, then shut
   assert.equal(carry.status, 0, carry.stderr);
   const lines = carry.stdout.trim().split("\n");
   assert.equal(lines.length, 2);
-  assert.match(lines[0]!, /^carried=i1 bbd-i1 79991 [0-9A-F-]{36} user \d+\.\d,device \d+\.\d,first-boot \d+\.\d,daemons \d+\.\d$/);
-  assert.match(lines[1]!, /^carried=i2 bbd-i2 79992 /);
+  assert.match(lines[0]!, /^carried=i1 aliad-i1 79991 [0-9A-F-]{36} user \d+\.\d,device \d+\.\d,first-boot \d+\.\d,daemons \d+\.\d$/);
+  assert.match(lines[1]!, /^carried=i2 aliad-i2 79992 /);
   for (const [id, uid, ports] of [["i1", 79991, 20000], ["i2", 79992, 20100]] as const) {
     const slot = host.slot(id)!;
     assert.deepEqual([slot.is, slot.uid, slot.carried, slot.ports, slot.booted, slot.loaded], ["ready", uid, true, ports, false, false]);
-    const [device] = Object.values(host.devices(`bbd-${id}`));
+    const [device] = Object.values(host.devices(`aliad-${id}`));
     assert.equal(device?.state, "Shutdown");
-    assert.ok(host.file(`/var/db/alia-box/host/slots/${id}/daemons/app.alia-box.device.bbd-${id}.plist`));
+    assert.ok(host.file(`/var/db/alia-box/host/slots/${id}/daemons/app.alia-box.device.aliad-${id}.plist`));
   }
   assert.deepEqual(host.daemons(), [], "nothing boots in the image, and nothing holds the ports");
   assert.equal(host.run(["init"], "ahead=0\n").status, 0);
@@ -422,11 +422,11 @@ test("carry makes the image's two slots, each seeded and first booted, then shut
   assert.equal(host.run(["claim", "i2"], CLAIM("box_b")).status, 0);
   assert.equal(host.run(["release", "i1"], BOX()).stdout, "released=yes\nlast=no\n");
   assert.equal(host.run(["carry"]).status, 0);
-  assert.equal(count(host, "sysadminctl -addUser bbd-i1 "), 1, "a carried slot is made once in a host's life: its UID is never given again");
+  assert.equal(count(host, "sysadminctl -addUser aliad-i1 "), 1, "a carried slot is made once in a host's life: its UID is never given again");
   rmSync(join(host.root, HOST, "carried"));
   assert.equal(host.run(["carry"]).status, 0);
-  assert.deepEqual([host.slot("i2")?.is, count(host, "sysadminctl -addUser bbd-i2 ")], ["held", 1], "a host that kept no record of its carried slots keeps the ones it has");
-  assert.deepEqual(made(host).get("uid"), "80001", "the first slot made in a running host is bbd-1");
+  assert.deepEqual([host.slot("i2")?.is, count(host, "sysadminctl -addUser aliad-i2 ")], ["held", 1], "a host that kept no record of its carried slots keeps the ones it has");
+  assert.deepEqual(made(host).get("uid"), "80001", "the first slot made in a running host is aliad-1");
 });
 
 test("a claim lends a ready slot once, with the box's key; a carried slot loads its daemons and warms the other", async () => {
@@ -435,15 +435,15 @@ test("a claim lends a ready slot once, with the box's key; a carried slot loads 
   const claim = host.run(["claim", "i1"], CLAIM());
   assert.equal(claim.status, 0, claim.stderr);
   const lent = answer(claim.stdout);
-  assert.deepEqual(["slot", "user", "uid", "home", "ports"].map((key) => lent.get(key)), ["i1", "bbd-i1", "79991", "/Users/bbd-i1", "20000"]);
-  assert.equal(host.file("/Users/bbd-i1/.ssh/authorized_keys"), `${KEY}\n`);
-  assert.equal(statSync(join(host.root, "Users/bbd-i1/.ssh/authorized_keys")).mode & 0o777, 0o600);
-  assert.ok(host.lines("owners").includes(`79991 ${host.data}/Users/bbd-i1/.ssh/authorized_keys`));
+  assert.deepEqual(["slot", "user", "uid", "home", "ports"].map((key) => lent.get(key)), ["i1", "aliad-i1", "79991", "/Users/aliad-i1", "20000"]);
+  assert.equal(host.file("/Users/aliad-i1/.ssh/authorized_keys"), `${KEY}\n`);
+  assert.equal(statSync(join(host.root, "Users/aliad-i1/.ssh/authorized_keys")).mode & 0o777, 0o600);
+  assert.ok(host.lines("owners").includes(`79991 ${host.data}/Users/aliad-i1/.ssh/authorized_keys`));
   assert.match(host.file(`${HOST}/slots/i1/claim`)!, /^install=inst_a\nbox=box_a\nthread=thr_a\nname=ios-box\nkind=ios\ncreated=1790000000000\nclaimed=\d+\n$/);
-  assert.ok(host.daemons().includes("app.alia-box.device.bbd-i1"));
+  assert.ok(host.daemons().includes("app.alia-box.device.aliad-i1"));
   const held = host.slot("i1")!;
   assert.deepEqual([held.is, held.box], ["held", "box_a"]);
-  await host.until("bbd-i2 warmed", () => host.slot("i2")?.loaded === true && host.slot("i2")?.booted === true);
+  await host.until("aliad-i2 warmed", () => host.slot("i2")?.loaded === true && host.slot("i2")?.booted === true);
   assert.equal(count(host, "sysadminctl -addUser"), 2, "the warmed carried slot is the one kept ahead");
 
   assert.deepEqual(host.run(["claim", "i1"], CLAIM("box_b")), { status: EXIT.notReady, stdout: "", stderr: "Slot i1 is held, not ready.\n" });
@@ -481,7 +481,7 @@ test("a claim for a macos box deletes the slot's device and its server's daemon"
   made(host);
   const claim = host.run(["claim", "1"], CLAIM("box_m", "macos"));
   assert.equal(claim.status, 0, claim.stderr);
-  assert.deepEqual(host.devices("bbd-1"), {});
+  assert.deepEqual(host.devices("aliad-1"), {});
   assert.deepEqual(slotDaemons(host), []);
   assert.equal(answer(claim.stdout).get("udid"), "");
 });
@@ -494,16 +494,16 @@ test("a macos box's slot is removed at its release, never lent again, and the ne
   assert.equal(host.run(["claim", "3"], CLAIM("box_k")).status, 0, "another box keeps the host");
   assert.equal(host.run(["claim", "1"], CLAIM("box_m", "macos")).status, 0);
   assert.match(host.status().lines.find((line) => line.startsWith("claim=1\t")) ?? "", /^claim=1\tinst_a\tbox_m\tthr_a\tios-box\tmacos\t/);
-  assert.deepEqual(host.devices("bbd-1"), {});
+  assert.deepEqual(host.devices("aliad-1"), {});
   assert.deepEqual(host.run(["release", "1"], BOX("box_m")), { status: 0, stdout: "released=yes\nlast=no\n", stderr: "" });
-  assert.equal(host.user("bbd-1"), null, "its user is removed with the release");
+  assert.equal(host.user("aliad-1"), null, "its user is removed with the release");
   assert.deepEqual(host.run(["claim", "1"], CLAIM("box_i")), { status: EXIT.notReady, stdout: "", stderr: "Slot 1 is resetting, not ready.\n" }, "slot 1 is not lent again");
   const next = host.run(["claim", "2"], CLAIM("box_i"));
   assert.equal(next.status, 0, next.stderr);
   const lent = answer(next.stdout);
   assert.equal(lent.get("slot"), "2");
   assert.notEqual(lent.get("udid"), "", "the ios box's slot has its device");
-  assert.deepEqual(Object.keys(host.devices("bbd-2")), [lent.get("udid")]);
+  assert.deepEqual(Object.keys(host.devices("aliad-2")), [lent.get("udid")]);
   await swept(host);
   assert.deepEqual(host.status().slots.map((slot) => slot.id), ["2", "3"]);
 });
@@ -518,7 +518,7 @@ test("a release removes the box's user with its home, processes, daemons and cro
   host.add("processes", "503 80001 idb_companion 1");
   host.add("processes", "504 80001 containermanagerd 1");
   host.add("processes", "502 501 Terminal 1");
-  writeFileSync(join(host.root, "private/var/at/tabs/bbd-1"), "* * * * * true\n");
+  writeFileSync(join(host.root, "private/var/at/tabs/aliad-1"), "* * * * * true\n");
   for (const [path, uid] of [["/private/tmp/left-by-box", 80001], ["/Users/Shared/box-folder", 80001], ["/private/tmp/person-file", 501]] as const) {
     writeFileSync(join(host.root, path), "left\n");
     host.own(path, uid);
@@ -530,18 +530,18 @@ test("a release removes the box's user with its home, processes, daemons and cro
   assert.deepEqual(host.run(["release", "1"], BOX("box_a", "inst_b")), { status: EXIT.notOurs, stdout: "", stderr: "Another alia-box install holds slot 1.\n" });
   const release = host.run(["release", "1"], BOX());
   assert.deepEqual(release, { status: 0, stdout: "released=yes\nlast=no\n", stderr: "" });
-  assert.equal(host.user("bbd-1"), null);
-  assert.equal(existsSync(join(host.root, "Users/bbd-1")), false);
-  assert.ok(!host.members("_developer").includes("bbd-1"));
-  assert.equal(existsSync(join(host.root, "private/var/at/tabs/bbd-1")), false);
+  assert.equal(host.user("aliad-1"), null);
+  assert.equal(existsSync(join(host.root, "Users/aliad-1")), false);
+  assert.ok(!host.members("_developer").includes("aliad-1"));
+  assert.equal(existsSync(join(host.root, "private/var/at/tabs/aliad-1")), false);
   assert.deepEqual(host.lines("processes").filter((line) => line.split(" ")[1] === "80001"), [], "a process that ignores SIGTERM is killed");
   assert.ok(count(host, "pkill -KILL -u 80001") >= 2);
   const calls = host.calls();
-  const order = ["launchctl bootout system/app.alia-box.device.bbd-1", "xcrun simctl shutdown all", "pkill -TERM -u 80001 -x idb_companion", "launchctl bootout user/80001", "pkill -KILL -u 80001"].map((call) => calls.findIndex((line) => line.startsWith(call)));
+  const order = ["launchctl bootout system/app.alia-box.device.aliad-1", "xcrun simctl shutdown all", "pkill -TERM -u 80001 -x idb_companion", "launchctl bootout user/80001", "pkill -KILL -u 80001"].map((call) => calls.findIndex((line) => line.startsWith(call)));
   assert.ok(order.every((at, index) => at >= 0 && (index === 0 || at > order[index - 1]!)), `the slot is stopped gently first: its daemons, its devices, its companion, then its domain, then whatever is left (${order.join(", ")})`);
   assert.equal(count(host, "pkill -TERM -u 80001 -x containermanagerd"), 0, "its containermanagerd outlives its clients, so the system's CoreMediaIO service never queries a dead one");
   assert.ok(count(host, "launchctl bootout user/80001") >= 1);
-  assert.deepEqual(slotDaemons(host), ["app.alia-box.device.bbd-2"]);
+  assert.deepEqual(slotDaemons(host), ["app.alia-box.device.aliad-2"]);
   assert.equal(host.file(`${HOST}/deleting`), null, "another box keeps the host");
 
   await swept(host);
@@ -625,7 +625,7 @@ test("a promise given back with nothing else on the host, and vacate on a host t
   assert.deepEqual(parseHostStatus(held.status().lines.join("\n"))?.claims, [{ slot: "1", install: "inst_a", box: "box_a", thread: "thr_a", name: "ios-box", kind: "ios", created: 1790000000000 }]);
   assert.equal(held.run(["restart", "1"], BOX("box_b")).status, EXIT.notOurs);
   assert.deepEqual(held.run(["restart", "1"], BOX("box_a")), { status: 0, stdout: "restarted=1\n", stderr: "" });
-  assert.ok(held.calls().some((line) => line === "launchctl kickstart -k system/app.alia-box.device.bbd-1"), held.calls().filter((line) => line.startsWith("launchctl")).join("\n"));
+  assert.ok(held.calls().some((line) => line === "launchctl kickstart -k system/app.alia-box.device.aliad-1"), held.calls().filter((line) => line.startsWith("launchctl")).join("\n"));
 
   const empty = quiet();
   assert.equal(empty.run(["vacate"], "install=inst_a\n").stdout, "last=yes\n");
@@ -640,13 +640,13 @@ test("a release cut short carries on from its step when run again, and answers a
   host.flag("directory-down");
   const cut = host.run(["release", "1"], BOX());
   assert.equal(cut.status, 1);
-  assert.match(cut.stderr, /^Resetting slot 1 failed at its user step: The Mac's directory service did not answer, so user bbd-1 is not removed yet\. Run it again to carry on from there\.\n$/);
+  assert.match(cut.stderr, /^Resetting slot 1 failed at its user step: The Mac's directory service did not answer, so user aliad-1 is not removed yet\. Run it again to carry on from there\.\n$/);
   assert.deepEqual([host.slot("1")?.is, host.slot("1")?.step], ["resetting", "user"]);
   assert.match(host.file(`${HOST}/deleting`) ?? "", /slot=1/, "decided last before the cut");
   host.flag("directory-down", false);
   assert.deepEqual(host.run(["release", "1"], BOX("box_b")).status, EXIT.notOurs);
   assert.deepEqual(host.run(["release", "1"], BOX()), { status: 0, stdout: "released=yes\nlast=yes\n", stderr: "" });
-  assert.equal(host.user("bbd-1"), null);
+  assert.equal(host.user("aliad-1"), null);
   assert.equal(count(host, "xcrun simctl shutdown all"), 1, "the processes step, done before the cut, is not run again");
   await swept(host);
 });
@@ -689,38 +689,38 @@ test("daemon moves VesnALIA's daemon, as its installer left it with ALIA_INSTALL
   assert.equal(host.run(["claim", "1"], CLAIM()).status, 0);
   const orphan = spawnSync("/bin/sh", ["-c", "sleep 60 >/dev/null 2>&1 & echo $!"], { encoding: "utf8" });
   const installer = { pid: Number(orphan.stdout.trim()) };
-  const data = join(host.root, "Users/bbd-1/.alia-machines/alia.example.test");
+  const data = join(host.root, "Users/aliad-1/.alia-machines/alia.example.test");
   mkdirSync(data, { recursive: true });
   writeFileSync(join(data, "install-daemon.pid"), `${installer.pid}\n`);
   writeFileSync(join(data, "host-daemon-port"), "38889\n");
-  ownedByTheSlot(host, "/Users/bbd-1/.alia-machines", "alia.example.test", "alia.example.test/install-daemon.pid", "alia.example.test/host-daemon-port");
+  ownedByTheSlot(host, "/Users/aliad-1/.alia-machines", "alia.example.test", "alia.example.test/install-daemon.pid", "alia.example.test/host-daemon-port");
   host.add("processes", `${installer.pid} 80001 node 1`);
-  writeFileSync(join(host.state, "commands", String(installer.pid)), "/Users/bbd-1/.alia-machines/alia.example.test/npm/bin/alia-app host-daemon --supervise --auto-update --host-daemon-port 38889 --server-url https://bb.example.test\n");
+  writeFileSync(join(host.state, "commands", String(installer.pid)), "/Users/aliad-1/.alia-machines/alia.example.test/npm/bin/alia-app host-daemon --supervise --auto-update --host-daemon-port 38889 --server-url https://bb.example.test\n");
 
   assert.deepEqual(host.run(["daemon", "1"], BOX("box_b")).status, EXIT.notOurs);
   const daemon = host.run(["daemon", "1"], BOX());
-  assert.deepEqual(daemon, { status: 0, stdout: "daemon=app.alia-box.alia.bbd-1\nport=38889\n", stderr: "" });
+  assert.deepEqual(daemon, { status: 0, stdout: "daemon=app.alia-box.alia.aliad-1\nport=38889\n", stderr: "" });
   assert.throws(() => process.kill(installer.pid, 0), "the installer's own daemon is stopped");
-  assert.ok(host.daemons().includes("app.alia-box.alia.bbd-1"));
-  const plist = host.file("/Library/LaunchDaemons/app.alia-box.alia.bbd-1.plist")!;
-  assert.match(plist, /<key>UserName<\/key><string>bbd-1<\/string>/);
+  assert.ok(host.daemons().includes("app.alia-box.alia.aliad-1"));
+  const plist = host.file("/Library/LaunchDaemons/app.alia-box.alia.aliad-1.plist")!;
+  assert.match(plist, /<key>UserName<\/key><string>aliad-1<\/string>/);
   const args = [...plist.matchAll(/^    <string>(.*)<\/string>$/gm)].map((match) => match[1]);
-  assert.deepEqual(args, ["/Users/bbd-1/.alia-machines/alia.example.test/npm/bin/alia-app", "host-daemon", "--auto-update", "--host-daemon-port", "38889", "--server-url", "https://bb.example.test"]);
-  assert.match(plist, /<key>ALIA_DATA_DIR<\/key><string>\/Users\/bbd-1\/.alia-machines\/alia.example.test<\/string>/);
-  assert.match(plist, /<key>ALIA_APP_NPM_PREFIX<\/key><string>\/Users\/bbd-1\/.alia-machines\/alia.example.test\/npm<\/string>/);
-  assert.match(plist, /<key>StandardErrorPath<\/key><string>\/private\/var\/log\/alia-box-slots\/bbd-1.log<\/string>/);
+  assert.deepEqual(args, ["/Users/aliad-1/.alia-machines/alia.example.test/npm/bin/alia-app", "host-daemon", "--auto-update", "--host-daemon-port", "38889", "--server-url", "https://bb.example.test"]);
+  assert.match(plist, /<key>ALIA_DATA_DIR<\/key><string>\/Users\/aliad-1\/.alia-machines\/alia.example.test<\/string>/);
+  assert.match(plist, /<key>ALIA_APP_NPM_PREFIX<\/key><string>\/Users\/aliad-1\/.alia-machines\/alia.example.test\/npm<\/string>/);
+  assert.match(plist, /<key>StandardErrorPath<\/key><string>\/private\/var\/log\/alia-box-slots\/aliad-1.log<\/string>/);
 
   const bare = spawnSync("/bin/sh", ["-c", "sleep 60 >/dev/null 2>&1 & echo $!"], { encoding: "utf8" });
   const bareInstaller = Number(bare.stdout.trim());
   writeFileSync(join(data, "install-daemon.pid"), `${bareInstaller}\n`);
   host.add("processes", `${bareInstaller} 80001 node 1`);
-  writeFileSync(join(host.state, "commands", String(bareInstaller)), "node /Users/bbd-1/.alia-machines/alia.example.test/npm/bin/alia-app host-daemon --supervise --host-daemon-port 38889\n");
+  writeFileSync(join(host.state, "commands", String(bareInstaller)), "node /Users/aliad-1/.alia-machines/alia.example.test/npm/bin/alia-app host-daemon --supervise --host-daemon-port 38889\n");
   assert.equal(host.run(["daemon", "1"], BOX()).status, 0);
-  const program = [...host.file("/Library/LaunchDaemons/app.alia-box.alia.bbd-1.plist")!.matchAll(/^    <string>(.*)<\/string>$/gm)][0]![1]!;
+  const program = [...host.file("/Library/LaunchDaemons/app.alia-box.alia.aliad-1.plist")!.matchAll(/^    <string>(.*)<\/string>$/gm)][0]![1]!;
   assert.match(program, /^\/.*\/node$/, "a program VesnALIA's installer named bare, as node, is given to launchd by its path");
 
   writeFileSync(join(data, "install-daemon.pid"), "99999\n");
-  assert.match(host.run(["daemon", "1"], BOX()).stderr, /^ALIA's installer left no daemon running as bbd-1: run ALIA's command with ALIA_INSTALL_SKIP_SERVICE=1 first\.\n$/);
+  assert.match(host.run(["daemon", "1"], BOX()).stderr, /^ALIA's installer left no daemon running as aliad-1: run ALIA's command with ALIA_INSTALL_SKIP_SERVICE=1 first\.\n$/);
   assert.equal(host.run(["release", "1"], BOX()).status, 0);
   assert.deepEqual(slotDaemons(host), [], "a release unloads VesnALIA's daemon too");
   await swept(host);
@@ -738,7 +738,7 @@ test("resume carries on every slot whose step was cut short, and the sweep queue
   host.flag("directory-down", false);
   assert.match(host.run(["resume"]).stdout, /^resumed=\d+\n$/);
   await host.until("both carried on", () => host.slot("2")?.is === "ready" && host.slot("1") === undefined);
-  assert.equal(host.user("bbd-1"), null);
+  assert.equal(host.user("aliad-1"), null);
 });
 
 test("status gives each slot's load, and a second booted device is shut down after 10 minutes, with words", () => {
@@ -749,21 +749,21 @@ test("status gives each slot's load, and a second booted device is shut down aft
   const line = host.status().lines.find((each) => each.startsWith("slot=1\t"))!.split("\t");
   assert.deepEqual([line[14], line[15]], ["2.50", "2000"], "cores and MiB of resident memory");
 
-  const env = { ...process.env, FAKE_MAC_STATE: host.state, FAKE_MAC_ROOT: host.root, FAKE_AS: "bbd-1", PATH: `${join(host.root, "../bin")}:/usr/bin:/bin` };
+  const env = { ...process.env, FAKE_MAC_STATE: host.state, FAKE_MAC_ROOT: host.root, FAKE_AS: "aliad-1", PATH: `${join(host.root, "../bin")}:/usr/bin:/bin` };
   const second = spawn(join(host.root, "../bin/xcrun"), ["simctl", "create", "iPhone 17", "x", RUNTIME], { env });
   return new Promise((resolve) => second.on("exit", resolve)).then(async () => {
-    const extra = Object.entries(host.devices("bbd-1")).find(([, device]) => device.name === "iPhone 17")![0];
+    const extra = Object.entries(host.devices("aliad-1")).find(([, device]) => device.name === "iPhone 17")![0];
     await new Promise((resolve) => spawn(join(host.root, "../bin/xcrun"), ["simctl", "boot", extra], { env }).on("exit", resolve));
     host.clock(1_800_000_000);
     assert.equal(host.run(["bound"]).status, 0);
     assert.match(host.status().lines.find((each) => each.startsWith("devices=")) ?? "", /^devices=1\t2\t1800000000$/);
     host.clock(1_800_000_000 + 599);
     host.run(["bound"]);
-    assert.equal(host.devices("bbd-1")[extra]?.state, "Booted", "left for a test that needs two");
+    assert.equal(host.devices("aliad-1")[extra]?.state, "Booted", "left for a test that needs two");
     host.clock(1_800_000_000 + 600);
     host.run(["bound"]);
-    assert.equal(host.devices("bbd-1")[extra]?.state, "Shutdown");
-    assert.equal(Object.values(host.devices("bbd-1")).find((device) => device.name === "iPhone 18 Pro")?.state, "Booted", "the slot's own device stays");
+    assert.equal(host.devices("aliad-1")[extra]?.state, "Shutdown");
+    assert.equal(Object.values(host.devices("aliad-1")).find((device) => device.name === "iPhone 18 Pro")?.state, "Booted", "the slot's own device stays");
     assert.match(host.status().lines.find((each) => each.startsWith("device_words=")) ?? "", new RegExp(`^device_words=1\\tA second device, ${extra}, was booted in slot 1 for 10 minutes, so it was shut down at \\d\\d:\\d\\d\\.$`));
   });
 });
@@ -882,16 +882,16 @@ test("a slot's VesnALIA daemon is taken over by the host's helper, as root, for 
 test("resume, at a new boot, clears the VesnALIA daemon's lock a hard stop left in each slot, and leaves a running daemon's alone", () => {
   const host = quiet();
   made(host);
-  const data = join(host.root, "Users/bbd-1/.alia-machines/alia.example.test");
+  const data = join(host.root, "Users/aliad-1/.alia-machines/alia.example.test");
   mkdirSync(join(data, "daemon.lock.lock"), { recursive: true });
   writeFileSync(join(data, "install-daemon.pid"), "4242\n");
   writeFileSync(join(data, "host-daemon-port"), "38889\n");
-  ownedByTheSlot(host, "/Users/bbd-1/.alia-machines", "alia.example.test");
+  ownedByTheSlot(host, "/Users/aliad-1/.alia-machines", "alia.example.test");
   writeFileSync(join(host.state, "boot"), "BOOT-2\n");
   assert.equal(host.run(["resume"]).status, 0);
   assert.equal(existsSync(join(data, "daemon.lock.lock")), false);
   assert.equal(existsSync(join(data, "install-daemon.pid")), false);
-  assert.equal(host.file("/Users/bbd-1/.alia-machines/alia.example.test/host-daemon-port"), "38889\n");
+  assert.equal(host.file("/Users/aliad-1/.alia-machines/alia.example.test/host-daemon-port"), "38889\n");
   mkdirSync(join(data, "daemon.lock.lock"));
   assert.equal(host.run(["resume"]).status, 0);
   assert.equal(existsSync(join(data, "daemon.lock.lock")), true, "the same boot: the daemon running now holds it");
@@ -926,19 +926,19 @@ test("daemon keeps VesnALIA's launchd log in a folder of root's, the file the sl
   const callsBefore = host.calls().length;
   const daemon = host.run(["daemon", "1"], BOX());
   assert.equal(daemon.status, 0, daemon.stderr);
-  assert.deepEqual(readdirSync(daemons).sort(), [...before, "app.alia-box.alia.bbd-1.plist"].sort(), "only the helper's own LaunchDaemon is added");
+  assert.deepEqual(readdirSync(daemons).sort(), [...before, "app.alia-box.alia.aliad-1.plist"].sort(), "only the helper's own LaunchDaemon is added");
   assert.ok(!host.lines("owners").some((line) => line.endsWith("/Library/LaunchDaemons")), "the LaunchDaemons folder is never given to the slot's user");
-  assert.deepEqual(host.calls().slice(callsBefore).filter((line) => line.startsWith("chown") && line.includes("/Users/bbd-1")), [], "root changes nothing in the user's home");
+  assert.deepEqual(host.calls().slice(callsBefore).filter((line) => line.startsWith("chown") && line.includes("/Users/aliad-1")), [], "root changes nothing in the user's home");
   assert.ok(lstatSync(join(data, "logs")).isSymbolicLink());
 
-  const log = "/private/var/log/alia-box-slots/bbd-1.log";
+  const log = "/private/var/log/alia-box-slots/aliad-1.log";
   assert.equal(host.file(log), "");
   assert.equal(statSync(join(host.root, log)).mode & 0o777, 0o644);
   assert.ok(host.lines("owners").includes(`0 ${host.data}/private/var/log/alia-box-slots`), "a folder of root's, where the user can neither add nor swap a file");
   assert.ok(host.lines("owners").includes(`80001 ${host.data}${log}`), "the file the user's, as launchd opens it as the job's user");
-  const plist = host.file("/Library/LaunchDaemons/app.alia-box.alia.bbd-1.plist")!;
+  const plist = host.file("/Library/LaunchDaemons/app.alia-box.alia.aliad-1.plist")!;
   for (const key of ["StandardOutPath", "StandardErrorPath"]) assert.match(plist, new RegExp(`<key>${key}</key><string>${log}</string>`));
-  assert.ok(host.calls().some((line) => line.startsWith("sudo -n -H -u bbd-1 -- kill -TERM ")), "the installer's daemon is stopped as its own user");
+  assert.ok(host.calls().some((line) => line.startsWith("sudo -n -H -u aliad-1 -- kill -TERM ")), "the installer's daemon is stopped as its own user");
 
   assert.equal(host.run(["release", "1"], BOX()).status, 0);
   assert.equal(host.file(log), null, "a release removes the log");
@@ -948,26 +948,26 @@ test("daemon keeps VesnALIA's launchd log in a folder of root's, the file the sl
 test("daemon reads nothing through a link, or a file the slot user does not own, in the user's VesnALIA data", () => {
   const cases: [string, (data: string, host: FakeDeviceHost) => void, RegExp][] = [
     ["a linked .alia-machines", (_data, host) => {
-      const machines = join(host.root, "Users/bbd-1/.alia-machines");
+      const machines = join(host.root, "Users/aliad-1/.alia-machines");
       spawnSync("mv", [machines, join(host.root, "private/var/elsewhere")]);
       symlinkSync(join(host.root, "private/var/elsewhere"), machines);
-    }, /^ALIA's installer left no daemon running as bbd-1/],
+    }, /^ALIA's installer left no daemon running as aliad-1/],
     ["a linked data folder", (data, host) => {
       spawnSync("mv", [data, `${data}.real`]);
       symlinkSync(`${data}.real`, data);
-      host.own("/Users/bbd-1/.alia-machines/alia.example.test.real", 80001);
-    }, /^ALIA's installer left no daemon running as bbd-1/],
+      host.own("/Users/aliad-1/.alia-machines/alia.example.test.real", 80001);
+    }, /^ALIA's installer left no daemon running as aliad-1/],
     ["a linked pid file", (data) => {
       writeFileSync(join(data, "pid.real"), readFileSync(join(data, "install-daemon.pid")));
       rmSync(join(data, "install-daemon.pid"));
       symlinkSync(join(data, "pid.real"), join(data, "install-daemon.pid"));
-    }, /^ALIA's installer left no daemon running as bbd-1/],
-    ["a pid file of root's, as a hard link to it would be", (_data, host) => host.own("/Users/bbd-1/.alia-machines/alia.example.test/install-daemon.pid", 0), /^ALIA's installer left no daemon running as bbd-1/],
+    }, /^ALIA's installer left no daemon running as aliad-1/],
+    ["a pid file of root's, as a hard link to it would be", (_data, host) => host.own("/Users/aliad-1/.alia-machines/alia.example.test/install-daemon.pid", 0), /^ALIA's installer left no daemon running as aliad-1/],
     ["a linked port file", (data) => {
       writeFileSync(join(data, "port.real"), "38889\n");
       rmSync(join(data, "host-daemon-port"));
       symlinkSync(join(data, "port.real"), join(data, "host-daemon-port"));
-    }, /^ALIA's installer left no daemon port in \/Users\/bbd-1\/.alia-machines\/alia.example.test\.\n$/],
+    }, /^ALIA's installer left no daemon port in \/Users\/aliad-1\/.alia-machines\/alia.example.test\.\n$/],
   ];
   for (const [what, plant, words] of cases) {
     const host = quiet();
@@ -979,7 +979,7 @@ test("daemon reads nothing through a link, or a file the slot user does not own,
     assert.equal(daemon.status, 1, what);
     assert.match(daemon.stderr, words, what);
     assert.ok(alive(pid), `${what}: nothing is stopped`);
-    assert.ok(!host.daemons().includes("app.alia-box.alia.bbd-1"), what);
+    assert.ok(!host.daemons().includes("app.alia-box.alia.aliad-1"), what);
     process.kill(pid);
   }
 });
@@ -991,16 +991,16 @@ test("resume at a new boot follows no link in a slot user's VesnALIA data, and c
   const outside = join(host.root, "private/var/root-things");
   mkdirSync(join(outside, "daemon.lock.lock"), { recursive: true });
   writeFileSync(join(outside, "install-daemon.pid"), "1\n");
-  const machines = join(host.root, "Users/bbd-1/.alia-machines");
+  const machines = join(host.root, "Users/aliad-1/.alia-machines");
   mkdirSync(join(machines, "real/daemon.lock.lock"), { recursive: true });
   mkdirSync(join(machines, "roots/daemon.lock.lock"), { recursive: true });
-  ownedByTheSlot(host, "/Users/bbd-1/.alia-machines", "real");
+  ownedByTheSlot(host, "/Users/aliad-1/.alia-machines", "real");
   symlinkSync(outside, join(machines, "linked"));
-  symlinkSync(outside, join(host.root, "Users/bbd-2/.alia-machines"));
+  symlinkSync(outside, join(host.root, "Users/aliad-2/.alia-machines"));
   writeFileSync(join(host.state, "boot"), "BOOT-2\n");
   assert.equal(host.run(["resume"]).status, 0);
   assert.equal(existsSync(join(machines, "real/daemon.lock.lock")), false, "the user's own lock is cleared");
-  assert.ok(host.calls().some((line) => line.startsWith(`sudo -n -H -u bbd-1 -- rm -rf ${machines}/real/daemon.lock.lock`)), "as the user");
+  assert.ok(host.calls().some((line) => line.startsWith(`sudo -n -H -u aliad-1 -- rm -rf ${machines}/real/daemon.lock.lock`)), "as the user");
   assert.ok(existsSync(join(outside, "daemon.lock.lock")) && existsSync(join(outside, "install-daemon.pid")), "a linked data folder and a linked .alia-machines are left");
   assert.ok(existsSync(join(machines, "roots/daemon.lock.lock")), "a folder the user does not own is left");
 });
@@ -1012,7 +1012,7 @@ test("the sweep removes a hand-written sweep file named \"80001 0\" by its whole
   host.add("processes", "700 0 rootd 1");
   host.add("ipc", "m 9 root");
   const sweep = join(host.root, HOST, "sweep");
-  writeFileSync(join(sweep, "80001 0"), "slot=1\nuser=bbd-1\nuid=80001\nsince=1\n");
+  writeFileSync(join(sweep, "80001 0"), "slot=1\nuser=aliad-1\nuid=80001\nsince=1\n");
   symlinkSync(join(host.root, "private/tmp/roots-file"), join(sweep, "80002"));
   const reset = host.run(["reset"]);
   assert.equal(reset.status, 0, reset.stderr);
@@ -1026,7 +1026,7 @@ test("the sweep removes a hand-written sweep file named \"80001 0\" by its whole
   assert.deepEqual(acting, [], "no find, kill, log-out or IPC removal ran");
 
   const resumed = quiet();
-  writeFileSync(join(resumed.root, HOST, "sweep", "80001 0"), "slot=1\nuser=bbd-1\nuid=80001\nsince=1\n");
+  writeFileSync(join(resumed.root, HOST, "sweep", "80001 0"), "slot=1\nuser=aliad-1\nuid=80001\nsince=1\n");
   assert.equal(resumed.run(["resume"]).status, 0);
   await resumed.until("resume's sweep removed it", () => readdirSync(join(resumed.root, HOST, "sweep")).length === 0);
   assert.equal(resumed.calls().filter((line) => line.startsWith("find ")).length, 0);
@@ -1034,7 +1034,7 @@ test("the sweep removes a hand-written sweep file named \"80001 0\" by its whole
 
 test("the sweep's steps each refuse a UID outside the slots' before they act", () => {
   const host = quiet();
-  for (const line of ["m 5 bbd-1", "m 6 80001", "q 1 person", "m 7 root"]) host.add("ipc", line);
+  for (const line of ["m 5 aliad-1", "m 6 80001", "q 1 person", "m 7 root"]) host.add("ipc", line);
   host.add("processes", "700 0 rootd 1");
   const refused = [["sweep_pass", host.data, "0"], ["sweep_pass", host.data, "80001", "0"], ["sweep_pass", host.data, "80001 0"], ["sweep_pass", host.data], ["log_out_again", "0"], ["log_out_again", "501"], ["log_out_again", "80001 0"], ["remove_ipc", "0"], ["remove_ipc", "80001 0"], ["remove_ipc", "root"]];
   for (const args of refused) assert.equal(internal(host, args).status, 1, args.join(" "));
@@ -1050,10 +1050,10 @@ test("the sweep refuses a file whose slot or user is not its UID's, and removes 
   made(host);
   host.add("ipc", "m 7 root");
   const sweep = join(host.root, HOST, "sweep");
-  writeFileSync(join(sweep, "80002"), "slot=1\nuser=bbd-1\nuid=80002\nsince=1\n");
-  writeFileSync(join(sweep, "80003"), "slot=../../..\nuser=bbd-3\nuid=80003\nsince=1\n");
+  writeFileSync(join(sweep, "80002"), "slot=1\nuser=aliad-1\nuid=80002\nsince=1\n");
+  writeFileSync(join(sweep, "80003"), "slot=../../..\nuser=aliad-3\nuid=80003\nsince=1\n");
   writeFileSync(join(sweep, "80004"), "slot=4\nuser=root\nuid=80004\nsince=1\n");
-  writeFileSync(join(sweep, "79991"), "slot=\nuser=bbd-i1\nuid=79991\nsince=1\n");
+  writeFileSync(join(sweep, "79991"), "slot=\nuser=aliad-i1\nuid=79991\nsince=1\n");
   const reset = host.run(["reset"]);
   assert.equal(reset.status, 0, reset.stderr);
   assert.deepEqual(reset.stdout.split("\n").filter((line) => line.startsWith("refused=")).map((line) => line.split(":")[0]).sort(), ["refused=79991", "refused=80002", "refused=80003", "refused=80004"]);
@@ -1074,7 +1074,7 @@ test("a release cut between its state and its claim's move carries on, from rele
   spawnSync("mv", [join(slot1, "claim"), join(slot1, "released")]);
   assert.equal(stranded.run(["release", "1"], BOX("box_b")).status, EXIT.notOurs, "the released file still names its box");
   assert.deepEqual(stranded.run(["release", "1"], BOX()), { status: 0, stdout: "released=yes\nlast=no\n", stderr: "" }, "a held slot with its claim moved, as the old order left it, is released");
-  assert.equal(stranded.user("bbd-1"), null);
+  assert.equal(stranded.user("aliad-1"), null);
 
   const cut = quiet();
   made(cut);
@@ -1112,7 +1112,7 @@ test("a claim whose slot's warm-up outlasts its wait gives the slot back as read
     assert.deepEqual(claim, { status: 1, stdout: "", stderr: "Slot 1's warm-up did not end within 1 s; ask again.\n" });
     assert.deepEqual([host.slot("1")?.is, host.slot("1")?.box], ["ready", ""]);
     assert.equal(host.file(`${HOST}/slots/1/claim`), null);
-    assert.equal(host.file("/Users/bbd-1/.ssh/authorized_keys"), null, "nothing of the box's was written");
+    assert.equal(host.file("/Users/aliad-1/.ssh/authorized_keys"), null, "nothing of the box's was written");
   } finally {
     process.kill(-holder.pid!);
   }
@@ -1132,7 +1132,7 @@ test("a lend that fails removes the slot instead of offering it again, for a mac
     assert.equal(claim.status, 1, kind);
     assert.match(claim.stderr, /^Could not lend slot 1, so it is removed: /, kind);
     host.flag("simctl-fails", false);
-    assert.equal(host.user("bbd-1"), null, `${kind}: its user is removed`);
+    assert.equal(host.user("aliad-1"), null, `${kind}: its user is removed`);
     assert.notEqual(host.slot("1")?.is, "ready", kind);
     assert.ok([EXIT.lost, EXIT.notReady].includes(host.run(["claim", "1"], CLAIM("box_n")).status as never), `${kind}: never lent again`);
     await swept(host);
@@ -1149,14 +1149,14 @@ test("the seed refuses a store that is a link or another user's folder, and seed
   symlinkSync(target, join(linked.root, store));
   const refused = linked.run(["make"]);
   assert.equal(refused.status, 1);
-  assert.equal(refused.stderr, `Making slot 1 failed at its device step: ${store} is not a folder of root's or bbd-1's, so the slot's device is not seeded. Run it again to carry on from there.\n`);
+  assert.equal(refused.stderr, `Making slot 1 failed at its device step: ${store} is not a folder of root's or aliad-1's, so the slot's device is not seeded. Run it again to carry on from there.\n`);
   assert.deepEqual(readdirSync(target), [], "nothing copied through the link");
   assert.ok(!linked.lines("owners").some((line) => line.includes("LaunchDaemons")), "nothing given away through it");
 
   const others = fakeDeviceHost();
   mkdirSync(join(others.root, store));
   others.own(store, 501);
-  assert.match(others.run(["make"]).stderr, /is not a folder of root's or bbd-1's/);
+  assert.match(others.run(["make"]).stderr, /is not a folder of root's or aliad-1's/);
   assert.equal(others.file(`${store}/disabled.plist`), null);
 
   const roots = fakeDeviceHost();
@@ -1173,7 +1173,7 @@ test("make refuses once the host has given every slot UID, with words to let it 
   const host = quiet();
   writeFileSync(join(host.root, HOST, "generation"), "9998\n");
   const last = made(host);
-  assert.deepEqual([last.get("slot"), last.get("user"), last.get("uid")], ["9999", "bbd-9999", "89999"]);
+  assert.deepEqual([last.get("slot"), last.get("user"), last.get("uid")], ["9999", "aliad-9999", "89999"]);
   const words = "This host has given all its 9999 slot UIDs, so it makes no new slot: let its boxes go, then set it up again.\n";
   assert.deepEqual(host.run(["make"]), { status: EXIT.full, stdout: "", stderr: words });
   assert.deepEqual(host.run(["promise"], BOX("box_p")), { status: EXIT.full, stdout: "", stderr: words });
@@ -1212,10 +1212,10 @@ test("a claim that tops up the host lends the slot it claimed, and a release tha
   made(host);
   const claim = host.run(["claim", "1"], CLAIM());
   assert.equal(claim.status, 0, claim.stderr);
-  assert.deepEqual([answer(claim.stdout).get("slot"), answer(claim.stdout).get("user")], ["1", "bbd-1"]);
-  assert.equal(host.file("/Users/bbd-1/.ssh/authorized_keys"), `${KEY}\n`);
+  assert.deepEqual([answer(claim.stdout).get("slot"), answer(claim.stdout).get("user")], ["1", "aliad-1"]);
+  assert.equal(host.file("/Users/aliad-1/.ssh/authorized_keys"), `${KEY}\n`);
   await host.until("slot 2 made ahead", () => host.slot("2")?.is === "ready");
-  assert.equal(existsSync(join(host.root, "Users/bbd-2/.ssh")), false, "the slot made ahead got no key");
+  assert.equal(existsSync(join(host.root, "Users/aliad-2/.ssh")), false, "the slot made ahead got no key");
   assert.equal(host.slot("1")?.box, "box_a");
 
   const releasing = quiet();
@@ -1225,7 +1225,7 @@ test("a claim that tops up the host lends the slot it claimed, and a release tha
   assert.equal(releasing.run(["claim", "2"], CLAIM("box_b")).status, 0);
   setSetting(releasing, "ahead", "1");
   assert.deepEqual(releasing.run(["release", "1"], BOX()), { status: 0, stdout: "released=yes\nlast=no\n", stderr: "" });
-  assert.equal(releasing.user("bbd-1"), null, "the released slot's user is removed by the release itself");
+  assert.equal(releasing.user("aliad-1"), null, "the released slot's user is removed by the release itself");
   await releasing.until("slot 3 made ahead", () => releasing.slot("3")?.is === "ready");
   await swept(releasing);
 });

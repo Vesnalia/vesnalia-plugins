@@ -12,10 +12,10 @@ use Time::HiRes qw(time sleep clock_gettime CLOCK_MONOTONIC);
 use constant VERSION => '0.4.4';
 use constant PROTOCOL => 1;
 use constant TESTED_PVE_CONTAINER => ('6.1.14');
-use constant REPORT_VM_NAME => 'bb-box-gpu-memory';
-use constant CONFIG_FILE => '/etc/bb-box/gpu.conf';
-use constant STATE_DIR => '/var/lib/bb-box-gpu';
-use constant HELPER_LOCK => '/run/bb-box-gpu.lock';
+use constant REPORT_VM_NAME => 'alia-box-gpu-memory';
+use constant CONFIG_FILE => '/etc/alia-box/gpu.conf';
+use constant STATE_DIR => '/var/lib/alia-box-gpu';
+use constant HELPER_LOCK => '/run/alia-box-gpu.lock';
 use constant REPORT_BUDGET => 8000;
 use constant ANSWERS_KEPT_SECONDS => 600;
 use constant ANSWERS_KEPT_MOST => 300;
@@ -41,7 +41,7 @@ use constant DEVICE_MODE => '0666';
 my $UUID = qr/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
 my $MARKER = qr/^gpu\.(?:(none|release)|(shared|whole)\.($UUID))\.g([1-9][0-9]{0,8})$/;
 my $SMI_FIELDS = 'uuid,pci.bus_id,index,memory.free,memory.total';
-my $ROOT = $ENV{BBBOX_GPU_ROOT} // '';
+my $ROOT = $ENV{ALIABOX_GPU_ROOT} // '';
 my $stopping = 0;
 my $dry_run_fixed = 0;
 my $previewing = 0;
@@ -85,16 +85,16 @@ sub note_once {
 
 sub usage {
     print <<"USAGE";
-bb-box-gpu @{[VERSION]}, protocol @{[PROTOCOL]}: the host's GPU helper for bb-box.
+alia-box-gpu @{[VERSION]}, protocol @{[PROTOCOL]}: the host's GPU helper for alia-box.
 
-  bb-box-gpu          run as a service: scan every second, answer markers,
-                      start, stop and delete the guests bb-box asks it to,
+  alia-box-gpu          run as a service: scan every second, answer markers,
+                      start, stop and delete the guests alia-box asks it to,
                       write the report in the notes of VM @{[REPORT_VM_NAME]},
                       on its first pass and whenever it has something new
-  bb-box-gpu --once   one pass, with one reading of the cards, then exit
-  bb-box-gpu --boot   the boot pass: put each claimed guest's device lines
+  alia-box-gpu --once   one pass, with one reading of the cards, then exit
+  alia-box-gpu --boot   the boot pass: put each claimed guest's device lines
                       right from its claim, before guests start
-  bb-box-gpu --preview
+  alia-box-gpu --preview
                       one pass as writes on would make it, changing nothing:
                       no guest, ledger or report is written and no guest's
                       config is locked; it prints each write writes on would
@@ -448,15 +448,15 @@ sub labels_from {
     my ($description, $tags) = @_;
     my %labels = (install => undef, box => undef, kind => undef, held => 0, earlier => 0, described_box => undef, held_described => 0);
     my %tag = map { $_ => 1 } @$tags;
-    if ($description =~ /^bb-box install (\S+) box (\S+) held copy of snapshot /) {
+    if ($description =~ /^alia-box install (\S+) box (\S+) held copy of snapshot /) {
         $labels{install} = $1;
         $labels{held} = 1;
         $labels{held_described} = 1;
-    } elsif ($description =~ /^bb-box /) {
+    } elsif ($description =~ /^alia-box /) {
         $labels{install} = $1 if $description =~ /^install (\S+)$/m;
         $labels{box} = $1 if $description =~ /^box (\S+)$/m;
         $labels{kind} = $1 if $description =~ /^kind (\S+)$/m;
-        $labels{kind} //= "warm-$1" if $description =~ /^bb-box warm (\S+)$/m;
+        $labels{kind} //= "warm-$1" if $description =~ /^alia-box warm (\S+)$/m;
         $labels{earlier} = 1 if $description =~ /^earlier guest$/m;
     }
     $labels{described_box} = $labels{box};
@@ -475,9 +475,9 @@ sub labels_from {
 
 sub parse_power {
     my ($tags) = @_;
-    my @asked = grep { /^bb-power\./i } @$tags;
+    my @asked = grep { /^alia-power\./i } @$tags;
     return undef unless @asked;
-    return { malformed => join(' ', @asked) } unless @asked == 1 && $asked[0] =~ /^bb-power\.(start|stop|shutdown|delete)\.([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)\.g(\d+)\.n([0-9a-f]{8,32})$/;
+    return { malformed => join(' ', @asked) } unless @asked == 1 && $asked[0] =~ /^alia-power\.(start|stop|shutdown|delete)\.([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)\.g(\d+)\.n([0-9a-f]{8,32})$/;
     return { action => $1, install => $2, box => $3 eq '-' ? undef : $3, generation => $4 + 0, nonce => $5 };
 }
 
@@ -493,7 +493,7 @@ sub ineligibility {
     return 'template' if $guest->{template};
     return 'privileged' unless $guest->{unprivileged};
     return 'not-served' unless defined $guest->{pool} && $served->{ $guest->{pool} };
-    return 'not-bb-box' unless defined $guest->{install};
+    return 'not-alia-box' unless defined $guest->{install};
     return '';
 }
 
@@ -1275,7 +1275,7 @@ sub power_identity {
     my $description = $guest->{conf}{description} // '';
     my @installs = map { /^install\.(.+)$/ ? $1 : () } split_list($guest->{conf}{tags});
     my $install = $guest->{install} // (@installs == 1 ? $installs[0] : undef);
-    my $warm = $description =~ /^bb-box warm \S+$/m && $description =~ /^warm ([0-9a-f]+)$/m ? $1 : undef;
+    my $warm = $description =~ /^alia-box warm \S+$/m && $description =~ /^warm ([0-9a-f]+)$/m ? $1 : undef;
     my $who = defined $guest->{box} ? ($guest->{box} =~ s{^[^/]*/}{}r) : defined $warm ? "warm-$warm" : '';
     return { install => $install, who => $who };
 }
@@ -1308,7 +1308,7 @@ sub decide_power {
     my $request = $guest->{power} or return;
     my $vmid = $guest->{vmid};
     if ($request->{malformed}) {
-        note_once("power malformed $vmid $request->{malformed}", "CT $vmid: its power request $request->{malformed} is not one bb-box writes, so it is not acted on");
+        note_once("power malformed $vmid $request->{malformed}", "CT $vmid: its power request $request->{malformed} is not one alia-box writes, so it is not acted on");
         return;
     }
     my $done = $ctx->{ledger}{power}{$vmid};
@@ -1322,7 +1322,7 @@ sub decide_power {
         return ['refused', 'not-served'] if ($fresh->{ineligible} // '') eq 'not-served';
         return ['refused', 'template'] if $fresh->{template} && $action ne 'delete';
         my $identity = power_identity($fresh);
-        return ['refused', 'not-bb-box'] unless defined $identity->{install};
+        return ['refused', 'not-alia-box'] unless defined $identity->{install};
         return ['refused', 'not-the-box', "$identity->{install}/" . (length $identity->{who} ? $identity->{who} : '-')]
             unless $identity->{install} eq $request->{install} && $identity->{who} eq ($request->{box} // '');
         my $generation = $fresh->{marker} ? $fresh->{marker}{generation} : 0;
@@ -1668,7 +1668,7 @@ sub report_lines {
     my @required;
     push @required, 'at ' . int($ctx->{cards_known} ? $ctx->{reading_at} : $ctx->{now});
     push @required, smi_reading_lines($ctx);
-    push @required, join(' ', 'helper bb-box-gpu', VERSION, 'protocol', PROTOCOL, 'writes', $ctx->{writes} ? 'on' : 'off',
+    push @required, join(' ', 'helper alia-box-gpu', VERSION, 'protocol', PROTOCOL, 'writes', $ctx->{writes} ? 'on' : 'off',
         'pve-container', $ctx->{pve_container}, pve_container_tested($ctx->{pve_container}) ? 'tested' : 'untested');
     push @required, serves_line($ctx->{config}{pools});
     push @required, "driver $state->{driver}{version} since $state->{driver}{since}" if $state->{driver};
@@ -1736,7 +1736,7 @@ sub report_text {
 sub budgeted_report_text {
     my ($ctx, $guests) = @_;
     my ($required, $groups) = report_lines($ctx, $guests);
-    my $head = "bb-box: each GPU's memory and its claims, from bb-box-gpu on this host. Do not edit.\n";
+    my $head = "alia-box: each GPU's memory and its claims, from alia-box-gpu on this host. Do not edit.\n";
     my @body = @$required;
     my $used = length($head) + 1;
     $used += length("    $_\n") for @body;
@@ -1865,7 +1865,7 @@ sub with_helper_lock {
 
 sub named_as_its_box {
     my ($guest) = @_;
-    my $name = ($guest->{conf}{description} // '') =~ /^bb-box (\S+)$/m ? $1 : undef;
+    my $name = ($guest->{conf}{description} // '') =~ /^alia-box (\S+)$/m ? $1 : undef;
     return defined $name && ($guest->{conf}{hostname} // '') eq $name ? 1 : 0;
 }
 
@@ -2241,7 +2241,7 @@ sub print_preview {
     my ($ctx, $status) = @_;
     my @writes = @{ $ctx->{previewed_writes} // [] };
     my @answers = map { answer_line($_) } @{ $ctx->{previewed_answers} // [] };
-    print "preview: bb-box-gpu " . VERSION . " on pve-container $ctx->{pve_container}, as its first pass with writes on would go; nothing was written\n";
+    print "preview: alia-box-gpu " . VERSION . " on pve-container $ctx->{pve_container}, as its first pass with writes on would go; nothing was written\n";
     print "$_\n" for @writes;
     print "would answer: $_\n" for @answers;
     print "would leave running, on lines that do not name its claim's card: $_\n" for sort @{ $ctx->{mismatches} };
@@ -2275,7 +2275,7 @@ sub run_service {
     my $ctx = new_context();
     $ctx->{report_on_start} = 1;
     my $started_version = $ctx->{pve_container};
-    note("bb-box-gpu " . VERSION . ", protocol " . PROTOCOL . ", on pve-container $started_version" . ($dry_run_fixed ? ', with writes off whatever the settings say (--dry-run)' : ''));
+    note("alia-box-gpu " . VERSION . ", protocol " . PROTOCOL . ", on pve-container $started_version" . ($dry_run_fixed ? ', with writes off whatever the settings say (--dry-run)' : ''));
     local $SIG{TERM} = sub { $stopping = 1 };
     local $SIG{INT} = sub { $stopping = 1 };
     local $SIG{PIPE} = 'IGNORE';
@@ -2350,8 +2350,8 @@ sub main {
         elsif ($arg eq '--preview') { $mode = 'preview'; $previewing = 1 }
         elsif ($arg eq '--dry-run') { $dry_run_fixed = 1 }
         elsif ($arg eq '--help' || $arg eq '-h') { usage(); return 0 }
-        elsif ($arg eq '--version') { print "bb-box-gpu " . VERSION . " protocol " . PROTOCOL . "\n"; return 0 }
-        else { print STDERR "bb-box-gpu: cannot read '$arg'\n"; usage(); return 2 }
+        elsif ($arg eq '--version') { print "alia-box-gpu " . VERSION . " protocol " . PROTOCOL . "\n"; return 0 }
+        else { print STDERR "alia-box-gpu: cannot read '$arg'\n"; usage(); return 2 }
     }
     STDERR->autoflush(1);
     STDOUT->autoflush(1);

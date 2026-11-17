@@ -14,7 +14,7 @@ describe("isCheckError", () => {
   it.each([
     // runInstallCommand, which runs every git and npm command VesnALIA's check does
     "git ls-remote failed (exit 128): fatal: unable to access 'https://github.com/a/b.git/': Failed to connect to github.com port 443 after 75002 ms: Operation timed out",
-    "git ls-remote failed (exit 128): fatal: '/tmp/bbiso.Ec6SZc/fixtures/does-not-exist-fa' does not appear to be a git repository\nfatal: Could not read from remote repository.",
+    "git ls-remote failed (exit 128): fatal: '/tmp/aliaiso.Ec6SZc/fixtures/does-not-exist-fa' does not appear to be a git repository\nfatal: Could not read from remote repository.",
     "git clone failed (exit 128): fatal: unable to access 'https://github.com/a/b.git/': Could not resolve host: github.com",
     "git -C failed (exit signal)",
     "git ls-remote timed out after 300000ms",

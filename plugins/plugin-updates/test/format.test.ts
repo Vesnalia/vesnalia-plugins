@@ -6,7 +6,7 @@ const update = (id: string): CheckEntry => ({
   id,
   outcome: "update-available",
   installed: { version: "aaa", label: "1", display: `${id}@v1 (aaa)` },
-  candidate: { version: "bbb", label: "2", display: `${id}@v2 (bbb)` },
+  candidate: { version: "aliab", label: "2", display: `${id}@v2 (aliab)` },
 });
 
 const current = (id: string): CheckEntry => ({
@@ -59,7 +59,7 @@ describe("formatReport", () => {
     });
 
     expect(formatReport(report, 0)).toContain(
-      `Compatible updates:\n  a  a@v1 (aaa) → a@v2 (bbb)  (stale: last confirmed ${new Date(0).toLocaleString()})\n`,
+      `Compatible updates:\n  a  a@v1 (aaa) → a@v2 (aliab)  (stale: last confirmed ${new Date(0).toLocaleString()})\n`,
     );
   });
 

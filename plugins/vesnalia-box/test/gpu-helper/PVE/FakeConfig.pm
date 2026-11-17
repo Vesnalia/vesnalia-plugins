@@ -9,7 +9,7 @@ use Time::HiRes qw(time sleep);
 
 my %held;
 
-sub root { return $ENV{BBBOX_GPU_ROOT} // die "fake pve: BBBOX_GPU_ROOT is not set\n" }
+sub root { return $ENV{ALIABOX_GPU_ROOT} // die "fake pve: ALIABOX_GPU_ROOT is not set\n" }
 
 sub node { return $ENV{FAKE_PVE_NODE} // 'pve' }
 

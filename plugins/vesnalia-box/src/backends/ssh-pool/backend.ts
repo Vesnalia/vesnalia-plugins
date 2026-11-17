@@ -2,7 +2,7 @@
 // already has, reached over SSH, one box per machine. alia-box logs in as its
 // admin user on each machine and runs only its helper as root through sudo:
 // setup/ssh-pool/machine.sh, or machine-mac.sh on a Mac. The helper claims
-// the machine for a box by making a new user for it, bbx-<generation>, whose
+// the machine for a box by making a new user for it, aliax-<generation>, whose
 // SSH the box's commands use, and releases it by removing that user and
 // everything the user left. The reset generation counts completed resets: a
 // claim names the generation it expects, so a machine is never lent twice
@@ -89,7 +89,7 @@ import { PRODUCT } from "../../brand.ts";
 
 const SSH_KEY = "ssh-key";
 const RECORD = "machine/";
-const USER_PREFIX = "bbx-";
+const USER_PREFIX = "aliax-";
 /** The architecture each OS's offers promise, so every machine of it must have. */
 const ARCH: Readonly<Record<SshPoolMachine["os"], Arch>> = { linux: "x86_64", macos: "arm64" };
 /** The pool's single entry in capacity. */
@@ -1263,10 +1263,10 @@ export class SshPoolBackend implements Backend {
       else fail(ARCH_CHECK, `${name} is ${status.arch || "of unknown architecture"}, but its kinds promise ${arch}.`, `Take ${name} out of the machines list: every machine that serves a kind must be ${arch}.`);
       const { missing, enrolment } = status;
       const node = enrolment?.node ?? null;
-      const forBB = enrolment ? [...(node === null ? ["node"] : []), ...enrolment.lacks.filter((tool) => tool === "npm")] : [];
+      const forALIA = enrolment ? [...(node === null ? ["node"] : []), ...enrolment.lacks.filter((tool) => tool === "npm")] : [];
       const forGit = enrolment ? enrolment.lacks.filter((tool) => tool !== "npm") : [];
       const oldNode = node !== null && !nodeFits(node);
-      const lacks = [...missing, ...forBB, ...forGit];
+      const lacks = [...missing, ...forALIA, ...forGit];
       const found = [
         ...(lacks.length ? [`${name} lacks ${lacks.join(", ")}.`] : []),
         ...(oldNode ? [`${name} has Node.js ${node}, but VesnALIA's installer needs 22.19 or newer.`] : []),
@@ -1276,10 +1276,10 @@ export class SshPoolBackend implements Backend {
         ...(missing.length
           ? [mac ? `Install ${missing.join(", ")}, or run ${setupWords(machine)} again.` : `Install ${missing.join(", ")}. curl-or-wget means either. Boxes need sh, tar and curl or wget to enrol in VesnALIA.`]
           : []),
-        ...(forBB.length || oldNode ? [nodeFix] : []),
+        ...(forALIA.length || oldNode ? [nodeFix] : []),
         ...(forGit.length ? [gitFix] : []),
       ];
-      if (missing.length || forBB.length || oldNode) fail(TOOLS, found, `On ${name}: ${fixes.join(" ")}`);
+      if (missing.length || forALIA.length || oldNode) fail(TOOLS, found, `On ${name}: ${fixes.join(" ")}`);
       else if (forGit.length) warn(TOOLS, `${found} Boxes there enrol in VesnALIA, but cannot use the thread's GitHub access, which git takes through gh.`, `On ${name}: ${gitFix}`);
       else if (!enrolment) {
         warn(TOOLS, `The helper does not say whether ${name} has Node.js, npm, git and gh, which enrolment and the thread's GitHub access need.`, `Run this ${PRODUCT}'s ${setup}.`);

@@ -197,7 +197,7 @@ test("a failed build, or a failed check, keeps the image and removes what the re
   assert.match(timedSteps.reason!, /answered in 6\.0 s \(clone 0\.4 s, ssh 5\.6 s\) and 6\.0 s \(clone 0\.4 s, ssh 5\.6 s\), of the old in 1\.0 s \(clone 0\.4 s, ssh 0\.6 s\) and 1\.0 s \(clone 0\.4 s, ssh 0\.6 s\)\./);
 
   const app = await refresh(fake({ app: "b".repeat(64) }));
-  assert.match(app.reason!, /ALIA's app: The box has ALIA's app bbbbbbbbbbbb, the record aaaaaaaaaaaa, the server aaaaaaaaaaaa\./);
+  assert.match(app.reason!, /ALIA's app: The box has ALIA's app aliabbbbbbbbbb, the record aaaaaaaaaaaa, the server aaaaaaaaaaaa\./);
 
   const older = await refresh(fake({ captured: record("build.x", { node: "24.21.0", "claude-code": "2.1.280" }) }));
   assert.match(older.reason!, /no tool older: claude-code 2\.1\.280 is older than 2\.1\.283\./);
@@ -211,8 +211,8 @@ test("a refresh on a backend whose standard images come from a build script, as 
     build: async (current, setup, { log }) => {
       made.events.push(`build from ${current.ref}`);
       staged.push(setup);
-      log("built bbbox/linux:refresh-x");
-      return { ref: "bbbox/linux:refresh-x", image: "standard", kind: current.kind, build: "build.20261003-021500-3f9c", record: record("build.20261003-021500-3f9c", { node: "24.21.0", "claude-code": "2.1.288" }), current: false };
+      log("built aliabox/linux:refresh-x");
+      return { ref: "aliabox/linux:refresh-x", image: "standard", kind: current.kind, build: "build.20261003-021500-3f9c", record: record("build.20261003-021500-3f9c", { node: "24.21.0", "claude-code": "2.1.288" }), current: false };
     },
     check: () => "echo 'node ok   v24.21.0'",
   };
@@ -222,11 +222,11 @@ test("a refresh on a backend whose standard images come from a build script, as 
     "build from 9100",
     "box 7000 from 9100: answer time of build.20260926-060000-a1b2",
     "remove 7000",
-    "box 7001 from bbbox/linux:refresh-x: trial of build.20261003-021500-3f9c",
+    "box 7001 from aliabox/linux:refresh-x: trial of build.20261003-021500-3f9c",
     "run 7001 echo 'node ok   v24.21.0'",
     "run 7001 app",
     "remove 7001",
-    "replace 9100 with bbbox/linux:refresh-x",
+    "replace 9100 with aliabox/linux:refresh-x",
   ]);
   assert.match(staged[0]!, /alia-box-refresh-.*\/setup$/, "a staged copy of setup/");
   assert.equal(result.checks[1]!.name, "the kind's check");
@@ -242,15 +242,15 @@ test("a refresh writes its build's output to the build's own file, and gives the
       log("#14 [linux 4/9] RUN apt-get update");
       for (let i = 0; i < 50; i++) log(`#14 ${i}.1 Get:${i} https://snapshot.ubuntu.com/ubuntu resolute/main amd64 package-${i}`);
       log("#14 DONE 98.1s");
-      log("built bbbox/linux:refresh-x");
-      return { ref: "bbbox/linux:refresh-x", image: "standard", kind: current.kind, build: "build.20261003-021500-3f9c", record: record("build.20261003-021500-3f9c", { node: "24.21.0", "claude-code": "2.1.288" }), current: false };
+      log("built aliabox/linux:refresh-x");
+      return { ref: "aliabox/linux:refresh-x", image: "standard", kind: current.kind, build: "build.20261003-021500-3f9c", record: record("build.20261003-021500-3f9c", { node: "24.21.0", "claude-code": "2.1.288" }), current: false };
     },
     check: () => "echo 'node ok   v24.21.0'",
   };
   const result = await refreshImage({ images, current: CURRENT, setup: SETUP, aliaUrl: "https://bb.example.com", aliaApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now, log: (line) => void lines.push(line), buildLogDir: dir });
   assert.equal(result.ok, true, result.reason ?? "");
   assert.deepEqual(lines.filter((line) => /Get:|DONE/.test(line)), [], "no build output in the plugin's log");
-  assert.ok(lines.includes("#14 [linux 4/9] RUN apt-get update") && lines.includes("built bbbox/linux:refresh-x"), "its steps are");
+  assert.ok(lines.includes("#14 [linux 4/9] RUN apt-get update") && lines.includes("built aliabox/linux:refresh-x"), "its steps are");
   const [file] = readdirSync(dir);
   assert.equal(readFileSync(join(dir, file!), "utf8").split("\n").filter((line) => line.includes("Get:")).length, 50, "the file has the whole output");
 });

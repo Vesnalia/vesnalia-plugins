@@ -140,7 +140,7 @@ const formId = "sample-new-box";
       const type = chosen("type").value === "desktop" ? `${system} desktop` : `${system} server`;
       const provider = chosen("provider").value;
       const where = provider === "first" ? "wherever it fits" : `on ${provider}`;
-      note.textContent = `In BB, this makes a ${sizeWords[chosen("size").value]} ${type} ${where}.`;
+      note.textContent = `In ALIA, this makes a ${sizeWords[chosen("size").value]} ${type} ${where}.`;
     });
     fit();
     showWhatIsHidden();

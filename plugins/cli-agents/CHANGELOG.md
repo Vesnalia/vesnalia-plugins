@@ -6,7 +6,7 @@
 
 - Keep agent selection out of the message text and remove leftover duplicate Agent labels in mobile drafts.
 - Restore the picker when switching from an unsupported CLI to a supported CLI, and keep it hidden for unsupported providers.
-- Remove the BB 0.44 and Plugin SDK 0.5 upper version bounds; retain the existing minimum versions.
+- Remove the VesnALIA 0.44 and Plugin SDK 0.5 upper version bounds; retain the existing minimum versions.
 
 - Show the Agent picker in “Handoff to new thread”: the panel is a thread composer, not new-thread. Detect the mode from the form (en+ru labels; no public SDK flag). Resolve projectId from the source thread. Keep follow-up chats on the ThreadAgent label only.
 - Observe the handoff draft separately from the New thread draft. Bind the chosen agent to the created thread, not the source chat.
@@ -19,9 +19,9 @@
 ## 0.2.3
 
 - Resolve the CLI from the provider chip of the composer the picker is mounted in, so the list always matches the CLI shown in that chat.
-- Stop reading BB's shared localStorage copy of the remembered selection; another window or chat can no longer leak its CLI into this picker.
+- Stop reading VesnALIA's shared localStorage copy of the remembered selection; another window or chat can no longer leak its CLI into this picker.
 - Reload the agent list in place when the machine or CLI changes instead of closing the popover.
-- Star agents to keep them at the top of the list; stars are stored per CLI on the BB server and shared across windows and machines.
+- Star agents to keep them at the top of the list; stars are stored per CLI on the VesnALIA server and shared across windows and machines.
 - Show the resolved CLI next to the picker heading.
 
 ## 0.2.2
@@ -39,8 +39,8 @@
 ## 0.2.0
 
 - Add Codex Profile picker for file-based profiles (Codex 0.134+).
-- Apply developer_instructions through BB with explicit 4096-character limit.
-- Keep BB model and permission controls; reject configuration-only and oversized profiles instead of silently ignoring instructions.
+- Apply developer_instructions through VesnALIA with explicit 4096-character limit.
+- Keep VesnALIA model and permission controls; reject configuration-only and oversized profiles instead of silently ignoring instructions.
 - Document that native app-server does not accept --profile and full profile configuration is not applied.
 
 ## 0.1.0

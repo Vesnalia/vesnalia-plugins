@@ -487,7 +487,7 @@ def last_prompt(sid):
 
 
 def tag_in_title(title):
-    return bool(re.match(r"\[bb:[0-9a-f]{6}\]", title or ""))
+    return bool(re.match(r"\[alia:[0-9a-f]{6}\]", title or ""))
 
 
 def verify_open(sid, s, rows=None):
@@ -500,12 +500,12 @@ def verify_open(sid, s, rows=None):
 
 
 def task_tag(sid):
-    m = re.match(r"\[bb:([0-9a-f]{6})\]", first_user_text(sid))
-    return "[bb:%s]" % m.group(1) if m else None
+    m = re.match(r"\[alia:([0-9a-f]{6})\]", first_user_text(sid))
+    return "[alia:%s]" % m.group(1) if m else None
 
 
 def open_task(sid):
-    """Select the task in the sidebar and prove it is the right one. A task `send` started carries a unique [bb:xxxxxx] tag at the start
+    """Select the task in the sidebar and prove it is the right one. A task `send` started carries a unique [alia:xxxxxx] tag at the start
     of its first prompt and so of its title: it is looked up by the tag (tasks started by hand or by older versions: by title, proved
     with ZCode's own 'Copy session ID')."""
     s = session_row(sid); tag = task_tag(sid) if tag_in_title(s["title"]) else None
@@ -775,7 +775,7 @@ def slots_live():
     keep = []
     for e in es:
         age = time.time() - e.get("at", 0)
-        if e.get("owner_pid") and not pid_alive(e["owner_pid"]): continue   # its zcode-acp is gone (BB side failed or stopped): the slot is free
+        if e.get("owner_pid") and not pid_alive(e["owner_pid"]): continue   # its zcode-acp is gone (ALIA side failed or stopped): the slot is free
         if e.get("task_id"):
             try: live = task_state(e["task_id"])["state"] not in DONE
             except BridgeError: live = False
@@ -1485,7 +1485,7 @@ def parse_model_list(d):
 def do_models(a):
     """The models this ZCode offers on this machine, read from its own screens (Settings > Model settings for the list and the
     enabled switches, the New task composer for ZCode's current default). Cached in ~/.zcode-bridge/models.json; the cache is
-    what zcode-acp shows in BB. Reading it takes the window lock for a few seconds and changes nothing."""
+    what zcode-acp shows in ALIA. Reading it takes the window lock for a few seconds and changes nothing."""
     if a.cached:
         try: return dict(ok=True, **json.load(open(MODELS_FILE)))
         except Exception: raise BridgeError("no_cache", "no models cache yet; run `zcbridge models`")
@@ -1695,7 +1695,7 @@ def main(argv=None):
     p = add("send", do_send, help="new task: project folder, model, effort, mode"); sendargs(p)
     p.add_argument("--folder", help="project folder (omit = work outside a project)"); p.add_argument("--model", default="flash"); p.add_argument("--effort", choices=list(EFFORT))
     p.add_argument("--mode", choices=list(MODES), help="ask|plan|auto|full (default: config default_mode, else ask)"); p.add_argument("--allow-autonomous", action="store_true"); p.add_argument("--allow-full", action="store_true")
-    p.add_argument("--no-tag", action="store_true", help="do not prefix the prompt with [bb:xxxxxx], the tag that makes the task findable in the sidebar")
+    p.add_argument("--no-tag", action="store_true", help="do not prefix the prompt with [alia:xxxxxx], the tag that makes the task findable in the sidebar")
     p.add_argument("--no-create-project", action="store_true", help="fail with project_missing instead of registering an unknown folder as a ZCode project")
     p.add_argument("--route", default=os.environ.get("ZCODE_ROUTE") or "keep", choices=["keep", "auto", "plan", "promo"], help="which plan pays: keep (default, ZCode's current choice), plan, promo (Start Plan), auto (promo for Flash when Ready)")
     p = add("continue", do_continue, help="follow-up turn in an existing task"); sendargs(p); p.add_argument("task"); p.add_argument("--force", action="store_true")

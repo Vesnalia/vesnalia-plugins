@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { chromium } from "playwright";
 
 const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
-const cli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "bbc.sh");
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "aliadata");
+const cli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "aliac.sh");
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const [what] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });

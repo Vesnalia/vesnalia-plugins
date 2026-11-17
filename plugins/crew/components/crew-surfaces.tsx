@@ -7,7 +7,7 @@
 //   analogous to Graph Studio's `::graph-run`.
 // - ConfirmInteraction: `slots.pendingInteraction` renderer "crew-confirm"
 //   for team changes that need the human (removing a member, full).
-// - CrewPanelHeader: the thread side panel's chrome (BBP-79) — crew picker,
+// - CrewPanelHeader: the thread side panel's chrome (ALIAP-79) — crew picker,
 //   Apply / Stop / Edit / + New, and the CLI hint — drawn like Graph
 //   Studio's Library card so the two side panels read as one family.
 import { useCallback, useEffect, useState } from "react";
@@ -151,7 +151,7 @@ export function CrewDirectiveCard({ attributes, message }: Pick<PluginMessageDir
           variant="outline"
           className="h-7"
           onClick={() => {
-            // BBP-49: the sidebar first, as Graph Studio's ::graph-run does; a surface
+            // ALIAP-49: the sidebar first, as Graph Studio's ::graph-run does; a surface
             // without a thread side panel (the panel view itself) falls back to the nav panel.
             const opened = navigate.openThreadPanel({ actionId: "crew", title: `Crew ${crew.name}`, params: { crew: crew.name, projectId } });
             if (!opened) navigate.toPluginPanel("crews");
@@ -216,7 +216,7 @@ export function CopyCommand({ command, className }: { command: string; className
   );
 }
 
-/** The thread side panel's chrome (BBP-79, BBP-70 req 1): crew picker, Apply / Stop / Edit / + New, CLI hint. */
+/** The thread side panel's chrome (ALIAP-79, ALIAP-70 req 1): crew picker, Apply / Stop / Edit / + New, CLI hint. */
 export function CrewPanelHeader({
   crews,
   crew,

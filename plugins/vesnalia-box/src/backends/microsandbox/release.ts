@@ -50,15 +50,15 @@ export const BUILDER_NAME = /^alia-box-builder-[a-z0-9]{1,32}$/;
 export const OOM_SCORE_ADJ = 500;
 
 /** A box's Docker disk's name: its microVM's. */
-export const DISK_NAME = /^bbbox-[A-Za-z0-9_.-]{1,80}$/;
+export const DISK_NAME = /^aliabox-[A-Za-z0-9_.-]{1,80}$/;
 
 export const MSB_SNAPSHOT_ID = /^snap_[0-9a-f]{32}$/;
 
 export const KEEP_DATE = /^([0-9]{4}-[0-9]{2}-[0-9]{2}|none)$/;
 
-/** Sets `dir` to alia-box's msb folder: BBBOX_MSB_DIR, or MSB_DEFAULT_DIR. */
+/** Sets `dir` to alia-box's msb folder: ALIABOX_MSB_DIR, or MSB_DEFAULT_DIR. */
 const PRELUDE = `set -eu
-dir=\${BBBOX_MSB_DIR:-${MSB_DEFAULT_DIR}}
+dir=\${ALIABOX_MSB_DIR:-${MSB_DEFAULT_DIR}}
 version=${MSB_VERSION}
 msb=$dir/bin/msb
 `;
@@ -122,8 +122,8 @@ if [ ! -x "$dir/$version/msb" ] || ! "$dir/$version/msb" --version >/dev/null 2>
   mv "$work/$version" "$dir/$version"
 fi
 mkdir -p "$dir/bin" "$dir/home"
-cat >"$dir/bin/msb.new" <<'BBBOX_WRAPPER'
-${wrapper()}BBBOX_WRAPPER
+cat >"$dir/bin/msb.new" <<'ALIABOX_WRAPPER'
+${wrapper()}ALIABOX_WRAPPER
 chmod 755 "$dir/bin/msb.new"
 mv "$dir/bin/msb.new" "$dir/bin/msb"
 echo "installed=$version"
@@ -228,7 +228,7 @@ fi
 n=0
 if [ "$(uname -s)" = Linux ]; then
   for proc in /proc/[0-9]*; do
-    tr '\\0' ' ' <"$proc/cmdline" 2>/dev/null | grep -Eq ' machine .*(-n|--name)[ =]bbbox-' || continue
+    tr '\\0' ' ' <"$proc/cmdline" 2>/dev/null | grep -Eq ' machine .*(-n|--name)[ =]aliabox-' || continue
     adj=$(cat "$proc/oom_score_adj" 2>/dev/null) || continue
     [ "$adj" -lt ${OOM_SCORE_ADJ} ] 2>/dev/null || continue
     echo ${OOM_SCORE_ADJ} >"$proc/oom_score_adj" 2>/dev/null && n=$((n + 1))
@@ -293,6 +293,6 @@ export function scriptValues(stdout: string): Record<string, string> {
 
 /** `sh -c` of script `name` with `args`, for a command line on VesnALIA's server or over ssh://. */
 export function scriptCommand(name: MsbScript, args: readonly string[], dir?: string): string {
-  const env = dir ? `BBBOX_MSB_DIR=${quote(dir)} ` : "";
+  const env = dir ? `ALIABOX_MSB_DIR=${quote(dir)} ` : "";
   return `${env}sh -c ${quote(msbScript(name))} alia-box-msb ${args.map(quote).join(" ")}`.trimEnd();
 }

@@ -287,7 +287,7 @@ QEMU one with the production token, their own VMIDs and addresses, and a
 Linux template each; its install ID keeps production's guests and these
 apart. Its log on the first start: "Opened snapshots.db, attached to
 alia-box's database: ran 4 migrations." `alia box doctor`: "[ok] Snapshots: The
-token may take, delete and restore snapshots on /pool/bbbox. local-lvm
+token may take, delete and restore snapshots on /pool/aliabox. local-lvm
 (LVM-thin) restores any snapshot." and "[ok] Snapshots' records: ...
 snapshots.db, attached to alia-box's database: 0 snapshots, 0 operations not
 settled, 40 KB used."
@@ -561,7 +561,7 @@ re-reviews](#after-the-re-reviews) say what each changed.
   wait %n` before it starts. When the boot could not tell, these wait while
   `settle` keeps looking (below); otherwise they go on at once.
 - **Docker's image** has no systemd. `alia-box-start` runs `alia-box-identity
-  boot --value "$BBBOX_IDENTITY"` before it starts anything; if that fails,
+  boot --value "$ALIABOX_IDENTITY"` before it starts anything; if that fails,
   it exits, starts nothing and never writes `/run/alia-box/ready`.
 - **What the marker records**, by backend and kind (`identitySource` in
   `src/backends/types.ts`):
@@ -570,8 +570,8 @@ re-reviews](#after-the-re-reviews) say what each changed.
   | --- | --- | --- |
   | Proxmox LXC, `linux` | `eth` | the MAC addresses of the interfaces named `ethN`, as `netN` makes them |
   | Proxmox QEMU, `linux` | `device` | the MAC addresses of the interfaces with a device under `/sys/class/net/<name>/device` |
-  | Docker, `linux` | `value` | `BBBOX_IDENTITY`, which alia-box sets on each guest when it makes it: the box's ID |
-  | The other Linux kinds, Tart, microsandbox, Hetzner, Namespace, boat.dev | none until checked | microsandbox, Hetzner and Namespace boxes get `BBBOX_IDENTITY`, unused |
+  | Docker, `linux` | `value` | `ALIABOX_IDENTITY`, which alia-box sets on each guest when it makes it: the box's ID |
+  | The other Linux kinds, Tart, microsandbox, Hetzner, Namespace, boat.dev | none until checked | microsandbox, Hetzner and Namespace boxes get `ALIABOX_IDENTITY`, unused |
   | macOS, Windows, iOS, the SSH host pool | none | |
 
   alia-box writes markers only on the backends in
@@ -734,7 +734,7 @@ be undone on its own.
 1. **Merge.** No box gets a marker: `general.identityResetBackends` is
    empty, so alia-box writes none, and an unarmed box never resets. alia-box
    checks for a reset only in a box it armed, so nothing else changes
-   either. Docker boxes made from then on carry `BBBOX_IDENTITY`, unused
+   either. Docker boxes made from then on carry `ALIABOX_IDENTITY`, unused
    until their backend is turned on. As for any change to
    `setup/proxmox-lxc/template` or `setup/docker`, Hetzner's host images,
    Namespace's Linux images and boat.dev's template are built again by
@@ -1225,7 +1225,7 @@ The lead deleted the snapshot and destroyed the clones.
   box starts, not before its network, which Docker makes first. A
   `docker commit` made by hand keeps the variable in its image's settings,
   so a container run from it by hand would not reset; unit 12's commits
-  must clear it (`--change "ENV BBBOX_IDENTITY="`).
+  must clear it (`--change "ENV ALIABOX_IDENTITY="`).
 - **boat.dev, Tart** write no marker in this unit. boat: whether its stop and start keep
   a MAC address is not measured (its files are another worker's, and its
   boxes are paid). Unit 11 settles its source.
@@ -3291,7 +3291,7 @@ writing a counter each second, from `launchctl submit`, showed memory.
 | Take, running | 11 s as alia-box timed it, 12.0 s for the command: suspend, copy, resume. "it holds its disk and memory ... Size: 89 GB, some shared with its box. Price: no charge." The counter process, PID 983, ran on |
 | Restore | 13 s: stop (suspend) 4.0, undo 0.2, rollback (the copy put back) 0.2, start (resume) 7.8, access 0.1 s. `work.txt` back to "before"; PID 983 running, its counter back at 110, as at the take, from 128; the host ID file the same |
 | Undo | 14 s: stop 3.9, undo 0.2, rollback 0.2, start 9.4, access 0.1 s. `work.txt` "after"; PID 983 at 131, from where the restore suspended it |
-| Fork | the source suspended first (4.9 s), then forked as one of the person's machines: ready in 15 s, 16.2 s for the command, after core's check before ready. In the fork: booted 00:36:55, reset at 00:37:00, the console login at 00:37, `raced=no`; the host ID file and the VesnALIA LaunchAgent gone; a new SSH host key (`97b91907...` for `d0413a31...`), a new hardware UUID (`BBBB2925-...` for `C3396674-...`); its marker names its own MAC address and no box; named gate-fork; `work.txt` "before"; no counter process; an access file of its own (another SHA-256) |
+| Fork | the source suspended first (4.9 s), then forked as one of the person's machines: ready in 15 s, 16.2 s for the command, after core's check before ready. In the fork: booted 00:36:55, reset at 00:37:00, the console login at 00:37, `raced=no`; the host ID file and the VesnALIA LaunchAgent gone; a new SSH host key (`97b91907...` for `d0413a31...`), a new hardware UUID (`ALIABB2925-...` for `C3396674-...`); its marker names its own MAC address and no box; named gate-fork; `work.txt` "before"; no counter process; an access file of its own (another SHA-256) |
 | The source after its fork | started (resumed) in 7.1 s: the same host ID file, LaunchAgent, hardware UUID and SSH host key, PID 983 still running, `boot=unarmed`, `marker=matches` |
 | Keep | 1.0 s, the date on the snapshot's label. `--check`: "If gate-mac is released, it stays where it is until 2026-12-01." Release 1.9 s: the two undos deleted with the box, the kept one listed "kept until 2026-11-02 · its box was released" |
 | Fork of the kept snapshot after the release | ready in 16 s, one of the person's machines: `boot=reset`, `raced=no`, a new hardware UUID, no host ID file, `work.txt` "before" |
@@ -3445,20 +3445,20 @@ Linux box with nested KVM (8 cores, 16 GiB), by
   `snapshot`, `deleteSnapshot`, `heldSnapshots`, `snapshotsOn`,
   `providerTask`, `labelKept`, `powerOff`, `adoptSnapshot`, `forkSnapshot`,
   `armFork`, `disarmFork`, `guestIdentity` and `identitySource` (`value`).
-  Each box's snapshots are the group `bbbox-<box ID>`, named
+  Each box's snapshots are the group `aliabox-<box ID>`, named
   `<install>-<snapshot ID>-r<reset version>`, with labels for the box, the
   snapshot and its size. A keep date is a file in `msb`'s folder's `kept`,
   written by a new host script, `keep`; another, `snapshots`, gives each
   snapshot's size and keep date.
-- **The restore** restores into `bbbox-<box ID>-<token>`, at the box's size,
+- **The restore** restores into `aliabox-<box ID>-<token>`, at the box's size,
   or the captured size for memory, with the box's network profiles, then
-  sets its labels, environment (`BBBOX_IDENTITY`, `BBBOX_HOSTNAME`) and disk
+  sets its labels, environment (`ALIABOX_IDENTITY`, `ALIABOX_HOSTNAME`) and disk
   size with `msb modify` before anything of the box runs there. Core's
   new-guest restore from unit 11 does the rest: the stop, the undo of the
   stopped box, the swap, the access file first, the old microVM deleted once
   the new one has started.
 - **Each start** mounts `/run` in memory again when it is not, and sets the
-  box's hostname from `BBBOX_HOSTNAME`.
+  box's hostname from `ALIABOX_HOSTNAME`.
 - **The fork** restores the snapshot's disk only (`--disk-only` for a
   memory snapshot) under the fork's own name, labels and identity value; a
   part-made sandbox of that name with no alia-box labels is removed first.
@@ -3506,7 +3506,7 @@ ports, started with `env -i` and `ALIA_BOX_LIVE_CHECKS=1`
 ([live-setup.sh](070-snapshots/unit-10/live-setup.sh)), in the same QEMU
 box, alia-box installed from this branch with `alia plugin install path:`, and a
 microsandbox backend on VesnALIA's server, the box itself, with
-`bbbox/linux:1` built from this branch by `setup/docker/build.sh linux` and
+`aliabox/linux:1` built from this branch by `setup/docker/build.sh linux` and
 `general.identityResetBackends=microsandbox`, then the steps of
 [live-gates.sh](070-snapshots/unit-10/live-gates.sh), run one at a time. No
 credentials were needed.
@@ -3632,7 +3632,7 @@ restore and no Keep. Forks and Keep wait for unit 11b, as the lead decided
   `adoptSnapshot` deploys it into a staging sandbox named
   `alia-box:restoring:<box>:<token>`, waits until it runs, stops it (boat's
   stop takes its last capture), forks it with the box's labels and a token
-  of its own (`bbbox-guest`), and deletes the staging sandbox. The staging
+  of its own (`aliabox-guest`), and deletes the staging sandbox. The staging
   sandbox is on the claimed guest's record from the moment it exists, so a
   release or a recovery deletes it, and only one with that name and no
   labels. A restored guest's reference carries the token, so it never
@@ -3889,7 +3889,7 @@ alia-box's pinned SSH.
   `BOX_IDENTITY_MACHINE=provider` (`buildEnvFor`), and the template's
   fingerprint covers those settings, so a change to them rebuilds it.
   Desktop and Android templates keep it off.
-- **Every sandbox alia-box makes for a box carries `BBBOX_IDENTITY`**, the
+- **Every sandbox alia-box makes for a box carries `ALIABOX_IDENTITY`**, the
   box's ID: the fork from the template, a restore's deployed sandbox and
   its copy, and a fork's two, with the fork's own ID. A resume passes
   none, so boat.dev keeps it. `identitySource` is `value` for `linux`.
@@ -4050,7 +4050,7 @@ the fixes add.
 | Finding | Fix | Test |
 | --- | --- | --- |
 | Astra 1, Opus 4: a slow start wiped a good box's identity after 30 s | only a value that differs is a copy; a value not there yet holds the box as unknown, removing nothing, while SSH, Tailscale and VesnALIA's daemon wait, and `settle` reads the file again every 2 s; alia-box's start waits, and fails after 5 minutes with why | "version 8, boat: a value missing from the file never counts the box as a copy ..." |
-| Opus 4: a box that reset with no marker stayed unarmed, and the words named interfaces | the unarm names `BBBOX_IDENTITY`; at the box's next start alia-box writes the marker again, on a value-source backend that is armed, only after a reset (`boot=reset`, marker missing), never for a box unarmed by hand or a Proxmox box | "version 8, boat: a box that reset with no value ..."; "Opus 4: a value-source box that a reset left with no marker ..." |
+| Opus 4: a box that reset with no marker stayed unarmed, and the words named interfaces | the unarm names `ALIABOX_IDENTITY`; at the box's next start alia-box writes the marker again, on a value-source backend that is armed, only after a reset (`boot=reset`, marker missing), never for a box unarmed by hand or a Proxmox box | "version 8, boat: a box that reset with no value ..."; "Opus 4: a value-source box that a reset left with no marker ..." |
 | Astra 2, Opus 5: a fork joined the tailnet and let the box user in before core's check | a boat fork starts only as far as its identity check (`startForForkCheck`), as boat.dev's `user`, and refuses a boot of `unarmed` or `off`; core reads the check through `forkCheckCommand`, as that user; the box user's SSH, settle and the tailnet join run only at `armFork("boot")`, after the check; the access file comes after | "Astra 2 and Opus 5: a fork starts only as far as its identity check ..." (boat) and "... core checks it through the backend's own check command ..." (core) |
 | Opus 3: with a plain `enable`, `wait` held VesnALIA's daemon when no check had run | `wait` holds on no result only with a value file, so Proxmox's `wait` is version 7's | "version 8 on Proxmox: with a plain enable, wait goes on at once ..." |
 | Opus 1: removing the backend left saved snapshots costing | a save that removes a backend whose snapshots live on its provider lists the provider's snapshots of this install first, kept or not, and refuses, naming them and how to delete them, or refuses if it cannot list them; only such a save asks the provider; the boat guide's "Turn it off" says so | "Opus 1: a backend whose snapshots live on its provider cannot be removed ..." |
@@ -4167,7 +4167,7 @@ and fell back to the box's size.
   with `msb` 0.7.7. The version guard stays as it was: every change reads
   `msb --version` first.
 - **A snapshot is named by its group and member** (`groupMember`,
-  `bbbox-<box ID>:<name>`) in `snapshot inspect`, `restore`, which forks
+  `aliabox-<box ID>:<name>`) in `snapshot inspect`, `restore`, which forks
   use too, and `remove`, and when a new head is chosen. alia-box's own files
   (keep dates, sizes) stay keyed by the ID.
 - **Docs**: the snapshots guide and the microsandbox guide say Linux hosts

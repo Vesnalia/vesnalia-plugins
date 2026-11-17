@@ -10,11 +10,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - While a session is open, the **Screen Sharing** entry in the sidebar carries a **LIVE** badge again,
-  with the number of open sessions in its tooltip. bb 0.46 had stopped drawing it.
+  with the number of open sessions in its tooltip. VesnALIA 0.46 had stopped drawing it.
 
 ### Changed
 
-- **Needs bb 0.47 or newer.** On an older bb this version is not offered as an update, and Screen
+- **Needs VesnALIA 0.47 or newer.** On an older VesnALIA this version is not offered as an update, and Screen
   Sharing 0.4.1 keeps working there.
 
 ## 0.4.1
@@ -32,12 +32,12 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   your clipboard on the Mac; *Receive clipboard* puts the Mac's clipboard text on yours; *Auto sync
   clipboard* does both whenever either side's clipboard changes, and is remembered on that computer
   for the next connection. Text only, in any language, up to 1 MB. It reaches the clipboard of the
-  macOS account bb runs as on that Mac, so sign in to Screen Sharing as that account; signed in as
+  macOS account VesnALIA runs as on that Mac, so sign in to Screen Sharing as that account; signed in as
   another one, the menu says why it is off.
 
 ### Changed
 
-- Needs bb 0.46 or later.
+- Needs VesnALIA 0.46 or later.
 
 ## 0.3.0
 
@@ -48,34 +48,34 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- A bb window still showing an earlier version of the Screen Sharing page is asked to reload bb
+- A VesnALIA window still showing an earlier version of the Screen Sharing page is asked to reload VesnALIA
   before it connects, so every session can tell when its connection is lost.
 
 ### Fixed
 
-- A session whose connection to bb is gone now ends, and the page says so, within a few seconds.
-  Before, restarting bb (or losing the network) could leave the page showing a session that was
-  already over, still marked as connected; Connect starts a new one once bb is back. A session to
-  another Mac that disappears (its bb restarted, its network lost) also ends within seconds while
+- A session whose connection to VesnALIA is gone now ends, and the page says so, within a few seconds.
+  Before, restarting VesnALIA (or losing the network) could leave the page showing a session that was
+  already over, still marked as connected; Connect starts a new one once VesnALIA is back. A session to
+  another Mac that disappears (its VesnALIA restarted, its network lost) also ends within seconds while
   nothing is happening on screen, instead of after a minute or more.
 - Scrolling on the shared Mac follows how far you scroll. Before, a quick flick or a turn of a mouse
   wheel scrolled the Mac by one small step, and a trackpad by far less than it scrolls a page. If it
   is still too slow or now too fast, change Scroll speed.
 - A pinch on the trackpad over the shared screen no longer scrolls the Mac.
 - Scrolling and dragging on another Mac reach it sooner: input no longer waits behind what was sent
-  just before it, which over bb's link to a laptop could add up to half a second.
+  just before it, which over VesnALIA's link to a laptop could add up to half a second.
 
 ## 0.2.0
 
 ### Added
 
-- **Every Mac connected to your bb**, not only the one running the bb server. A Mac picker at the
-  left of the Screen Sharing page's toolbar lists the machines enrolled in bb, each marked with whether its
+- **Every Mac connected to your VesnALIA**, not only the one running the VesnALIA server. A Mac picker at the
+  left of the Screen Sharing page's toolbar lists the machines enrolled in VesnALIA, each marked with whether its
   Screen Sharing is on, off, not a Mac or offline; pick one to connect to it, or to see where on that Mac to turn Screen Sharing on.
   Nothing extra is installed on the other Macs, and no port is opened on any of them.
-- Sessions to several Macs at once in the same bb window. The page shows the Mac you pick; the others
+- Sessions to several Macs at once in the same VesnALIA window. The page shows the Mac you pick; the others
   keep running out of sight, and Close all ends every one of them.
-- The page says what to expect from a Mac reached through bb's link to it: about half a second
+- The page says what to expect from a Mac reached through VesnALIA's link to it: about half a second
   between a key or click and the screen answering, and fewer screen updates a second. Typing does not
   wait for each key to arrive before sending the next.
 
@@ -83,7 +83,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A page that cannot keep up with a busy screen now slows the Mac down instead of letting data pile up
   on the way.
-- A bb window still showing the previous version of the page is asked to reload before it connects.
+- A VesnALIA window still showing the previous version of the page is asked to reload before it connects.
 
 ## 0.1.0
 
@@ -91,7 +91,7 @@ The first release.
 
 ### Added
 
-- **A Screen Sharing page** in the sidebar showing the screen of the Mac running the bb server, with
+- **A Screen Sharing page** in the sidebar showing the screen of the Mac running the VesnALIA server, with
   keyboard and mouse, at that Mac or remotely through getbb.app. It uses the Mac's own Screen Sharing.
 - When Screen Sharing is off, the page says where in System Settings to turn it on, and checks again
   when asked.
@@ -99,11 +99,11 @@ The first release.
 - **View only**, which can be switched during a session.
 - **Send keys**, for the shortcuts your own Mac keeps for itself (⌘Tab, ⌘Space, Mission Control and
   more), with a held ⌘ for stepping through the app switcher.
-- **Full screen** in Chrome, Edge and bb's desktop app: the page fills the screen with the whole
+- **Full screen** in Chrome, Edge and VesnALIA's desktop app: the page fills the screen with the whole
   keyboard going to the Mac, the browser's own shortcuts included. Hold Esc to leave.
-- **Live** beside the sidebar row and a **Close all** pill in the corner of every bb window while any
+- **Live** beside the sidebar row and a **Close all** pill in the corner of every VesnALIA window while any
   session is open, on any device.
-- A session keeps running while you use other pages in the same bb window, and is still signed in
+- A session keeps running while you use other pages in the same VesnALIA window, and is still signed in
   when you come back. It ends on Disconnect or Close all, when the window closes, after 30 minutes
   without keyboard or mouse use, and after 8 hours.
 - The pointer stays visible over the screen.

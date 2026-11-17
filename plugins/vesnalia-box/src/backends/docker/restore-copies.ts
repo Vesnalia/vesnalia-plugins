@@ -29,7 +29,7 @@ function fenceKey(volume: string): string {
 function copyCreateArgs(snapshot: RestorableSnapshot & { readonly volume: string }, fence: CopyFence, installId: string): readonly string[] {
   return [
     "container", "create", "--name", copyIntoName(fence.volume), "--pull", "never", "--privileged", "--network", "none",
-    "--label", `${SNAPSHOT_INSTALL}=${installId}`, "--label", `bbbox.snapshot=${snapshot.id}`,
+    "--label", `${SNAPSHOT_INSTALL}=${installId}`, "--label", `aliabox.snapshot=${snapshot.id}`,
     "--label", `${COPY_INTO}=${fence.volume}`, "--label", `${COPY_FOR}=${fence.container}`, "--label", `${COPY_OP}=${fence.op}`,
     "--entrypoint", "cp",
     "--volume", `${snapshot.volume}:/from:ro`, "--volume", `${fence.volume}:/to`,

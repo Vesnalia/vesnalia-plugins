@@ -22,7 +22,7 @@ function setup() {
     sleep: async () => {},
     readyTimeoutMs: 20_000,
     setupArchive: async () => Buffer.from("setup"),
-    linuxImageScript: (target, key) => `cat >/dev/null; echo nscr.io/ws/bbbox/${target}:${key}`,
+    linuxImageScript: (target, key) => `cat >/dev/null; echo nscr.io/ws/aliabox/${target}:${key}`,
     linuxPullScript: (ref, local) => (pulls.push(`${ref} as ${local}`), ":"),
     dockerCli: (instance) => {
       let cli = hosts.get(instance);
@@ -55,26 +55,26 @@ test("a Linux box is a Linux machine of its own with the kind's image pulled fro
   const { fake, backend, pulls } = setup();
   const recorded = hooks();
   const guest = await backend.acquire(box("b1"), null, recorded.hooks, new AbortController().signal);
-  const machine = [...fake.instances.values()].find((instance) => instance.labels["bbbox-box"] === "b1")!;
+  const machine = [...fake.instances.values()].find((instance) => instance.labels["aliabox-box"] === "b1")!;
   assert.equal(machine.shape.os, "linux");
   assert.deepEqual([machine.shape.virtualCpu, machine.shape.memoryMegabytes], [2, 4096]);
-  assert.equal(guest.ref, "bbbox-b1");
+  assert.equal(guest.ref, "aliabox-b1");
   assert.equal(guest.data?.instance, machine.id);
   assert.deepEqual(guest.size, { cores: 2, memoryMiB: 4096, diskGiB: null }, "the machine's size, though the container keeps a margin");
   assert.ok(guest.endsAt, "it ends at the plan's longest life, as a Mac does");
-  assert.deepEqual(pulls, [`nscr.io/ws/bbbox/linux:${(await backend.linuxImages.record("linux"))!.key} as bbbox/linux:1`]);
+  assert.deepEqual(pulls, [`nscr.io/ws/aliabox/linux:${(await backend.linuxImages.record("linux"))!.key} as aliabox/linux:1`]);
   assert.deepEqual(recorded.steps.slice(0, 6), ["create", "ready", "ssh", "image", "pull", "place"]);
   assert.ok(CONTAINER_MEMORY_MARGIN_MIB > 0);
   const { command } = await backend.transports(guest, "linux");
   assert.equal((await command!.run("echo hello", { timeoutMs: 20_000 })).stdout.trim(), "hello");
   const held = await backend.held();
-  assert.deepEqual(held.map((each) => [each.ref, each.owner?.boxId]), [["bbbox-b1", "b1"]], "the sweep finds the box's guest by the container's name");
+  assert.deepEqual(held.map((each) => [each.ref, each.owner?.boxId]), [["aliabox-b1", "b1"]], "the sweep finds the box's guest by the container's name");
   await backend.release(guest, { resetting: async () => {}, timing: () => {} });
   assert.equal(machine.status, "DESTROYED");
 });
 
 test("the pull script lets every user on the machine use /dev/kvm, as the machine is the box's alone, pulls the registry's image and tags it with the name the Docker backend runs", () => {
-  assert.equal(pullScript("nscr.io/ws/bbbox/linux:abc", "bbbox/linux:1"), "set -eu\n[ ! -e /dev/kvm ] || chmod 0666 /dev/kvm\ndocker pull -q 'nscr.io/ws/bbbox/linux:abc' >/dev/null\ndocker tag 'nscr.io/ws/bbbox/linux:abc' 'bbbox/linux:1'");
+  assert.equal(pullScript("nscr.io/ws/aliabox/linux:abc", "aliabox/linux:1"), "set -eu\n[ ! -e /dev/kvm ] || chmod 0666 /dev/kvm\ndocker pull -q 'nscr.io/ws/aliabox/linux:abc' >/dev/null\ndocker tag 'nscr.io/ws/aliabox/linux:abc' 'aliabox/linux:1'");
 });
 
 test("Namespace's linux boxes offer kvm, as each is a privileged container on a machine of its own with /dev/kvm, so linux-kvm can be asked of Namespace", () => {

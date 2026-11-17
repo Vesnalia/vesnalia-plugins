@@ -7,7 +7,7 @@ a verdict the test writes, and checks the line, the exit code and the page revis
 composes the three pages (release, scope-dropped, waiting) from this folder's `fixture.html` and checks the reporter
 was placed and the fixture no longer runs on load, and runs the page's reporter in node against a stand-in
 repository. Nothing leaves the temp folder; it is removed after. The tool's PATH holds the stand-in and the system's
-programs but those `syspath.py` hides, so neither `claude`, a real `syns`, bb, a browser nor the Unife daemon is
+programs but those `syspath.py` hides, so neither `claude`, a real `syns`, alia, a browser nor the Unife daemon is
 reached.
 
 When it pays: whenever `claude-code-inhost` or `fixture.html`'s last lines change.

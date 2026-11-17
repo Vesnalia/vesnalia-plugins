@@ -13,7 +13,7 @@ t open -a TextEdit
 t osascript -e 'tell application "System Events" to get name of every process'
 t screencapture -x /tmp/shot-$(id -un).png
 t sh -c 'xcrun simctl list devices booted | grep -c Booted'
-t sh -c 'rm -rf ~/probe && cp -R /Users/Shared/alia/probe ~/probe && xcodebuild -project ~/probe/BBProbe.xcodeproj -scheme BBProbe -destination "generic/platform=iOS Simulator" -derivedDataPath ~/probe-derived build-for-testing -quiet'
+t sh -c 'rm -rf ~/probe && cp -R /Users/Shared/alia/probe ~/probe && xcodebuild -project ~/probe/AliaProbe.xcodeproj -scheme AliaProbe -destination "generic/platform=iOS Simulator" -derivedDataPath ~/probe-derived build-for-testing -quiet'
 U=$(xcrun simctl list devices booted | sed -n 's/.*slot (\([-0-9A-F]*\)).*/\1/p')
-t xcodebuild test-without-building -project ~/probe/BBProbe.xcodeproj -scheme BBProbe -destination "id=$U" -derivedDataPath ~/probe-derived -collect-test-diagnostics never -quiet
+t xcodebuild test-without-building -project ~/probe/AliaProbe.xcodeproj -scheme AliaProbe -destination "id=$U" -derivedDataPath ~/probe-derived -collect-test-diagnostics never -quiet
 t sh -c 'nohup python3 -m http.server 8799 --bind 127.0.0.1 >/dev/null 2>&1 & sleep 1; curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8799/'

@@ -204,7 +204,7 @@ test("a refusal for memory leads with what binds: the room kept free, or the box
 
 test("capacity refuses when the VMID range is full", async () => {
   const { backend, proxmox } = setup({ "proxmox-lxc-vmid-last": 7000 });
-  proxmox.guests.set(7000, { vmid: 7000, name: "x", pool: "bbbox", status: "running", template: false, config: {} });
+  proxmox.guests.set(7000, { vmid: 7000, name: "x", pool: "aliabox", status: "running", template: false, config: {} });
   const full = await backend.capacity("linux", sized("linux"), waiting(), signal());
   assert.equal(full.ok, false);
   assert.match(full.message!, /Every VMID from 7000 to 7000 is in use/);
@@ -621,7 +621,7 @@ function gpuReporter(vm = true) {
       writeFileSync(join(dir, "smi"), smi);
       return spawnSync(bash, [GPU_REPORTER], {
         encoding: "utf8",
-        env: { PATH: `${bin}:/usr/bin:/bin`, BBBOX_QEMU_CONFIGS: configs, BBBOX_GPU_REPORT_STATE: join(dir, "last") },
+        env: { PATH: `${bin}:/usr/bin:/bin`, ALIABOX_QEMU_CONFIGS: configs, ALIABOX_GPU_REPORT_STATE: join(dir, "last") },
       });
     },
     /** The notes of each qm set, oldest first. */
@@ -739,7 +739,7 @@ test("the doctor's GPU helper check reads what real helpers report: a dry run wa
   assert.equal(verdict((await doctorOnReport(helperReport(new FakeNode({ writes: "on" }), ["--once", "--dry-run"])))("proxmox.gpu-helper"))?.[0], "warn", "--dry-run keeps writes off whatever gpu.conf says");
 
   const writing = await doctorOnReport(helperReport(new FakeNode({ writes: "on" })));
-  assert.deepEqual(verdict(writing("proxmox.gpu-helper")), ["ok", "alia-box-gpu 0.4.4 on pve reported just now, with writes on, for pool bbbox, on pve-container 6.1.14, which it was tested on.", null]);
+  assert.deepEqual(verdict(writing("proxmox.gpu-helper")), ["ok", "alia-box-gpu 0.4.4 on pve reported just now, with writes on, for pool aliabox, on pve-container 6.1.14, which it was tested on.", null]);
 
   const untested = await doctorOnReport(helperReport(new FakeNode({ writes: "on", pveContainer: "6.1.15" })));
   assert.deepEqual(verdict(untested("proxmox.gpu-helper")), [
@@ -749,9 +749,9 @@ test("the doctor's GPU helper check reads what real helpers report: a dry run wa
   ]);
 
   const elsewhere = await doctorOnReport(helperReport(new FakeNode({ writes: "on", pools: ["team", "lab"] })));
-  assert.deepEqual(verdict(elsewhere("proxmox.gpu-helper")), ["fail", "alia-box-gpu 0.4.4 on pve serves pools team and lab, not this install's pool bbbox.", "Run host/setup-gpu.sh --pool bbbox as root on pve."]);
+  assert.deepEqual(verdict(elsewhere("proxmox.gpu-helper")), ["fail", "alia-box-gpu 0.4.4 on pve serves pools team and lab, not this install's pool aliabox.", "Run host/setup-gpu.sh --pool aliabox as root on pve."]);
   const nowhere = await doctorOnReport(helperReport(new FakeNode({ writes: "off", pools: [] })));
-  assert.equal(verdict(nowhere("proxmox.gpu-helper"))?.[1], "alia-box-gpu 0.4.4 on pve serves no pool, not this install's pool bbbox.");
+  assert.equal(verdict(nowhere("proxmox.gpu-helper"))?.[1], "alia-box-gpu 0.4.4 on pve serves no pool, not this install's pool aliabox.");
 });
 
 test("the doctor's GPU helper check fails a report 3 minutes old and a helper of another protocol, with each fix; the GPU report's fix names the helper where it writes the report (071 unit 3)", async () => {
@@ -775,7 +775,7 @@ test("the doctor's GPU helper check fails a report 3 minutes old and a helper of
   const unreadable = await doctorOnReport(withHelper("helper alia-box-gpu 0.1.0 protocol broken"), at);
   assert.deepEqual(verdict(unreadable("proxmox.gpu-helper")), ["fail", "VM 9190's report has a helper line this VesnALIA Box cannot read.", "Run host/setup-gpu.sh again, from this VesnALIA Box's setup guide, as root on pve."], "a helper line with no protocol is not taken for no helper (Astra 5)");
   const many = await doctorOnReport(notes.replace(/^(\s*)serves .*$/m, "$1serves p1 p2 p3 and 40 more"), at);
-  assert.deepEqual(verdict(many("proxmox.gpu-helper")), ["warn", "alia-box-gpu 0.4.4 on pve serves more pools than its report lists, so VesnALIA Box cannot tell whether it serves this install's pool bbbox.", "Run host/setup-gpu.sh --pool bbbox as root on pve."]);
+  assert.deepEqual(verdict(many("proxmox.gpu-helper")), ["warn", "alia-box-gpu 0.4.4 on pve serves more pools than its report lists, so VesnALIA Box cannot tell whether it serves this install's pool aliabox.", "Run host/setup-gpu.sh --pool aliabox as root on pve."]);
 });
 
 test("the doctor's GPU helper check fails a report dated a minute or more ahead of VesnALIA's clock, as a stopped helper could pass for fresh until then (071 unit 3, Astra 4)", async () => {
@@ -788,7 +788,7 @@ test("the doctor's GPU helper check fails a report dated a minute or more ahead 
     "Run systemctl status alia-box-gpu as root on pve, and check the host's clock.",
   ]);
   assert.equal(verdict((await doctorOnReport(notes, at - 60_000))("proxmox.gpu-helper"))?.[0], "fail");
-  assert.deepEqual(verdict((await doctorOnReport(notes, at - 30_000))("proxmox.gpu-helper"))?.slice(0, 2), ["ok", "alia-box-gpu 0.4.4 on pve reported just now, with writes on, for pool bbbox, on pve-container 6.1.14, which it was tested on."], "a clock under a minute behind the host's is allowed");
+  assert.deepEqual(verdict((await doctorOnReport(notes, at - 30_000))("proxmox.gpu-helper"))?.slice(0, 2), ["ok", "alia-box-gpu 0.4.4 on pve reported just now, with writes on, for pool aliabox, on pve-container 6.1.14, which it was tested on."], "a clock under a minute behind the host's is allowed");
 });
 
 test("071 unit 7, Fable 5: box_list's room for servers says nothing on a node with no card at all, and says why there is no GPU on one with cards and no helper", async () => {
@@ -816,22 +816,22 @@ test("071 unit 7: a node with cards and no GPU helper warns that servers get no 
 });
 
 test("the GPU helper's lines are read by their protocol's grammar, and a pool list the report cut short says how many it left out (071 unit 3)", () => {
-  const notes = (rest: string) => `alia-box: each GPU's memory and its claims.\n\n    at 1790000000\n    ${rest}\n    serves bbbox lab/gpu`;
+  const notes = (rest: string) => `alia-box: each GPU's memory and its claims.\n\n    at 1790000000\n    ${rest}\n    serves aliabox lab/gpu`;
   assert.deepEqual(parseGpuHelper(notes("helper alia-box-gpu 0.1.0 protocol 1 writes off pve-container 6.1.14 tested")), {
     version: "0.1.0",
     protocol: 1,
     writes: "off",
     pveContainer: "6.1.14",
     tested: true,
-    serves: { listed: ["bbbox", "lab/gpu"], unlisted: 0 },
+    serves: { listed: ["aliabox", "lab/gpu"], unlisted: 0 },
   });
   assert.deepEqual(parseGpuHelper(notes("helper alia-box-gpu 3.0.0 protocol 3 anything at all")), { version: "3.0.0", protocol: 3, writes: null, pveContainer: null, tested: null, serves: null });
   assert.deepEqual(parseGpuHelper(notes("helper alia-box-gpu 0.1.0 protocol broken")), { version: null, protocol: null, writes: null, pveContainer: null, tested: null, serves: null });
   assert.equal(parseGpuHelper("    helper alia-box-gpus are elsewhere"), null);
   assert.equal(parseGpuHelper(reportNotes(1_790_000_000_000, [[UUID_A, "00000000:01:00.0", 6100]])), null);
-  assert.deepEqual(parseGpuHelper(`${notes("helper alia-box-gpu 0.1.0 protocol 1 writes on pve-container 6.1.14 untested")}`.replace("serves bbbox lab/gpu", "serves none"))?.serves, { listed: [], unlisted: 0 });
-  assert.deepEqual(parseGpuHelper(notes("helper alia-box-gpu 0.1.0 protocol 1 writes on pve-container 6.1.14 tested").replace("serves bbbox lab/gpu", "serves a b and 12 more"))?.serves, { listed: ["a", "b"], unlisted: 12 });
-  const seen = { node: "pve", pool: "bbbox", vmid: 9190, ageMs: 0, ago: () => "just now" };
+  assert.deepEqual(parseGpuHelper(`${notes("helper alia-box-gpu 0.1.0 protocol 1 writes on pve-container 6.1.14 untested")}`.replace("serves aliabox lab/gpu", "serves none"))?.serves, { listed: [], unlisted: 0 });
+  assert.deepEqual(parseGpuHelper(notes("helper alia-box-gpu 0.1.0 protocol 1 writes on pve-container 6.1.14 tested").replace("serves aliabox lab/gpu", "serves a b and 12 more"))?.serves, { listed: ["a", "b"], unlisted: 12 });
+  const seen = { node: "pve", pool: "aliabox", vmid: 9190, ageMs: 0, ago: () => "just now" };
   assert.equal(judgeGpuHelper(parseGpuHelper(notes("helper alia-box-gpu 0.1.0 protocol 1 writes on pve-container 6.1.14 tested"))!, { ...seen, ageMs: null }).detail, "The GPU helper on pve has written no report in VM 9190.");
 });
 
@@ -886,7 +886,7 @@ test("acquire claims the VMID before it clones, then configures and starts the b
 
   const made = proxmox.guests.get(7000)!;
   assert.equal(made.status, "running");
-  assert.equal(made.pool, "bbbox");
+  assert.equal(made.pool, "aliabox");
   assert.equal(made.name, box.name);
   assert.equal(made.config.cores, "2");
   assert.equal(made.config.memory, "4096");
@@ -1223,12 +1223,12 @@ test("stamp records this install on its guest from before install IDs, and leave
   proxmox.guests.set(7005, {
     vmid: 7005,
     name: "old",
-    pool: "bbbox",
+    pool: "aliabox",
     status: "running",
     template: false,
     config: { tags, description: "alia-box old\nbox box_old\nthread thr_x" },
   });
-  proxmox.guests.set(7006, { vmid: 7006, name: "theirs", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_old" } });
+  proxmox.guests.set(7006, { vmid: 7006, name: "theirs", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_old" } });
   const guest: Guest = { ref: "7005", host: "pve", address: "192.0.2.105", size: null, data: { template: 9000 } };
   assert.deepEqual(await backend.held(), [], "a guest with no install ID is not this install's yet");
 
@@ -1260,26 +1260,26 @@ test("held lists this install's guests, labelled or part-made, and leaves others
   proxmox.guests.set(7001, {
     vmid: 7001,
     name: "half",
-    pool: "bbbox",
+    pool: "aliabox",
     status: "stopped",
     template: false,
     config: { description: "alia-box half-done\ninstall test\nbox box_x\nthread thr_x\nkind linux\ncreated 2026-09-30T00:00:00.000Z" },
   });
   // A warm guest whose fill was interrupted: this install's, and no box's.
-  proxmox.guests.set(7002, { vmid: 7002, name: "filling", pool: "bbbox", status: "stopped", template: false, config: { tags: "alia-box;install.test;filling;template.9000" } });
-  proxmox.guests.set(7003, { vmid: 7003, name: "warm", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.test;warm;template.9000" } });
+  proxmox.guests.set(7002, { vmid: 7002, name: "filling", pool: "aliabox", status: "stopped", template: false, config: { tags: "alia-box;install.test;filling;template.9000" } });
+  proxmox.guests.set(7003, { vmid: 7003, name: "warm", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.test;warm;template.9000" } });
   proxmox.guests.set(7005, {
     vmid: 7005,
     name: "theirs",
-    pool: "bbbox",
+    pool: "aliabox",
     status: "running",
     template: false,
     config: { tags: "alia-box;install.other;box.box_y;thread.thr_y;kind.linux" },
   });
-  proxmox.guests.set(7006, { vmid: 7006, name: "their-half", pool: "bbbox", status: "stopped", template: false, config: { description: "alia-box their-half\ninstall other\nbox box_z" } });
-  proxmox.guests.set(7007, { vmid: 7007, name: "mystery", pool: "bbbox", status: "running", template: false, config: {} });
-  proxmox.guests.set(7008, { vmid: 7008, name: "old", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;box.box_old;thread.thr_x;kind.linux" } });
-  proxmox.guests.set(8000, { vmid: 8000, name: "outside", pool: "bbbox", status: "running", template: false, config: {} });
+  proxmox.guests.set(7006, { vmid: 7006, name: "their-half", pool: "aliabox", status: "stopped", template: false, config: { description: "alia-box their-half\ninstall other\nbox box_z" } });
+  proxmox.guests.set(7007, { vmid: 7007, name: "mystery", pool: "aliabox", status: "running", template: false, config: {} });
+  proxmox.guests.set(7008, { vmid: 7008, name: "old", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;box.box_old;thread.thr_x;kind.linux" } });
+  proxmox.guests.set(8000, { vmid: 8000, name: "outside", pool: "aliabox", status: "running", template: false, config: {} });
   proxmox.guests.set(7004, { vmid: 7004, name: "other-pool", pool: "else", status: "running", template: false, config: {} });
 
   const held = await backend.held();
@@ -1748,7 +1748,7 @@ test("warm guests of a template that build.sh replaced are retired, not handed o
   const { backend, proxmox, context } = setup({ "proxmox-lxc-linux-warm": 1 });
   // In the pool, as build.sh puts it, so the pool's listing shows its tags.
   const template = proxmox.guests.get(9000)!;
-  template.pool = "bbbox";
+  template.pool = "aliabox";
   template.config.tags = "build.one";
   await backend.maintain();
   assert.deepEqual(parseTags(proxmox.guests.get(7000)!.config.tags), ["alia-box", "install.test", "warm", "template.9000", "build.one", "alia-box-starting"]);
@@ -2060,16 +2060,16 @@ test("doctor warns about a kind the node cannot hold at any preset (#74)", async
 test("doctor shows this install's ID and counts the containers it leaves alone", async () => {
   const { backend, proxmox } = setup();
   await backend.acquire(identity(), null, hooks().value, signal());
-  proxmox.guests.set(7005, { vmid: 7005, name: "theirs", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_y" } });
-  proxmox.guests.set(7006, { vmid: 7006, name: "their-half", pool: "bbbox", status: "stopped", template: false, config: { description: "alia-box their-half\ninstall other\nbox box_z" } });
-  proxmox.guests.set(7007, { vmid: 7007, name: "mystery", pool: "bbbox", status: "running", template: false, config: {} });
-  proxmox.guests.set(7008, { vmid: 7008, name: "old", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;box.box_old" } });
+  proxmox.guests.set(7005, { vmid: 7005, name: "theirs", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_y" } });
+  proxmox.guests.set(7006, { vmid: 7006, name: "their-half", pool: "aliabox", status: "stopped", template: false, config: { description: "alia-box their-half\ninstall other\nbox box_z" } });
+  proxmox.guests.set(7007, { vmid: 7007, name: "mystery", pool: "aliabox", status: "running", template: false, config: {} });
+  proxmox.guests.set(7008, { vmid: 7008, name: "old", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;box.box_old" } });
   const report = await backend.doctor();
   const notes = report.notes.join("\n");
   assert.match(notes, /^This install's ID is test\. Its containers carry the tag install\.test\.$/m);
   assert.match(
     notes,
-    /^This install leaves alone 2 containers of install other, 2 containers with no install ID in pool bbbox\. They still count against the host's capacity\. .* alia box install-id --set <id>\.$/m,
+    /^This install leaves alone 2 containers of install other, 2 containers with no install ID in pool aliabox\. They still count against the host's capacity\. .* alia box install-id --set <id>\.$/m,
   );
 });
 
@@ -2083,7 +2083,7 @@ test("doctor says what is missing", async () => {
   assert.equal(report.ok, false);
   const byId = Object.fromEntries(report.checks.map((check) => [check.id, check]));
   assert.equal(byId["proxmox.pool"]!.status, "fail");
-  assert.match(byId["proxmox.pool"]!.fix!, /pveum pool add bbbox/);
+  assert.match(byId["proxmox.pool"]!.fix!, /pveum pool add aliabox/);
   assert.match(byId["template.9000"]!.fix!, /pct set 9000 --features nesting=1/);
   assert.match(byId["template.9001"]!.detail, /CT 9001 does not exist on pve/);
   assert.match(byId["template.9001"]!.fix!, /remove it from the GPU desktop templates/);
@@ -2093,7 +2093,7 @@ test("doctor says what is missing", async () => {
 
 test("doctor names the snapshot rights a token made before 070 lacks, without the token, and what each template's storage restores (070)", async () => {
   const { backend, proxmox } = setup({ "proxmox-lxc-ssh-private-key": "" });
-  proxmox.privileges.set("/pool/bbbox", new Set(TOKEN_ROLE.filter((privilege) => !privilege.startsWith("VM.Snapshot"))));
+  proxmox.privileges.set("/pool/aliabox", new Set(TOKEN_ROLE.filter((privilege) => !privilege.startsWith("VM.Snapshot"))));
   proxmox.storage.set("tank", { total: 900 * GiB, avail: 600 * GiB });
   proxmox.storageTypes.set("tank", "zfspool");
   proxmox.guests.get(9001)!.config.rootfs = "tank:base-9001-disk-0,size=8G";
@@ -2102,21 +2102,21 @@ test("doctor names the snapshot rights a token made before 070 lacks, without th
   const snapshots = report.checks.find((check) => check.id === "proxmox.snapshots")!;
   assert.deepEqual([snapshots.status, snapshots.detail, snapshots.fix], [
     "warn",
-    "The token lacks VM.Snapshot and VM.Snapshot.Rollback on /pool/bbbox, so VesnALIA Box cannot take or restore snapshots. " +
+    "The token lacks VM.Snapshot and VM.Snapshot.Rollback on /pool/aliabox, so VesnALIA Box cannot take or restore snapshots. " +
       "local-lvm (LVM-thin) restores any snapshot. tank (ZFS) restores only the newest snapshot.",
     "Run host/setup-token.sh from the Proxmox LXC setup guide again, as root on pve. It keeps the token and its secret, and adds the missing rights to the token's role.",
   ]);
   for (const part of [FAKE_TOKEN.tokenSecret, FAKE_TOKEN.tokenId]) assert.ok(!JSON.stringify(report).includes(part), "the report never names the token");
   assert.deepEqual(
     proxmox.calls.filter((call) => call.path === "/access/permissions").map((call) => [call.method, call.params.path]),
-    [["GET", "/pool/bbbox"]],
+    [["GET", "/pool/aliabox"]],
   );
 
-  proxmox.privileges.set("/pool/bbbox", new Set(TOKEN_ROLE));
+  proxmox.privileges.set("/pool/aliabox", new Set(TOKEN_ROLE));
   const fixed = (await backend.doctor()).checks.find((check) => check.id === "proxmox.snapshots")!;
   assert.deepEqual([fixed.status, fixed.detail, fixed.fix], [
     "ok",
-    "The token may take, delete and restore snapshots on /pool/bbbox. local-lvm (LVM-thin) restores any snapshot. tank (ZFS) restores only the newest snapshot.",
+    "The token may take, delete and restore snapshots on /pool/aliabox. local-lvm (LVM-thin) restores any snapshot. tank (ZFS) restores only the newest snapshot.",
     null,
   ]);
 });
@@ -2129,14 +2129,14 @@ test("doctor says a container on directory storage takes no snapshots (070)", as
   const snapshots = (await backend.doctor()).checks.find((check) => check.id === "proxmox.snapshots")!;
   assert.deepEqual([snapshots.status, snapshots.detail, snapshots.fix], [
     "warn",
-    "The token may take, delete and restore snapshots on /pool/bbbox. local-lvm (LVM-thin) restores any snapshot. files (directory) takes no snapshots of containers.",
+    "The token may take, delete and restore snapshots on /pool/aliabox. local-lvm (LVM-thin) restores any snapshot. files (directory) takes no snapshots of containers.",
     "For snapshots, put the templates on storage that takes them: LVM-thin, ZFS, Ceph RBD or BTRFS.",
   ]);
 });
 
 test("doctor warns, without failing, when every VMID is in use", async () => {
   const { backend, proxmox } = setup({ "proxmox-lxc-vmid-last": 7000, "proxmox-lxc-ssh-private-key": "" });
-  proxmox.guests.set(7000, { vmid: 7000, name: "x", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.test;box.box_x;thread.thr_x;kind.linux" } });
+  proxmox.guests.set(7000, { vmid: 7000, name: "x", pool: "aliabox", status: "running", template: false, config: { tags: "alia-box;install.test;box.box_x;thread.thr_x;kind.linux" } });
   const report = await backend.doctor();
   assert.equal(report.ok, true, JSON.stringify(report.checks.filter((check) => check.status === "fail")));
   const vmids = report.checks.find((check) => check.id === "proxmox.vmids")!;
@@ -2181,7 +2181,7 @@ test("a box is from its template as built now only while the template has the bu
   const during = { ...identity(), createdAt: Date.UTC(2026, 8, 25, 0, 30) };
   const cloned = await backend.acquire(during, null, hooks().value, signal());
   // The swap: the same VMID with the new build. On LVM-thin both boxes keep running.
-  template.config.tags = "build.20260925-000000-bbbb";
+  template.config.tags = "build.20260925-000000-aliabb";
   assert.equal(await backend.asOffered(old, "linux", before.createdAt), false, "made before the replace");
   assert.equal(await backend.asOffered(cloned, "linux", during.createdAt), false, "made during the build, before the swap");
 
@@ -2201,7 +2201,7 @@ test("a box comes from its template's current build until build.sh --replace swa
   const guest = await backend.acquire(identity(), null, hooks().value, signal());
   assert.equal(guest.data?.build, "20261001-000000-aaaa");
   assert.equal(await backend.fromCurrentBuild(guest, "linux"), true);
-  proxmox.guests.get(9000)!.config.tags = "build.20261009-000000-bbbb";
+  proxmox.guests.get(9000)!.config.tags = "build.20261009-000000-aliabb";
   assert.equal(await backend.fromCurrentBuild(guest, "linux"), false);
   assert.equal(await backend.fromCurrentBuild({ ...guest, data: { ...guest.data, template: 9999 } }, "linux"), false, "a template the kind no longer lists");
   const { build: _, ...data } = guest.data!;

@@ -248,21 +248,21 @@ describe("spend", () => {
     const reports: Record<string, UsageReport> = {};
     const threads: Record<string, Seed> = {};
     for (let i = 1; i <= 12; i++) {
-      const id = `thr_bbbbbb${String(i).padStart(2, "0")}`;
+      const id = `thr_aliabbbb${String(i).padStart(2, "0")}`;
       reports[id] = reportWith([day(0, i, { "p/claude-haiku": i / 4, "p/claude-opus": (3 * i) / 4 }, i), day(20, 100)], {
         running: i === 12,
       });
       threads[id] = { projectId: "proj_b", children: i === 12 ? 3 : 0 };
     }
-    threads.thr_bbbbbb11 = { title: null, titleFallback: "Fix the flaky test", projectId: "proj_b" };
-    threads.thr_bbbbbb10 = { title: null, projectId: "proj_b" };
+    threads.thr_aliabbbb11 = { title: null, titleFallback: "Fix the flaky test", projectId: "proj_b" };
+    threads.thr_aliabbbb10 = { title: null, projectId: "proj_b" };
     const s = await setup({ reports, threads });
     const out = await s.spend({ range: "7d", projectId: null });
     expect(out.threadCount).toBe(12);
     expect(out.threads.map((t) => t.rangeCost)).toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3]);
     expect(out.threads[0]).toEqual({
-      threadId: "thr_bbbbbb12",
-      title: "Title of thr_bbbbbb12",
+      threadId: "thr_aliabbbb12",
+      title: "Title of thr_aliabbbb12",
       projectName: "beta",
       model: "claude-opus",
       harness: "pi",

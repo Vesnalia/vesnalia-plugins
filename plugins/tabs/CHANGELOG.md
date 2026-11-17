@@ -6,7 +6,7 @@ All notable changes to Chat Tabs are documented here.
 
 ### Added
 
-- Register Chat Tabs commands in the BB palette with rebindable defaults: `Mod+Alt+1…8`/`9` select a tab or the last one, `Mod+Alt+P` pins, `Mod+Alt+S` toggles a favorite, `Mod+Alt+W` cycles workspaces, and `F2` renames. Letter defaults match the physical key in Russian and Option layouts. Parent chat, subthread tree, tab list, copy link, close others, move, cycle, and restore are palette-only.
+- Register Chat Tabs commands in the VesnALIA palette with rebindable defaults: `Mod+Alt+1…8`/`9` select a tab or the last one, `Mod+Alt+P` pins, `Mod+Alt+S` toggles a favorite, `Mod+Alt+W` cycles workspaces, and `F2` renames. Letter defaults match the physical key in Russian and Option layouts. Parent chat, subthread tree, tab list, copy link, close others, move, cycle, and restore are palette-only.
 
 ### Fixed
 
@@ -19,7 +19,7 @@ All notable changes to Chat Tabs are documented here.
 
 - Show nested chats in side-opening submenus of the chat list by default, with a setting to return to a flat list. Search results remain directly accessible as a flat list; known ancestors preserve access to nested pins and history.
 - Search all available recent projects by name or alias from the New chat menu, including keyboard selection and automatic reveal of the selected result without moving search focus.
-- Restore the last explicitly selected workspace on the same browser/device after reopening BB, while keeping existing windows independent. Catalog refreshes and old-window reloads do not overwrite another window's choice.
+- Restore the last explicitly selected workspace on the same browser/device after reopening VesnALIA, while keeping existing windows independent. Catalog refreshes and old-window reloads do not overwrite another window's choice.
 
 ### Changed
 
@@ -27,13 +27,13 @@ All notable changes to Chat Tabs are documented here.
 
 ### Security
 
-- Update Zod, Vitest/mocker, Hono, Vite, Undici and their required transitive dependencies within the existing version ranges to address reported advisories. Keep the BB SDK pin unchanged.
+- Update Zod, Vitest/mocker, Hono, Vite, Undici and their required transitive dependencies within the existing version ranges to address reported advisories. Keep the VesnALIA SDK pin unchanged.
 
 ## 0.1.14
 
 ### Added
 
-- Manage project aliases/colors in a modal with a searchable list, autocomplete addition, editing, and confirmed removal from the list only. Empty project rows persist until explicitly removed; native BB projects/chats and individual tab colors are untouched. Pending saves lock portalled controls/dismissal, errors stay inside the modal, and unsaved drafts survive closing/reopening.
+- Manage project aliases/colors in a modal with a searchable list, autocomplete addition, editing, and confirmed removal from the list only. Empty project rows persist until explicitly removed; native VesnALIA projects/chats and individual tab colors are untouched. Pending saves lock portalled controls/dismissal, errors stay inside the modal, and unsaved drafts survive closing/reopening.
 - Split settings into keyboard-accessible General/Appearance tabs without losing unsaved drafts. Add a single project autocomplete with local name/alias search, keyboard/touch selection and recent-activity ordering to the appearance editor, keeping inactive and personal projects available. Typing alone never changes the edited project or saves its draft.
 - Local appearance prototype: a six-color settings palette, project alias prefixes and inherited colors in the strip, with individual tab overrides in the context menu. Field patches merge across windows without renaming native projects/chats or changing workspace memberships.
 
@@ -43,7 +43,7 @@ All notable changes to Chat Tabs are documented here.
 - Keep all 15 language autonyms in one stable alphabetical list after Auto, with no pinned locale and unchanged stored values. Keep publication descriptions and README screenshots English; update the overview for the appearance preview and internal language settings.
 - Avoid document-wide style invalidation when switching chats: replace global `body:has(...)` conditions with one shared, event-driven layout observer, preserving CSS priority, any-overlay semantics, panel/modal/split visibility, and anchor positioning with a coalesced fallback.
 - Keep New chat outside the horizontal scroller and give projects with open tabs in the current workspace priority in its menu, preserving activity order within each group and the existing pagination.
-- Keep the active tab visible when switching chats or resizing the available strip, including opening or closing BB's right panel, without moving chat focus or resetting manual scroll on status updates.
+- Keep the active tab visible when switching chats or resizing the available strip, including opening or closing VesnALIA's right panel, without moving chat focus or resetting manual scroll on status updates.
 - Keep the chat menu's Pinned section scoped to the selected Chat Tabs workspace; include pins from other workspaces in the general list below, deduplicated against history and active pins, without changing memberships or recording visits.
 
 ### Documentation
@@ -128,7 +128,7 @@ All notable changes to Chat Tabs are documented here.
 
 ### Fixed
 
-- Reduce style recalculation during chat switching by restricting the localized-settings suppression selector to BB's native form panel instead of testing arbitrary first-child elements. The native settings form remains available when the localized replacement is absent.
+- Reduce style recalculation during chat switching by restricting the localized-settings suppression selector to VesnALIA's native form panel instead of testing arbitrary first-child elements. The native settings form remains available when the localized replacement is absent.
 
 ## 0.1.7
 
@@ -151,15 +151,15 @@ All notable changes to Chat Tabs are documented here.
 ### Fixed
 
 - Setting labels and descriptions now explain what enabling each option shows, where it appears, and what remains when disabled. The language setting explicitly describes Auto mode, and archived-search help explains that archived results cannot be opened here.
-- Chat-title search now includes all available BB chats (optionally including archived chats), not just pins and the last 100 plugin-history entries. Older chats and numeric version fragments such as `43` in `0.43.3` are searchable through a paginated metadata lookup with a 250 ms debounce and 30-second cache.
+- Chat-title search now includes all available VesnALIA chats (optionally including archived chats), not just pins and the last 100 plugin-history entries. Older chats and numeric version fragments such as `43` in `0.43.3` are searchable through a paginated metadata lookup with a 250 ms debounce and 30-second cache.
 - Archived and deleted history entries no longer receive an accidental selection background or a separate icon. Their struck-through titles and second-line status remain, and the entries stay disabled.
 
 ## 0.1.5
 
 ### Added
 
-- Fifteen interface languages: English, Russian, Spanish, Brazilian Portuguese, French, German, Simplified Chinese, Hindi, Arabic, Japanese, Indonesian, Turkish, Korean, Vietnamese, and Italian. Auto follows the supported BB page language, then the browser language, with English as fallback.
-- A compact **?** indicator when BB is waiting for a question answer or approval, including in nested chats. A tooltip explains the pending input; lists and pinned cards show the full **Needs input** status instead of **Working**.
+- Fifteen interface languages: English, Russian, Spanish, Brazilian Portuguese, French, German, Simplified Chinese, Hindi, Arabic, Japanese, Indonesian, Turkish, Korean, Vietnamese, and Italian. Auto follows the supported VesnALIA page language, then the browser language, with English as fallback.
+- A compact **?** indicator when VesnALIA is waiting for a question answer or approval, including in nested chats. A tooltip explains the pending input; lists and pinned cards show the full **Needs input** status instead of **Working**.
 - A theme-aware SVG icon for the plugin settings and catalog.
 
 ### Fixed
@@ -201,7 +201,7 @@ All notable changes to Chat Tabs are documented here.
 - A borderless **New chat** button after the last tab. Hover to choose a recently active project; groups of 15 projects load through **More**.
 - A searchable chat list with fuzzy title matching, arrow-key selection, Enter to open, and a double-Shift shortcut that also works while the chat composer has focus.
 - Plugin-owned recent chat history, with pagination and clear Archived/Deleted entries.
-- Real BB screenshots showing the tab strip, project picker, chat list, and optional pinned-chat home section.
+- Real VesnALIA screenshots showing the tab strip, project picker, chat list, and optional pinned-chat home section.
 
 ### Improved
 
@@ -212,5 +212,5 @@ All notable changes to Chat Tabs are documented here.
 
 ## 0.1.0 — initial public release
 
-- Introduced pinned chats and a single temporary preview tab in a BB plugin.
+- Introduced pinned chats and a single temporary preview tab in a VesnALIA plugin.
 - Published the first immutable `v0.1.0` Git tag. Its commit and history are unchanged.

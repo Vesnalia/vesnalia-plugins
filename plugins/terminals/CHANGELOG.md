@@ -11,22 +11,22 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Chinese and other late input on iPhone and iPad.** Text from the system Pinyin keyboard (and other
   keyboards that put in a chosen word a moment after the key) now reaches the shell. Before, the
-  terminal missed it. bb 0.49 fixed the same thing in its own terminal.
+  terminal missed it. VesnALIA 0.49 fixed the same thing in its own terminal.
 - **A very quick drag of a tab no longer leaves the tabs stuck.** Letting go of a tab just as it began
   to drag could leave it drawn mid-drag and every later click on the tabs ignored until the page was
   reloaded.
 
 ### Changed
 
-- **Agents use bb 0.49's terminal commands.** On bb 0.49 or later, agents told about the Terminals page
+- **Agents use VesnALIA 0.49's terminal commands.** On VesnALIA 0.49 or later, agents told about the Terminals page
   read a tab as plain text, without colours and progress redraws, and run a command of their own in one
-  step that gives back its output and exit code. On bb 0.48 they work as before.
+  step that gives back its output and exit code. On VesnALIA 0.48 they work as before.
 
 ## 0.3.0
 
 ### Changed
 
-- **The tabs are bb's own.** The strip of tabs is now the one bb draws in its own panels: each tab
+- **The tabs are VesnALIA's own.** The strip of tabs is now the one VesnALIA draws in its own panels: each tab
   has a terminal icon, the tab under the pointer shows its ×, and when the tabs do not fit, arrows
   and faded edges at either end scroll them (the mouse wheel does too). A tab whose machine is
   offline or whose shell has ended says so after its name.
@@ -43,13 +43,13 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - **Add to chat from a terminal.** Select text in a terminal and an **Add to chat** button appears by
-  the pointer, as in bb's own terminal. It asks which chat: an open thread (search them by title or
+  the pointer, as in VesnALIA's own terminal. It asks which chat: an open thread (search them by title or
   project; the most recent are first) or a new thread in a project you pick. A new thread starts on
   the project whose folder the shell is in, when the shell says where it is, and otherwise on the one
   you picked last time. The selection goes into that chat's message box as a block of terminal
   output, saying which tab and machine it came from, for you to read over and send yourself.
-- **Copy on select**, following bb's own setting (Settings → General → Terminals → Copy on select):
-  selecting text copies it and shows "Selection copied", as bb's terminal does. Turn the setting off
+- **Copy on select**, following VesnALIA's own setting (Settings → General → Terminals → Copy on select):
+  selecting text copies it and shows "Selection copied", as VesnALIA's terminal does. Turn the setting off
   and selecting copies nothing; the change counts at once.
 
 ## 0.1.1
@@ -64,7 +64,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **A Terminals page** in the sidebar, with tabs of shells on any machine connected to bb. Each one
+- **A Terminals page** in the sidebar, with tabs of shells on any machine connected to VesnALIA. Each one
   opens in that machine's home folder; no project is needed.
 - **+ at the end of the tabs** opens a terminal: straight away when one machine is connected, from a
   list of machines when there are several.

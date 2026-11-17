@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="#171717" role="img" aria-label="Kilo Code">
   <title>Kilo Code</title>
-  <!-- Official Kilo Code mark, monochrome so BB can tint the light-theme logo. -->
+  <!-- Official Kilo Code mark, monochrome so ALIA can tint the light-theme logo. -->
   <g>
     <path d="M23,26v-2h3v-5l-2-2h-4v2h-3v5l2,2h4ZM20,20h3v3h-3v-3Z"/>
     <rect x="12" y="17" width="3" height="3"/>

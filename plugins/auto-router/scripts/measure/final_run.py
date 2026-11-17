@@ -7,7 +7,7 @@
 # plugin is rebuilt from the branch it started on.
 import argparse, json, os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from paired import bb, wait_turn
+from paired import alia, wait_turn
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,14 +15,14 @@ def log(message):
     print(time.strftime("%H:%M:%S"), message, flush=True)
 
 def window():
-    """The Claude window BB reports after one tiny turn: (status, resetsAtMs)."""
-    t = json.loads(bb("thread", "spawn", "--json", "--parent-self", "--project", "proj_hymem4rej5",
+    """The Claude window ALIA reports after one tiny turn: (status, resetsAtMs)."""
+    t = json.loads(alia("thread", "spawn", "--json", "--parent-self", "--project", "proj_hymem4rej5",
                       "--environment", "env_izxivbi46y", "--provider", "claude-code",
                       "--model", "claude-haiku-4-5-20251001", "--reasoning-level", "low",
                       "--title", "measure window check", "--prompt-file", "-", stdin="Reply with the word ok. Use no tools."))["id"]
     state = wait_turn(t, 0, 600)
-    events = json.loads(bb("thread", "log", t, "--all", "--json"))
-    bb("thread", "stop", t)
+    events = json.loads(alia("thread", "log", t, "--all", "--json"))
+    alia("thread", "stop", t)
     reports = [e["data"]["rateLimits"] for e in events if e["type"] == "provider/rateLimits/updated"]
     if state != "done" or not reports:
         return "blocked", None
@@ -43,8 +43,8 @@ def wait_for_window(after_ms=0):
 
 def install(repo, ref):
     subprocess.run(["git", "-C", repo, "checkout", "-q", ref], check=True)
-    subprocess.run(["bb", "plugin", "build", repo], check=True, capture_output=True)
-    subprocess.run(["bb", "plugin", "reload", "auto-router"], check=True, capture_output=True)
+    subprocess.run(["alia", "plugin", "build", repo], check=True, capture_output=True)
+    subprocess.run(["alia", "plugin", "reload", "auto-router"], check=True, capture_output=True)
     log(f"Model Pilot built from {ref} ({subprocess.run(['git', '-C', repo, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip()})")
 
 def set_aside_failed(out):

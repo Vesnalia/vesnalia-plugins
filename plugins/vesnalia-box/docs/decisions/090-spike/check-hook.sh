@@ -77,22 +77,22 @@ check_restore_cut_short_after() {
   step=$1
   echo "before-$step" >"$DATA/marker"
   operation=$(new_id op)
-  BBBOX_HOOK_STOP_AFTER=$step "$RUNNER" "$operation" restore "$TAKEN" "$operation" >/dev/null
-  while [ ! -f "$BBBOX_STATE/snapshot-operations/$operation/status" ] && [ -n "$(cat "$BBBOX_STATE/snapshot-operations/$operation/pid" 2>/dev/null)" ] && kill -0 "$(cat "$BBBOX_STATE/snapshot-operations/$operation/pid")" 2>/dev/null; do sleep 0.1; done
+  ALIABOX_HOOK_STOP_AFTER=$step "$RUNNER" "$operation" restore "$TAKEN" "$operation" >/dev/null
+  while [ ! -f "$ALIABOX_STATE/snapshot-operations/$operation/status" ] && [ -n "$(cat "$ALIABOX_STATE/snapshot-operations/$operation/pid" 2>/dev/null)" ] && kill -0 "$(cat "$ALIABOX_STATE/snapshot-operations/$operation/pid")" 2>/dev/null; do sleep 0.1; done
   until_done "$operation" restore "$TAKEN" "$operation" >/dev/null
   expect "a restore killed after the step '$step' finishes when asked again" 0 $?
   expect "and the data is as it was at the take" first "$(cat "$DATA/marker")"
-  expect "and it launched the hook twice" 2 "$(cat "$BBBOX_STATE/snapshot-operations/$operation/launches")"
+  expect "and it launched the hook twice" 2 "$(cat "$ALIABOX_STATE/snapshot-operations/$operation/launches")"
 }
 
 check_machine_restart_mid_operation() {
   operation=$(new_id op)
-  boot=$BBBOX_STATE/fake-boot-id
+  boot=$ALIABOX_STATE/fake-boot-id
   echo boot-one >"$boot"
-  BBBOX_BOOT_ID_FILE=$boot BBBOX_HOOK_STOP_AFTER=moved-aside "$RUNNER" "$operation" restore "$TAKEN" "$operation" >/dev/null
+  ALIABOX_BOOT_ID_FILE=$boot ALIABOX_HOOK_STOP_AFTER=moved-aside "$RUNNER" "$operation" restore "$TAKEN" "$operation" >/dev/null
   sleep 1
   echo boot-two >"$boot"
-  out=$(BBBOX_BOOT_ID_FILE=$boot until_done "$operation" restore "$TAKEN" "$operation")
+  out=$(ALIABOX_BOOT_ID_FILE=$boot until_done "$operation" restore "$TAKEN" "$operation")
   expect "after the machine restarts mid-restore, asking again finishes it" 0 $?
   expect "and the data is as it was at the take" first "$(cat "$DATA/marker")"
 }
@@ -112,7 +112,7 @@ check_unknown_snapshot() {
   expect "restoring a snapshot that is not there exits 4" 4 $?
 }
 
-export BBBOX_STATE=${BBBOX_STATE:-/var/lib/alia-box}
+export ALIABOX_STATE=${ALIABOX_STATE:-/var/lib/alia-box}
 check_describe
 check_take_is_idempotent
 check_restore

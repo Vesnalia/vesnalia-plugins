@@ -1,4 +1,4 @@
-// bbt-iwi.2 — pure tests for the verifiable-acceptance backend: submission
+// aliat-iwi.2 — pure tests for the verifiable-acceptance backend: submission
 // schemas (server stamps, result XOR notApplicable), append-only merge with
 // explicit limits, and the acceptance gates per caller class (executor /
 // lead / manual). No SDK, no AI.
@@ -59,7 +59,7 @@ const storedRecord = (submissionId = "sub_stamp1"): TaskReviewRecord => ({
   decisions: [],
 });
 
-describe("review schemas (bbt-iwi.2)", () => {
+describe("review schemas (aliat-iwi.2)", () => {
   it("rejects caller-supplied stamps: id, submittedBy, atMs are server-only", () => {
     const forged = JSON.parse(submissionJson) as Record<string, unknown>;
     forged.id = "sub_forged";

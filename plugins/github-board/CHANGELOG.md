@@ -12,7 +12,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **GitHub requests nobody is waiting for any more are stopped** instead of running to the end: those
   of a board, card, comment or image load when the plugin is reloaded, turned off or removed, or when
   the window that asked closes before the answer arrives. A load cut short is not remembered, so the
-  next look loads it afresh. This needs bb 0.48.1 or newer; on an older bb the requests finish as
+  next look loads it afresh. This needs VesnALIA 0.48.1 or newer; on an older VesnALIA the requests finish as
   before.
 
 ## 0.6.0
@@ -21,17 +21,17 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **A thread started from a card shows that card in its Info tab**: the repository and number, which
   open the card on GitHub, and its title. A thread a card was only added to shows nothing there.
-- **The card on the thread's sidebar row**, as the repository and number with the title on hover. bb
+- **The card on the thread's sidebar row**, as the repository and number with the title on hover. VesnALIA
   draws this only while its "thread row metadata" experiment is on and Organize → Rows → Metadata is
-  enabled, and needs bb 0.48 or newer; with either off, nothing changes.
+  enabled, and needs VesnALIA 0.48 or newer; with either off, nothing changes.
 - The prompt template page is named **Prompt templates** in the window title, split panes and history.
 
 ### Changed
 
-- **Needs bb 0.47 or newer.** On an older bb this version is not offered as an update, and GitHub Board
+- **Needs VesnALIA 0.47 or newer.** On an older VesnALIA this version is not offered as an update, and GitHub Board
   stays on the version you have.
-- The GitHub CLI is found the way bb finds its own tools, so a `gh` installed with mise, asdf, Volta or
-  into `~/.local/bin` works, and one installed after bb started is picked up on the board's next
+- The GitHub CLI is found the way VesnALIA finds its own tools, so a `gh` installed with mise, asdf, Volta or
+  into `~/.local/bin` works, and one installed after VesnALIA started is picked up on the board's next
   refresh, without reloading the plugin.
 
 ## 0.5.1
@@ -46,9 +46,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Needs bb 0.46 or newer.** On an older bb this version is not offered as an update, and GitHub Board
+- **Needs VesnALIA 0.46 or newer.** On an older VesnALIA this version is not offered as an update, and GitHub Board
   stays on the version you have.
-- **Add to chat** opens a thread that is not on screen through bb's own "open beside" rule, so where it
+- **Add to chat** opens a thread that is not on screen through VesnALIA's own "open beside" rule, so where it
   lands follows how you have set up split views, and it still opens in place where the window cannot be
   split.
 
@@ -77,7 +77,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.2.0
 
-Needs bb 0.45 or later. On bb 0.44, stay on 0.1.
+Needs VesnALIA 0.45 or later. On VesnALIA 0.44, stay on 0.1.
 
 ### Added
 
@@ -90,11 +90,11 @@ Needs bb 0.45 or later. On bb 0.44, stay on 0.1.
 
 ### Changed
 
-- Built and tested against bb 0.45. Nothing you can see changes, and it still runs on bb 0.44.
+- Built and tested against VesnALIA 0.45. Nothing you can see changes, and it still runs on VesnALIA 0.44.
 
 ## 0.1.0
 
-The first release: GitHub Board for bb, ported from the Paseo plugin of the same name (0.9.2).
+The first release: GitHub Board for VesnALIA, ported from the Paseo plugin of the same name (0.9.2).
 
 ### Added
 
@@ -111,7 +111,7 @@ The first release: GitHub Board for bb, ported from the Paseo plugin of the same
   images from outside GitHub wait until you ask. The panel can be widened or narrowed by dragging its
   edge, and keeps that width.
 - **Labels from a right-click menu**, applied as you press them.
-- **Send to chat**, which opens bb's own new-thread composer on the card with a prompt for its column,
+- **Send to chat**, which opens VesnALIA's own new-thread composer on the card with a prompt for its column,
   in the project that has the card's repository checked out — including a fork, through its
   `upstream` remote. The next card opens with the same model and environment.
 - **Prompt templates** per column and per project, on the plugin's settings page and behind the board's
@@ -120,8 +120,8 @@ The first release: GitHub Board for bb, ported from the Paseo plugin of the same
 
 ### Changed from the Paseo plugin
 
-- The send dialog is bb's composer, so the model, reasoning, environment, project and permission
-  pickers are bb's own. A prompt you were editing is kept if you close the dialog.
-- The board no longer adds a card row to the new thread's transcript; bb has no way for a plugin to add
+- The send dialog is VesnALIA's composer, so the model, reasoning, environment, project and permission
+  pickers are VesnALIA's own. A prompt you were editing is kept if you close the dialog.
+- The board no longer adds a card row to the new thread's transcript; VesnALIA has no way for a plugin to add
   one. The card's details are in the prompt and stored with the thread.
 - Sending a card to another machine is done through the composer's environment picker.

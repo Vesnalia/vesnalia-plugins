@@ -145,7 +145,7 @@ export class MsbCli {
     const command = this.host
       ? [this.#options.ssh ?? "ssh", "-o", "BatchMode=yes", "-T", ...sshTarget(this.host), `sh -c ${quote(msbScript(name))} alia-box-msb ${args.map(quote).join(" ")}`]
       : ["sh", "-c", msbScript(name), "alia-box-msb", ...args];
-    return this.#spawn(command as [string, ...string[]], { timeoutMs, signal }, this.host ? {} : { BBBOX_MSB_DIR: this.#dir }, `msb script ${name}`);
+    return this.#spawn(command as [string, ...string[]], { timeoutMs, signal }, this.host ? {} : { ALIABOX_MSB_DIR: this.#dir }, `msb script ${name}`);
   }
 
   /** Runs `argv`, counted by the loop watch as `site`, which names no path. */

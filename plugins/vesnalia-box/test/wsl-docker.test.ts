@@ -91,7 +91,7 @@ test("docker exec that exits 0 without an end mark is not a success", async () =
 
 test("a wsl host that cannot start wsl.exe fails the doctor with the reason", async () => {
   const fake = fakeDockerHost();
-  const backend = new DockerBackend(dockerConfig({ host: "wsl://bbdocker" }), testContext(), { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "wsl://aliadocker" }), testContext(), { binary: fake.binary, readyTimeoutMs: 2_000 });
   const report = await backend.doctor(signal());
   const cli = report.checks.find((entry) => entry.id === "docker.cli");
   assert.equal(cli?.status, "fail");

@@ -16,7 +16,7 @@ const ICONS: Record<string, Sprite> = {
   night: ["...c...", "...c...", ".ccxcc.", "ccxxxcc", ".ccxcc.", "...c...", "...c..."],
   balloons: [".RYB.", "RRYBB", "RRYBB", ".RYB.", "..k..", ".hhh."],
   pond: ["...gg.", "..gGgo", "..gg..", "w.ww..", "wwwww."],
-  train: ["k.....", "kk.RRR", "BBBBRR", "BBBBBB", ".o..o."],
+  train: ["k.....", "kk.RRR", "ALIABBRR", "ALIABBBB", ".o..o."],
   garden: [".p.", "pyp", ".p.", "lG.", ".G."],
   campfire: [".o.", "oyo", "oyo", "hhh"],
   underwater: ["..GG..", ".GlGG.", "GGGGGg", ".g..g."],

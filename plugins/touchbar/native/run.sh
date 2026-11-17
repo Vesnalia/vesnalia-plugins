@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP="${ALIA_TOUCHBAR_APP:-$HOME/Applications/BBTouchBar.app}"
-BIN="$APP/Contents/MacOS/BBTouchBar"
-READY="$HOME/Library/Application Support/BBTouchBar/BBTouchBar.ready"
+APP="${ALIA_TOUCHBAR_APP:-$HOME/Applications/AliaTouchBar.app}"
+BIN="$APP/Contents/MacOS/AliaTouchBar"
+READY="$HOME/Library/Application Support/AliaTouchBar/AliaTouchBar.ready"
 
 running_pids() {
   local pid command
@@ -24,7 +24,7 @@ ready() {
 wait_ready() {
   local attempt
   for attempt in {1..50}; do ready && return 0; sleep 0.1; done
-  printf '%s\n' 'error: BBTouchBar.app did not become ready' >&2
+  printf '%s\n' 'error: AliaTouchBar.app did not become ready' >&2
   return 1
 }
 

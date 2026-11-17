@@ -764,7 +764,7 @@ export async function validateProviders(
 }
 
 /** True when .vesnalia is covered by a .gitignore pattern. */
-export function gitIgnoresBB(gitignoreContent: string): boolean {
+export function gitIgnoresALIA(gitignoreContent: string): boolean {
   return gitignoreContent.split("\n").some((raw) => {
     const line = raw.trim();
     if (!line || line.startsWith("#")) return false;

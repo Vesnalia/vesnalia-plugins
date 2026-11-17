@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this plugin. Versions follow the `vX.Y.Z` git tags that bb
+All notable changes to this plugin. Versions follow the `vX.Y.Z` git tags that VesnALIA
 reads when you install or update the plugin.
 
 ## Unreleased
@@ -38,7 +38,7 @@ _None yet. Release 0.1.7 is the current tagged release._
 ### History restoration
 
 - Make history restoration self-healing. A corrupt or foreign checkpoint value in
-  bb turn events now decodes to a legacy/no-checkpoint reconstruction instead of
+  VesnALIA turn events now decodes to a legacy/no-checkpoint reconstruction instead of
   throwing, and one failed history read fails only its own turn: the sticky
   restoration requirement is cleared, so later turns on the same resumed thread
   continue with the current input instead of failing forever.
@@ -81,7 +81,7 @@ _None yet. Release 0.1.7 is the current tagged release._
 
 ## 0.1.6 — 2026-11-09
 
-- Fix the provider handshake so bb can list NanoGPT models again. The bridge
+- Fix the provider handshake so VesnALIA can list NanoGPT models again. The bridge
   reported `capabilities.grammarVersions` as `[3]`, but the SDK contract is an
   ascending `[min, max]` pair, so the host rejected `initialize` with
   "capabilities.grammarVersions: Too small: expected array to have >=2 items"
@@ -89,14 +89,14 @@ _None yet. Release 0.1.7 is the current tagged release._
   reports `[3, 3]`.
 - Add a regression test that validates the advertised capabilities against the
   SDK's `bridgeCapabilitiesSchema`. Verification: 281 tests, typecheck, plugin
-  build, local reinstall, and `bb provider models nano-gpt` returning the live
+  build, local reinstall, and `alia provider models nano-gpt` returning the live
   catalog.
 
 ## 0.1.5 — 2026-11-09
 
 - Add a Tool controls panel and independent RPCs for exact tool denials and
   optional one-time manual confirmations. Carry validated controls in public
-  provider options so configured denials work without bb forwarding the native
+  provider options so configured denials work without VesnALIA forwarding the native
   denylist. Preserve each submitted turn's settings snapshot. Validate approval
   replies with the SDK contract, reject broader grants and malformed/error replies,
   cancel on Stop/release/replacement, ignore late responses, and redact credential
@@ -104,13 +104,13 @@ _None yet. Release 0.1.7 is the current tagged release._
   presentation limit. Automatic review and workspace confinement remain unsupported.
   Verification: 280 tests, typecheck, build, and four offline built-host protocol
   smoke scenarios passed. Live approval UI/daemon behavior remains unverified.
-- Preserve bb's complete permission policy in immutable per-request options and
+- Preserve VesnALIA's complete permission policy in immutable per-request options and
   reject unsupported modes before acknowledging input or changing sessions.
   Keep the advertised modes limited to full until workspace/reviewer enforcement
   is available. Enforce exact session tool denials in model definitions and
   dispatch, reject duplicate names, and restrict the hidden history tool to
   bridge restoration. Missing/denied history retrieval stops resumed generation.
-  Add 31 regression tests; the inspected bb adapter still needs denylist
+  Add 31 regression tests; the inspected VesnALIA adapter still needs denylist
   forwarding, and general approval review remains unsupported.
 - Document the permission/tool audit: full-only capability declaration, dropped
   policy fields, ignored session tool denylist, and separate tool/approval routing.
@@ -126,12 +126,12 @@ _None yet. Release 0.1.7 is the current tagged release._
 - Add model-specific Low, Medium, and High reasoning effort choices when NanoGPT
   declares support. Explicit choices are validated and sent as `reasoning_effort`;
   Provider default omits the field and preserves the old saved `medium` behavior.
-- Make default-only reasoning records authoritative to bb so stale explicit
+- Make default-only reasoning records authoritative to VesnALIA so stale explicit
   choices are removed after metadata loss. Refresh once when cached metadata
   rejects an explicit effort, and share one model-list deadline across detailed
   discovery and basic fallback. Dedicated regression and live acceptance checks
   remain open; see [the reasoning guide](docs/REASONING_EFFORT.md).
-- Restore NanoGPT model context from bb's saved event history after provider
+- Restore NanoGPT model context from VesnALIA's saved event history after provider
   session resume. History is fetched through a bounded hidden tool before the
   first model request; failed retrieval fails the turn instead of silently
   continuing with empty context. URL images are restored; historical local
@@ -139,7 +139,7 @@ _None yet. Release 0.1.7 is the current tagged release._
 - Add history-adapter and resume-bridge coverage. Live daemon restart verification
   remains outstanding.
 - Restore queued prompts in execution order and preserve accepted retry inputs.
-  Record request identity and input retention in bb turn checkpoints so rolled-back
+  Record request identity and input retention in VesnALIA turn checkpoints so rolled-back
   input and canceled queued prompts stay excluded after resume. Retained failed
   and interrupted turns can be evicted together with their tool results.
 
@@ -158,9 +158,9 @@ _None yet. Release 0.1.7 is the current tagged release._
 - Correct default-model selection and preferred-model ordering; return the full
   catalog instead of silently cutting it to 400 entries.
 - Plan mode has a composer action, a planning instruction and a strict tool
-  execution guard. Unknown tools never reach bb.
+  execution guard. Unknown tools never reach VesnALIA.
 - Replace ineffective reasoning choices with one Provider default option; close
-  reasoning with accumulated text. Health uses bb's current server credential
+  reasoning with accumulated text. Health uses VesnALIA's current server credential
   contribution instead of a process API-key snapshot.
 - Add a 10-second model-list deadline and 120-second completion header/idle-read
   deadlines, including body reads. Timeouts fail turns instead of interrupting them.

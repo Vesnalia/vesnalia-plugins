@@ -116,20 +116,20 @@ test("071 unit 12: the update script fetches NVIDIA's installer for exactly the 
   const root = fakeRoot();
   const dir = tempDir("nvidia-update-dir");
   const base = mirror("580.142");
-  const fetched = run(root, ["fetch", dir, "580.142"], { BBBOX_NVIDIA_BASE: base });
+  const fetched = run(root, ["fetch", dir, "580.142"], { ALIABOX_NVIDIA_BASE: base });
   assert.equal(fetched.status, 0, fetched.err);
   assert.equal(fetched.out, `fetched ${RUN("580.142")}\n`);
   assert.equal(readFileSync(join(dir, "artifacts", RUN("580.142")), "utf8"), "a fake NVIDIA installer\n");
-  assert.equal(run(root, ["fetch", dir, "580.142"], { BBBOX_NVIDIA_BASE: base }).out, `kept ${RUN("580.142")}\n`);
+  assert.equal(run(root, ["fetch", dir, "580.142"], { ALIABOX_NVIDIA_BASE: base }).out, `kept ${RUN("580.142")}\n`);
 
   const bad = tempDir("nvidia-update-dir");
-  const wrong = run(root, ["fetch", bad, "580.142"], { BBBOX_NVIDIA_BASE: mirror("580.142", "tampered\n", "0".repeat(64)) });
+  const wrong = run(root, ["fetch", bad, "580.142"], { ALIABOX_NVIDIA_BASE: mirror("580.142", "tampered\n", "0".repeat(64)) });
   assert.notEqual(wrong.status, 0);
   assert.match(wrong.err, /NVIDIA-Linux-x86_64-580\.142\.run from NVIDIA does not match NVIDIA's SHA-256/);
   assert.equal(existsSync(join(bad, "artifacts", RUN("580.142"))), false);
   assert.equal(existsSync(join(bad, "artifacts", `${RUN("580.142")}.part`)), false);
 
-  const other = run(root, ["fetch", tempDir("nvidia-update-dir"), "590.10"], { BBBOX_NVIDIA_BASE: mirror("590.10") });
+  const other = run(root, ["fetch", tempDir("nvidia-update-dir"), "590.10"], { ALIABOX_NVIDIA_BASE: mirror("590.10") });
   assert.notEqual(other.status, 0);
   assert.match(other.err, /the box sees the host's driver 580\.142, not 590\.10/);
   assert.match(run(fakeRoot({ driver: null }), ["fetch", tempDir("nvidia-update-dir"), "580.142"]).err, /the box sees no NVIDIA driver on its host/);
@@ -367,7 +367,7 @@ test("071 unit 12: the update holds a lock in the box while it fetches and insta
     const again = run(root, ["install", tempDir("nvidia-update-dir")]);
     assert.notEqual(again.status, 0);
     assert.match(again.err, /an earlier update of NVIDIA's userspace is still running in this box/);
-    const fetch = run(root, ["fetch", tempDir("nvidia-update-dir"), "580.142"], { BBBOX_NVIDIA_BASE: mirror("580.142") });
+    const fetch = run(root, ["fetch", tempDir("nvidia-update-dir"), "580.142"], { ALIABOX_NVIDIA_BASE: mirror("580.142") });
     assert.notEqual(fetch.status, 0);
     assert.match(fetch.err, /still running in this box/);
   } finally {
@@ -376,7 +376,7 @@ test("071 unit 12: the update holds a lock in the box while it fetches and insta
   for (let i = 0; i < 100 && updateRunning(readingWithLock(lock)); i++) await new Promise((resolve) => setTimeout(resolve, 20));
   assert.equal(existsSync(lock), true, "the lock file stays behind");
   assert.equal(updateRunning(readingWithLock(lock)), false, "a lock whose last holder died is no lock: the kernel drops it with its holder");
-  const later = run(root, ["fetch", tempDir("nvidia-update-dir"), "580.142"], { BBBOX_NVIDIA_BASE: mirror("580.142") });
+  const later = run(root, ["fetch", tempDir("nvidia-update-dir"), "580.142"], { ALIABOX_NVIDIA_BASE: mirror("580.142") });
   assert.equal(later.status, 0, later.err);
 });
 

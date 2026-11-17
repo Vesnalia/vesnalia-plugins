@@ -76,7 +76,7 @@ export const MADE_UID_BASE = 80000;
 export const MADE_UID_SPAN = 10000;
 export const LAST_GENERATION = MADE_UID_SPAN - 1;
 
-export const slotUser = (slot: SlotName): string => (slot.carried ? `bbd-i${slot.generation}` : `bbd-${slot.generation}`);
+export const slotUser = (slot: SlotName): string => (slot.carried ? `aliad-i${slot.generation}` : `aliad-${slot.generation}`);
 export const slotUid = (slot: SlotName): number => (slot.carried ? CARRIED_UID_BASE + slot.generation : MADE_UID_BASE + slot.generation);
 
 export const PORT_BASE = 20000;

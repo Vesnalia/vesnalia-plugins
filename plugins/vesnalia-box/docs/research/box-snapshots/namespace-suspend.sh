@@ -20,12 +20,12 @@ wait_for() {
 }
 
 if [ "$INSTANCE" = find ]; then
-  INSTANCE=$(call ListInstances "{\"maxEntries\":50,\"labelFilter\":[{\"name\":\"bbbox-box\",\"value\":\"$BOX\",\"op\":\"EQUAL\"}]}" | python3 -c "import json,sys; i=json.load(sys.stdin).get('instances',[]); print(i[0]['instanceId'] if len(i)==1 else '')")
+  INSTANCE=$(call ListInstances "{\"maxEntries\":50,\"labelFilter\":[{\"name\":\"aliabox-box\",\"value\":\"$BOX\",\"op\":\"EQUAL\"}]}" | python3 -c "import json,sys; i=json.load(sys.stdin).get('instances',[]); print(i[0]['instanceId'] if len(i)==1 else '')")
   [ -n "$INSTANCE" ] || { echo "No single instance carries box $BOX; stopping." >&2; exit 1; }
   echo "instance id: $INSTANCE"
 fi
 describe > "$WORK/first.json"
-LABEL=$(field "next((l.get('value') for l in m.get('labels',[]) if l.get('name')=='bbbox-box'),'')" < "$WORK/first.json")
+LABEL=$(field "next((l.get('value') for l in m.get('labels',[]) if l.get('name')=='aliabox-box'),'')" < "$WORK/first.json")
 [ "$LABEL" = "$BOX" ] || { echo "Instance $INSTANCE is not box $BOX's; stopping." >&2; exit 1; }
 echo "instance: $(field "m.get('shape')" < "$WORK/first.json"), status $(field "m.get('status')" < "$WORK/first.json"), deadline $(field "m.get('deadline')" < "$WORK/first.json")"
 

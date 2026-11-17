@@ -1,6 +1,6 @@
 # Live check focus, 2026-10-31T11:14:10.084Z
 
-Box: rosy-river (bxtakmbxzlxloh), container bbbox-bxtakmbxzlxloh.
+Box: rosy-river (bxtakmbxzlxloh), container aliabox-bxtakmbxzlxloh.
 
 - PASS [reason] a box stopped outside alia-box says Unexpected stop on its line, with the warning mark: state stopped; line "Stopped · Unexpected stop · 4 min ago · 2 cores · 4 GiB memory"
 - PASS [keys] keyboard only: the name's focus shows the line's tooltip with its reason, Escape hides it, and it goes when focus moves on: "Unexpected stop: It stopped without a request from alia-box at 2026-10-31 11:09:41 UTC. Its backend does not record why."

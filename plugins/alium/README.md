@@ -1,4 +1,4 @@
-# Bbium
+# Alium
 
 Vimium-style keys for [VesnALIA](https://getbb.app). Press `f`, type the label next to a button, link, thread or field, and VesnALIA clicks it. Scroll with `j`/`k` and `d`/`u`. No mouse.
 
@@ -28,11 +28,11 @@ Scroll keys move the area you last clicked into, else the largest scrollable are
 
 ## Settings
 
-In VesnALIA: Plugins > Bbium, or from the CLI (an agent can do this for you):
+In VesnALIA: Plugins > Alium, or from the CLI (an agent can do this for you):
 
 ```sh
-alia plugin config bbium set theme alia
-alia plugin config bbium set customCss '[data-bbium-root] { --bbium-font-size: 13px; }'
+alia plugin config alium set theme alia
+alia plugin config alium set customCss '[data-alium-root] { --alium-font-size: 13px; }'
 ```
 
 Changes apply live, no reload.
@@ -40,19 +40,19 @@ Changes apply live, no reload.
 | Setting          | Default          | Meaning                                                                                                  |
 | ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
 | `vimKeys`        | `true`           | Turn all keys on or off                                                                                  |
-| `disabledKeys`   | empty            | Keys bbium leaves alone, any of `f i j k d u g G`. `jk` lets the sidebar switch threads with `j`/`k`     |
+| `disabledKeys`   | empty            | Keys alium leaves alone, any of `f i j k d u g G`. `jk` lets the sidebar switch threads with `j`/`k`     |
 | `hintCharacters` | `sadfjklewcmpgh` | Label letters, home row first                                                                            |
 | `scrollStep`     | `70`             | Pixels per `j`/`k`                                                                                       |
 | `theme`          | `keycap`         | `keycap` alia-style key chips, `vimium` yellow, `alia` app accent, `mono` (all but vimium follow light/dark) |
 | `customCss`      | empty            | CSS applied after the theme                                                                              |
 
-Hint styling uses CSS variables (`--bbium-bg`, `--bbium-fg`, `--bbium-font-size`, `--bbium-offset-y`...) on `[data-bbium-root]`. The full list is in [`skills/bbium/SKILL.md`](skills/bbium/SKILL.md). VesnALIA loads that skill for agents, so "make the hints bigger and blue" works in any thread.
+Hint styling uses CSS variables (`--alium-bg`, `--alium-fg`, `--alium-font-size`, `--alium-offset-y`...) on `[data-alium-root]`. The full list is in [`skills/alium/SKILL.md`](skills/alium/SKILL.md). VesnALIA loads that skill for agents, so "make the hints bigger and blue" works in any thread.
 
 ## How it works
 
 An app overlay (`experimental_appOverlay`, [`app.tsx`](app.tsx)) mounts once per VesnALIA window, renders nothing and installs one capture-phase key handler. It reads settings live with `useSettings`. Hint mode labels semantic controls (links, buttons, inputs, ARIA roles) and the outermost `cursor: pointer` elements that are visible and not covered. Activation sends the full pointer sequence, so Radix menus and selects open too. Hover-only controls (message actions, Snooze and Settle on sidebar threads) are shown and clickable while hints are open, and an icon-only button gets its label on its top edge, so you can see what each label does. When two labels would cover each other (icon buttons side by side, a toggle inside a row), the later one moves the shortest distance to a free spot.
 
-Other plugins with their own keys: put `data-bbium-passthrough` on the container. While a key event comes from inside it, bbium ignores plain keys (no Cmd or Ctrl) and does not stop them. The Kuri sidebar uses this for its j/k navigation. Hints and scroll keys then work only after focus leaves that container.
+Other plugins with their own keys: put `data-alium-passthrough` on the container. While a key event comes from inside it, alium ignores plain keys (no Cmd or Ctrl) and does not stop them. The Kuri sidebar uses this for its j/k navigation. Hints and scroll keys then work only after focus leaves that container.
 
 Limits: content inside the built-in Browser panel (an iframe) gets no hints. Hint detection depends on VesnALIA's DOM, so a VesnALIA update can change which elements get a label.
 

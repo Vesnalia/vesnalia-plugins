@@ -35,7 +35,7 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ### Añadido
 
-- **`bb claude-switcher unblock <cuenta>`**: quita el veto por rechazo, las
+- **`alia claude-switcher unblock <cuenta>`**: quita el veto por rechazo, las
   marcas de límite (todos los ámbitos) y las de sesión perdida (todas las
   máquinas) de esa cuenta, lo apunta en el registro y en `history --dias`
   (sección «Notes», no cuenta como hilo atascado),
@@ -61,7 +61,7 @@ project uses [Semantic Versioning](https://semver.org/).
   plugin lo leyó como la negativa de cada cuenta y en tres minutos dejó
   cinco cuentas con cuota fuera 6 h, con hilos esperando o en error hasta
   una recarga. Ahora, antes de marcar una negativa, se lee el texto del
-  fallo en el registro de bb (`isNetworkBlock`): si es esa página, no se
+  fallo en el registro de VesnALIA (`isNetworkBlock`): si es esa página, no se
   marca ninguna cuenta, el proyecto no se mueve y el turno se reintenta en
   la misma cuenta a los 2 min (`NETWORK_BLOCK_RETRY_MS`) mientras le queden
   intentos; agotados, queda en error para el rescate. Si el texto no se
@@ -89,7 +89,7 @@ project uses [Semantic Versioning](https://semver.org/).
   arrancó en una cuenta, el plugin se recargó mientras corría, el proyecto se
   movió a otra cuenta y el 429 del turno marcó la cuenta nueva con el
   reinicio semanal de la vieja. Ahora el fallo de un turno de antes de la
-  carga (bb listó el hilo en marcha al cargar y ese turno no ha acabado, o
+  carga (VesnALIA listó el hilo en marcha al cargar y ese turno no ha acabado, o
   el fallo llega antes de esa lista) es de una cuenta desconocida: no marca
   ninguna, ni límite ni negativa, y deciden las mediciones. Lo que restaura la recarga (la plaza)
   no se usa como prueba de dónde corre: puede ser de otro turno del mismo
@@ -133,11 +133,11 @@ project uses [Semantic Versioning](https://semver.org/).
 
 - **Un turno que falla porque la cuenta no tiene sesión en su máquina mueve
   el proyecto y se reintenta.** Aitor, 2026-11-10: «tengo un par de hilos
-  que no corren porque no ha cambiado de cuenta». bb anuncia ese fallo sin
+  que no corren porque no ha cambiado de cuenta». VesnALIA anuncia ese fallo sin
   `errorInfo` («Not logged in · Please run /login», «this login reached its
   time limit and cannot be renewed», un 401 o «OAuth token has expired» en el
   texto del error) y el plugin lo ignoraba; `history` decía «Stuck threads:
-  0». Ahora el texto del error en el registro de bb lo delata, la cuenta
+  0». Ahora el texto del error en el registro de VesnALIA lo delata, la cuenta
   queda marcada en esa máquina (no en las demás: en otra puede tener sesión),
   el proyecto va a otra cuenta capaz con el criterio de siempre y el turno se
   reintenta solo; sin otra capaz, se queda en error, dicho en el registro y
@@ -210,7 +210,7 @@ project uses [Semantic Versioning](https://semver.org/).
   por el bloqueo, que es lo que dice. Para eso el estado que reciben las
   vistas lleva ya la marca `missing` de cada ventana: su esquema la quitaba,
   y el panel nunca la habría visto (lo prueba un test del servidor).
-- **El panel de uso de bb también recibe la semanal de una Team** cuando su
+- **El panel de uso de VesnALIA también recibe la semanal de una Team** cuando su
   lectura la midió, con reinicio o sin él (mismo patrón, en
   `src/usage-source.ts`: la escondía por la misma regla del 2026-11-02; es el
   panel del «Agotada» de la captura de Aitor). Una respuesta incompleta, que
@@ -218,7 +218,7 @@ project uses [Semantic Versioning](https://semver.org/).
   sin semanal: es lo que protegía Codex BARS-001. Codex Sol r1 (medium,
   `docs/semanal-team-2026-11-07/codex-r1.txt`): la primera versión pedía
   además el reinicio, y una semanal medida al 100 % sin reinicio se
-  escondía; bb veía 0 % y 85 % y no el límite que frena la cuenta. El test
+  escondía; VesnALIA veía 0 % y 85 % y no el límite que frena la cuenta. El test
   de BARS-001 usaba justo una medición válida sin reinicio; ahora usa la
   respuesta incompleta que BARS-001 quería evitar. El panel propio no tenía
   ese corte (lo cubre ahora un test).
@@ -367,7 +367,7 @@ Revisión (Astra r3: 1 high y 3 medium, `docs/reparto-por-hueco-2026-11-07/astra
   primero. Si la sesión o la semanal general también están llenas, o la
   lectura no explica el 429, la marca es de toda la cuenta (medium 2).
 - La salida por `maximumWaitHours` se mantiene hasta que el turno arranca: si
-  otro plugin retiene el mensaje y bb vuelve a preguntar 1 ms después, el
+  otro plugin retiene el mensaje y VesnALIA vuelve a preguntar 1 ms después, el
   turno sigue saliendo hacia la Ultra en vez de empezar otra hora de espera.
   Cuando un turno suyo ha corrido, el siguiente cuenta desde cero (medium 3).
 - Todo movimiento automático antes o después de un turno ata el proyecto
@@ -385,7 +385,7 @@ Revisión (Astra r4: 1 high y 3 medium, `docs/reparto-por-hueco-2026-11-07/astra
   avanzando 1 s entre fallos, el reintento volvía a ir de work a spare y de
   spare a work hasta agotar los intentos. Ahora la marca dura hasta el
   reinicio que dice el 429 y, sin reinicio, 30 min (`LIMIT_NO_RESET_MS`,
-  [SUPUESTO]: no había un retraso de bb ni nuestro que encajara). Fuera el
+  [SUPUESTO]: no había un retraso de VesnALIA ni nuestro que encajara). Fuera el
   código de «una lectura posterior la desmiente» y el de la marca sin fin
   (high 1).
 - Cada cuenta guarda una marca de la cuenta entera y una por modelo, cada
@@ -624,12 +624,12 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
 - **A seat that ends asks the waiting threads again at once**, also those
   waiting on other accounts: one whose project can move to it goes now,
   not at its next 30-second ask.
-- **`bb claude-switcher seats` lists the last day's samples**; the week is
+- **`alia claude-switcher seats` lists the last day's samples**; the week is
   in `history --dias N`.
 
 ### Added
 
-- **A week of seat history** (`bb claude-switcher history --dias N`, 1 to
+- **A week of seat history** (`alia claude-switcher history --dias N`, 1 to
   7): per hour and account, the seats taken and the threads waiting at
   most and the session and weekly %; every stuck thread with its why; and
   the moves of those days. Kept in the plugin's own SQLite database, one
@@ -638,7 +638,7 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
 ### Fixed
 
 - **The seat samples were not kept past two days.** They went to one
-  key-value row, and from about the third day it passed bb's 256 KB limit:
+  key-value row, and from about the third day it passed VesnALIA's 256 KB limit:
   every store failed (662 times in the log from 2026-11-03 to 2026-11-05)
   and a reload lost them. The samples kept there move to the database once;
   if the database cannot take them they stay in memory, and in key-value
@@ -743,7 +743,7 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
   before reserving. With no account able to run it the turn still starts
   and fails: that failure is what tells the user and applies the longest
   wait.
-- **A pick by hand takes effect at once**: bb is asked again for the
+- **A pick by hand takes effect at once**: VesnALIA is asked again for the
   messages the plugin holds (up to 5 minutes otherwise), and the retries
   with a far time are looked at without waiting for the refresh. A pick of
   an Ultra still does not run Opus there («Esperar siempre», Aitor,
@@ -756,17 +756,17 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
 
 - **A thread held 10 minutes with another account free is said to be
   stuck**: a `STUCK:` line in the log at most every 10 minutes per thread,
-  and `atascos` in `health --json` and `seats --json` (`null` when bb's
+  and `atascos` in `health --json` and `seats --json` (`null` when VesnALIA's
   queue could not be read, never an empty list). `health` also gives
   `pctExacto`, the unrounded percentage (99.6 % rounds to 100 and still
   runs).
 - **`scripts/canario-cola.mjs`**, a canary from outside the plugin, every
-  10 minutes as a `bb automation` on bb's server. It warns when the plugin
+  10 minutes as a `alia automation` on VesnALIA's server. It warns when the plugin
   holds a message 10 minutes with a usable account with a free seat that
   could run it, seen in two looks in a row (a seat just freed is taken within
   30 s); when it holds one 2 hours with none that could (one grouped
   warning every 6 hours: the rule still waits, not in silence); and when a
-  failed message has been stopped 10 minutes. A failed read, or a `bb` that
+  failed message has been stopped 10 minutes. A failed read, or a `alia` that
   hangs, exits 1, and warns after 30 minutes in a row.
 - **An account not read yet, whose login says Max or Ultra, runs no Opus**:
   just after a reload, or with its reads failing, the turn goes to a free
@@ -812,7 +812,7 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
   Ultra account takes a fifth thread while its day's pace is under 50 %
   and its 5-hour session under 40 %, and drops to three once its pace
   passes 90 %; each change is in the history with why.
-- **`bb claude-switcher rebalance [--apply]`**: one pass that spreads the
+- **`alia claude-switcher rebalance [--apply]`**: one pass that spreads the
   projects with no thread at work over the usable Ultra accounts by the
   room in their weekly, none more than 10 projects above the one with
   fewest; each move is in the history as `Rebalanced`.
@@ -838,7 +838,7 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
 - **An Opus turn waits instead of spending a Max account's weekly.** By
   Aitor's decision of 2026-11-03 («Esperar siempre»): when no Team seat
   (or Max account out of Fable) can take an Opus turn, it no longer runs
-  on the Max account that keeps Fable where its project sits. bb holds
+  on the Max account that keeps Fable where its project sits. VesnALIA holds
   the message, the user's own threads too, with the seat it waits for
   and from when (`Waiting for Opus on team3, free from 2026-11-03 14:00:
   aitor keeps its weekly for Fable`), and asks again within 5 minutes.
@@ -856,7 +856,7 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
   project for the model of its latest turn, and moves one in Opus only
   where Opus spends no weekly Fable needs.
 - **After a turn in Opus that ran on a Max account that keeps Fable, the
-  project moves off it at once.** Turns that skip bb's dispatch check (a
+  project moves off it at once.** Turns that skip VesnALIA's dispatch check (a
   message from a child thread, a Send now) run where the project sits:
   this repository's own Opus thread ran on aitor that way from 21:04 on
   2 Nov to 09:41 on 3 Nov, and aitor's weekly reached 48 % with Fable at
@@ -897,7 +897,7 @@ Revisión (Astra r9: 0 high y 1 medium, `docs/reparto-por-hueco-2026-11-07/astra
 
 ### Fixed
 
-- **A Team seat no longer shows a 7-day bar in bb's Provider usage
+- **A Team seat no longer shows a 7-day bar in VesnALIA's Provider usage
   panel.** The plugin published a «Weekly limit» window at 0 % for every
   Team seat, which has no general weekly; now a Team seat publishes its
   5 hours and its per-model windows only.
@@ -937,7 +937,7 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   missing session as an incomplete answer, so the account was never
   chosen and `list` said `ses 100% LOCKED`. Such an answer now reads a
   session absent at 0 % that never binds (the pattern of a Team seat's
-  absent weekly); without the `five_hour` key it is still incomplete. bb's
+  absent weekly); without the `five_hour` key it is still incomplete. VesnALIA's
   usage panel shows no 5-hour window for it, the account menu no
   session, and `list` no `ses` column.
 
@@ -965,7 +965,7 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   whose account can run is not moved for the pace. The user's own
   threads are not affected. Unknown (no weekly reset) counts as saved; a
   Team seat has no pace.
-- **`bb claude-switcher health [--json]`:** a stable read for other
+- **`alia claude-switcher health [--json]`:** a stable read for other
   threads and scripts, version 1, the same schema as the Mac's
   `claude-cuentas.py salud --json`: per account `nombre`, `plan`,
   `planTexto`, `cincoHoras`, `sesion`, `semana`, `modelos` (only those the
@@ -974,9 +974,9 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   automatic choice may pick, whatever the model: an account out at its
   last good read, whose reset passed while the queries kept failing, is
   not usable («reset sin confirmar…»).
-- **`bb claude-switcher reserve <account> --id <x> --until <ISO>` and
-  `unreserve --id <x>`:** a seat held for a run outside bb (`claude -p`
-  with the account's `CLAUDE_CONFIG_DIR`, which bb does not see), so bb
+- **`alia claude-switcher reserve <account> --id <x> --until <ISO>` and
+  `unreserve --id <x>`:** a seat held for a run outside VesnALIA (`claude -p`
+  with the account's `CLAUDE_CONFIG_DIR`, which VesnALIA does not see), so VesnALIA
   does not put more threads on it than its seats. Checked and taken in
   one synchronous step; fails (exit 1) with no free seat beyond those
   owed to threads already waiting, or for an unknown account. Right after
@@ -1003,7 +1003,7 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   at its end, the state as an icon and a word (Out, Kept for you,
   Working, Free; «No data» for a failed read), today's line or the
   seat's threads, and when it is back («lun 09:00», «mañana 11:00»).
-  Working = it holds a seat, also one held from outside bb. Spanish for a
+  Working = it holds a seat, also one held from outside VesnALIA. Spanish for a
   browser set to Spanish, English otherwise. The cards with one bar per
   window and their «ses/sem» text are gone; the pace of the window that
   matters is now in each row's tooltip and in the thread's menu, in the
@@ -1012,9 +1012,9 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   its menu opens on a small card with what is left in large type, the
   bar and its line; every account of the menu, and every account
   heading of Projects, says its state and what is left in one line.
-- **bb's usage panel** labels each card with the account's name and its
+- **VesnALIA's usage panel** labels each card with the account's name and its
   plan («aitor · Ultra · sin tope de 5 h», Codex ULTRA-R05). `plan` stays
-  null: bb 0.46 puts its own word («Max», «Team») in place of the label
+  null: VesnALIA 0.46 puts its own word («Max», «Team») in place of the label
   for a plan id it knows, and the account's name would be lost.
 - **Every date in the panel, its rows and the menus is Madrid's**, not
   the browser's zone (a reset at 09:00 in Madrid read «03:00» in New
@@ -1060,16 +1060,16 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   waits («Waiting for a seat on <account>: 2/2 threads running, 1 ahead in
   the queue», asked again every 30 s, not counted against the 3 waits of a
   new project's placement); a turn that ends, fails or whose thread goes
-  frees its seat for the first in line and bb is asked again at once. A
+  frees its seat for the first in line and VesnALIA is asked again at once. A
   reservation whose turn does not start within 90 s is freed. Every turn
   is checked, placed by the plugin or not: when its project's account
   cannot be read, the message waits up to three times, then goes with a
   warning. A started turn keeps the seat its dispatch reserved, even when
-  the project moved before bb announced it. The seats are the login's
+  the project moved before VesnALIA announced it. The seats are the login's
   (`accountUuid`): two directories of one account share them, and a
   renamed default keeps them. The seats are kept in memory; after a
-  reload the threads bb reports active are counted before any turn starts
-  (a message waits meanwhile, at once, and bb asks again as soon as they
+  reload the threads VesnALIA reports active are counted before any turn starts
+  (a message waits meanwhile, at once, and VesnALIA asks again as soon as they
   are counted); a read that fails or
   gives no answer within 3 s is tried three times, 2 s apart, after which
   turns go with what was counted, and a thread that ends while counted is
@@ -1080,7 +1080,7 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   turn was being placed takes its seat where it is now, never where the
   placement left it; while a write of its account is under way, also one
   that confirms the account it is on, the turn waits. The whole dispatch
-  checkpoint answers within 8 s, every read in it together (bb fails the
+  checkpoint answers within 8 s, every read in it together (VesnALIA fails the
   message at 10 s): out of time, the message waits and is asked again in
   5 s. A turn that starts without a reservation and whose account cannot
   be read within 3 s keeps the seat it held, or is counted on the next
@@ -1094,17 +1094,17 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   threads wait. The one exception is the switch after a turn failed on a
   limit, which picks by quota among the others when none has a seat. A
   pick by hand waits for a seat like any.
-- `bb claude-switcher list` shows `seats 3/4` under each limited account
+- `alia claude-switcher list` shows `seats 3/4` under each limited account
   and a «Waiting for a seat:» section; each account card in Settings shows
   `seats 3/4 · 2 waiting`, updated as seats change.
 - Each measurement of an account stores a sample whole in itself
   (`seat-samples`, a week, one per account and measurement): seats
   running and reserved then, session and weekly %, and their resets.
-  `bb claude-switcher seats [--json]` prints them with the session % spent
+  `alia claude-switcher seats [--json]` prints them with the session % spent
   per hour and seat, to set the defaults from data (they are a guess).
 - No project stays on an account out of the preferred model or without a
   login: after every refresh the plugin moves each one it manages to the
-  best account with a free seat, whatever `switchAheadPercent` says (bb
+  best account with a free seat, whatever `switchAheadPercent` says (VesnALIA
   greys out the composer of a project on an account at its limit, so no
   turn reached the checkpoint that moves it); a project whose account
   cannot be read within 3 s, read again or moved within 10 s, is skipped
@@ -1128,7 +1128,7 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
 ### Fixed
 
 - **A thread keeps its conversation when its project moves to another
-  account.** bb resumes a thread with `claude --resume <session>` under the
+  account.** VesnALIA resumes a thread with `claude --resume <session>` under the
   project's new `CLAUDE_CONFIG_DIR`, and Claude Code looks for the session
   in that account's `projects/`. Where the accounts do not share that
   directory (Linux, an account made without the link), the thread failed
@@ -1153,7 +1153,7 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
 
 ### Changed
 
-- **`bb claude-switcher list` is one short line per account.** At most 60
+- **`alia claude-switcher list` is one short line per account.** At most 60
   characters, in aligned columns: `ses` (session), `sem` (weekly, not on a
   Team seat, which has none), the preferred model, `agotada hasta HH:MM`
   (or the date, a day or more away) when a window is full, `LOCKED`. The
@@ -1174,10 +1174,10 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
 ### Fixed
 
 - **A new project's first thread starts on the account chosen for it.**
-  The project was placed when bb announced the thread, which comes after
+  The project was placed when VesnALIA announced the thread, which comes after
   its first turn has started: that turn ran on the default account. On a
-  machine whose `~/.claude` has no login (bb's server moved to a new
-  machine), it failed with «Not logged in», and so did its retries. bb
+  machine whose `~/.claude` has no login (VesnALIA's server moved to a new
+  machine), it failed with «Not logged in», and so did its retries. VesnALIA
   asks the plugin before a thread's first message is sent; a new project
   with no account of its own is placed then, and the message waits once,
   up to 5 s, while the accounts are measured.
@@ -1194,9 +1194,9 @@ null`, no `session` limit and a `weekly_all`: the plugin read the
   after the login was read still counts as a login. A project with an
   account of its own, or one set outside the plugin, is never held: when
   the accounts directory cannot be read, its turn runs on that variable and
-  the log says so. When no account can take it, bb
+  the log says so. When no account can take it, VesnALIA
   refuses the message with the command that fixes it
-  (`bb claude-switcher use <project id> <account>`) instead of starting a
+  (`alia claude-switcher use <project id> <account>`) instead of starting a
   turn that fails.
 
 ## [0.2.28] - 2026-10-17
@@ -1215,7 +1215,7 @@ ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a
 
 - **A judgment that lands while the pass checks what was read back
   keeps its banner.** After a restart, the banners' pass checks against
-  bb what a banner was asked on, then asks the banner. A judgment of the
+  VesnALIA what a banner was asked on, then asks the banner. A judgment of the
   thread could land between the two, and the pass went on with what it
   had checked: it could take away the banner the judgment had just shown
   (when the account the turn failed on had room for the preferred model
@@ -1235,19 +1235,19 @@ ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a
 - **README.** The paragraph on the banner after a usage refresh is split
   into shorter sentences, and says that dropping what was kept writes
   the storage again, that after a restart the pass reads the thread and
-  its log in bb, and that the seven days count from when the decline was
+  its log in VesnALIA, and that the seven days count from when the decline was
   first judged.
 
 ## [0.2.26] - 2026-10-17
 
 ### Fixed
 
-- **A banner read back after a restart stands only on what bb logged of
+- **A banner read back after a restart stands only on what VesnALIA logged of
   the retry that followed.** After a restart, a declined thread's banner
-  came back when bb said its latest turn was the one judged or any later
+  came back when VesnALIA said its latest turn was the one judged or any later
   retry of its chain. With the plugin running, that retry's start ends
   the banner, and only its failure's judgment brings one back. A later
-  retry now counts only when bb's log says it was sent in the model
+  retry now counts only when VesnALIA's log says it was sent in the model
   judged and failed on a limit or was refused; another failure or
   another model drops what was kept, and a failure not yet in the log
   keeps it, unshown, until the log says it.
@@ -1278,12 +1278,12 @@ ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a
 - **What a banner is asked on, read back after a restart, does not stay
   forever.** It was skipped unchecked while the preferred model was
   another or an account was never read, and a thread that could not be
-  read was warned about at every refresh. It is now checked against bb
+  read was warned about at every refresh. It is now checked against VesnALIA
   before anything else, and only for so long: one whose decline was
   first judged more than 7 days before is dropped without reading its
   thread (every window of a limit has reset since), and one that 5
   refreshes in a row could not check (the thread could not be read, or
-  bb's log does not say how its retry failed) is dropped at the fifth.
+  VesnALIA's log does not say how its retry failed) is dropped at the fifth.
 - **Storage of a shape that cannot be read is written again.** It was
   said in the log at every start.
 - **The same decline judged again writes nothing.** A thread left in
@@ -1293,7 +1293,7 @@ ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a
 
 ### Changed
 
-- **README.** The table of bb surfaces lists the composer banner,
+- **README.** The table of VesnALIA surfaces lists the composer banner,
   `thread.active`, `thread.archived`, `thread.deleted` and
   `message.cancelled`, and says the storage keeps what each banner is
   asked on and the retries cancelled by hand. Known limitations: the
@@ -1320,7 +1320,7 @@ ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a
   the declines a banner can follow (in the preferred model, beyond the
   maximum wait or with no account usable), and a refresh that ends
   while it runs gets one more pass after it, not a second one at once.
-  A refresh asked by hand (the section's refresh, `bb claude-switcher
+  A refresh asked by hand (the section's refresh, `alia claude-switcher
 refresh`) still answers once the banners are asked.
 - **A refresh that fails still asks the banners.** When the accounts
   directory could not be read, the refresh stopped before the banners
@@ -1333,7 +1333,7 @@ refresh`) still answers once the banners are asked.
   asked on was kept in memory only: after a restart or a reload, a
   thread with a retry queued hours ahead lost its banner until the
   retry ran. It is now kept in the plugin's storage, and the usage
-  refresh at start asks it again if bb says the thread still waits on
+  refresh at start asks it again if VesnALIA says the thread still waits on
   the turn it was judged on; a thread that moved on meanwhile keeps
   nothing. The queue is left as it is.
 - **A deleted thread is treated as an archived one.** Its banner and
@@ -1362,7 +1362,7 @@ refresh`) still answers once the banners are asked.
 
 - **The banner follows the usage reads.** A declined thread's banner
   named the account an Opus turn would go to when its failure was
-  judged, and kept it: a thread with a retry queued (bb's provider-retry
+  judged, and kept it: a thread with a retry queued (VesnALIA's provider-retry
   queues one for the session's reset) is not judged again until it runs,
   while the numbers change. After every usage refresh the banner is now
   asked again on the new reads, as a later judgment would ask it: it
@@ -1389,13 +1389,13 @@ refresh`) still answers once the banners are asked.
 
 ### Changed
 
-- **One read of bb's log per failure.** A failed turn's model and its
-  retry chain come from the same read of bb's log, made before anything
+- **One read of VesnALIA's log per failure.** A failed turn's model and its
+  retry chain come from the same read of VesnALIA's log, made before anything
   is checked (a retry's failure read it twice).
 - **README, Known limitations: where the account named for Opus
-  holds.** For a message sent in Opus through bb's dispatch checkpoint,
+  holds.** For a message sent in Opus through VesnALIA's dispatch checkpoint,
   on the reads of that moment. Send now on a queued retry's card skips
-  the checkpoint (by bb's design), and the queued card and the history
+  the checkpoint (by VesnALIA's design), and the queued card and the history
   row keep the name they were written with.
 
 ## [0.2.23] - 2026-10-17
@@ -1404,13 +1404,13 @@ refresh`) still answers once the banners are asked.
 
 - **The veto of a blocked report.** Since 0.2.21 a failure's blocked
   limit report put its account out of every turn until the reset it
-  reported, and 0.2.22 extended that to every choice and read bb's log to
+  reported, and 0.2.22 extended that to every choice and read VesnALIA's log to
   tell whose report a failure carried. It changed how every thread's
   turns were placed, waited for and released, for an advice that only
   tells, and each review found new ways it crossed the waits, the grace
   after a move, the filter of old measurements and the report's date.
   Every choice judges each account on its own numbers again, as in
-  0.2.20, and the plugin no longer reads bb's log to tell whose report it
+  0.2.20, and the plugin no longer reads VesnALIA's log to tell whose report it
   is.
 
 ### Changed
@@ -1459,12 +1459,12 @@ refresh`) still answers once the banners are asked.
   it. They all leave it out now, and a wait for it lands on the reset it
   reported (or later, when its own numbers say so).
 - **A report puts out only the account it came from.** (Removed in
-  0.2.23.) bb sends a thread's latest limit report with each failure,
+  0.2.23.) VesnALIA sends a thread's latest limit report with each failure,
   whichever turn it came from: after a move from one account to another,
   a failure on the second
   could carry the first one's report and put the second out, and the
   Opus advice then named an account other than the one the Opus turn
-  stayed on. A report now puts its account out only when bb's log shows
+  stayed on. A report now puts its account out only when VesnALIA's log shows
   it came while the failed turn ran (the first report or request after
   that turn's request is a report). Otherwise, or when the log cannot be
   read, no account is put out and the account is judged on its numbers.
@@ -1475,7 +1475,7 @@ refresh`) still answers once the banners are asked.
   back once its reads ended. A judgment now shows or takes away the
   banner only if none of those happened since it began, and no banner
   shows with the automatic choice off.
-- **The banner reads again when bb's connection comes back.** bb does not
+- **The banner reads again when VesnALIA's connection comes back.** VesnALIA does not
   replay its realtime signals: one that added or took away the advice
   while the connection was down was lost, and the banner kept what it
   showed until the next one. It now reads the thread's advice again when
@@ -1488,7 +1488,7 @@ refresh`) still answers once the banners are asked.
 - **The thread shows the advice to switch to Opus when nothing is
   queued.** Beyond `maximumWaitHours`, or when no account will free, a
   thread told to switch to Opus had the text only in the history and the
-  log. It now shows in a banner over the thread's composer (bb's composer
+  log. It now shows in a banner over the thread's composer (VesnALIA's composer
   banner, scoped to threads), which schedules nothing and changes no
   model: the switch stays yours. The banner goes when a turn of the thread
   starts, when a later failure of it is judged without the advice, when
@@ -1519,7 +1519,7 @@ refresh`) still answers once the banners are asked.
   retry was taken for the turn told before whatever turn it belonged to,
   so a new turn told only at its second attempt got no row; and a retry
   whose wait moved the project wrote the text again in the move's row. The
-  turn is now its retry chain, as bb's log names it, and a move of a turn
+  turn is now its retry chain, as VesnALIA's log names it, and a move of a turn
   already told is recorded without the text.
 - **A thread whose preferred model is Opus is never told to switch to
   Opus.** Under a warning report the account it failed on could still be
@@ -1530,7 +1530,7 @@ refresh`) still answers once the banners are asked.
 ### Added
 
 - **A thread told to switch to Opus when no account has the preferred
-  model left.** bb gives a plugin no way to send a retry in another model,
+  model left.** VesnALIA gives a plugin no way to send a retry in another model,
   so a turn in the preferred model (Fable) that no account can run now
   says what to do: when it waits, when the wait would be beyond
   `maximumWaitHours` and when no account will free, as long as an account
@@ -1582,13 +1582,13 @@ Opus with the model picker; it will go to <name>`, naming the account
   been replaced and the plugin's own retry then fails (a 5xx), the row is
   queued again as it was; that recovery now holds in the cases 0.2.17 left
   open. A failed second look at the queue no longer escapes before the row
-  is put back. A retry bb refuses because it already has one of the turn,
+  is put back. A retry VesnALIA refuses because it already has one of the turn,
   or because the turn is no longer the failed one, is no failure, before
-  and after the restore. A restore whose answer bb lost is looked for in
+  and after the restore. A restore whose answer VesnALIA lost is looked for in
   the queue instead of being reported as failed. The row put back is
   marked, so a later refresh releases it as soon as its account is
   measured able to run the turn (never on an account that cannot be
-  measured), like a wait the refresh released that bb did not take; a mark
+  measured), like a wait the refresh released that VesnALIA did not take; a mark
   is set only for a row found queued, and marks made while a refresh was
   reading the queue survive it. The log names the row that could not be
   removed instead of calling it another retry.
@@ -1631,13 +1631,13 @@ account spares Fable`). A failed Opus turn waits only for an account
   failed turn is judged on the clock after the accounts were re-read, so a
   Max account whose Fable reset passed meanwhile keeps Fable again.
 - **The retry provider-retry queued is never sent as it is.** An explicit
-  send skips bb's dispatch checkpoint, where the turn is placed: the retry
+  send skips VesnALIA's dispatch checkpoint, where the turn is placed: the retry
   ran where the project stood when the row was found, not when it was
   sent, so an Opus retry could start on a Max account a Fable turn had
   taken the project back to meanwhile. The row is replaced by a retry of
-  this plugin's, which bb dispatches through the checkpoint at once. If
+  this plugin's, which VesnALIA dispatches through the checkpoint at once. If
   ours cannot be queued, the row is put back as it was; if the row cannot
-  be removed, ours is queued anyway and bb keeps whichever it has: the turn
+  be removed, ours is queued anyway and VesnALIA keeps whichever it has: the turn
   is never left without a retry.
 - **A new thread of a project on an excursion goes home too**: the
   placement a new thread causes takes the way back like a turn's does.
@@ -1652,9 +1652,9 @@ account spares Fable`). A failed Opus turn waits only for an account
   with room before its next turn fails, while Fable threads keep
   `switchAheadPercent` (0 = never moved ahead). The move is measured on
   the thread's own model and the destination is chosen for that model.
-  The thread's model is the one bb logged for its latest turn, so a Send
+  The thread's model is the one VesnALIA logged for its latest turn, so a Send
   now or an edited message that skipped the plugin's checkpoint counts;
-  a failed turn is judged by the model bb logged for that very turn. The
+  a failed turn is judged by the model VesnALIA logged for that very turn. The
   account a project left ahead of the limit is not a target for it again
   while that account is still at or above the share that moved it away,
   so a project with a Fable thread and an Opus thread does not move back
@@ -1730,15 +1730,15 @@ account spares Fable`). A failed Opus turn waits only for an account
 - A leftover refused (no login) by the account it ran on marks that account,
   also when the leftover is retried on the project's account: before, the
   refusing account stayed eligible for other projects.
-- Where a turn started is read when bb announces it, and bb announces it
+- Where a turn started is read when VesnALIA announces it, and VesnALIA announces it
   after reading the account for it: a move of the project completed in
   between made the start the new account's, and a refusal of that turn set
   a healthy account aside for 6 hours. The project's state is now anchored
-  when bb asks to send the message; a start read across a move since, or
+  when VesnALIA asks to send the message; a start read across a move since, or
   while the project moves, or that could not be read, is unknown: its
   failure's report belongs to nobody, its refusal marks no account, and
   such a refusal is retried as many times as any other failure, then left
-  for the periodic rescue. A turn that bb sends past that checkpoint (a
+  for the periodic rescue. A turn that VesnALIA sends past that checkpoint (a
   queued message sent by hand with "Send now") is unknown too; the retries
   the plugin sends itself anchor the project's state right before sending.
 
@@ -1746,12 +1746,12 @@ account spares Fable`). A failed Opus turn waits only for an account
 
 ### Fixed
 
-- **A thread left in error is looked at again.** bb's provider-retry gives
+- **A thread left in error is looked at again.** VesnALIA's provider-retry gives
   up after five attempts and so did this plugin, so a thread whose attempts
   were burnt in minutes (a retry of every failed turn was on its way seconds
   after the failure, before this plugin judged it) sat in error for good,
   with accounts free. On every refresh, each of the user's threads in error
-  with nothing queued is judged from bb's log, as bb's own failure event
+  with nothing queued is judged from VesnALIA's log, as VesnALIA's own failure event
   reads it (the failure of its latest turn, a turn refused at the door
   included): retried on the project's own account when that has room now,
   moved to an account that can run it, or queued to wait for the earliest
@@ -1760,15 +1760,15 @@ account spares Fable`). A failed Opus turn waits only for an account
   the thread is read again when its project's turn comes (archived, running
   again or retried meanwhile: left alone; a retry another plugin queued
   meanwhile is left to it). A refusal found there (no login) marks no
-  account: bb's log does not say which account ran the turn, so the thread
+  account: VesnALIA's log does not say which account ran the turn, so the thread
   is retried where the project sits and the account marks itself if it
-  refuses again. A retry the user cancelled by hand (bb's queued card,
-  `bb thread queue`) is not queued again: the thread is left alone until a
-  new turn of it (bb's own Retry included), across restarts.
+  refuses again. A retry the user cancelled by hand (VesnALIA's queued card,
+  `alia thread queue`) is not queued again: the thread is left alone until a
+  new turn of it (VesnALIA's own Retry included), across restarts.
 - A refusal (no login) marks the account whatever the attempt: at the fifth
   it was declined before the mark, and a thread left in error was retried
   on the same account on every refresh.
-- bb's 409 on a retry it already has (`retry_already_queued`,
+- VesnALIA's 409 on a retry it already has (`retry_already_queued`,
   `no_failed_turn`) is logged, not thrown as a failed handler.
 - The retry already queued for a failed turn is named in the log (its reason
   and time): the trace of whoever retries ahead of this plugin.
@@ -1786,12 +1786,12 @@ account spares Fable`). A failed Opus turn waits only for an account
   wait is now looked at again after each usage refresh: when the
   project's account is measured unable to run the waiting turn's model,
   has no login, or refused a turn in the last six hours, and another
-  account can run it, the project moves there and bb retries the turn at
+  account can run it, the project moves there and VesnALIA retries the turn at
   once, through the same checks as any message, other plugins' included.
   A wait queued before the project last changed account is retried the
   same way. Left as they are: a wait due within two minutes, one another
   plugin holds, a retry of an earlier turn, one of an archived or deleted
-  thread, and one whose account may still run it. If bb does not take the
+  thread, and one whose account may still run it. If VesnALIA does not take the
   retry, the wait is queued again as it was and looked at again in the
   next pass; if that fails too, the plugin's log says so as an error.
 
@@ -1799,10 +1799,10 @@ account spares Fable`). A failed Opus turn waits only for an account
 
 ### Changed
 
-- **Needs bb 0.45 or later** (plugin SDK 0.6.15). The new-thread control
-  now reads the composer bb 0.45 gives plugins, and hides while another
-  provider is picked. On bb 0.44, `bb plugin update` keeps 0.2.9 and lists
-  this release as blocked until bb is updated.
+- **Needs VesnALIA 0.45 or later** (plugin SDK 0.6.15). The new-thread control
+  now reads the composer VesnALIA 0.45 gives plugins, and hides while another
+  provider is picked. On VesnALIA 0.44, `alia plugin update` keeps 0.2.9 and lists
+  this release as blocked until VesnALIA is updated.
 - The listing and the overview mention the account control in the
   new-thread composer.
 - `@types/better-sqlite3` back to 7.x, the range the plugin SDK declares.
@@ -1820,8 +1820,8 @@ account spares Fable`). A failed Opus turn waits only for an account
   out of your preferred model when the thread is created; without a pick,
   a new project still moves to the best account after its first turn.
   A message sent while a pick is still being saved can start on the old
-  account, and that turn's own placement can then write over the pick. On bb 0.45 and later it shows
-  only when Claude Code is the picked provider; bb 0.44 does not tell
+  account, and that turn's own placement can then write over the pick. On VesnALIA 0.45 and later it shows
+  only when Claude Code is the picked provider; VesnALIA 0.44 does not tell
   plugins which provider is picked, so there it shows for every provider.
   On a phone it shows once the composer is open. A project made a moment ago shows at once: a view that needs a project
   missing from the list the views share reads it again.
@@ -1833,23 +1833,23 @@ account spares Fable`). A failed Opus turn waits only for an account
 - **The account control in a thread's header no longer comes and goes.**
   It drew nothing until two reads answered (is this a Claude Code thread,
   and the list of accounts and projects), again on every thread switch,
-  and a failed read was never tried again. With bb busy on 2026-10-02 each
+  and a failed read was never tried again. With VesnALIA busy on 2026-10-02 each
   list took 3-10 s (measured), so the control appeared on some threads and not on others. A
   header now starts from the last list any view received, asks once per
   thread whether it is a Claude Code thread, and retries a failed read (2,
   5, 15 and 30 s, then once a minute) while it is open.
-- **Listing the accounts costs bb far less.** Each list read every
-  project's machine environment, one bb call per project, and every open
-  view listed again on the same event. On 2026-10-02 bb's server stalled
+- **Listing the accounts costs VesnALIA far less.** Each list read every
+  project's machine environment, one VesnALIA call per project, and every open
+  view listed again on the same event. On 2026-10-02 VesnALIA's server stalled
   over half a second 556 times in 3 h, with this list in flight in about
   140 of them. The views now share one read for 30 s; a change made by the
-  plugin, or in the accounts it finds, drops it; one made in bb's own
+  plugin, or in the accounts it finds, drops it; one made in VesnALIA's own
   settings shows within that time.
   The Refresh button, the account menu, logins and the CLI still read
   fresh, and decisions still read each project directly.
 - **A retry refused because a newer turn replaced the failed one is not an
   error.** When a message sent after the failure has started a newer turn,
-  bb refuses the retry ("is not the failed turn"); that newer turn runs on
+  VesnALIA refuses the retry ("is not the failed turn"); that newer turn runs on
   the project's account and its own failure is handled apart. The plugin
   logs it and moves on instead of reporting a failed handler.
 
@@ -1869,9 +1869,9 @@ account spares Fable`). A failed Opus turn waits only for an account
   account had left, it was given up (`no switch (beyond-maximum-wait)`)
   while two other accounts still had a quarter of their week left. Now a
   thread the plugin has not seen sent is judged by the model of its latest
-  message in bb's log; the preferred model decides only when the log names
+  message in VesnALIA's log; the preferred model decides only when the log names
   none.
-- **A limit enforced before bb reported it blocked is acted on.** bb sends
+- **A limit enforced before VesnALIA reported it blocked is acted on.** VesnALIA sends
   a failed turn with the thread's latest stored rate-limit report; when
   the provider refuses the turn before reporting the limit reached
   ("rate limit rejected; type seven_day_overage_included"), that report is
@@ -1897,8 +1897,8 @@ account spares Fable`). A failed Opus turn waits only for an account
   its next thread, and a switch never goes back to it. The retry says which
   account refused (`Switched to account work: main refused the turn`), and
   so does a project moved off it before a turn (`main refused a turn`). It
-  is remembered in memory: `bb plugin reload claude-switcher` forgets it.
-  This also covers a new thread's first turn, which in bb 0.44 starts on
+  is remembered in memory: `alia plugin reload claude-switcher` forgets it.
+  This also covers a new thread's first turn, which in VesnALIA 0.44 starts on
   the account the project had before it was placed.
 
 ### Added
@@ -1913,9 +1913,9 @@ account spares Fable`). A failed Opus turn waits only for an account
 
 - **A thread you switch to another model follows that model.** Every
   decision looked only at `preferredModel`, so a thread switched to Opus
-  in bb's model picker, in a project whose account was out, kept waiting
+  in VesnALIA's model picker, in a project whose account was out, kept waiting
   for the preferred model (or failed with a 429) while other accounts had
-  Opus left. bb now tells the plugin the model each turn is sent with
+  Opus left. VesnALIA now tells the plugin the model each turn is sent with
   (its dispatch checkpoint), and that model decides:
   - **Before every turn**, a project whose account is measured unable to
     run the turn's model moves to an account that can. It is decided on
@@ -1927,7 +1927,7 @@ account spares Fable`). A failed Opus turn waits only for an account
     Opus left, or waits for Opus.
     A thread sent with the preferred model is decided by that model, as
     before: when no account can run it, the project stays and the retry
-    waits for it. A thread bb has not sent a message for since the plugin
+    waits for it. A thread VesnALIA has not sent a message for since the plugin
     started is judged by the preferred model. The plugin never changes a
     thread's model: it only chooses the account. With `preferredModel`
     empty, a thread's own model now counts too, and the reasons name it
@@ -1937,7 +1937,7 @@ account spares Fable`). A failed Opus turn waits only for an account
 
 ### Added
 
-- **Add an account from bb.** Settings has an **Add account** form, and a
+- **Add an account from VesnALIA.** Settings has an **Add account** form, and a
   **Log in** button on every account without a login. Both run Claude
   Code's own `claude auth login` for the account's directory and open the
   consent page in a private Chrome window on macOS, so the login does not
@@ -1951,7 +1951,7 @@ account spares Fable`). A failed Opus turn waits only for an account
   minutes and stopped with the plugin. A new name that differs only in
   case from an account or a directory, or that is a link or a file, is
   refused, and so is a new directory under `~/.claude`. The login does
-  not inherit credentials from bb's environment.
+  not inherit credentials from VesnALIA's environment.
   A directory the plugin creates links
   `projects`, `settings.json`, `hooks`, `CLAUDE.md`, `plugins`, `skills`,
   `agents`, `commands` and `rules` from `~/.claude` (those that exist), so
@@ -1977,7 +1977,7 @@ account spares Fable`). A failed Opus turn waits only for an account
 - **History of moves.** Every move of a project (after a failed turn, when
   a thread is created, ahead of the limit or picked by hand) with its
   time, accounts and reason: the last 100, in Settings and with
-  `bb claude-switcher history [--json]`. `release` is not recorded. It
+  `alia claude-switcher history [--json]`. `release` is not recorded. It
   starts with the last switch 0.2.3 had stored.
 
 ### Changed
@@ -1994,9 +1994,9 @@ account spares Fable`). A failed Opus turn waits only for an account
   for how it stands for the preferred model (room, running low at 80 %,
   out, not measured, or no login) and a menu: switch now to the account the switch
   policy would pick, or pick any account. The change applies to every
-  thread of the project from its next turn. Uses bb's experimental thread
+  thread of the project from its next turn. Uses VesnALIA's experimental thread
   header slot, registered only when the host offers it. Its menu uses the
-  dropdown menu of bb's component registry (Radix, provided by the host).
+  dropdown menu of VesnALIA's component registry (Radix, provided by the host).
 
 ### Fixed
 
@@ -2039,7 +2039,7 @@ account spares Fable`). A failed Opus turn waits only for an account
   worker) no longer moves the whole project to another account. Visible
   threads are the user's work even when a plugin's composer opened them,
   and are handled as before.
-- `bb claude-switcher use` and the project picker read the accounts again,
+- `alia claude-switcher use` and the project picker read the accounts again,
   so a changed accounts directory or a new account directory needs no
   refresh first, and a measurement of an account that is gone is never
   used.
@@ -2051,16 +2051,16 @@ account spares Fable`). A failed Opus turn waits only for an account
 - Every placement decision, including leaving a project where it was, is
   logged with its reason.
 - Development dependencies: better-sqlite3 13, hono 4.13.11; the plugin
-  SDK stays pinned to bb's own (0.5.29), now checked in CI.
+  SDK stays pinned to VesnALIA's own (0.5.29), now checked in CI.
 
 ## [0.2.1] - 2026-09-29
 
 ### Added
 
-- A logo for the README and the plugin's own icon in bb, instead of a
+- A logo for the README and the plugin's own icon in VesnALIA, instead of a
   generic one (the glyph is Lucide's `repeat`, ISC License).
 - A README in a new layout: the problem, a before/after table, where to
-  find each surface in bb, and what the plugin never does. Every setting,
+  find each surface in VesnALIA, and what the plugin never does. Every setting,
   caveat and the disclaimer are unchanged.
 - `docs/DESIGN.md`: how the plugin measures, chooses, waits and declines,
   why, its known limits and the decisions not taken.
@@ -2070,17 +2070,17 @@ account spares Fable`). A failed Opus turn waits only for an account
 ### Changed
 
 - Renamed to **Claude Switcher**. The plugin id and the CLI are now
-  `claude-switcher` (`bb claude-switcher list`, `refresh`, `use`,
-  `release`), the repository is `Finolaina/bb-plugin-claude-switcher`, and
+  `claude-switcher` (`alia claude-switcher list`, `refresh`, `use`,
+  `release`), the repository is `Finolaina/alia-plugin-claude-switcher`, and
   the note next to each `CLAUDE_CONFIG_DIR` it sets reads "set by the
   Claude Switcher plugin". Behaviour is unchanged.
 
 ### Upgrading from claude-accounts 0.1.x
 
-bb treats the new id as another plugin. Note your settings
-(`bb plugin config claude-accounts`), run `bb claude-accounts release`
-and `bb plugin remove claude-accounts`, install `claude-switcher`, set the
-settings again and reassign any project with `bb claude-switcher use`.
+VesnALIA treats the new id as another plugin. Note your settings
+(`alia plugin config claude-accounts`), run `alia claude-accounts release`
+and `alia plugin remove claude-accounts`, install `claude-switcher`, set the
+settings again and reassign any project with `alia claude-switcher use`.
 
 ## [0.1.0] - 2026-09-29
 
@@ -2090,17 +2090,17 @@ First public release.
 
 - Every Claude Code account the plugin finds (`~/.claude` plus each
   subdirectory of the accounts directory that holds a `.claude.json`) in
-  bb's Provider usage panel, with the 5-hour session, weekly and
+  VesnALIA's Provider usage panel, with the 5-hour session, weekly and
   per-model weekly windows.
 - Automatic switch and retry when a turn fails on a subscription-window
   rate limit, following a policy that ranks accounts by the closest weekly
   reset and respects a preferred model.
 - Waiting for the account that frees first when none is free, within a
-  configurable maximum wait, in cooperation with bb's provider-retry
+  configurable maximum wait, in cooperation with VesnALIA's provider-retry
   plugin.
 - A **Claude accounts** section in Settings with account cards, a
   per-project account picker and the last automatic switch.
-- The `bb claude-accounts` CLI: `list`, `refresh`, `use` and `release`.
+- The `alia claude-accounts` CLI: `list`, `refresh`, `use` and `release`.
 - macOS keychain and Linux credentials-file support; rotated OAuth tokens
   are written back and verified by reading them again.
 

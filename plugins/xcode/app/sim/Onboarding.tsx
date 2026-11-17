@@ -25,7 +25,7 @@ export interface OnboardingProps {
 export function Onboarding({ plan, onApply, onChoose, busy }: OnboardingProps) {
   const [applied, setApplied] = useState<string[] | null>(null);
 
-  if (plan === null) return <div className="bbxs-skeleton m-4 h-40" aria-hidden />;
+  if (plan === null) return <div className="aliaxs-skeleton m-4 h-40" aria-hidden />;
 
   if (plan.checkoutElsewhere !== null) {
     return (
@@ -40,7 +40,7 @@ export function Onboarding({ plan, onApply, onChoose, busy }: OnboardingProps) {
 
   if (plan.candidates.length === 0) {
     return (
-      <div className="bbxs-scroll h-full space-y-3 p-4">
+      <div className="aliaxs-scroll h-full space-y-3 p-4">
         <p className="text-sm">
           No Xcode project under{" "}
           <code className="text-xs">{plan.searched ?? "this checkout"}</code>.
@@ -56,7 +56,7 @@ export function Onboarding({ plan, onApply, onChoose, busy }: OnboardingProps) {
   }
 
   return (
-    <div className="bbxs-scroll h-full space-y-4 p-4">
+    <div className="aliaxs-scroll h-full space-y-4 p-4">
       {plan.candidates.length > 1 ? (
         <section className="space-y-2">
           {/* Every candidate, never one picked silently: a monorepo legitimately
@@ -116,7 +116,7 @@ export function Onboarding({ plan, onApply, onChoose, busy }: OnboardingProps) {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <pre className="bbxs-scroll mt-1 max-h-64 rounded-md border bg-muted p-2 text-[11px] leading-relaxed">
+                <pre className="aliaxs-scroll mt-1 max-h-64 rounded-md border bg-muted p-2 text-[11px] leading-relaxed">
                   {file.contents}
                 </pre>
               </CollapsibleContent>

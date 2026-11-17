@@ -57,13 +57,13 @@ test("a Tart Mac takes its own slots, cores and memory for shared hosts, a backe
   assert.deepEqual(bad.problems, [{ path: "hosts.0.ios-hosts-most", message: "Mac mac-1: the slots of a shared iOS host on it must be a whole number from 1 to 64, or empty for VesnALIA Box's estimate." }]);
 
   const pool = (line: string, most?: number) => parseSshPoolSettings({ "ssh-pool-enabled": true, "ssh-pool-machines": line, "ssh-pool-known-hosts": "192.0.2.30 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOne", ...(most !== undefined ? { "ssh-pool-ios-hosts-most": most } : {}) });
-  const lined = pool("mac-1 bbbox-admin@192.0.2.30 macos,ios:7", 9);
+  const lined = pool("mac-1 aliabox-admin@192.0.2.30 macos,ios:7", 9);
   assert.ok(lined.enabled && lined.ok, JSON.stringify(lined));
   assert.deepEqual([lined.config.machines[0]!.kinds, lined.config.machines[0]!.slotsMost, lined.config.slots.mostSet], [["macos", "ios"], 7, 9]);
-  const plain = pool("mac-1 bbbox-admin@192.0.2.30 macos,ios");
+  const plain = pool("mac-1 aliabox-admin@192.0.2.30 macos,ios");
   assert.ok(plain.enabled && plain.ok);
   assert.deepEqual([plain.config.machines[0]!.slotsMost, plain.config.slots.mostSet], [undefined, undefined]);
-  const wrong = pool("mac-1 bbbox-admin@192.0.2.30 macos,ios:many");
+  const wrong = pool("mac-1 aliabox-admin@192.0.2.30 macos,ios:many");
   assert.ok(wrong.enabled && !wrong.ok);
   assert.match(JSON.stringify(wrong.problems), /Give the machine on line 1's iOS slots as ios:<slots>, a whole number from 1 to 64, or ios for ALIA Box's estimate\./);
 });

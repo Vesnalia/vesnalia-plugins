@@ -53,19 +53,19 @@ const Stepper = defineComponent({
     };
     const label = props.label ?? props.name;
     return (
-      <div className="bbui bbui-inputs-stack">
+      <div className="aliaui aliaui-inputs-stack">
         {props.label ? (
-          <label className="bbui-label" htmlFor={id}>
+          <label className="aliaui-label" htmlFor={id}>
             {props.label}
           </label>
         ) : null}
-        <div className="bbui-inputs-stepper" role="group" aria-label={label}>
-          <Button className="bbui-inputs-icon" aria-label={`Decrease ${label}`} disabled={streaming || value <= min} onClick={() => set(value - step)}>
+        <div className="aliaui-inputs-stepper" role="group" aria-label={label}>
+          <Button className="aliaui-inputs-icon" aria-label={`Decrease ${label}`} disabled={streaming || value <= min} onClick={() => set(value - step)}>
             <Minus {...ICON} />
           </Button>
           <input
             id={id}
-            className="bbui-inputs-field bbui-inputs-number"
+            className="aliaui-inputs-field aliaui-inputs-number"
             type="number"
             inputMode="decimal"
             min={Number.isFinite(min) ? min : undefined}
@@ -79,7 +79,7 @@ const Stepper = defineComponent({
             onBlur={commit}
             onKeyDown={(e) => e.key === "Enter" && commit()}
           />
-          <Button className="bbui-inputs-icon" aria-label={`Increase ${label}`} disabled={streaming || value >= max} onClick={() => set(value + step)}>
+          <Button className="aliaui-inputs-icon" aria-label={`Increase ${label}`} disabled={streaming || value >= max} onClick={() => set(value + step)}>
             <Plus {...ICON} />
           </Button>
         </div>
@@ -106,13 +106,13 @@ const Rating = defineComponent({
     const count = Math.min(10, Math.max(1, Math.round(num(props.max) ?? 5)));
     const value = num(field.value) ?? 0;
     return (
-      <fieldset className="bbui bbui-inputs-rating" disabled={streaming}>
-        <legend className="bbui-label">{props.label ?? "Rating"}</legend>
-        <div className="bbui-inputs-stars">
+      <fieldset className="aliaui aliaui-inputs-rating" disabled={streaming}>
+        <legend className="aliaui-label">{props.label ?? "Rating"}</legend>
+        <div className="aliaui-inputs-stars">
           {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
-            <label key={n} className={cx("bbui-inputs-star", n <= value && "is-on")}>
+            <label key={n} className={cx("aliaui-inputs-star", n <= value && "is-on")}>
               <input
-                className="bbui-inputs-sr"
+                className="aliaui-inputs-sr"
                 type="radio"
                 name={group}
                 value={n}
@@ -123,7 +123,7 @@ const Rating = defineComponent({
               <Star {...ICON} />
             </label>
           ))}
-          <span className="bbui-label" aria-hidden="true">
+          <span className="aliaui-label" aria-hidden="true">
             {value > 0 ? `${value} of ${count}` : "Not rated"}
           </span>
         </div>
@@ -157,44 +157,44 @@ const ListEditor = defineComponent({
       setDraft("");
     };
     return (
-      <div className="bbui bbui-inputs-stack" role="group" aria-labelledby={labelId}>
-        <span className="bbui-label" id={labelId}>
+      <div className="aliaui aliaui-inputs-stack" role="group" aria-labelledby={labelId}>
+        <span className="aliaui-label" id={labelId}>
           {label}
         </span>
         {list.length > 0 ? (
-          <ol className="bbui-inputs-rows">
+          <ol className="aliaui-inputs-rows">
             {list.map((item, i) => (
-              <li key={i} className="bbui-inputs-row">
+              <li key={i} className="aliaui-inputs-row">
                 <input
-                  className="bbui-inputs-field"
+                  className="aliaui-inputs-field"
                   value={item}
                   aria-label={`Item ${i + 1}`}
                   disabled={streaming}
                   onChange={(e) => field.setValue(replaceAt(list, i, e.target.value))}
                 />
-                <Button className="bbui-inputs-icon" aria-label={`Move item ${i + 1} up`} disabled={streaming || i === 0} onClick={() => field.setValue(moveItem(list, i, -1))}>
+                <Button className="aliaui-inputs-icon" aria-label={`Move item ${i + 1} up`} disabled={streaming || i === 0} onClick={() => field.setValue(moveItem(list, i, -1))}>
                   <ArrowUp {...ICON} />
                 </Button>
                 <Button
-                  className="bbui-inputs-icon"
+                  className="aliaui-inputs-icon"
                   aria-label={`Move item ${i + 1} down`}
                   disabled={streaming || i === list.length - 1}
                   onClick={() => field.setValue(moveItem(list, i, 1))}
                 >
                   <ArrowDown {...ICON} />
                 </Button>
-                <Button className="bbui-inputs-icon" aria-label={`Remove item ${i + 1}`} disabled={streaming} onClick={() => field.setValue(removeAt(list, i))}>
+                <Button className="aliaui-inputs-icon" aria-label={`Remove item ${i + 1}`} disabled={streaming} onClick={() => field.setValue(removeAt(list, i))}>
                   <X {...ICON} />
                 </Button>
               </li>
             ))}
           </ol>
         ) : (
-          <span className="bbui-label">The list is empty. Type below and press Enter to add the first item.</span>
+          <span className="aliaui-label">The list is empty. Type below and press Enter to add the first item.</span>
         )}
-        <div className="bbui-inputs-row">
+        <div className="aliaui-inputs-row">
           <input
-            className="bbui-inputs-field"
+            className="aliaui-inputs-field"
             value={draft}
             placeholder={props.placeholder ?? "Add an item"}
             aria-label={`New item for ${label}`}
@@ -247,37 +247,37 @@ const Swatches = defineComponent({
     };
     const status = copied ? (copied.ok ? `Copied ${colors[copied.at]?.value ?? ""}` : "Could not copy. Select the value and copy it by hand.") : "";
     return (
-      <div className="bbui bbui-inputs-stack" role="group" aria-labelledby={props.label ? labelId : undefined}>
+      <div className="aliaui aliaui-inputs-stack" role="group" aria-labelledby={props.label ? labelId : undefined}>
         {props.label ? (
-          <span className="bbui-label" id={labelId}>
+          <span className="aliaui-label" id={labelId}>
             {props.label}
           </span>
         ) : null}
-        <ul className="bbui-inputs-palette">
+        <ul className="aliaui-inputs-palette">
           {colors.map((color, i) => {
             const state = copied?.at === i ? (copied.ok ? "success" : "error") : undefined;
             return (
               <li key={i}>
                 <Button
-                  className={cx("bbui-inputs-swatch", picking && field.value === color.value && "is-picked")}
+                  className={cx("aliaui-inputs-swatch", picking && field.value === color.value && "is-picked")}
                   state={state}
                   aria-pressed={picking ? field.value === color.value : undefined}
                   aria-label={`${color.name ? `${color.name}, ` : ""}${color.value}${picking ? "" : ", copy"}`}
                   disabled={streaming}
                   onClick={() => press(i, color.value)}
                 >
-                  <span className="bbui-inputs-chip" style={{ backgroundColor: color.value }} />
-                  <span className="bbui-inputs-swatch-text">
+                  <span className="aliaui-inputs-chip" style={{ backgroundColor: color.value }} />
+                  <span className="aliaui-inputs-swatch-text">
                     {color.name ? <span>{color.name}</span> : null}
-                    <span className="bbui-mono bbui-inputs-swatch-value">{color.value}</span>
+                    <span className="aliaui-mono aliaui-inputs-swatch-value">{color.value}</span>
                   </span>
-                  {state === "success" ? <Check {...ICON} className="bbui-inputs-ok" /> : <Copy {...ICON} className="bbui-inputs-copy" />}
+                  {state === "success" ? <Check {...ICON} className="aliaui-inputs-ok" /> : <Copy {...ICON} className="aliaui-inputs-copy" />}
                 </Button>
               </li>
             );
           })}
         </ul>
-        <span className={cx("bbui-label", copied && !copied.ok ? "bbui-inputs-bad" : "bbui-inputs-sr")} aria-live="polite">
+        <span className={cx("aliaui-label", copied && !copied.ok ? "aliaui-inputs-bad" : "aliaui-inputs-sr")} aria-live="polite">
           {status}
         </span>
       </div>
@@ -298,12 +298,12 @@ const FollowUps = defineComponent({
     const prompts = strings(props.prompts);
     if (prompts.length === 0) return null;
     return (
-      <nav className="bbui bbui-inputs-followups" aria-label="Suggested follow-ups">
+      <nav className="aliaui aliaui-inputs-followups" aria-label="Suggested follow-ups">
         <ul>
           {prompts.map((prompt, i) => (
             <li key={i}>
               <Button
-                className={cx("bbui-inputs-followup", sent === i && "is-sent")}
+                className={cx("aliaui-inputs-followup", sent === i && "is-sent")}
                 disabled={streaming || sent !== null}
                 onClick={() => {
                   setSent(i);
@@ -352,20 +352,20 @@ const Timer = defineComponent({
     const left = total !== null ? Math.max(0, total - elapsed) / total : 1;
     const status = done ? "Time is up" : running ? "Running" : elapsed > 0 ? "Paused" : "Ready";
     return (
-      <div className="bbui bbui-inputs-stack">
-        <div className="bbui-inputs-timer-head">
-          <span className="bbui-head">{name}</span>
-          <span className={cx("bbui-label", done && "bbui-inputs-good")}>{status}</span>
+      <div className="aliaui aliaui-inputs-stack">
+        <div className="aliaui-inputs-timer-head">
+          <span className="aliaui-head">{name}</span>
+          <span className={cx("aliaui-label", done && "aliaui-inputs-good")}>{status}</span>
         </div>
-        <span className="bbui-figure bbui-inputs-clock" role="timer" aria-label={name}>
+        <span className="aliaui-figure aliaui-inputs-clock" role="timer" aria-label={name}>
           {total !== null ? clock(total - elapsed, true) : clock(elapsed)}
         </span>
         {total !== null ? (
-          <span className="bbui-inputs-bar" aria-hidden="true">
-            <span className="bbui-inputs-bar-fill bbui-inputs-bar-live" style={{ transform: `scaleX(${left})` }} />
+          <span className="aliaui-inputs-bar" aria-hidden="true">
+            <span className="aliaui-inputs-bar-fill aliaui-inputs-bar-live" style={{ transform: `scaleX(${left})` }} />
           </span>
         ) : null}
-        <div className="bbui-inputs-row">
+        <div className="aliaui-inputs-row">
           <Button variant="primary" disabled={streaming} onClick={toggle}>
             {running ? <Pause {...ICON} /> : <Play {...ICON} />}
             {running ? "Pause" : done ? "Start again" : elapsed > 0 ? "Resume" : "Start"}
@@ -375,7 +375,7 @@ const Timer = defineComponent({
             Reset
           </Button>
         </div>
-        <span className="bbui-inputs-sr" aria-live="polite">
+        <span className="aliaui-inputs-sr" aria-live="polite">
           {done ? `${name} finished` : ""}
         </span>
       </div>
@@ -419,12 +419,12 @@ const Quiz = defineComponent({
       const missed = questions.filter((q, i) => picks[i] !== q.answer).map((q) => q.q);
       const message = `My quiz score: ${score} of ${questions.length}.${missed.length ? ` I missed: ${missed.join(" | ")}` : ""}`;
       return (
-        <div className="bbui bbui-inputs-stack">
-          <span className="bbui-label">Your score</span>
-          <span className="bbui-figure">
+        <div className="aliaui aliaui-inputs-stack">
+          <span className="aliaui-label">Your score</span>
+          <span className="aliaui-figure">
             {score} of {questions.length}
           </span>
-          <div className="bbui-inputs-row">
+          <div className="aliaui-inputs-row">
             <Button
               variant="primary"
               state={sent ? "success" : undefined}
@@ -451,17 +451,17 @@ const Quiz = defineComponent({
     const keyed = question.answer !== undefined && question.answer >= 0 && question.answer < question.options.length;
     const right = checked && pick === question.answer;
     return (
-      <div className="bbui bbui-inputs-stack">
-        <span className="bbui-label">
+      <div className="aliaui aliaui-inputs-stack">
+        <span className="aliaui-label">
           Question {at + 1} of {questions.length}
         </span>
-        <fieldset className="bbui-inputs-options" disabled={streaming || checked}>
-          <legend className="bbui-head">{question.q}</legend>
+        <fieldset className="aliaui-inputs-options" disabled={streaming || checked}>
+          <legend className="aliaui-head">{question.q}</legend>
           {question.options.map((option, i) => {
             const isAnswer = checked && i === question.answer;
             const isWrongPick = checked && i === pick && !isAnswer;
             return (
-              <label key={i} className={cx("bbui-inputs-option", pick === i && "is-picked", isAnswer && "is-right", isWrongPick && "is-wrong")}>
+              <label key={i} className={cx("aliaui-inputs-option", pick === i && "is-picked", isAnswer && "is-right", isWrongPick && "is-wrong")}>
                 <input
                   type="radio"
                   name={group}
@@ -470,12 +470,12 @@ const Quiz = defineComponent({
                 />
                 <span>{option}</span>
                 {isAnswer ? (
-                  <span className="bbui-inputs-mark">
+                  <span className="aliaui-inputs-mark">
                     <Check {...ICON} />
                     Correct answer
                   </span>
                 ) : isWrongPick ? (
-                  <span className="bbui-inputs-mark">
+                  <span className="aliaui-inputs-mark">
                     <X {...ICON} />
                     Your answer
                   </span>
@@ -486,15 +486,15 @@ const Quiz = defineComponent({
         </fieldset>
         <div aria-live="polite">
           {checked ? (
-            <p className="bbui-inputs-feedback">
-              <span className={cx("bbui-head", right ? "bbui-inputs-good" : "bbui-inputs-bad")}>
+            <p className="aliaui-inputs-feedback">
+              <span className={cx("aliaui-head", right ? "aliaui-inputs-good" : "aliaui-inputs-bad")}>
                 {!keyed ? "This question has no answer key." : right ? "Correct." : "Not quite."}
               </span>{" "}
               {question.why ?? ""}
             </p>
           ) : null}
         </div>
-        <div className="bbui-inputs-row">
+        <div className="aliaui-inputs-row">
           {checked ? (
             <Button
               variant="primary"
@@ -550,33 +550,33 @@ const Flashcards = defineComponent({
     };
     const tally = Object.values(marks);
     return (
-      <div className="bbui bbui-inputs-stack">
-        <div className="bbui-inputs-timer-head">
-          <span className="bbui-label">
+      <div className="aliaui aliaui-inputs-stack">
+        <div className="aliaui-inputs-timer-head">
+          <span className="aliaui-label">
             Card {i + 1} of {cards.length}
           </span>
-          <span className="bbui-label">
+          <span className="aliaui-label">
             Known {tally.filter((m) => m === "known").length}, again {tally.filter((m) => m === "again").length}
           </span>
         </div>
         {/* Keyed by card so moving on never fades the next card's answer into view. */}
-        <button key={i} type="button" className="bbui-inputs-card" disabled={streaming} onClick={() => setFlipped(!flipped)}>
-          <span className="bbui-inputs-face bbui-head" data-shown={!flipped} aria-hidden={flipped}>
+        <button key={i} type="button" className="aliaui-inputs-card" disabled={streaming} onClick={() => setFlipped(!flipped)}>
+          <span className="aliaui-inputs-face aliaui-head" data-shown={!flipped} aria-hidden={flipped}>
             {card.front}
           </span>
-          <span className="bbui-inputs-face" data-shown={flipped} aria-hidden={!flipped}>
+          <span className="aliaui-inputs-face" data-shown={flipped} aria-hidden={!flipped}>
             {card.back}
           </span>
-          <span className="bbui-label bbui-inputs-hint">{flipped ? "Answer. Click to see the question." : "Click to show the answer."}</span>
+          <span className="aliaui-label aliaui-inputs-hint">{flipped ? "Answer. Click to see the question." : "Click to show the answer."}</span>
         </button>
-        <span className="bbui-inputs-sr" aria-live="polite">
+        <span className="aliaui-inputs-sr" aria-live="polite">
           {flipped ? card.back : ""}
         </span>
-        <div className="bbui-inputs-row bbui-inputs-spread">
-          <Button className="bbui-inputs-icon" aria-label="Previous card" disabled={streaming || i === 0} onClick={() => go(i - 1)}>
+        <div className="aliaui-inputs-row aliaui-inputs-spread">
+          <Button className="aliaui-inputs-icon" aria-label="Previous card" disabled={streaming || i === 0} onClick={() => go(i - 1)}>
             <ChevronLeft {...ICON} />
           </Button>
-          <div className="bbui-inputs-row">
+          <div className="aliaui-inputs-row">
             <Button disabled={streaming} state={marks[i] === "again" ? "error" : undefined} onClick={() => mark("again")}>
               Again
             </Button>
@@ -584,7 +584,7 @@ const Flashcards = defineComponent({
               Known
             </Button>
           </div>
-          <Button className="bbui-inputs-icon" aria-label="Next card" disabled={streaming || i === cards.length - 1} onClick={() => go(i + 1)}>
+          <Button className="aliaui-inputs-icon" aria-label="Next card" disabled={streaming || i === cards.length - 1} onClick={() => go(i + 1)}>
             <ChevronRight {...ICON} />
           </Button>
         </div>
@@ -614,19 +614,19 @@ const Walkthrough = defineComponent({
     const i = Math.min(at, steps.length - 1);
     const step = steps[i]!;
     return (
-      <section className="bbui bbui-inputs-stack" aria-label="Walkthrough">
-        <h3 className="bbui-head bbui-inputs-title">{step.title}</h3>
-        {step.body ? <Markdown content={step.body} className="bbui-inputs-md" /> : null}
-        {step.code ? <Markdown content={codeFence(step.code, step.language)} className="bbui-inputs-md" /> : null}
-        <span className="bbui-inputs-bar" aria-hidden="true">
-          <span className="bbui-inputs-bar-fill" style={{ transform: `scaleX(${(i + 1) / steps.length})` }} />
+      <section className="aliaui aliaui-inputs-stack" aria-label="Walkthrough">
+        <h3 className="aliaui-head aliaui-inputs-title">{step.title}</h3>
+        {step.body ? <Markdown content={step.body} className="aliaui-inputs-md" /> : null}
+        {step.code ? <Markdown content={codeFence(step.code, step.language)} className="aliaui-inputs-md" /> : null}
+        <span className="aliaui-inputs-bar" aria-hidden="true">
+          <span className="aliaui-inputs-bar-fill" style={{ transform: `scaleX(${(i + 1) / steps.length})` }} />
         </span>
-        <div className="bbui-inputs-row">
+        <div className="aliaui-inputs-row">
           <Button disabled={streaming || i === 0} onClick={() => setAt(i - 1)}>
             <ChevronLeft {...ICON} />
             Previous
           </Button>
-          <span className="bbui-label" aria-live="polite">
+          <span className="aliaui-label" aria-live="polite">
             Step {i + 1} of {steps.length}
           </span>
           <Button variant="primary" disabled={streaming || i === steps.length - 1} onClick={() => setAt(i + 1)}>

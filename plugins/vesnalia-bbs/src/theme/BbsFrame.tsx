@@ -54,8 +54,8 @@ export function BbsFrame(props: BbsFrameProps) {
   }, [hangup]);
 
   const style = {
-    "--bbbbs-scanline": `${Math.max(2, Math.round(fontSize / 8))}px`,
-    "--bbbbs-font": BBS_FONT_FAMILY,
+    "--aliabbs-scanline": `${Math.max(2, Math.round(fontSize / 8))}px`,
+    "--aliabbs-font": BBS_FONT_FAMILY,
   } as CSSProperties;
 
   const copy = hangup ? HANGUP_COPY[hangup.reason] : null;
@@ -63,30 +63,30 @@ export function BbsFrame(props: BbsFrameProps) {
   return (
     <div
       ref={props.frameRef}
-      className={["bbbbs-frame", props.className].filter(Boolean).join(" ")}
+      className={["aliabbs-frame", props.className].filter(Boolean).join(" ")}
       data-state={state}
       data-crt={crt ? "on" : "off"}
       data-motion={props.reducedMotion ? "off" : "on"}
       data-layout={props.layout ?? "content"}
       style={style}
     >
-      <div className="bbbbs-screen-slot" ref={props.slotRef}>
-        <div className="bbbbs-screen" data-power={state === "dialing" ? "on" : "off"}>
-          <div className="bbbbs-term">{props.children}</div>
-          <div className="bbbbs-crt-glow" aria-hidden="true" />
-          <div className="bbbbs-crt-overlay" aria-hidden="true" />
+      <div className="aliabbs-screen-slot" ref={props.slotRef}>
+        <div className="aliabbs-screen" data-power={state === "dialing" ? "on" : "off"}>
+          <div className="aliabbs-term">{props.children}</div>
+          <div className="aliabbs-crt-glow" aria-hidden="true" />
+          <div className="aliabbs-crt-overlay" aria-hidden="true" />
           {hangup && copy && (
-            <div className="bbbbs-hangup" data-headline={copy.headline} role="alertdialog" aria-labelledby="bbbbs-hangup-h">
-              <div className="bbbbs-hangup-box">
-                <p className="bbbbs-hangup-headline" id="bbbbs-hangup-h">
+            <div className="aliabbs-hangup" data-headline={copy.headline} role="alertdialog" aria-labelledby="aliabbs-hangup-h">
+              <div className="aliabbs-hangup-box">
+                <p className="aliabbs-hangup-headline" id="aliabbs-hangup-h">
                   {copy.headline}
                 </p>
-                <p className="bbbbs-hangup-detail">{copy.detail}</p>
-                <button ref={actionRef} type="button" className="bbbbs-button" onClick={hangup.onAction}>
+                <p className="aliabbs-hangup-detail">{copy.detail}</p>
+                <button ref={actionRef} type="button" className="aliabbs-button" onClick={hangup.onAction}>
                   {copy.action}
                 </button>
                 {hangup.onDismiss && (
-                  <button type="button" className="bbbbs-button" onClick={hangup.onDismiss}>
+                  <button type="button" className="aliabbs-button" onClick={hangup.onDismiss}>
                     Close
                   </button>
                 )}
@@ -96,18 +96,18 @@ export function BbsFrame(props: BbsFrameProps) {
         </div>
       </div>
 
-      <div className="bbbbs-statusbar">
-        <span className="bbbbs-led" aria-hidden="true" />
-        <span className="bbbbs-status-text" role="status">
+      <div className="aliabbs-statusbar">
+        <span className="aliabbs-led" aria-hidden="true" />
+        <span className="aliabbs-status-text" role="status">
           {props.statusText ?? DEFAULT_STATUS[state]}
         </span>
         {props.controls}
         {onSoundChange && (
-          <button type="button" className="bbbbs-switch" aria-pressed={!!sound} onClick={() => onSoundChange(!sound)}>
+          <button type="button" className="aliabbs-switch" aria-pressed={!!sound} onClick={() => onSoundChange(!sound)}>
             Sound
           </button>
         )}
-        <button type="button" className="bbbbs-switch" aria-pressed={crt} onClick={() => props.onCrtChange(!crt)}>
+        <button type="button" className="aliabbs-switch" aria-pressed={crt} onClick={() => props.onCrtChange(!crt)}>
           CRT
         </button>
       </div>

@@ -33,7 +33,7 @@
   button. It shows on read cards and puts them back at the top of Done as unread.
 - The resource monitor shows today's Shopify AI proxy spend next to the machine
   gauges, read from the proxy's own per-user counter (every tool on the proxy,
-  not just bb threads) and refreshed once a minute. The chip turns amber from
+  not just VesnALIA threads) and refreshed once a minute. The chip turns amber from
   $450. Its panel section lists the costliest models, token counts, this hour
   and the last 7 days.
 - Each resource chip now opens its own popover (on hover, or click to pin it)
@@ -52,15 +52,15 @@
 
 ## 0.15.1
 
-- The open board no longer covers the bottom of bb's left sidebar (settings and
+- The open board no longer covers the bottom of VesnALIA's left sidebar (settings and
   the other footer controls). The panel now starts at the sidebar's right edge
   and follows it as it collapses, switches to the rail or is resized; with the
   sidebar hidden, as on phones, it still spans the full width.
 
 ## 0.15.0
 
-- The title bar shows how close the bb machine is to running out of CPU,
-  memory, disk or battery, also when you open bb from another device. Each
+- The title bar shows how close the VesnALIA machine is to running out of CPU,
+  memory, disk or battery, also when you open VesnALIA from another device. Each
   gauge is a half-transparent capsule in the metric's color with a solid icon
   and a percentage cut out of it, where high always means danger: CPU busy
   (blue chip), memory pressure (red memory stick; not "used", which macOS
@@ -77,12 +77,12 @@
 - One word for a thread with a turn in progress: Working. The WIP column is
   now Working and its limit the working limit. The chip reads
   `3/5 working · 2 in queue`, the choices `Max N working`; a card it holds
-  reads "Waiting to start" (was "Waiting for a WIP slot"), and bb's queue row
+  reads "Waiting to start" (was "Waiting for a WIP slot"), and VesnALIA's queue row
   says "Working limit reached" or "Working limit is 0". Card status marks and
   reasons read Working, `N child threads working` and In queue (were In
   progress, `N child threads running` and Queued), and parking a working
   thread from the CLI says it is working. Column ids (`wip` in `board_list`,
-  `bb shop-kanban list`) and `board_set_wip_limit` are unchanged.
+  `alia shop-kanban list`) and `board_set_wip_limit` are unchanged.
 - The Working mark is an amber petal spinner (was a spinning arc), so it
   doesn't look like the context meter under it.
 - Queue gets three tabs, kept across reloads: **Queue** (its threads),
@@ -117,7 +117,7 @@
   agents no standing instructions, threads start with your message alone,
   and the bundled skill says to use the board only when you ask.
 - Removed: the `shop_kanban_move_card` and `shop_kanban_mark_result` agent
-  tools, `bb shop-kanban move|success|fail`, and the `column` input of
+  tools, `alia shop-kanban move|success|fail`, and the `column` input of
   `shop_kanban_spawn_task` and `board_spawn_task`. A reported failure no
   longer turns an idle card Blocked, and a reported Done or Blocked no
   longer marks the thread unread or turns on its notifications. Agent notes
@@ -152,13 +152,13 @@
   for a WIP slot, or otherwise queued) shows a play button in place of the
   pause button, on hover and always on touch. Dragging it onto WIP, which
   outlines and shows "Drop to start now" while you drag one, does the same.
-  Its message goes out with bb's Send now, past the WIP limit, and the card
+  Its message goes out with VesnALIA's Send now, past the WIP limit, and the card
   moves to WIP. New `board_start_task` RPC; `board_list` tasks carry
   `startable`.
 - The Queue + form no longer fails to start a thread when no thread is open
-  in bb; the thread starts in the default project.
+  in VesnALIA; the thread starts in the default project.
 - Notes and result summaries are capped at 2,000 characters and short names
-  at 40: `bb shop-kanban add|move|success|fail` refuse longer ones, as the
+  at 40: `alia shop-kanban add|move|success|fail` refuse longer ones, as the
   agent tools already did, and a longer stored note (such as a failed
   thread's error) is cut. One oversized note could fill the 256 KB row all
   cards share and fail every later board write.
@@ -169,7 +169,7 @@
   to pace spend. It shows running over the limit (amber when full) and how
   many threads wait. Past the limit, a message that would start another
   thread waits in that thread's message queue (the card stays in Queue,
-  marked "Waiting for a WIP slot") and bb sends it when a WIP thread
+  marked "Waiting for a WIP slot") and VesnALIA sends it when a WIP thread
   finishes. Blocked threads don't count; steers, follow-ups and child threads
   of a running thread go through, and running threads are never stopped.
   Send now skips the limit. New `board_set_wip_limit` RPC; `board_list`
@@ -179,14 +179,14 @@
   Drag an idle card onto Parked, the only column that takes a drop (it
   outlines while you drag and fills in under the pointer, with a "Drop to
   park" slot), or hover the card and press the pause button. The return
-  button unparks it; `bb shop-kanban park|unpark <thread-id>` does the same.
+  button unparks it; `alia shop-kanban park|unpark <thread-id>` does the same.
   Running and parked cards can't be dragged. A parked card keeps its status
   (Completed, Asked a question, ...) and leaves Parked on its own when the
   thread runs again.
 - The Blocked column is gone: blocked threads sit at the top of WIP and keep
   their red card, stripe and title-bar count. Agents and the CLI still
   report `blocked`.
-- `bb shop-kanban list --json` and `board_list`: each task's `column` is
+- `alia shop-kanban list --json` and `board_list`: each task's `column` is
   `queue`, `wip`, `done` or `parked`, and a new `status` field carries the
   card's state (`queue`, `wip`, `blocked`, `done` or `parked`). Blocked
   threads report `column: "wip"`, `status: "blocked"`.
@@ -230,7 +230,7 @@
   peeking in, and swipes snap column by column. The title bar gives its room
   to search, and search results span the bar instead of running off screen.
   The hidden board is a full-width bottom bar in its own strip; the floating
-  pill used to cover bb's agent options and permission mode buttons.
+  pill used to cover VesnALIA's agent options and permission mode buttons.
 - Touch screens: larger hide, new-thread, archive, review action and Me |
   Team buttons; 16px text in the search, new-thread and request-changes
   fields so iOS doesn't zoom in.
@@ -247,7 +247,7 @@
   or crash; starting the thread or cancelling clears it.
 - The board keeps clear of the iPhone home indicator.
 - The omp mark is drawn in omp's pink (`#f84fcc`) instead of the
-  surrounding text color, on cards and in bb's sidebar and pickers.
+  surrounding text color, on cards and in VesnALIA's sidebar and pickers.
 
 ## 0.9.0
 
@@ -261,7 +261,7 @@
   requests. A pull request both sides find is listed under Me. Emptying a
   setting hides its side; emptying both hides the section.
 - Each card is two lines. The title, behind a low/medium/high risk chip,
-  opens bb's new-thread screen with an unsent prompt asking what changed, why,
+  opens VesnALIA's new-thread screen with an unsent prompt asking what changed, why,
   and how risky it is. The second line opens the pull request on Delta or
   GitHub, approves it (click twice) or requests changes with a reason; the
   card leaves the queue once the review is submitted. Archive hides a card
@@ -283,22 +283,22 @@
   once an hour with the `labelerCommand` hint, and labels retry right after
   a settings change; a missing qmd shows how to install it or set
   `searchCommand` under the search bar. Host commands get `HOME` even when
-  the bb daemon started without one, so `gh`, `dt` and `qmd` find their
+  the VesnALIA daemon started without one, so `gh`, `dt` and `qmd` find their
   config.
 - A host command that hangs (ignores its stop signal, or leaves a background
   process holding its output) is killed a second after its timeout, so it
   can't hold up labels, search, reviews or costs. Threads on a disconnected
-  host count the cost bb reports instead of waiting on the host.
+  host count the cost VesnALIA reports instead of waiting on the host.
 - Archiving a thread drops its board state and label from plugin storage, so
   storage stays bounded by the threads you keep. Corrupt stored state is
   dropped and rebuilt instead of breaking the board.
-- The board and the review queue stop polling while bb's window is hidden
+- The board and the review queue stop polling while VesnALIA's window is hidden
   and read again when it comes back. One board read and one search request
   are in flight at a time.
 - The cost tooltip wraps instead of cutting off a long line such as
   `$185.13 spent across 47 threads (… estimated)`.
-- `bb shop-kanban remove` exits 1 when nothing was archived. The
-  `bb shop-kanban children` command, a no-op since child threads always roll
+- `alia shop-kanban remove` exits 1 when nothing was archived. The
+  `alia shop-kanban children` command, a no-op since child threads always roll
   up into their parent, is gone; agent tools ignore the old `showOnBoard`
   and `showChildren` inputs.
 
@@ -310,8 +310,8 @@
   says how many threads the cost spans.
 - omp and Pi threads are read from their transcripts on the thread's host.
   For omp, subagents at every depth count; omp's own figure covers only a
-  session's replies and its direct tasks, and reaches bb only at the end of
-  a turn. Pi reports no cost to bb at all, so Pi threads used to add nothing.
+  session's replies and its direct tasks, and reaches VesnALIA only at the end of
+  a turn. Pi reports no cost to VesnALIA at all, so Pi threads used to add nothing.
   When no transcript is found there, the board falls back to what the harness
   reported.
 - A forked transcript doesn't count the entries it copied from its source
@@ -337,13 +337,13 @@
 
 - A search bar in the board's title bar finds past threads, archived
   ones included, through a qmd full-text index of every thread's user turns
-  and assistant replies. Picking a result only opens the thread in bb; the
+  and assistant replies. Picking a result only opens the thread in VesnALIA; the
   board is left as it is. New `searchCommand` setting (default `qmd`; empty
   turns search off). The index lives on one connected persistent host, rebuilds
   itself when its files or qmd's index go missing, and runs qmd through
   cross-spawn so Windows npm shims work.
 - User-facing text and agent instructions (board, agent tools, bundled skill,
-  CLI output, docs) now say "thread", bb's own word, instead of task, card or
+  CLI output, docs) now say "thread", VesnALIA's own word, instead of task, card or
   conversation. Tool names, RPC methods and CLI commands are unchanged.
 
 ## 0.6.0
@@ -351,7 +351,7 @@
 - Cards show, flush right in the footer: what the session has spent (when the
   harness reports cost), a ring with the share of the context window in use
   (amber at 70%, red at 90%), and the icon of the harness the thread runs on
-  (e.g. omp, Pi, Codex; the same artwork as the bb sidebar).
+  (e.g. omp, Pi, Codex; the same artwork as the VesnALIA sidebar).
 - Hovering or focusing the cost, the ring or the icon opens a compact
   three-line tooltip: harness, model and thinking level; tokens used, context
   share and cost; then access mode, service tier and the raw model id. A thin
@@ -359,8 +359,8 @@
 - The archive button moved to the card's top-right corner and appears on
   hover or focus (always shown on touch devices). The footer keeps the
   updated time and status on the left.
-- omp threads show bb's omp mark instead of a generic toolbox, on cards and
-  in bb's sidebar and pickers, when a `customAgents` entry replaces bb's
+- omp threads show VesnALIA's omp mark instead of a generic toolbox, on cards and
+  in VesnALIA's sidebar and pickers, when a `customAgents` entry replaces VesnALIA's
   shipped omp agent. The mark follows the surrounding text color.
 - Published: MIT license, public repository at
   github.com/muhammad-siddeek/bb-plugin-shop-kanban, and a store overview
@@ -368,11 +368,11 @@
 
 ## 0.5.0
 
-- The card for the thread open in bb is highlighted: it renders in the
+- The card for the thread open in VesnALIA is highlighted: it renders in the
   opposite theme (light card in dark mode, dark card in light mode) with an
   outline in its column's accent color.
 - The selected card stays fully visible: the board scrolls just enough to show
-  it when it becomes selected (from bb or the board), when it's clicked while
+  it when it becomes selected (from VesnALIA or the board), when it's clicked while
   partly hidden, and when the layout shifts under it (reorders, size changes,
   panel resize). Scrolling away yourself never snaps back.
 
@@ -390,7 +390,7 @@
 
 - Read status on Done cards: unread cards come first with a solid check, read
   cards below with a tinted check.
-- bb sidebar thread titles sync with card titles and follow the overall user
+- VesnALIA sidebar thread titles sync with card titles and follow the overall user
   intent; manual renames are respected.
 - Oldest-first order within columns.
 

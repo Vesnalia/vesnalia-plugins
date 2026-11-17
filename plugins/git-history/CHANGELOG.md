@@ -6,11 +6,11 @@ All notable changes to Git History are documented here.
 
 ### Fixed
 
-- The thread header shortcut is an icon button again. Since 0.4.4 bb drew it
+- The thread header shortcut is an icon button again. Since 0.4.4 VesnALIA drew it
   as a labelled "Git History" button; the plugin now registers its own icon
-  button through `experimental_threadHeaderAction`, which bb 0.48 still
-  renders, and falls back to the labelled header action on a bb without that
-  slot. `bb plugin build` warns that the slot is retired from SDK typings.
+  button through `experimental_threadHeaderAction`, which VesnALIA 0.48 still
+  renders, and falls back to the labelled header action on a VesnALIA without that
+  slot. `alia plugin build` warns that the slot is retired from SDK typings.
 
 ### Changed
 
@@ -22,16 +22,16 @@ All notable changes to Git History are documented here.
 
 ### Changed
 
-- Git History no longer polls every 15 seconds. The panel refreshes when bb
+- Git History no longer polls every 15 seconds. The panel refreshes when VesnALIA
   reports a change to the thread's environment (commits, branch changes, file
   edits) or when a turn ends, and runs no git commands while nothing changes.
   Working-tree edits refresh the panel at most once every 15 seconds.
-- Git commands run through bb's shared VCS process queue
+- Git commands run through VesnALIA's shared VCS process queue
   (`experimental_runVcsProcess`) instead of spawning unmetered.
 - Register the panel with `experimental_tab` and the header shortcut with
   `experimental_threadAction`, replacing the retired `threadPanelAction`,
   `experimental_threadHeaderAction` and `openThreadPanel` APIs.
-- Require BB 0.48 or later and Plugin SDK 0.6.94 or later. The SDK is now a
+- Require VesnALIA 0.48 or later and Plugin SDK 0.6.94 or later. The SDK is now a
   runtime dependency because the host entry and frontend use it at runtime.
 
 ## [0.4.3] - 2026-10-02
@@ -52,7 +52,7 @@ All notable changes to Git History are documented here.
 
 ### Changed
 
-- Support BB 0.44 and later; move to Plugin SDK 0.5.29.
+- Support VesnALIA 0.44 and later; move to Plugin SDK 0.5.29.
 
 ## [0.4.1] - 2026-09-12
 
@@ -138,7 +138,7 @@ If `workspace/` is itself a Git worktree, only that root repository is shown.
 
 - Complete repository history across local branches, remote-tracking branches, tags, stashes, and shared worktrees.
 - Compact colored branch and merge graph with responsive layouts for narrow and wide panels.
-- Inline changed-file summaries and bb-native per-file diffs.
+- Inline changed-file summaries and alia-native per-file diffs.
 - Virtualized incremental loading and search across loaded commits.
-- Light, dark, and custom bb theme support.
-- Read-only Git inspection on local and connected bb hosts.
+- Light, dark, and custom VesnALIA theme support.
+- Read-only Git inspection on local and connected VesnALIA hosts.

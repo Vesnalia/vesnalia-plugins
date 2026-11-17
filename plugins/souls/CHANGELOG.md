@@ -36,18 +36,18 @@ All notable changes to Souls are documented here. The format follows
 
 - Profile, editor and review tabs separate persona content, permissions,
   team controls and appearance. Compact banners and expandable chat cards show
-  selection/version state; saved model preferences use BB's provider picker.
+  selection/version state; saved model preferences use VesnALIA's provider picker.
 - Redesigned the Souls library with scannable portrait cards, job/expertise search,
   usage filtering, name/recent sorting and a more readable profile. The title-bar
   New soul chooser consolidates creation methods; comparison and deletion use
-  explicit dialogs. Container-responsive layouts support narrow BB panes and
+  explicit dialogs. Container-responsive layouts support narrow VesnALIA panes and
   mobile drill-down with preserved search/scroll and keyboard focus. Loading,
   missing links and unavailable usage are distinct from empty results.
 - Import review now uses separate Upload, Paste and GitHub tabs, a drag-and-drop
   file card, searchable agent cards with instruction previews, and a focused
   review editor. Optional details and import notes are collapsible; navigation
   keeps unsaved edits. Scrollable bodies keep actions visible on desktop and
-  BB's native mobile bottom sheets.
+  VesnALIA's native mobile bottom sheets.
 - Voice and temperament now accepts up to 32,000 characters so imported agent
   instructions longer than the former 2,000-character limit are not cut.
 - Updated the README, import and team guides, and store listing for the
@@ -61,7 +61,7 @@ All notable changes to Souls are documented here. The format follows
 - Import review's **Back** action preserves each candidate's unsaved persona,
   permission choices and team settings.
 - Managed spawn requests preserve the hierarchical parent relationship and
-  satisfy BB's request validation. Bound children use normal queue admission,
+  satisfy VesnALIA's request validation. Bound children use normal queue admission,
   respect concurrency limits and leave pending CLI soul arms untouched.
 - Existing archived bindings remain editable, while archived souls remain
   unavailable for new assignments.
@@ -78,7 +78,7 @@ All notable changes to Souls are documented here. The format follows
   and **Dismiss**. Nothing is saved until you approve.
 - **Every agent change waits for you.** `souls_update` shows the same card,
   listing the fields it changes, and `souls_delete` asks you to confirm. An
-  agent binds only its own thread or a child it spawned, and `bb souls create`,
+  agent binds only its own thread or a child it spawned, and `alia souls create`,
   `update` and `delete` refuse when run inside a thread.
 - **Choose a soul…** in the composer's `+` menu, for an existing thread or the
   one you are about to start. *Apply from the next turn* releases an idle
@@ -107,16 +107,16 @@ All notable changes to Souls are documented here. The format follows
 - **A `::soul` persona card** an agent posts once it has loaded its persona,
   tinted with the soul's colours, with tabs for its hard limits, principles,
   expertise and voice, and **Open in Souls**.
-- **Child threads:** `souls_arm_child` and `bb souls select --next-child` bind
+- **Child threads:** `souls_arm_child` and `alia souls select --next-child` bind
   a soul to the next child a thread spawns, before its first session.
 - **Delegation consent:** an explicit, thread-scoped checkbox that only you can
   tick. Selecting a soul never grants it, and children do not inherit it.
-- **Session evidence:** `bb souls status` and the picker separate selection
+- **Session evidence:** `alia souls status` and the picker separate selection
   from recorded session injection, and show **unknown** rather than guess.
 - **Comparisons:** run a soul against no soul, or up to three other souls, on
   the same prompt and project model, plus an optional delegation probe. Runs
   start only when you ask.
 - Agent tools `souls_list`, `souls_get`, `souls_eval`, `souls_propose`,
   `souls_update`, `souls_delete`, `souls_select` and `souls_arm_child`.
-- `bb souls` with `list`, `show`, `eval`, `create`, `update`, `delete`,
+- `alia souls` with `list`, `show`, `eval`, `create`, `update`, `delete`,
   `current`, `status`, `select`, `unbind` and `threads`.

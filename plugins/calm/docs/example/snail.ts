@@ -20,8 +20,8 @@ const SNAIL: Record<"creep" | "look" | "shell", Sprite> = {
     "....sSSSSs.",
     "...sSsssSs.",
     "...sSsSsSs.",
-    "bbbbsSSSsbb",
-    ".bbbbbbbbb.",
+    "aliabbsSSSsbb",
+    ".aliabbbbbbb.",
   ],
   look: [
     "b.b........",
@@ -29,7 +29,7 @@ const SNAIL: Record<"creep" | "look" | "shell", Sprite> = {
     ".alia.sSSSSs.",
     ".b.sSsssSs.",
     ".bbsSsSsSs.",
-    ".bbbbbbbbb.",
+    ".aliabbbbbbb.",
   ],
   shell: [
     "...........",
@@ -37,10 +37,10 @@ const SNAIL: Record<"creep" | "look" | "shell", Sprite> = {
     "....sSSSSs.",
     "...sSsssSs.",
     "...sSsSsSs.",
-    "....bbbbb..",
+    "....aliabbb..",
   ],
 };
-const BABY: Sprite = ["..ss.", ".sSSs", "bbbbb"];
+const BABY: Sprite = ["..ss.", ".sSSs", "aliabbb"];
 const LEAF: Sprite = [".gg..", "gggg.", ".gggg", "..g.."];
 
 // 2. Palette: one per theme. Pale colors listed in `outlined` get a thin

@@ -75,7 +75,7 @@ def arrow(draw, start, end, color=ORANGE):
 def base(index, title=None, eyebrow=None):
     image = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(image)
-    text(draw, (64, 36), "MODEL PILOT / BB", 19, SECONDARY, True)
+    text(draw, (64, 36), "MODEL PILOT / ALIA", 19, SECONDARY, True)
     text(draw, (1095, 36), f"0{index + 1} / 06", 19, SECONDARY)
     line(draw, ((64, 78), (1216, 78)))
     if eyebrow:
@@ -91,7 +91,7 @@ def scene_intro():
     text(draw, (64, 270), "Right model.", 65, CREAM, True)
     text(draw, (64, 350), "Right effort.", 65, ORANGE, True)
     text(draw, (64, 478), "Automatic model selection", 29, SECONDARY)
-    text(draw, (64, 520), "and focused helpers inside BB.", 29, SECONDARY)
+    text(draw, (64, 520), "and focused helpers inside ALIA.", 29, SECONDARY)
     for y, label, detail in [(157, "Your task", "Describe the work"), (307, "Classifier", "Chooses the route"), (457, "Coding agent", "Does the work")]:
         panel(draw, (832, y, 1216, y + 112), label == "Classifier")
         text(draw, (860, y + 24), label, 30, CREAM, True)
@@ -106,9 +106,9 @@ def scene_task():
     panel(draw, (64, 260, 590, 470))
     text(draw, (96, 292), "YOUR FIRST MESSAGE", 20, SECONDARY, True)
     text(draw, (96, 348), "Add search to this app.", 36, CREAM, True)
-    text(draw, (96, 410), "Send it to Model Pilot in BB.", 26, SECONDARY)
+    text(draw, (96, 410), "Send it to Model Pilot in ALIA.", 26, SECONDARY)
     arrow(draw, (614, 365), (686, 365))
-    text(draw, (720, 255), "CHOOSE A BB CLASSIFIER", 20, SECONDARY, True)
+    text(draw, (720, 255), "CHOOSE A ALIA CLASSIFIER", 20, SECONDARY, True)
     for i, label in enumerate(("An available model", "Uses Codex sign-in", "or Claude Code sign-in")):
         y = 300 + i * 80
         panel(draw, (720, y, 1216, y + 64), i == 0)
@@ -170,16 +170,16 @@ def scene_usage():
 
 def scene_connect():
     image, draw = base(5)
-    text(draw, (64, 124), "START IN BB", 19, ACCENT_TEXT, True)
-    text(draw, (64, 172), "Use your BB models.", 47, CREAM, True)
+    text(draw, (64, 124), "START IN ALIA", 19, ACCENT_TEXT, True)
+    text(draw, (64, 172), "Use your ALIA models.", 47, CREAM, True)
     text(draw, (64, 232), "Keep your agent sign-ins.", 47, CREAM, True)
-    for y, number, title in [(338, "1", "Choose a BB classification model."), (416, "2", "Use your existing agent sign-in."), (494, "3", "Select Model Pilot. Send your task.")]:
+    for y, number, title in [(338, "1", "Choose a ALIA classification model."), (416, "2", "Use your existing agent sign-in."), (494, "3", "Select Model Pilot. Send your task.")]:
         draw.rounded_rectangle((64, y, 103, y + 39), radius=3, fill=ORANGE)
         text(draw, (77, y + 8), number, 23, BG, True)
         text(draw, (123, y + 7), title, 27, CREAM)
-    text(draw, (64, 596), "No separate API key for BB models.", 26, SECONDARY)
+    text(draw, (64, 596), "No separate API key for ALIA models.", 26, SECONDARY)
     text(draw, (64, 638), "Your provider subscription limits still apply.", 24, SECONDARY)
-    text(draw, (664, 304), "ACTUAL BB CONNECTION", 19, SECONDARY, True)
+    text(draw, (664, 304), "ACTUAL ALIA CONNECTION", 19, SECONDARY, True)
     screenshot = Image.open(MEDIA / "model-pilot-connection.png").convert("RGB")
     screenshot = screenshot.crop((720, 235, 1408, 525))
     screenshot.thumbnail((552, 360), Image.Resampling.LANCZOS)

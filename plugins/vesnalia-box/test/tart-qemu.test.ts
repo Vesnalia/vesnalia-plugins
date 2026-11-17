@@ -290,7 +290,7 @@ test("acquires a Windows box: an owner file, an overlay on the image's build, tw
   assert.ok(dials.length > 0, "SSH to the guest");
   for (const dial of dials) {
     assert.equal(dial.args[dial.args.indexOf("-p") + 1], String(sshPort));
-    assert.ok(dial.args.some((arg) => arg.startsWith("ProxyCommand=") && arg.endsWith(`bbbox-admin@${MAC}'`)), JSON.stringify(dial.args));
+    assert.ok(dial.args.some((arg) => arg.startsWith("ProxyCommand=") && arg.endsWith(`aliabox-admin@${MAC}'`)), JSON.stringify(dial.args));
   }
 
   const transports = await backend.transports(guest, KIND);
@@ -301,7 +301,7 @@ test("acquires a Windows box: an owner file, an overlay on the image's build, tw
   assert.equal(transports.displays[0]!.label, "Desktop");
   const { route, auth } = await transports.displays[0]!.open(signal());
   assert.deepEqual(auth, { type: "none" }, "QEMU's VNC server listens on the Mac's loopback only");
-  assert.ok(route.type === "command" && route.argv.includes(`127.0.0.1:${vncPort}`) && route.argv.at(-1) === `bbbox-admin@${MAC}`);
+  assert.ok(route.type === "command" && route.argv.includes(`127.0.0.1:${vncPort}`) && route.argv.at(-1) === `aliabox-admin@${MAC}`);
 
   const held = (await backend.held(signal())).find((candidate) => candidate.ref === vm);
   assert.deepEqual(held, {
@@ -811,7 +811,7 @@ test("a Mac without QEMU or without the Windows image takes no Windows box, and 
   assert.match(capacity.message!, /mac1 has no Windows image alia-box-windows in ~\/\.alia-box\/qemu\/images\. Prepare it there/);
   rmSync(join(mac, ".nix-profile", "bin", "qemu-system-aarch64"));
   capacity = await backend.capacity(KIND, SMALL, [], signal());
-  assert.match(capacity.message!, /mac1 has no QEMU on the PATH of bbbox-admin's SSH sessions, which Windows boxes need/);
+  assert.match(capacity.message!, /mac1 has no QEMU on the PATH of aliabox-admin's SSH sessions, which Windows boxes need/);
   assert.equal((await backend.capacity("macos", SMALL, [], signal())).ok, true, "macOS boxes do not need QEMU");
 });
 
@@ -866,7 +866,7 @@ test("the doctor checks QEMU, the Hypervisor framework, the firmware and the Win
 
   rmSync(join(mac, ".nix-profile", "bin", "qemu-system-aarch64"));
   report = await backend.doctor(signal());
-  assert.equal(check("qemu.mac1")?.detail, "mac1 has no qemu-system-aarch64 on the PATH of bbbox-admin's SSH sessions.");
+  assert.equal(check("qemu.mac1")?.detail, "mac1 has no qemu-system-aarch64 on the PATH of aliabox-admin's SSH sessions.");
 });
 
 test("the doctor counts the memory a Windows VM's QEMU takes against the Mac (#74)", async () => {

@@ -5,7 +5,7 @@
 Needs .e2e/models (silero_vad_v5.onnx, nemo_en_titanet_small.onnx; Piper
 voices in .e2e/models/tts to generate the fixtures on first run) and, for the
 end-to-end tests, a running GigaAM server: GIGAAM_URL, else the port from
-`bb gigaam status --json`. Set MEETINGS_TEST_KEEP=1 to keep the meeting
+`alia gigaam status --json`. Set MEETINGS_TEST_KEEP=1 to keep the meeting
 directories under .e2e/test-runs, MEETINGS_TEST_LONG=1 to run the 3-hour
 scale test.
 """
@@ -62,7 +62,7 @@ def find_gigaam():
     url = os.environ.get("GIGAAM_URL")
     if not url:
         try:
-            out = subprocess.run(["bb", "gigaam", "status", "--json"], capture_output=True, text=True, timeout=30)
+            out = subprocess.run(["alia", "gigaam", "status", "--json"], capture_output=True, text=True, timeout=30)
             st = json.loads(out.stdout)
             if st.get("phase") == "ready" and st.get("port"):
                 url = f"http://127.0.0.1:{st['port']}"
@@ -578,7 +578,7 @@ class AsrClientTests(unittest.TestCase):
 # ----------------------------------------------------------------------------- end-to-end (GigaAM)
 
 
-@unittest.skipUnless(GIGAAM, "GigaAM server not reachable (set GIGAAM_URL or start `bb gigaam`)")
+@unittest.skipUnless(GIGAAM, "GigaAM server not reachable (set GIGAAM_URL or start `alia gigaam`)")
 class TranscriberTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

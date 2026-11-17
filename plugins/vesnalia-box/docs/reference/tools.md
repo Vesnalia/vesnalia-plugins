@@ -111,7 +111,7 @@ Grant a program in a macOS box macOS permissions, such as Accessibility or Scree
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `box` | string | yes | The box's name or ID, from box_acquire or box_list. |
-| `program` | string | yes | The app's path, such as /Users/bbx-3/Applications/Probe.app, or a program's full path in the box. |
+| `program` | string | yes | The app's path, such as /Users/aliax-3/Applications/Probe.app, or a program's full path in the box. |
 | `permissions` | array of `accessibility`, `screen-recording`, `input-monitoring`, `microphone`, `camera`, `system-audio`, `automation` | yes | The permissions to grant. |
 | `target` | string | no | For automation: the bundle ID of the app the program sends Apple events to, such as com.apple.finder. |
 

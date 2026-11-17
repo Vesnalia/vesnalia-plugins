@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to KodaForge. Versions follow [semver](https://semver.org); BB installs
+All notable changes to KodaForge. Versions follow [semver](https://semver.org); VesnALIA installs
 them from the `vX.Y.Z` tags.
 
 ## [0.7.0] - 2026-11-04
@@ -117,7 +117,7 @@ them from the `vX.Y.Z` tags.
 - Terminals survive leaving KodaForge: the same terminal reattaches with its screen and
   scrollback, and the layout and open tabs are restored per workspace.
 - Material Icon Theme icons for files and folders.
-- A BB marketplace file, so KodaForge appears in BB's plugin store.
+- A VesnALIA marketplace file, so KodaForge appears in VesnALIA's plugin store.
 
 ### Fixed
 - A crash when the bottom panel opened: Chromium's `scrollIntoView` returns a Promise, which
@@ -128,11 +128,11 @@ them from the `vX.Y.Z` tags.
 
 ### Added
 - Monaco editor with tabs, split view, hash-guarded saves, auto-reload, Quick Open, command
-  palette, find and replace, and BB's themes.
+  palette, find and replace, and VesnALIA's themes.
 - Explorer, search and replace with a preview, Python and TS/JS language servers (including
   TypeScript 7), split terminals, and source control.
 - Agent chat, threads and workflows in a right-hand panel.
-- Koda the bear, and colour coding from the BB theme.
+- Koda the bear, and colour coding from the VesnALIA theme.
 
 [0.6.0]: https://github.com/Kodaks94/bb-plugin-kodaforge/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Kodaks94/bb-plugin-kodaforge/compare/v0.4.0...v0.5.0

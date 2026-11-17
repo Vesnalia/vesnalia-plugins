@@ -5,7 +5,7 @@
 # --paired reads a paired.py run directory (runs.jsonl, blind.key.json, judge.json).
 import argparse, concurrent.futures as cf, json, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from paired import bb, price_thread, wait_turn
+from paired import alia, price_thread, wait_turn
 
 VERIFIER = """You check one answer from a coding agent before the person sees it. You see only the task and the final answer.
 Question: can an engineer act on this answer without asking again, and does the answer cite the evidence it rests on (files, logs, commands, links, or tool results it actually read)?
@@ -44,13 +44,13 @@ def from_paired(tasks_path, out, kind):
     return items
 
 def verify(item, project, environment):
-    t = json.loads(bb("thread", "spawn", "--json", "--parent-self", "--project", project, "--environment", environment,
+    t = json.loads(alia("thread", "spawn", "--json", "--parent-self", "--project", project, "--environment", environment,
                       "--provider", "claude-code", "--model", "claude-opus-5-5", "--reasoning-level", "low",
                       "--title", f"measure verifier {item['id']}", "--prompt-file", "-",
                       stdin=f"{VERIFIER}# Task\n\n{item['task']}\n\n# Answer\n\n{item['answer']}"))["id"]
     if wait_turn(t, 0) != "done":
         raise RuntimeError(f"verifier thread {t} did not finish")
-    text = json.loads(bb("thread", "output", t, "--json")).get("output") or ""
+    text = json.loads(alia("thread", "output", t, "--json")).get("output") or ""
     verdict = json.loads(text[text.index("{"): text.rindex("}") + 1])
     return {**item, "verifier": verdict, "thread": t, "verifierUsd": price_thread(t)["usd"]}
 

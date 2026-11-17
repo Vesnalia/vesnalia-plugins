@@ -4,7 +4,7 @@ https://github.com/user-attachments/assets/eba3dd91-6c14-42b5-a17b-b53a91e6b9fd
 
 Computers for [VesnALIA](https://getbb.app) threads: Linux, Windows, macOS, iOS and Android, virtual or real: desktops, terminals or simulators, shared by you and your agent.
 
-Documentation: [bbbox.dev](https://bbbox.dev).
+Documentation: [aliabox.dev](https://bbbox.dev).
 
 ## Why VesnALIA Box
 

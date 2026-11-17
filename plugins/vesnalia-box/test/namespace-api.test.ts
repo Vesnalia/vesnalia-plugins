@@ -15,7 +15,7 @@ function setup(options: ConstructorParameters<typeof FakeNamespace>[0] = {}) {
 test("an instance is made with its shape, labels, deadline, unique tag and SSH key, and a second make with the same tag finds the first", async () => {
   const { fake, api } = setup();
   const deadline = Date.parse("2030-01-01T01:00:00Z");
-  const request = { shape: MAC, labels: { "bbbox-install": "i1", "bbbox-box": "box_1" }, deadline, purpose: "VesnALIA Box box quiet-heron", uniqueTag: "bbbox-i1-box_1", sshPublicKeys: ["ssh-ed25519 AAAA alia-box"] };
+  const request = { shape: MAC, labels: { "aliabox-install": "i1", "aliabox-box": "box_1" }, deadline, purpose: "VesnALIA Box box quiet-heron", uniqueTag: "aliabox-i1-box_1", sshPublicKeys: ["ssh-ed25519 AAAA alia-box"] };
   const made = await api.create(request);
   const again = await api.create(request);
   assert.equal(again.id, made.id);
@@ -25,22 +25,22 @@ test("an instance is made with its shape, labels, deadline, unique tag and SSH k
     body: {
       shape: { os: "macos", machineArch: "arm64", virtualCpu: 6, memoryMegabytes: 14336, selectors: [{ name: "macos.version", value: "26.x" }] },
       documentedPurpose: "VesnALIA Box box quiet-heron",
-      labels: [{ name: "bbbox-install", value: "i1" }, { name: "bbbox-box", value: "box_1" }],
+      labels: [{ name: "aliabox-install", value: "i1" }, { name: "aliabox-box", value: "box_1" }],
       deadline: "2030-01-01T01:00:00.000Z",
-      experimental: { uniqueTag: "bbbox-i1-box_1", authorizedSshKeys: ["ssh-ed25519 AAAA alia-box"] },
+      experimental: { uniqueTag: "aliabox-i1-box_1", authorizedSshKeys: ["ssh-ed25519 AAAA alia-box"] },
     },
   });
   assert.equal(made.status, "unknown", "as Namespace's own answer to a create has no status");
   const ready = await api.wait(made.id);
-  assert.deepEqual([ready.status, ready.continent, ready.labels["bbbox-box"], ready.shape?.cores], ["running", "us", "box_1", 6]);
+  assert.deepEqual([ready.status, ready.continent, ready.labels["aliabox-box"], ready.shape?.cores], ["running", "us", "box_1", 6]);
 });
 
 test("instances are listed by label, extended to at least a time ahead within the plan's cap, and destroyed once, a second destroy being no error", async () => {
   let now = Date.parse("2030-01-01T00:00:00Z");
   const { fake, api } = setup({ now: () => now, lifeCapMs: 4 * 3600_000 });
-  const mine = await api.create({ shape: MAC, labels: { "bbbox-install": "i1" }, deadline: now + 3600_000, purpose: "a", uniqueTag: "a", sshPublicKeys: [] });
-  await api.create({ shape: { ...MAC, cores: 2, memoryMiB: 4096 }, labels: { "bbbox-install": "other" }, deadline: now + 3600_000, purpose: "b", uniqueTag: "b", sshPublicKeys: [] });
-  assert.deepEqual((await api.list({ "bbbox-install": "i1" })).map((instance) => instance.id), [mine.id]);
+  const mine = await api.create({ shape: MAC, labels: { "aliabox-install": "i1" }, deadline: now + 3600_000, purpose: "a", uniqueTag: "a", sshPublicKeys: [] });
+  await api.create({ shape: { ...MAC, cores: 2, memoryMiB: 4096 }, labels: { "aliabox-install": "other" }, deadline: now + 3600_000, purpose: "b", uniqueTag: "b", sshPublicKeys: [] });
+  assert.deepEqual((await api.list({ "aliabox-install": "i1" })).map((instance) => instance.id), [mine.id]);
   now += 50 * 60_000;
   const extended = await api.extend(mine.id, 3600_000);
   assert.equal(extended, now + 3600_000);
@@ -48,7 +48,7 @@ test("instances are listed by label, extended to at least a time ahead within th
   assert.equal(await api.extend(mine.id, 48 * 3600_000), Date.parse("2030-01-01T04:00:00Z"));
   await api.destroy(mine.id, "released");
   await api.destroy(mine.id, "released again");
-  assert.deepEqual((await api.list({ "bbbox-install": "i1" })).length, 0);
+  assert.deepEqual((await api.list({ "aliabox-install": "i1" })).length, 0);
 });
 
 test("an instance past its deadline is gone, and reading it says so", async () => {

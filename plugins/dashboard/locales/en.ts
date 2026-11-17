@@ -85,7 +85,7 @@ export const en = {
   "closeSettings": "Close settings",
   "projectsHelp": "Choose projects and change their order below. Import current work. Earlier completed replies remain in the regular VesnALIA interface.",
   "appsHelp": "Choose applications. Change their order and names below.",
-  "navigationHelp": "To connect applications, select BBDesk in VesnALIA Settings → Appearance → Navigation.",
+  "navigationHelp": "To connect applications, select AliaDesk in VesnALIA Settings → Appearance → Navigation.",
   "noApps": "No applications available. Install a plugin with its own screen in VesnALIA.",
   "appName": "Application name",
   "projectsNote": "Disabling a project only hides it here. Its threads keep working.",

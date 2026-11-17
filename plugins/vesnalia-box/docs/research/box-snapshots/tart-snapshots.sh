@@ -8,7 +8,7 @@ VM=$(grep -lxF "box=$BOX" "$OWNERS"/* 2>/dev/null | head -n 1 | xargs -n 1 basen
 [ -n "$VM" ] || { echo "No owner file names box $BOX; stopping." >&2; exit 1; }
 VMS=$(cd "${TART_HOME:-$HOME/.tart}/vms" && pwd -P)
 KEEP=$(dirname "$VMS")/snapshot-research
-FORK=bbsnap-research-fork
+FORK=aliasnap-research-fork
 running_vms() { pgrep -x tart | wc -l | tr -d ' '; }
 
 now() { perl -MTime::HiRes=time -e 'printf "%.3f\n", time'; }

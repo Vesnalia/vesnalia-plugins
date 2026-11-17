@@ -168,7 +168,7 @@ describe("dialogs", () => {
   });
 });
 
-describe("member_calls migration to rerun generations (BBP-15)", () => {
+describe("member_calls migration to rerun generations (ALIAP-15)", () => {
   /** A database as it was before the generation existed, with one delivery. */
   function legacyDatabase() {
     const db = new Database(":memory:");

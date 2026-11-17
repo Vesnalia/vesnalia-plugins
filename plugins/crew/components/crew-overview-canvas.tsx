@@ -1,4 +1,4 @@
-// The Crews canvas (BBP-71, made the main view in BBP-83): levels 0 and 1 of
+// The Crews canvas (ALIAP-71, made the main view in ALIAP-83): levels 0 and 1 of
 // the semantic zoom — every project as a labelled cluster, then one project
 // zoomed in. The canvas, nodes and edges — a card
 // per crew/task, a labelled frame per project, animated edges for active
@@ -386,7 +386,7 @@ export function OverviewCanvas({
   return (
     <div
       ref={colorRef}
-      // BBP-81: the canvas takes the full height it is given, as in Graph Studio;
+      // ALIAP-81: the canvas takes the full height it is given, as in Graph Studio;
       // a height derived from the drawing left a thin strip of tiny cards.
       className="relative h-full w-full min-w-0 overflow-hidden rounded-lg border border-border bg-background"
       aria-label="Crews canvas"

@@ -2,8 +2,8 @@ import { HOSTNAME_LIMIT, TAILNET_HASH_LENGTH, fitsTailnetHostname, shortTailnetI
 import { LONGEST_INSTALL_ID } from "../core/install.ts";
 import { backendIdName } from "../core/provider-name.ts";
 
-export const INSTALL_LABEL = "bbbox-install";
-export const BACKEND_LABEL = "bbbox-backend";
+export const INSTALL_LABEL = "aliabox-install";
+export const BACKEND_LABEL = "aliabox-backend";
 
 type Labels = Readonly<Record<string, string>>;
 
@@ -58,7 +58,7 @@ export class LabelledOwner {
   }
 
   uniqueTag(what: string): string {
-    return `bbbox-${this.scope}-${what}`.replace(/[^A-Za-z0-9-]+/g, "-");
+    return `aliabox-${this.scope}-${what}`.replace(/[^A-Za-z0-9-]+/g, "-");
   }
 
   tailnetPrefix(): string {

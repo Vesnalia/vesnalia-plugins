@@ -46,7 +46,7 @@ test("describeEpisode names culprits with average CPU per hot sample", () => {
       samples: 20,
       culprits: [
         { threadId: "thr_aaaaaaaaaa", title: "Build", cpuSum: 800, samples: 20, peakCpu: 60 },
-        { threadId: "thr_bbbbbbbbbb", title: null, cpuSum: 40, samples: 2, peakCpu: 30 },
+        { threadId: "thr_aliabbbbbbbb", title: null, cpuSum: 40, samples: 2, peakCpu: 30 },
       ],
       others: [{ name: "WindowServer", cpuSum: 60, samples: 20 }],
     },

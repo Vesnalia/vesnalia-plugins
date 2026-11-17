@@ -8,16 +8,16 @@ import { tags as t } from "@lezer/highlight";
  * without a `.dark` variant — the plugin Tailwind build lacks VesnALIA's dark
  * custom-variant, so colors must come from CSS vars (or `light-dark()`).
  *
- * Font size can be tuned by the host via `--bbnotes-editor-font-size`.
+ * Font size can be tuned by the host via `--alianotes-editor-font-size`.
  * Decoration classes (headings, chips, checkboxes, …) live in `editor.css`.
  */
-export const bbnotesTheme = EditorView.theme({
+export const alianotesTheme = EditorView.theme({
   "&": {
     height: "100%",
     color: "var(--foreground)",
     backgroundColor: "transparent",
     fontFamily: "var(--font-sans, ui-sans-serif, system-ui, sans-serif)",
-    fontSize: "var(--bbnotes-editor-font-size, 14px)",
+    fontSize: "var(--alianotes-editor-font-size, 14px)",
   },
   "&.cm-focused": {
     outline: "none",
@@ -54,12 +54,12 @@ export const bbnotesTheme = EditorView.theme({
  * Syntax colors for fenced-code languages, entirely from VesnALIA tokens: the
  * `--ansi-0…15` palette VesnALIA publishes for terminals (and re-tunes per theme;
  * `--ansi-1` red … `--ansi-6` cyan, `+8` for bright) plus `--muted-foreground`
- * for comments/meta. Apply with `syntaxHighlighting(bbnotesHighlightStyle)`.
+ * for comments/meta. Apply with `syntaxHighlighting(alianotesHighlightStyle)`.
  *
  * Deliberately does NOT touch markdown's own tags (heading, emphasis, link,
  * processingInstruction) — the live preview owns prose styling.
  */
-export const bbnotesHighlightStyle = HighlightStyle.define([
+export const alianotesHighlightStyle = HighlightStyle.define([
   { tag: [t.keyword, t.modifier, t.operatorKeyword], color: "var(--ansi-5)" },
   { tag: [t.string, t.special(t.string), t.regexp], color: "var(--ansi-2)" },
   { tag: t.comment, color: "var(--muted-foreground)", fontStyle: "italic" },

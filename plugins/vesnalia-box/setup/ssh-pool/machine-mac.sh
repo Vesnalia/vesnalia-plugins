@@ -37,7 +37,7 @@
 #   signs-in-by  the way that signed the last user in, which the next reset tries first
 #   xcode        Xcode's version and Simulator runtimes, as `status xcode` last found them
 #
-# Each box gets a new standard user, bbx-<generation>, whose UID is 70000
+# Each box gets a new standard user, aliax-<generation>, whose UID is 70000
 # plus the generation modulo 10000. It is hidden from the login window and in
 # the _developer group, and its home is macOS's template with alia-box's,
 # /usr/local/share/alia-box/home, on top. The reset makes the next box's user
@@ -93,7 +93,7 @@ LOGINWINDOW=/Library/Preferences/com.apple.loginwindow
 # Only a process with Full Disk Access can read it.
 TCC="/Library/Application Support/com.apple.TCC/TCC.db"
 CUA=/usr/local/bin/cua-driver
-PREFIX=bbx-
+PREFIX=aliax-
 ID_BASE=70000
 ID_SPAN=10000
 # _developer lets the debugger and Instruments run without a password. Where

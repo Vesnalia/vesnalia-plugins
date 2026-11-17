@@ -50,7 +50,7 @@
      "key": "token-id",
      "type": "string",
      "label": "API token ID",
-     "description": "For example bbbox@pve!plugin. The setup guide lists the privileges it needs.",
+     "description": "For example aliabox@pve!plugin. The setup guide lists the privileges it needs.",
      "default": "",
      "group": "credentials"
     },
@@ -66,7 +66,7 @@
      "key": "ssh-private-key",
      "type": "string",
      "label": "SSH private key",
-     "description": "The unencrypted OpenSSH private key the templates were built with (the setup guide's BBBOX_SSH_KEY). Leave empty and alia-box makes one and shows its public key, which the templates must then accept.",
+     "description": "The unencrypted OpenSSH private key the templates were built with (the setup guide's ALIABOX_SSH_KEY). Leave empty and alia-box makes one and shows its public key, which the templates must then accept.",
      "secret": true,
      "group": "credentials"
     },
@@ -75,7 +75,7 @@
      "type": "string",
      "label": "Resource pool",
      "description": "Boxes are made in this pool. The token needs rights on it.",
-     "default": "bbbox",
+     "default": "aliabox",
      "group": "boxes"
     },
     {
@@ -286,7 +286,7 @@
      "key": "token-id",
      "type": "string",
      "label": "API token ID",
-     "description": "For example bbbox@pve!plugin. The setup guide lists the privileges it needs.",
+     "description": "For example aliabox@pve!plugin. The setup guide lists the privileges it needs.",
      "group": "credentials",
      "default": "",
      "inherits": {
@@ -324,7 +324,7 @@
      "key": "ssh-private-key",
      "type": "string",
      "label": "SSH private key",
-     "description": "Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, alia-box makes a key, which the template does not accept until you add its public key.",
+     "description": "Paste ALIABOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, alia-box makes a key, which the template does not accept until you add its public key.",
      "secret": true,
      "group": "credentials",
      "inherits": {
@@ -341,7 +341,7 @@
      "label": "Resource pool",
      "description": "Boxes are made in this pool. The token needs rights on it.",
      "group": "boxes",
-     "default": "bbbox"
+     "default": "aliabox"
     },
     {
      "key": "windows-templates",
@@ -828,7 +828,7 @@
      "label": "Linux image",
      "description": "The image linux boxes run. setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux:1"
+     "default": "aliabox/linux:1"
     },
     {
      "key": "desktop-image",
@@ -836,7 +836,7 @@
      "label": "Desktop image",
      "description": "The image linux-desktop-cpu boxes, and linux-desktop boxes when GPU desktops are on, run. setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux-desktop:1"
+     "default": "aliabox/linux-desktop:1"
     },
     {
      "key": "wayland-desktop-image",
@@ -844,7 +844,7 @@
      "label": "Wayland desktop image",
      "description": "The image linux-desktop-wayland-cpu boxes run: Sway on Wayland, drawn by the CPU. setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux-desktop-wayland:1"
+     "default": "aliabox/linux-desktop-wayland:1"
     },
     {
      "key": "privileged",
@@ -876,7 +876,7 @@
      "label": "Network",
      "description": "The Docker network alia-box makes for its boxes, apart from the host's other containers.",
      "group": "advanced",
-     "default": "bbbox"
+     "default": "aliabox"
     },
     {
      "key": "boxes",
@@ -930,7 +930,7 @@
      "label": "Linux image",
      "description": "The image linux boxes run. alia-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux:1"
+     "default": "aliabox/linux:1"
     },
     {
      "key": "desktop-image",
@@ -938,7 +938,7 @@
      "label": "Desktop image",
      "description": "The image linux-desktop-cpu boxes run. alia-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux-desktop:1"
+     "default": "aliabox/linux-desktop:1"
     },
     {
      "key": "linux-arm64-image",
@@ -946,7 +946,7 @@
      "label": "Linux image (arm64)",
      "description": "The image linux-arm64 boxes run, on an arm64 host such as a Mac. alia-box imports it from Docker on the host, or builds it there with setup/docker/build.sh --arch arm64 in a microVM of its own. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux:1-arm64"
+     "default": "aliabox/linux:1-arm64"
     },
     {
      "key": "desktop-arm64-image",
@@ -954,7 +954,7 @@
      "label": "Desktop image (arm64)",
      "description": "The image linux-arm64-desktop-cpu boxes run, on an arm64 host such as a Mac. alia-box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux-desktop:1-arm64"
+     "default": "aliabox/linux-desktop:1-arm64"
     },
     {
      "key": "docker",
@@ -1111,7 +1111,7 @@
      "label": "Linux image",
      "description": "The image linux boxes run. setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux:1"
+     "default": "aliabox/linux:1"
     },
     {
      "key": "desktop-image",
@@ -1119,7 +1119,7 @@
      "label": "Desktop image",
      "description": "The image linux-desktop-cpu boxes, and linux-desktop boxes when GPU desktops are on, run. setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux-desktop:1"
+     "default": "aliabox/linux-desktop:1"
     },
     {
      "key": "wayland-desktop-image",
@@ -1127,7 +1127,7 @@
      "label": "Wayland desktop image",
      "description": "The image linux-desktop-wayland-cpu boxes run: Sway on Wayland, drawn by the CPU. setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
-     "default": "bbbox/linux-desktop-wayland:1"
+     "default": "aliabox/linux-desktop-wayland:1"
     },
     {
      "key": "privileged",
@@ -1159,7 +1159,7 @@
      "label": "Network",
      "description": "The Docker network alia-box makes for its boxes, apart from the host's other containers.",
      "group": "advanced",
-     "default": "bbbox"
+     "default": "aliabox"
     }
    ],
    "hostFields": [],

@@ -8,7 +8,7 @@ if os.path.exists(out): done={json.loads(l)["file"]:1 for l in open(out)}
 todo=[s for s in S if s["file"] not in done]; print(len(S),"eligible,",len(todo),"to route",flush=True)
 def route(s):
     for attempt in range(3):
-        p=subprocess.run(["bb","auto","route",s["prompt"]],capture_output=True,text=True,timeout=120)
+        p=subprocess.run(["alia","auto","route",s["prompt"]],capture_output=True,text=True,timeout=120)
         try:
             r=json.loads(p.stdout); return {"file":s["file"],"route":r["route"],"delegation":r.get("delegation"),"jev":r.get("jev") or r.get("classifier")}
         except Exception: err=p.stderr[-300:]

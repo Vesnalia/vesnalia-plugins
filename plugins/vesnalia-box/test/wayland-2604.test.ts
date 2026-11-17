@@ -19,7 +19,7 @@ test("the build's fallback apt source names the image's own release, as 26.04 is
   assert.doesNotMatch(baseline, /Suites: noble/);
   // dnsutils is only 24.04's transitional name for bind9-dnsutils, which 26.04 dropped.
   const base = read("proxmox-lxc/template/guest/customize-base.sh");
-  assert.match(base, /\bbind9-dnsutils\b/);
+  assert.match(base, /\aliaind9-dnsutils\b/);
   assert.doesNotMatch(/^extra_packages=.*$/m.exec(base)![0], / dnsutils /);
 });
 
@@ -47,13 +47,13 @@ test("Selkies is pinned for 26.04 beside 24.04, on both architectures, and the W
 
 test("a Proxmox LXC Wayland template is built from Ubuntu 26.04, and the rest from 24.04", () => {
   const common = read("proxmox-lxc/host/common.sh");
-  assert.match(common, /^BBBOX_OS_TEMPLATE=\$\{BBBOX_OS_TEMPLATE:-local:vztmpl\/ubuntu-24\.04-standard_/m);
-  assert.match(common, /^BBBOX_OS_TEMPLATE_WAYLAND=\$\{BBBOX_OS_TEMPLATE_WAYLAND:-local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst\}$/m);
-  assert.match(read("proxmox-lxc/host/alia-box.env.example"), /^BBBOX_OS_TEMPLATE_WAYLAND=local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst$/m);
+  assert.match(common, /^ALIABOX_OS_TEMPLATE=\$\{ALIABOX_OS_TEMPLATE:-local:vztmpl\/ubuntu-24\.04-standard_/m);
+  assert.match(common, /^ALIABOX_OS_TEMPLATE_WAYLAND=\$\{ALIABOX_OS_TEMPLATE_WAYLAND:-local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst\}$/m);
+  assert.match(read("proxmox-lxc/host/alia-box.env.example"), /^ALIABOX_OS_TEMPLATE_WAYLAND=local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst$/m);
   const build = read("proxmox-lxc/template/build.sh");
-  assert.match(build, /os_template=\$BBBOX_OS_TEMPLATE\n\[ -z "\$wayland" \] \|\| os_template=\$BBBOX_OS_TEMPLATE_WAYLAND\n/);
+  assert.match(build, /os_template=\$ALIABOX_OS_TEMPLATE\n\[ -z "\$wayland" \] \|\| os_template=\$ALIABOX_OS_TEMPLATE_WAYLAND\n/);
   assert.match(build, /pct create "\$ct" "\$os_template" /);
-  assert.doesNotMatch(build, /pct create "\$ct" "\$BBBOX_OS_TEMPLATE"/);
+  assert.doesNotMatch(build, /pct create "\$ct" "\$ALIABOX_OS_TEMPLATE"/);
 });
 
 test("Docker's Wayland stage has a base of its own, Ubuntu 26.04, and the rest stay on 24.04", () => {

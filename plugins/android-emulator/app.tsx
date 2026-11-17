@@ -234,21 +234,21 @@ function Emulator() {
   const booting = Boolean(launching) || Boolean(state?.devices.some(device => device.serial.startsWith('emulator-') && device.state !== 'device'));
 
   return (
-    <div className="bbae" onPointerDown={event => { if (!(event.target as Element).closest('.bbae-header')) setPopover(null); }}>
+    <div className="aliaae" onPointerDown={event => { if (!(event.target as Element).closest('.aliaae-header')) setPopover(null); }}>
       <style>{styles}</style>
-      <header className="bbae-header">
-        <button className="bbae-chip" aria-expanded={popover === 'host'} onClick={() => toggle('host')} title={t('chooseHost')}>
+      <header className="aliaae-header">
+        <button className="aliaae-chip" aria-expanded={popover === 'host'} onClick={() => toggle('host')} title={t('chooseHost')}>
           <Icon name="Laptop" aria-hidden />
-          <span className="bbae-name">{host?.name ?? t('chooseHost')}</span>
+          <span className="aliaae-name">{host?.name ?? t('chooseHost')}</span>
         </button>
         {hostId && (
-          <button className="bbae-chip" aria-expanded={popover === 'device' || popover === 'launch'} onClick={() => setPopover(current => (current === 'device' || current === 'launch' ? null : 'device'))} aria-label={device ? t('deviceNamed', { name: device.avd ?? device.serial }) : t('chooseDevice')}>
-            <span className={`bbae-dot ${link === 'live' ? 'online' : ''}`} />
-            <span className="bbae-name">{device ? device.avd ?? device.serial : t('none')}</span>
+          <button className="aliaae-chip" aria-expanded={popover === 'device' || popover === 'launch'} onClick={() => setPopover(current => (current === 'device' || current === 'launch' ? null : 'device'))} aria-label={device ? t('deviceNamed', { name: device.avd ?? device.serial }) : t('chooseDevice')}>
+            <span className={`aliaae-dot ${link === 'live' ? 'online' : ''}`} />
+            <span className="aliaae-name">{device ? device.avd ?? device.serial : t('none')}</span>
             <Icon name="ChevronDown" aria-hidden />
           </button>
         )}
-        <span className="bbae-spacer" />
+        <span className="aliaae-spacer" />
         {ready && <>
           <IconButton icon="android-emulator/camera" label={t('screenshot')} onClick={() => void screenshot()} />
           <IconButton icon="RotateCcw" label={t('rotate')} onClick={() => send({ t: 'rotate' })} />
@@ -257,51 +257,51 @@ function Emulator() {
         {hostId && <IconButton icon="MoreHorizontal" label={t('more')} expanded={popover === 'more' || popover === 'clipboard' || popover === 'stop'} onClick={() => toggle('more')} />}
 
         {popover === 'host' && (
-          <section className="bbae-popover bbae-menu bbae-left" aria-label={t('chooseHost')}>
+          <section className="aliaae-popover aliaae-menu aliaae-left" aria-label={t('chooseHost')}>
             {hosts.map(item => (
               <button key={item.id} disabled={!item.online} aria-current={item.id === hostId} onClick={() => void chooseHost(item.id)}>
-                <span className={`bbae-dot ${item.online ? 'online' : ''}`} />{item.name}{!item.online && <span className="bbae-hint">{t('offline')}</span>}
+                <span className={`aliaae-dot ${item.online ? 'online' : ''}`} />{item.name}{!item.online && <span className="aliaae-hint">{t('offline')}</span>}
               </button>
             ))}
           </section>
         )}
         {(popover === 'device' || popover === 'launch') && state && (
-          <section className="bbae-popover bbae-menu bbae-left" aria-label={t('chooseDevice')}>
+          <section className="aliaae-popover aliaae-menu aliaae-left" aria-label={t('chooseDevice')}>
             {state.devices.length === 0 ? launchItems : <>
-              <p className="bbae-label bbae-menu-title">{t('running')}</p>
+              <p className="aliaae-label aliaae-menu-title">{t('running')}</p>
               {state.devices.map(item => (
                 <button key={item.serial} disabled={item.state !== 'device'} aria-current={item.serial === serial}
                   onClick={() => { setSerial(item.serial); setPopover(null); }}>
-                  <span className={`bbae-dot ${item.state === 'device' ? 'online' : ''}`} />{item.avd ?? item.serial}
-                  <span className="bbae-hint">{item.state === 'device' ? item.serial : item.state}</span>
+                  <span className={`aliaae-dot ${item.state === 'device' ? 'online' : ''}`} />{item.avd ?? item.serial}
+                  <span className="aliaae-hint">{item.state === 'device' ? item.serial : item.state}</span>
                 </button>
               ))}
-              {idleAvds.length > 0 && <div className="bbae-submenu" onMouseEnter={() => setPopover('launch')} onMouseLeave={() => setPopover('device')}>
+              {idleAvds.length > 0 && <div className="aliaae-submenu" onMouseEnter={() => setPopover('launch')} onMouseLeave={() => setPopover('device')}>
                 <button aria-expanded={popover === 'launch'} onClick={() => toggle('launch')}>
-                  {t('launch')}<span className="bbae-spacer" /><Icon name="ChevronRight" aria-hidden />
+                  {t('launch')}<span className="aliaae-spacer" /><Icon name="ChevronRight" aria-hidden />
                 </button>
-                {popover === 'launch' && <div className="bbae-popover bbae-menu">{launchItems}</div>}
+                {popover === 'launch' && <div className="aliaae-popover aliaae-menu">{launchItems}</div>}
               </div>}
             </>}
-            {state.avds.length === 0 && <p className="bbae-hint bbae-menu-title">{t('noAvds')}</p>}
+            {state.avds.length === 0 && <p className="aliaae-hint aliaae-menu-title">{t('noAvds')}</p>}
           </section>
         )}
         {popover === 'input' && (
-          <section className="bbae-popover" aria-label={t('input')}>
+          <section className="aliaae-popover" aria-label={t('input')}>
             <form onSubmit={submitText}>
-              <label className="bbae-label" htmlFor="bbae-text">{t('textLabel')}</label>
-              <textarea id="bbae-text" rows={3} autoFocus value={text} placeholder={t('placeholder')} onChange={event => setText(event.target.value)}
+              <label className="aliaae-label" htmlFor="aliaae-text">{t('textLabel')}</label>
+              <textarea id="aliaae-text" rows={3} autoFocus value={text} placeholder={t('placeholder')} onChange={event => setText(event.target.value)}
                 onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) submitText(event); }} />
-              <div className="bbae-row">
-                <span className="bbae-hint">{t('shortcut')}</span><span className="bbae-spacer" />
+              <div className="aliaae-row">
+                <span className="aliaae-hint">{t('shortcut')}</span><span className="aliaae-spacer" />
                 <button type="button" onClick={() => setPopover(null)}>{t('cancel')}</button>
-                <button className="bbae-primary" type="submit" disabled={!text || link !== 'live'}>{t('send')}</button>
+                <button className="aliaae-primary" type="submit" disabled={!text || link !== 'live'}>{t('send')}</button>
               </div>
             </form>
           </section>
         )}
         {popover === 'more' && (
-          <div className="bbae-popover bbae-menu">
+          <div className="aliaae-popover aliaae-menu">
             <button onClick={() => { setPopover(null); void poll(); }}>{t('refresh')}</button>
             <button disabled={!ready} onClick={() => { setPopover(null); failures.current = 0; setTick(value => value + 1); }}>{t('reconnect')}</button>
             <button disabled={!ready} onClick={() => setPopover('clipboard')}>{t('clipboard')}</button>
@@ -309,43 +309,43 @@ function Emulator() {
           </div>
         )}
         {popover === 'stop' && (
-          <section className="bbae-popover" role="alertdialog" aria-label={t('stop')} aria-describedby="bbae-stop-text">
-            <p id="bbae-stop-text" className="bbae-confirm">{t('stopConfirm', { name: device?.avd ?? serial ?? '' })}</p>
-            <div className="bbae-row"><span className="bbae-spacer" />
+          <section className="aliaae-popover" role="alertdialog" aria-label={t('stop')} aria-describedby="aliaae-stop-text">
+            <p id="aliaae-stop-text" className="aliaae-confirm">{t('stopConfirm', { name: device?.avd ?? serial ?? '' })}</p>
+            <div className="aliaae-row"><span className="aliaae-spacer" />
               <button autoFocus onClick={() => setPopover(null)}>{t('cancel')}</button>
-              <button className="bbae-primary bbae-danger" disabled={busy} onClick={stopDevice}>{t('stop')}</button>
+              <button className="aliaae-primary aliaae-danger" disabled={busy} onClick={stopDevice}>{t('stop')}</button>
             </div>
           </section>
         )}
         {popover === 'clipboard' && (
-          <section className="bbae-popover" aria-label={t('clipboard')}>
-            <label className="bbae-label" htmlFor="bbae-clipboard">{t('clipboardLabel')}</label>
-            <p className="bbae-hint">{t('clipboardHelp')}</p>
-            <textarea id="bbae-clipboard" rows={4} readOnly value={deviceClipboard} />
-            <div className="bbae-row"><span className="bbae-spacer" />
-              <button className="bbae-primary" disabled={!deviceClipboard} onClick={() => void copyClipboard()}>{t('copy')}</button>
+          <section className="aliaae-popover" aria-label={t('clipboard')}>
+            <label className="aliaae-label" htmlFor="aliaae-clipboard">{t('clipboardLabel')}</label>
+            <p className="aliaae-hint">{t('clipboardHelp')}</p>
+            <textarea id="aliaae-clipboard" rows={4} readOnly value={deviceClipboard} />
+            <div className="aliaae-row"><span className="aliaae-spacer" />
+              <button className="aliaae-primary" disabled={!deviceClipboard} onClick={() => void copyClipboard()}>{t('copy')}</button>
             </div>
           </section>
         )}
       </header>
 
-      <main className="bbae-stage">
-        <canvas ref={canvas} tabIndex={0} hidden={!ready || !seen} aria-label={t('screen')} className="bbae-screen"
+      <main className="aliaae-stage">
+        <canvas ref={canvas} tabIndex={0} hidden={!ready || !seen} aria-label={t('screen')} className="aliaae-screen"
           onPointerDown={touch(0)} onPointerMove={touch(2)} onPointerUp={touch(1)} onPointerCancel={touch(1)} />
         {!ready && <Empty busy={booting}>
           {!hostId ? <><h1>{t('chooseHost')}</h1><p>{t('chooseHostBody')}</p>
-            <button className="bbae-primary" onClick={() => toggle('host')}>{t('chooseHost')}</button></>
+            <button className="aliaae-primary" onClick={() => toggle('host')}>{t('chooseHost')}</button></>
           : !state ? <p>{hostIssue || t('connecting')}</p>
           : failed.length > 0 ? <Checks state={state} t={t} />
           : booting ? <><h1>{t('starting')}</h1><p>{t('emptyBody')}</p></>
           : <><h1>{t('emptyTitle')}</h1>
-            {idleAvds.length ? <div className="bbae-choices">{launchItems}</div> : <p>{t('noAvds')}</p>}</>}
+            {idleAvds.length ? <div className="aliaae-choices">{launchItems}</div> : <p>{t('noAvds')}</p>}</>}
         </Empty>}
         {ready && !seen && <Empty>{link !== 'lost' && <p>{t('connecting')}</p>}</Empty>}
       </main>
-      {(state && hostIssue || status) && <p className="bbae-status" role="status" aria-live="polite">{state && hostIssue || status}</p>}
+      {(state && hostIssue || status) && <p className="aliaae-status" role="status" aria-live="polite">{state && hostIssue || status}</p>}
       {ready && (
-        <nav className="bbae-nav" aria-label={t('nav')}>
+        <nav className="aliaae-nav" aria-label={t('nav')}>
           <div>
             <IconButton icon="android-emulator/back" label={t('back')} onClick={() => send({ t: 'key', key: 'back' })} />
             <IconButton icon="Circle" label={t('home')} onClick={() => send({ t: 'key', key: 'home' })} />
@@ -359,20 +359,20 @@ function Emulator() {
 
 function IconButton(props: { icon: string; label: string; onClick: () => void; expanded?: boolean }) {
   return (
-    <button className="bbae-icon" aria-label={props.label} title={props.label} aria-expanded={props.expanded} onClick={props.onClick}>
+    <button className="aliaae-icon" aria-label={props.label} title={props.label} aria-expanded={props.expanded} onClick={props.onClick}>
       <Icon name={props.icon} aria-hidden />
     </button>
   );
 }
 
 function Empty({ children, busy = false }: { children: ReactNode; busy?: boolean }) {
-  return <section className="bbae-empty" aria-busy={busy}><div className="bbae-empty-icon">{busy ? <span className="bbae-spinner" /> : <Icon name="Smartphone" aria-hidden />}</div>{children}</section>;
+  return <section className="aliaae-empty" aria-busy={busy}><div className="aliaae-empty-icon">{busy ? <span className="aliaae-spinner" /> : <Icon name="Smartphone" aria-hidden />}</div>{children}</section>;
 }
 
 /** Environment readiness: the plugin checks the Android setup but never installs or changes it. */
 function Checks({ state, t }: { state: HostState; t: (key: string, values?: Record<string, string>) => string }) {
   return (
-    <div className="bbae-checks">
+    <div className="aliaae-checks">
       <h1>{t('checksTitle')}</h1>
       <ul>
         {state.checks.map(check => (
@@ -415,16 +415,16 @@ function Addresses() {
     void save(next);
   }
 
-  if (!list) return <div className="bbae bbae-settings">{error && <p className="bbae-error" role="alert">{error}</p>}</div>;
+  if (!list) return <div className="aliaae aliaae-settings">{error && <p className="aliaae-error" role="alert">{error}</p>}</div>;
   const rows = editing === list.length ? [...list, ''] : list;
   return (
-    <div className="bbae bbae-settings">
-      <p className="bbae-hint">The browser connects straight to the Android host when Connection is LAN / VPN. Add an address for every host that has several; each host uses the one it owns.</p>
-      {rows.length > 0 && <ul className="bbae-addresses">
+    <div className="aliaae aliaae-settings">
+      <p className="aliaae-hint">The browser connects straight to the Android host when Connection is LAN / VPN. Add an address for every host that has several; each host uses the one it owns.</p>
+      {rows.length > 0 && <ul className="aliaae-addresses">
         {rows.map((address, index) => index === editing
           ? <li key={index}><form onSubmit={commit} onKeyDown={event => { if (event.key === 'Escape') setEditing(null); }}>
               <input autoFocus value={draft} onChange={event => setDraft(event.target.value)} placeholder="100.64.0.1" aria-label="IPv4 address" />
-              <button type="submit" className="bbae-primary">Save</button>
+              <button type="submit" className="aliaae-primary">Save</button>
               <button type="button" onClick={() => setEditing(null)}>Cancel</button>
             </form></li>
           : <li key={index}><code>{address}</code>
@@ -432,7 +432,7 @@ function Addresses() {
               <button type="button" disabled={editing !== null} onClick={() => void save(list.filter((_, at) => at !== index))}>Delete</button>
             </li>)}
       </ul>}
-      {error && <p className="bbae-error" role="alert">{error}</p>}
+      {error && <p className="aliaae-error" role="alert">{error}</p>}
       {editing === null && <button type="button" onClick={() => edit(list.length)}>+ Add address</button>}
     </div>
   );

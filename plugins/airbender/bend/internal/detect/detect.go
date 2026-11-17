@@ -7,7 +7,7 @@
 // tracker a repository uses, or even know.
 //
 // Design notes:
-//   - The order, decided by the owner (bead-bb-c9l.1): what the repository
+//   - The order, decided by the owner (bead-alia-c9l.1): what the repository
 //     says itself in its setting file (config.go) wins; without one, a
 //     `.beads` folder means beads; without that, a remote called origin on
 //     github.com means GitHub issues. So a repository that has both beads
@@ -190,7 +190,7 @@ func Tracker(dir string, options Options) (Found, error) {
 		if os.Getenv(LiveVariable) != "" {
 			return Found{Root: root, Tracker: adapter}
 		}
-		// From a copy on this machine (bead-bb-c9l.14): a read then starts
+		// From a copy on this machine (bead-alia-c9l.14): a read then starts
 		// no bd. Reread from where the command ran, so that bd is started
 		// there as the caller would start it.
 		held := kept.Open(adapter, localcopy.FolderFor(root, "beads"), kept.Options{Warn: options.Warn})
@@ -207,7 +207,7 @@ func Tracker(dir string, options Options) (Found, error) {
 			return Found{Root: root, Tracker: adapter}
 		}
 		// From the copy on this machine, synced with GitHub
-		// (bead-bb-c9l.15): changes wait there and are sent afterwards.
+		// (bead-alia-c9l.15): changes wait there and are sent afterwards.
 		// Synced from where the command ran, so that the same setting file
 		// and the same repository are found again.
 		held := kept.Open(adapter, localcopy.FolderFor(root, repository), kept.Options{Warn: options.Warn, Actor: options.Actor})

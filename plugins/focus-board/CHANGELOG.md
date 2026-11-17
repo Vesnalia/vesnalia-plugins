@@ -59,7 +59,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### The board's lanes
 
-- **A lane's name and caret light up as a chip on hover.** The dropdown chips' faint tint read as nothing on the plain canvas; the pair now takes bb's interactive-state fill and its caret sharpens to full ink, so the lane menu reads as a target before you click it.
+- **A lane's name and caret light up as a chip on hover.** The dropdown chips' faint tint read as nothing on the plain canvas; the pair now takes VesnALIA's interactive-state fill and its caret sharpens to full ink, so the lane menu reads as a target before you click it.
 
 ### Fixed
 
@@ -109,7 +109,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Context menus
 
-- **An errored card's menu offers Retry beside the acknowledgment, and the acknowledgment reads Ignore error.** Retry re-submits the failed turn through the host's own retry, and a refusal reports bb's reason on the board's notice banner. Ignore error is the old write unchanged under a name that says what it does: the board's flag lifts, bb's error record stays.
+- **An errored card's menu offers Retry beside the acknowledgment, and the acknowledgment reads Ignore error.** Retry re-submits the failed turn through the host's own retry, and a refusal reports VesnALIA's reason on the board's notice banner. Ignore error is the old write unchanged under a name that says what it does: the board's flag lifts, VesnALIA's error record stays.
 
 ### Changed
 
@@ -154,7 +154,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **The thread pane focuses the message composer when it opens or switches threads.** The pane passes the SDK's `focusRequest` with a counter that bumps on open and on switch, so a keyboard-first operator can type without clicking into the box first. Same-thread refreshes leave the counter alone.
 - **Message rows in the pane gain the board's two actions: Copy message and Open in main view.** The host keeps other plugins' actions out of plugin panels (upstream), and the pane previously passed none of its own; both actions now ride the embedded chat's per-message bar.
-- **The New project button sits on the New Thread dialog's project row, and its create follows bb's typical flow.** The folder-plus button now anchors at the pickers row's open left edge, where the stacked shape left an empty band. Its click runs bb's typical create: the native folder picker names the project (boards the picker cannot be asked on fall back to the inline name field, with the reason shown).
+- **The New project button sits on the New Thread dialog's project row, and its create follows VesnALIA's typical flow.** The folder-plus button now anchors at the pickers row's open left edge, where the stacked shape left an empty band. Its click runs VesnALIA's typical create: the native folder picker names the project (boards the picker cannot be asked on fall back to the inline name field, with the reason shown).
 
 #### Cards and chips
 
@@ -164,8 +164,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Magic rename
 
-- **Magic rename's thread-model row is blocked when the thread's environment cannot run it.** The fallback menu now reads the environment row itself instead of trusting that the ids exist, so a destroyed, errored, or still-provisioning environment renders the row disabled with its actual state named, rather than a ✨ ready marker whose pick failed with bb's raw "HTTP 409: Environment unavailable".
-- **Magic rename's "use the thread's active model" probe generates on that model again.** bb 0.48 dropped `providerId` from the thread execution-options response, so every probe fell back to the project-default model chain instead of the thread's model (a thread on **acp-omp** got a probe on **codex**, which died "could not find the Codex CLI"). The probe now pairs that response's model with the source thread's own providerId.
+- **Magic rename's thread-model row is blocked when the thread's environment cannot run it.** The fallback menu now reads the environment row itself instead of trusting that the ids exist, so a destroyed, errored, or still-provisioning environment renders the row disabled with its actual state named, rather than a ✨ ready marker whose pick failed with VesnALIA's raw "HTTP 409: Environment unavailable".
+- **Magic rename's "use the thread's active model" probe generates on that model again.** VesnALIA 0.48 dropped `providerId` from the thread execution-options response, so every probe fell back to the project-default model chain instead of the thread's model (a thread on **acp-omp** got a probe on **codex**, which died "could not find the Codex CLI"). The probe now pairs that response's model with the source thread's own providerId.
 
 #### Cards and chips
 
@@ -173,8 +173,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### The thread pane
 
-- **Answering a pending question in the thread pane shows one form again.** bb 0.48.0's parity work made the host banner render inside the pane's embedded chat, so the pane's own question card duplicated it, and answering one left the other stale. The card is gone: the host banner owns the surface, and the host persists partial answers itself.
-- **The thread pane's "Recent decisions" card is gone.** The transcript has carried every answered question since bb 0.47.0 (and the plugin-form "Answered" rows since 0.48.0, get-bb/bb#4463), so the card was a second, weaker copy rebuilt by text-parsing the raw event log. The transcript's own answered rows are the record.
+- **Answering a pending question in the thread pane shows one form again.** VesnALIA 0.48.0's parity work made the host banner render inside the pane's embedded chat, so the pane's own question card duplicated it, and answering one left the other stale. The card is gone: the host banner owns the surface, and the host persists partial answers itself.
+- **The thread pane's "Recent decisions" card is gone.** The transcript has carried every answered question since VesnALIA 0.47.0 (and the plugin-form "Answered" rows since 0.48.0, get-alia/alia#4463), so the card was a second, weaker copy rebuilt by text-parsing the raw event log. The transcript's own answered rows are the record.
 - **Clicking a file-change row's name in the pane now opens the thread in the main view.** The path segment was colored like the main view's clickable file title but did nothing, because the plugin path supplies no title-action resolver; the pane claims the click and maximizes, where the host resolver opens the diff.
 
 ## [1.7.6] - 2026-11-04
@@ -281,11 +281,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **The card's ticket chips now land in a fixed shape: issues on the first row's left, PRs on its right, tags in the bottom-right corner.** Several issue ids stay inside the left half and spill onto fresh lines instead of sliding under the PR chip. A long ticket name holds one line by shrinking its text, and a tag wraps only at its hyphens.
 
-- **A family's fold and its idle-children filter now follow you to every bb window and machine.** They used to save only in browser localStorage, so a second machine opened every family expanded; the choice now saves to the board's server state, and a fold in one window lands live in the others.
+- **A family's fold and its idle-children filter now follow you to every VesnALIA window and machine.** They used to save only in browser localStorage, so a second machine opened every family expanded; the choice now saves to the board's server state, and a fold in one window lands live in the others.
 
 ### Fixed
 
-- **The pane's queued-message Send button works on a phone again.** bb's queued row reveals its "…" control on a touch device through a `@media (hover:none)` utility, and the plugin's own scoped `.opacity-0` was outranking that utility inside the pane, so the row's Send stayed unreachable. The pane now re-asserts the host's touch utilities, so the control behaves exactly as it does on bb's own thread page.
+- **The pane's queued-message Send button works on a phone again.** VesnALIA's queued row reveals its "…" control on a touch device through a `@media (hover:none)` utility, and the plugin's own scoped `.opacity-0` was outranking that utility inside the pane, so the row's Send stayed unreachable. The pane now re-asserts the host's touch utilities, so the control behaves exactly as it does on VesnALIA's own thread page.
 
 ## [1.7.0] - 2026-10-22
 
@@ -305,7 +305,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **A child thread joins the parent's group.** Starting a child thread from a grouped parent (card menu or pane menu) writes the parent's group membership onto the spawn, so the child counts as a real member of the box and the group filter everywhere, including after the parent is archived. The dialog names the group before the prompt is spent ("Will join the group …").
 
-- **A family box folds into one normal card.** A chevron beside the box label, or Collapse group in the box menu, turns the whole dashed box into a single card: it keeps the dashed ring so it never reads as a parent card, names the group with its member count and one status dot per member, and a click (or the menu's Expand group) unfolds it again. The fold persists per group and stays in step with a second bb window's fold, and the folded card still drags and join-drops as the whole box.
+- **A family box folds into one normal card.** A chevron beside the box label, or Collapse group in the box menu, turns the whole dashed box into a single card: it keeps the dashed ring so it never reads as a parent card, names the group with its member count and one status dot per member, and a click (or the menu's Expand group) unfolds it again. The fold persists per group and stays in step with a second VesnALIA window's fold, and the folded card still drags and join-drops as the whole box.
 
 #### Card animations
 
@@ -342,7 +342,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Settings
 
-- **The wallpaper frames the window, not the board's viewport.** The wallpaper now paints into the bb window's box at the window's ratio: opening and closing the thread pane (or resizing a sidebar) carves the board's view out of one fixed image instead of refitting the crop, and the picker's viewport preview models the same framing.
+- **The wallpaper frames the window, not the board's viewport.** The wallpaper now paints into the VesnALIA window's box at the window's ratio: opening and closing the thread pane (or resizing a sidebar) carves the board's view out of one fixed image instead of refitting the crop, and the picker's viewport preview models the same framing.
 
 #### Board layout
 
@@ -356,7 +356,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Cards and chips
 
-- **`bb focus-board done list` survives a done index entry whose thread was deleted.** A stale index id used to abort the whole listing with `HTTP 404: Thread not found`; the command now exits 0, prints the marks it can read, and flags the stale ids in the listing. Any other metadata failure still stops the command loud (issue #259).
+- **`alia focus-board done list` survives a done index entry whose thread was deleted.** A stale index id used to abort the whole listing with `HTTP 404: Thread not found`; the command now exits 0, prints the marks it can read, and flags the stale ids in the listing. Any other metadata failure still stops the command loud (issue #259).
 
 - **A Forgejo chip names its item, not its host.** A Cove or Gitea link used to collapse every item on the host into one chip reading `git.cove`, and following it opened whichever item happened to be first. Each link now reads its number (`#42`) with its own href, a PR leads with the PR glyph, the mark points at that repo's list page, and a `#39` in a title stops wearing GitHub's mark.
 
@@ -388,24 +388,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Cards and chips
 
 - **The collapsed child-dot strip paints the whole family, grandchildren in family order.** A child's dot now leads its own smaller sub-dots and a parent dot's hover preview names its sub-threads, so the strip always paints every thread the "N child threads" count reads (the 19-over-9 mismatch cannot recur). An idle sub-thread's dot hides with its row under the eye filter, at either depth.
-- **Chip dots age honestly instead of re-checking GitHub through a spawned process.** The plugin runtime no longer runs the gh CLI to re-check stale open chips, and an open dot is trusted only inside its one-hour confirm window, so a stale chip falls to unsure-plain until bb's own GitHub cache catches up. A closed or merged chip keeps its verdict whatever its age.
+- **Chip dots age honestly instead of re-checking GitHub through a spawned process.** The plugin runtime no longer runs the gh CLI to re-check stale open chips, and an open dot is trusted only inside its one-hour confirm window, so a stale chip falls to unsure-plain until VesnALIA's own GitHub cache catches up. A closed or merged chip keeps its verdict whatever its age.
 
 ### Fixed
 
 #### Cards and chips
 
-- **Two boards stop erasing each other's Done and sweep-keep marks.** Marking thread `t2` Done in one bb window while window B marks `t3` one instant later used to overwrite the shared row from a stale snapshot, so one mark vanished. These writes now serialize on the same queue every rank move already runs, and the done index plus the sweep-keep flags land both changes (issue #242).
+- **Two boards stop erasing each other's Done and sweep-keep marks.** Marking thread `t2` Done in one VesnALIA window while window B marks `t3` one instant later used to overwrite the shared row from a stale snapshot, so one mark vanished. These writes now serialize on the same queue every rank move already runs, and the done index plus the sweep-keep flags land both changes (issue #242).
 
 #### Groups and family boxes
 
-- **A family folded in one bb window stays folded when the other window folds one.** The fold and hide-idle sets were written whole from each window's own state, so the second window's write erased the first window's choice. Both sets now propagate live between windows through a storage event, and each toggle merges with the stored list instead of overwriting it (issue #245).
+- **A family folded in one VesnALIA window stays folded when the other window folds one.** The fold and hide-idle sets were written whole from each window's own state, so the second window's write erased the first window's choice. Both sets now propagate live between windows through a storage event, and each toggle merges with the stored list instead of overwriting it (issue #245).
 - **A group created in one board window survives a simultaneous change in another.** Group creates, renames, deletes, and the member-scan prune each rewrite the whole registry row; serialized, a create in window A is no longer wiped from the registry by a create or assign in window B (issue #242).
 
 #### Board layout
 
 - **A board crowded with cards that need you no longer crawls.** Every attention card pulsed at once, which dragged a busy board to a few frames per second; the pulse now animates only while it is on screen and holds still off screen, so nothing the operator can see changes (issue #260).
-- **A rank drag in one bb window now survives another window's drop in the same lane.** Every card stores its own fractional rank, so a move writes only the dragged card's rank plus the unranked cards above its landing, and no stale view rewrites the arrangement another window's move just placed (issue #246).
-- **A wallpaper chosen in one bb window survives the second window's dim change.** The wallpaper document was written whole from each window's state, so a settings edit on a stale window dropped the other window's image. The board panel and the configuration page's Appearance mirror now re-read the document whenever another window writes it (issue #245).
+- **A rank drag in one VesnALIA window now survives another window's drop in the same lane.** Every card stores its own fractional rank, so a move writes only the dragged card's rank plus the unranked cards above its landing, and no stale view rewrites the arrangement another window's move just placed (issue #246).
+- **A wallpaper chosen in one VesnALIA window survives the second window's dim change.** The wallpaper document was written whole from each window's state, so a settings edit on a stale window dropped the other window's image. The board panel and the configuration page's Appearance mirror now re-read the document whenever another window writes it (issue #245).
 
 ## [1.5.0] - 2026-10-16
 
@@ -413,7 +413,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Board layout
 
-- **The thread pane's composer names its project and checkout at rest.** bb's composer footer carries the project/checkout chips, but it collapses to height 0 whenever the composer sits unexpanded, so at rest in a pane nothing of it paints; the pane keeps its own "project · checkout · branch" line under the transcript whenever the host's chips are missing, hidden, or clipped, and yields the moment they actually paint, so the line never doubles up. A collapsed footer keeps its chips mounted but paints none of them, so the pane follows the paint, not the DOM.
+- **The thread pane's composer names its project and checkout at rest.** VesnALIA's composer footer carries the project/checkout chips, but it collapses to height 0 whenever the composer sits unexpanded, so at rest in a pane nothing of it paints; the pane keeps its own "project · checkout · branch" line under the transcript whenever the host's chips are missing, hidden, or clipped, and yields the moment they actually paint, so the line never doubles up. A collapsed footer keeps its chips mounted but paints none of them, so the pane follows the paint, not the DOM.
 
 #### Groups and family boxes
 
@@ -489,7 +489,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Cards and chips
 
-- **Agent-written reference tokens in pane messages become clickable chips.** An agent's `@thread:thr_…` or `@project:proj_…` token used to stay dead text, and a raw thread token vanished behind the host's empty mention element. They now paint as labeled chips from the board's own thread and project rows, falling back to the raw id; clicking opens the thread in the pane, or bb's main thread/project view for a target the board does not list.
+- **Agent-written reference tokens in pane messages become clickable chips.** An agent's `@thread:thr_…` or `@project:proj_…` token used to stay dead text, and a raw thread token vanished behind the host's empty mention element. They now paint as labeled chips from the board's own thread and project rows, falling back to the raw id; clicking opens the thread in the pane, or VesnALIA's main thread/project view for a target the board does not list.
 
 #### Ticket chips
 - **Ticket chips wrap their ids onto extra lines instead of overflowing the card.** A chip carrying long external labels (a cove forge link's "cove 0dac60e") used to run past the card's right edge; the ids now reflow onto extra lines whatever their width.
@@ -526,8 +526,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Board layout
 
-- **The auto-rename titles threads that open with a pasted file.** Such a thread carries an empty opener text row, so every option in the fallback modal (each AI service, and the thread's own model) failed "no prompt text to title from" before any model was even called; the prompt now recovers the paste's content from bb's attachments store, and a missing, escaping, or non-text paste fails with the file named.
-- **The auto-rename's service picks fit bb's bridge prompt cap again.** A thread whose opener text ran long built a title prompt over bb's 4000-character bridge limit, so the only usable service answered "HTTP 400: rpc input validation failed" on every pick; the built prompt now clamps to the cap with the instructions included, and the bridge wait rises above the provider plugin's own 30s budget so slow completions abort there, not in the bridge.
+- **The auto-rename titles threads that open with a pasted file.** Such a thread carries an empty opener text row, so every option in the fallback modal (each AI service, and the thread's own model) failed "no prompt text to title from" before any model was even called; the prompt now recovers the paste's content from VesnALIA's attachments store, and a missing, escaping, or non-text paste fails with the file named.
+- **The auto-rename's service picks fit VesnALIA's bridge prompt cap again.** A thread whose opener text ran long built a title prompt over VesnALIA's 4000-character bridge limit, so the only usable service answered "HTTP 400: rpc input validation failed" on every pick; the built prompt now clamps to the cap with the instructions included, and the bridge wait rises above the provider plugin's own 30s budget so slow completions abort there, not in the bridge.
 - **A squeezed panel puts the thread pane on a panel-wide sheet.** With a plugin panel that narrowed far below its desktop window, the side-by-side pane kept its stored width: the board flexed away to a sliver and the pane's header (title, auto-rename, Mark Unread) painted past the panel's right edge onto the host's own UI. The pane now measures its panel row; below 640px it covers the board as a sheet scoped to the panel, keeping the host's chrome visible, and above it the side-by-side pane returns with its stored width clamped to the panel so it can never jut past the edge again.
 - **A frozen parent-lane keeps its hold under By project.** The project sections re-sorted every section's lanes by recency and threw the lane freeze away, so the attended lane snapped back the moment By project engaged. The sectioning now preserves the order it receives, sections themselves still ordering by their freshest lane.
 - **Parent-lane board stops yanking the scroll back to the selected card.** With a card selected, every lane assembly rebuild re-ran the same-lane scroll correction and dragged the vertical scroll back down to the selection. Only a selection change, a lane move, or a viewport resize re-locks now; a hover capture or an ambient re-sort that merely rebuilds the lanes leaves the scroll alone.
@@ -551,7 +551,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Attending to a family's live card no longer moves its Done projection.** The attention freeze's slot pin was keyed by thread alone and applied in every lane, so the attended card's twin in Done jumped to the live slot's index. The pin holds column and thread now.
 - **A child thread spawned from a child card nests under that card's row.** Right-clicking a nested child card and picking "New child thread…" used to leave the new thread beside its parent under the family root, breaking the dialog's "Will nest under" promise. Families now follow their real edges one row level deeper (a child row carries its own children as indented sub-rows; deeper members still re-attach to the root), and when the display target differs from the spawn parent, the dialog names both.
   - The fold's count names what folding hides: the rows plus their sub-rows, so a family card with a grandchild no longer reads one short.
-- **An errored child thread reads as Needs-you, not gray idle.** A child whose turn failed hard (`status: "error"` in bb) matched no state in `threadState()`, so its dot rendered the same gray as an idle child everywhere, and a collapsed family's child-dot strip hid the error entirely. Errored turns and failed queued sends now ride the attention arm: amber, pulsing, on the strip, the nested rows, and the board lanes.
+- **An errored child thread reads as Needs-you, not gray idle.** A child whose turn failed hard (`status: "error"` in VesnALIA) matched no state in `threadState()`, so its dot rendered the same gray as an idle child everywhere, and a collapsed family's child-dot strip hid the error entirely. Errored turns and failed queued sends now ride the attention arm: amber, pulsing, on the strip, the nested rows, and the board lanes.
 
 ## [1.3.0] - 2026-10-13
 
@@ -574,9 +574,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Groups and family boxes
 
-- **The CLI can manage feature groups, not just list them.** `bb focus-board group` grows create, rename, delete, add, remove, and move, and every command accepts the group's id or its exact name, so agents and scripts can place threads without opening the board.
+- **The CLI can manage feature groups, not just list them.** `alia focus-board group` grows create, rename, delete, add, remove, and move, and every command accepts the group's id or its exact name, so agents and scripts can place threads without opening the board.
   - `group add` leaves a thread that is already in the group alone and refuses the batch when a thread sits in a different group; `group move <threads> --to <group>` is the mover.
-- **An agent can put a thread in a feature group by name.** The `focus_board_group_set` tool assigns the thread or one you name to a group quoted from the conversation, and sessions without plugin tools keep the `bb focus-board group add` fallback.
+- **An agent can put a thread in a feature group by name.** The `focus_board_group_set` tool assigns the thread or one you name to a group quoted from the conversation, and sessions without plugin tools keep the `alia focus-board group add` fallback.
 - **A family box drags by its label.** Grabbing the group name moves the whole box and ranks it wherever the drop lands, the same move grabbing a member card already made. A snoozed lead member still refuses to drag, and a click without the drag still renames.
 - **A right-click on a family box offers the group's actions in one menu.** New thread in group… opens the composer preset to the group, Rename group… opens the label editor, and Ungroup all members keeps its click-again confirm.
   - The spawned thread lands with the majority of the members' settings: the most common project and the most common provider/model pair seeded into the composer, each member's model resolved through its own settings.
@@ -597,7 +597,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Settings
 
 - **The Appearance tab is now the wallpaper's only home.** The board toolbar drops its wallpaper icon, and the picker renders inline in the settings' Appearance tab instead of popping over the toolbar; a wallpaper already stored keeps painting the board.
-- **The plugin CLI drops its config commands.** Sweep thresholds are set through `bb plugin config focus-board` or the board settings modal, so `bb focus-board config show` and `config set` retire and the CLI help names the surviving door.
+- **The plugin CLI drops its config commands.** Sweep thresholds are set through `alia plugin config focus-board` or the board settings modal, so `alia focus-board config show` and `config set` retire and the CLI help names the surviving door.
 - **The Behavior tab hosts the sweep thresholds.** Each arm's count and unit edit the same declared settings Focus Board's configuration page already edits, the values render live in both places, and a rejected write names its failure right under the row.
 - **The sidebar's footer gear retitles to Focus Board configuration.** The board's own gear keeps opening the settings modal; the footer gear still jumps to the plugin page in Tools, and two gears no longer share one name.
 
@@ -633,9 +633,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### The New thread composer
 
-- **The "@" mention menu works in the New thread dialog again.** A left-over scroll wrapper clipped the composer's popup menus out of the dialog; the @ picker and the / command menu now open like they do everywhere else in bb.
+- **The "@" mention menu works in the New thread dialog again.** A left-over scroll wrapper clipped the composer's popup menus out of the dialog; the @ picker and the / command menu now open like they do everywhere else in VesnALIA.
 
-- **Thread agents still link tickets when the linking tool is missing from their session.** GitHub Copilot CLI sessions run without bb plugin tools, so the agent read the linking instructions, tried the call, and could only apologize. The tool's instructions now carry the CLI fallback, `bb focus-board link set "$BB_THREAD_ID" <url>`, so those sessions file the Linear or Jira chip instead of reporting the tool unavailable.
+- **Thread agents still link tickets when the linking tool is missing from their session.** GitHub Copilot CLI sessions run without VesnALIA plugin tools, so the agent read the linking instructions, tried the call, and could only apologize. The tool's instructions now carry the CLI fallback, `alia focus-board link set "$ALIA_THREAD_ID" <url>`, so those sessions file the Linear or Jira chip instead of reporting the tool unavailable.
 
 #### Board layout
 
@@ -687,7 +687,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **Board cards name personal threads "No project", matching the composer's picker.** The old label used the personal project's "Personal" name ([get-bb/bb#5340](https://github.com/get-bb/bb/issues/5340)); a filter naming personal seeds that state deliberately. ([#25](https://github.com/cristoslc/bb-plugin-focus-board/issues/25))
+- **Board cards name personal threads "No project", matching the composer's picker.** The old label used the personal project's "Personal" name ([get-alia/alia#5340](https://github.com/get-bb/bb/issues/5340)); a filter naming personal seeds that state deliberately. ([#25](https://github.com/cristoslc/bb-plugin-focus-board/issues/25))
 
 #### Wallpaper
 
@@ -726,22 +726,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### The New thread composer
 
 - **New thread starts where the board points, even with no filter armed.** The composer seeds from the board's unanimous project, else from the project the board's composer last spawned into; "No project" only shows when nothing on the board points anywhere. ([#24](https://github.com/cristoslc/bb-plugin-focus-board/issues/24))
-  - The maximize hand-off rides the same seed now, instead of bb's own remembered pick.
+  - The maximize hand-off rides the same seed now, instead of VesnALIA's own remembered pick.
 
 #### Cards, menus, and views
 
-- **"Open in browser" now means your browser.** Renamed from "Open in new window": on desktop the gesture hands the thread to your system browser instead of bb's in-app panel (filed upstream as [get-bb/bb#5342](https://github.com/get-bb/bb/issues/5342)), and the web board's detached tab is unchanged.
+- **"Open in browser" now means your browser.** Renamed from "Open in new window": on desktop the gesture hands the thread to your system browser instead of VesnALIA's in-app panel (filed upstream as [get-alia/alia#5342](https://github.com/get-bb/bb/issues/5342)), and the web board's detached tab is unchanged.
 
 ## [1.1.0] - 2026-10-09
 
 ### Added
 
 - **The pane's question form keeps half-answered questions alive.** Picks and free text survive a reload or a thread switch and restore with the open tab, then clear once the question is submitted or dismissed — the same recovery the new-thread composer gives prompts.
-- **Card menus now surface a thread's controlled browser tab.** "Reveal browser tab" discovers the thread's desktop-browser tabs, focuses the owning thread, and opens the side panel on the page's tab — blank carrier tabs skipped — one click straight from the board. bb offers no honest success signal here (it answers `ok` even when the reveal no-ops, and `tabs`' `presentation` field never reflects live visibility), so the gesture claims nothing; the opened panel is the feedback.
+- **Card menus now surface a thread's controlled browser tab.** "Reveal browser tab" discovers the thread's desktop-browser tabs, focuses the owning thread, and opens the side panel on the page's tab — blank carrier tabs skipped — one click straight from the board. VesnALIA offers no honest success signal here (it answers `ok` even when the reveal no-ops, and `tabs`' `presentation` field never reflects live visibility), so the gesture claims nothing; the opened panel is the feedback.
   ([#17](https://github.com/cristoslc/bb-plugin-focus-board/issues/17))
 - **Board cards carry linked-issue chips.** A thread tied to a GitHub issue or pull request in the board's own link store shows its `#N` chip with a live status dot, even when the title and branch name say nothing (issue [#13](https://github.com/cristoslc/bb-plugin-focus-board/issues/13)).
   - **Agents are nudged to link.** The `focus_board_link_issue` tool rides thread instructions and asks agents to call it right after they open or file an issue or PR.
-  - **The CLI links too.** `bb focus-board link list|set|clear` manages the store by hand.
+  - **The CLI links too.** `alia focus-board link list|set|clear` manages the store by hand.
 - **Board links reach any tracker.** `link set` and the agent tool accept any https tracker URL (with an optional chip label), forgejo remotes build their own `…/issues/N` chips, and non-GitHub chips show the site's favicon.
 
 ### Changed
@@ -757,7 +757,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   into the bands; on scrollports too narrow to fit a single lane at all,
   snap-to on scroll is off and header clicks select lanes.
   ([#22](https://github.com/cristoslc/bb-plugin-focus-board/issues/22))
-- **The board no longer silently vanishes when a checkout's node_modules goes bad.** `npm test`, `npm run build`, and `npm run uat` now abort at a preflight guard whenever repo-root node_modules is a symlink, with the repair printed in the error; `scripts/node-modules-watchdog.sh` carries the self-healing bb automation that checks the main checkout every 5 minutes (its `/Users/cristos/code` path is a symlink alias to the same directory, not a second checkout), and AGENTS.md forbids node_modules symlinks outright.
+- **The board no longer silently vanishes when a checkout's node_modules goes bad.** `npm test`, `npm run build`, and `npm run uat` now abort at a preflight guard whenever repo-root node_modules is a symlink, with the repair printed in the error; `scripts/node-modules-watchdog.sh` carries the self-healing VesnALIA automation that checks the main checkout every 5 minutes (its `/Users/cristos/code` path is a symlink alias to the same directory, not a second checkout), and AGENTS.md forbids node_modules symlinks outright.
 - **Word-shaped ticket keys no longer chip.** `PROJ-123`-style text matched with nothing able to validate it, so impostor chips like GLM-5 appeared; only refs GitHub can confirm (`#N`, issue/PR URLs) and the board's own links chip now.
 - **Mobile thread pane: thread actions drop from a split caret, like Open
   in.** The standalone ⋯ button next to the Mark Read toggle is gone — an
@@ -811,16 +811,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Auto-rename gains the thread's own model as a fallback.** When the
   pinned AI service fails, the fallback modal now titles the thread with a
-  hidden one-turn probe on the model bb resolved for the source thread: no
+  hidden one-turn probe on the model VesnALIA resolved for the source thread: no
   workspace tools run, the probe is deleted in every path, and resolution
   falls back through the thread's provider to a plain hidden child. The
   modal's other-services list is probed for the bridge focus-board calls,
-  so a service whose plugin lacks it (bb cloud, Codex) renders disabled
+  so a service whose plugin lacks it (VesnALIA cloud, Codex) renders disabled
   with its reason instead of a click that 404s.
   - **Titles come from the thread's true originating prompt.** The source
     timeline's oldest user row wins, prompt history as the fallback — no
     more titling the latest follow-up.
-  - **The CLI mirrors the menu.** `bb focus-board autotitle
+  - **The CLI mirrors the menu.** `alia focus-board autotitle
     availability|prompt|probe --thread-id <id>` runs the probe end-to-end
     without opening the pane.
 
@@ -861,7 +861,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   nested under it.
   - **The child starts where the parent runs.** When the parent's checkout
     is a worktree, the composer's environment picker is seeded to reuse it;
-    other checkouts keep bb's own default.
+    other checkouts keep VesnALIA's own default.
 
 - **Drop a card onto a card to nest it.** The hovered target rings amber —
   distinct from the top/bottom thirds' ordinary insertion line, so a family
@@ -890,11 +890,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (on cards and in the pane's actions menu) opens a presets-or-picked-time
   picker, and the snoozed card dims until it wakes. Any pin/read/done/archive
   gesture lifts the snooze first, and CLI parity lands as
-  `bb focus-board snooze list|set|clear`.
+  `alia focus-board snooze list|set|clear`.
 
 - **Auto-rename in the pane's title editor.** One click on the title
   editor's auto-rename button titles the thread from its first user prompt, using
-  the AI service bb's thread-title task is set to (Settings → AI services)
+  the AI service VesnALIA's thread-title task is set to (Settings → AI services)
   via the openrouter-inference plugin's `complete` bridge. A generated
   title renames and closes the editor; a failure keeps it open with a
   fallback modal that names the reason and offers another service or a
@@ -919,7 +919,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - **New threads compose inside the board.** The toolbar, column, and
-  parent-lane new-thread buttons now open bb's full compose surface in a
+  parent-lane new-thread buttons now open VesnALIA's full compose surface in a
   modal over the board and pane. A failed create keeps your draft with an
   on-screen error, and Escape closes only the modal.
 
@@ -934,7 +934,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Big families scroll inside their card.** Past five child rows the
     list caps its height and scrolls.
   - **Archived children are hidden outright, everywhere.** Archiving a
-    thread removes it from the board completely, matching bb's sidebar, and
+    thread removes it from the board completely, matching VesnALIA's sidebar, and
     its children re-render as standalone cards.
 
 - **Filter dropdowns with a search bar gain a select-all checkbox.** One
@@ -985,7 +985,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
-- **The thread pane's project/branch footer line is gone.** Recent bb
+- **The thread pane's project/branch footer line is gone.** Recent VesnALIA
   builds show the working context in the composer itself; the pane ends
   with the transcript.
 
@@ -1101,7 +1101,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **Recent decisions card in the thread pane.** bb's transcript drops every
+- **Recent decisions card in the thread pane.** VesnALIA's transcript drops every
   trace of an answered question, so the pane rebuilds the last five from
   the raw event log — question and chosen answer. It auto-expands on a
   fresh answer and collapses with Escape.
@@ -1111,7 +1111,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - **Backticked workspace paths in thread messages are now clickable in the
-  board's pane.** Workspace-relative markdown files open in bb's file
+  board's pane.** Workspace-relative markdown files open in VesnALIA's file
   preview, styled like the main pane's links. Commit shas, `.ts` files, and
   block code stay plain.
 
@@ -1135,7 +1135,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **The open pane now lives in the panel's URL, so bb's back arrow restores
+- **The open pane now lives in the panel's URL, so VesnALIA's back arrow restores
   it.** Opening a card pushes a `…/board/t/<threadId>` route; links, a
   reload, or a shared deep link all return to the pane you left, and back
   walks the trail of cards one pane per step. Closing pushes the panel
@@ -1175,7 +1175,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Thread mention links in pane messages were swallowed.** The link
   interceptor treated every relative anchor as a workspace file; it now
-  mirrors the host's heuristic and strips bb's line and column suffixes
+  mirrors the host's heuristic and strips VesnALIA's line and column suffixes
   before resolving.
 
 ## [0.4.3] — 2026-09-27
@@ -1184,7 +1184,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Relative file links in pane messages no longer open as broken browser
   URLs.** A left-click on a relative anchor reopens the target as a live
-  workspace file in bb's preview panel. Absolute URLs keep native routing.
+  workspace file in VesnALIA's preview panel. Absolute URLs keep native routing.
 
 ## [0.4.2] — 2026-09-27
 
@@ -1258,7 +1258,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **New threads inherit the single selected project filter.** With no,
-  several, or stale selections, bb's default project pick applies.
+  several, or stale selections, VesnALIA's default project pick applies.
 
 ## [0.3.2] — 2026-09-26
 
@@ -1282,14 +1282,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **The new `bb thread-board` CLI manages the plugin's own state** (#6). A
+- **The new `alia thread-board` CLI manages the plugin's own state** (#6). A
   third surface over the same Done/metadata store, never a re-spelling of
-  `bb thread`:
+  `alia thread`:
   - `done list|mark|clear` — agents get free Done marking.
   - `sweep [--ids …] [--confirm]` — a dry-run prints the eligible set and
     exits 1, and `--ids` freezes the blast radius.
   - `config show|set` — sweep thresholds without learning
-    `bb plugin config` syntax.
+    `alia plugin config` syntax.
 
 ## [0.2.0] — 2026-09-25
 

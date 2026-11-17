@@ -132,7 +132,7 @@ describe("alia crew messaging commands", () => {
   const run = (service: Parameters<typeof runCli>[0], argv: string[], extra: Record<string, string> = {}) =>
     runCli(service, argv, { ...ctx, ...extra }, project);
 
-  it("log shows an info to the human as info, needs stays empty; negative: a question shows OPEN QUESTION, not INFO (BBP-23)", async () => {
+  it("log shows an info to the human as info, needs stays empty; negative: a question shows OPEN QUESTION, not INFO (ALIAP-23)", async () => {
     const { service, port } = setup();
     const { self } = await running(service, port);
     await service.send({ projectId: PROJECT, from: self("dev-impl"), to: "human", subject: "Status", body: "done", humanKind: "info" });

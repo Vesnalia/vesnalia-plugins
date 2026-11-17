@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ARCHIVE="${1:-$ROOT/build/BBTouchBar-0.1.0-universal.zip}"
+ARCHIVE="${1:-$ROOT/build/AliaTouchBar-0.1.0-universal.zip}"
 CASK_SOURCE="${2:-$ROOT/../../../Casks/alia-touch-bar.rb}"
 TAP="${ALIA_TOUCHBAR_TEST_TAP:-mateocerquetella/touchbar-local}"
 CASK="alia-touch-bar"
@@ -26,6 +26,6 @@ fi
 brew install --cask "$TAP/$CASK"
 
 APP="/Applications/ALIA Touch Bar.app"
-[ -x "$APP/Contents/MacOS/BBTouchBar" ]
+[ -x "$APP/Contents/MacOS/AliaTouchBar" ]
 launchctl print "gui/$(id -u)/app.getbb.touchbar.native" >/dev/null
 printf 'verified Homebrew cask installation at %s\n' "$APP"

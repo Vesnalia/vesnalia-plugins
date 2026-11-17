@@ -714,8 +714,8 @@ const HOLD = String.raw`hold() {
   run="$d/run/$vm.holder-$port"
   mkdir "$run" 2>/dev/null || return 0
   for old in "$d/run/$vm.holder-"*; do [ "$old" = "$run" ] || rm -rf "$old"; done
-  cat > "$run/holder.py" <<'BBBOX_HOLDER'
-${VNC_HOLDER_PY}BBBOX_HOLDER
+  cat > "$run/holder.py" <<'ALIABOX_HOLDER'
+${VNC_HOLDER_PY}ALIABOX_HOLDER
   nohup /usr/bin/python3 "$run/holder.py" "$d/run/$vm.out" "$d/run/$vm.vnc" "$run/status" > "$run/log" 2>&1 < /dev/null &
 }`;
 

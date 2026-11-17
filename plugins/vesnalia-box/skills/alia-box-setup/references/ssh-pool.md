@@ -42,7 +42,7 @@ scp -r setup/ssh-pool <admin>@192.0.2.21:
 ssh <admin>@192.0.2.21 sudo sh ssh-pool/setup.sh --key "'ssh-ed25519 AAAA... alia-box'" --name build-1
 ```
 
-It makes the admin user `bbbox-admin`, which accepts only alia-box's key and
+It makes the admin user `aliabox-admin`, which accepts only alia-box's key and
 may run only alia-box's helper as root. It prints the line for the pool's
 `machines` field and the machine's host keys. Read its warnings, and fix them
 first.
@@ -74,10 +74,10 @@ Add the printed line and host keys, then turn the pool on:
 
 ```sh
 alia box backend set ssh-pool \
-  --add-line machines="build-1 bbbox-admin@192.0.2.21 linux" \
+  --add-line machines="build-1 aliabox-admin@192.0.2.21 linux" \
   --add-line known-hosts="192.0.2.21 ssh-ed25519 AAAA..." --on --check
 alia box backend set ssh-pool \
-  --add-line machines="build-1 bbbox-admin@192.0.2.21 linux" \
+  --add-line machines="build-1 aliabox-admin@192.0.2.21 linux" \
   --add-line known-hosts="192.0.2.21 ssh-ed25519 AAAA..." --on
 ```
 

@@ -5,7 +5,7 @@ import { absolutePath, resolveHost } from "../lib/resolve-host";
 
 export function registerWorkspaceTools(alia: AliaPluginApi, register: Registrar) {
   register("workspace", {
-    name: "bbtools_projects_list",
+    name: "aliatools_projects_list",
     description:
       "List VesnALIA projects with their ids and names. Use it to orient yourself across workspaces.",
     parameters: z.object({}),
@@ -22,7 +22,7 @@ export function registerWorkspaceTools(alia: AliaPluginApi, register: Registrar)
   });
 
   register("workspace", {
-    name: "bbtools_workspace_list",
+    name: "aliatools_workspace_list",
     description:
       "List files and directories under a path in the current project's workspace. Use it to see what exists before reading files.",
     parameters: z.object({
@@ -48,7 +48,7 @@ export function registerWorkspaceTools(alia: AliaPluginApi, register: Registrar)
   });
 
   register("workspace", {
-    name: "bbtools_workspace_read",
+    name: "aliatools_workspace_read",
     description:
       "Read a file's content from the current project's workspace. Use it to load files into context even if your own workspace access is limited.",
     parameters: z.object({
@@ -70,7 +70,7 @@ export function registerWorkspaceTools(alia: AliaPluginApi, register: Registrar)
   });
 
   register("workspace", {
-    name: "bbtools_workspace_write",
+    name: "aliatools_workspace_write",
     description:
       "Write or overwrite a file in the current project's workspace, creating parent directories as needed. Use it to create/update files from VesnALIA context.",
     parameters: z.object({
@@ -91,7 +91,7 @@ export function registerWorkspaceTools(alia: AliaPluginApi, register: Registrar)
   });
 
   register("workspace", {
-    name: "bbtools_workspace_mkdir",
+    name: "aliatools_workspace_mkdir",
     description:
       "Create a directory in the current project's workspace (recursively). Use it to ensure a folder exists before writing files.",
     parameters: z.object({

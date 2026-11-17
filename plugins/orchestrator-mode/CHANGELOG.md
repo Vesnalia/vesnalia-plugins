@@ -25,18 +25,18 @@ All notable changes to Orchestrator Mode are documented here. The format follows
   `all`, `none`; `scope --orchestrator-subagents`) and **Worker subagents**
   (`blocked` default, `allowed`; `scope --worker-subagents`). The watchdog now
   judges identified provider subagents instead of always allowing them. The
-  default requires launch-specific read-only provenance, which BB does not yet
+  default requires launch-specific read-only provenance, which VesnALIA does not yet
   expose; native reading support remains blocked on that upstream metadata.
   Familiar names and cached telemetry grant no trust. Codex coordination stays allowed;
   unrelated task arrays retain normal classification. Legacy opaque OMP calls
   remain unverified work. Every policy is explicit in the contract and grants
   no additional user or parent authority. Blocked workers receive
-  an injected rule against starting subagents; BB cannot remove the provider's
+  an injected rule against starting subagents; VesnALIA cannot remove the provider's
   own tool, so it is an instruction rather than enforcement.
 - Queue direct child messages while an orchestrator turn is running, using
-  BB's persistent queue and delivery when idle. Global/Project settings
+  VesnALIA's persistent queue and delivery when idle. Global/Project settings
   and `scope --child-messages queued|immediate` control the policy. Automatic
-  child system notices still use BB's separate delivery path.
+  child system notices still use VesnALIA's separate delivery path.
 
 ### Changed
 
@@ -80,7 +80,7 @@ All notable changes to Orchestrator Mode are documented here. The format follows
 ### Added
 
 - Per-delegation worker provider, model, reasoning and permission controls,
-  with BB's provider/model picker, named execution presets and an optional
+  with VesnALIA's provider/model picker, named execution presets and an optional
   configured retry target.
 - Project-scoped settings, worker execution and appended rules, with global
   defaults and explicit inheritance controls.
@@ -98,7 +98,7 @@ All notable changes to Orchestrator Mode are documented here. The format follows
   provenance. Support the native `providerId` alias and CLI `--provider-id`
   and `--providerId` aliases; trim pins and reject blanks, conflicting
   aliases and incompatible provider/model combinations.
-- Recognise `bb thread tell`/`message` follow-ups to recorded workers as
+- Recognise `alia thread tell`/`message` follow-ups to recorded workers as
   delegation, including literal quoted stdin heredocs, even when read-only
   exploration is disabled.
 - Allow literal `2>/dev/null` stderr suppression on read-only commands,
@@ -120,7 +120,7 @@ All notable changes to Orchestrator Mode are documented here. The format follows
 ### Changed
 
 - Settings resolve through the plugin's Global/Project scope editor rather
-  than BB's single-install settings form; unchanged projects inherit defaults.
+  than VesnALIA's single-install settings form; unchanged projects inherit defaults.
 - Remove the `.github` directory and GitHub Actions workflow. Verification
   remains available through the local test, typecheck and build commands.
 
@@ -142,8 +142,8 @@ All notable changes to Orchestrator Mode are documented here. The format follows
 
 - Notify running turns when orchestrator mode changes and provide CLI delegation
   for existing or resumed sessions without the native tool.
-- Allow read-only `bb provider list` and `bb provider models` commands, including
-  chains with `bb status --json`.
+- Allow read-only `alia provider list` and `alia provider models` commands, including
+  chains with `alia status --json`.
 
 ## 0.1.0 - 2026-10-01
 

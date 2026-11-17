@@ -6,7 +6,7 @@
 - Add Done & archive to finished inbox threads and Mark done & archive to thread three-dot menus.
 - Format cleaner dates as 5 Feb 2026.
 - Preview cascaded children before archiving and protect running, pinned, waiting, queued, and background work.
-- Require BB 0.46.1 / Plugin SDK 0.6.49 for current thread lifecycle fields.
+- Require VesnALIA 0.46.1 / Plugin SDK 0.6.49 for current thread lifecycle fields.
 
 
 ## 0.2.0 — 2026-09-10
@@ -23,20 +23,20 @@
 - Guided Review completion/failure popups open the review directly and stay quiet when that review is already open.
 - Separate Extension activity setting; quiet hours and desktop/Telegram preferences apply.
 - Settings deep link and a close-button race fix for rapidly replaced notifications.
-- Developer integration guide for other BB extensions.
+- Developer integration guide for other VesnALIA extensions.
 
 ## 0.2.0-beta.2 — 2026-09-09
 
 - Optional first-run welcome with a persistent skip choice and an in-plugin Settings tab.
 - Guided Telegram setup: validate your own dedicated bot, pair a private chat, confirm identity, explicitly test, change or disconnect.
 - Notification preferences, quiet hours, completion cooldown and popup preview inside Needs You.
-- Update notices, manual checks and explicit installation through BB’s native updater; existing settings are retained.
+- Update notices, manual checks and explicit installation through VesnALIA’s native updater; existing settings are retained.
 - Connection writes fail closed; disconnect drains in-flight sends and prevents later delivery. Pairing and updates cannot overlap.
 - Safe Telegram errors and no token readback. Remote replies and approvals remain disabled.
 
 ## 0.2.0-beta.1 — 2026-09-09
 
-- First packaged public beta with a credential-free BB inbox.
+- First packaged public beta with a credential-free VesnALIA inbox.
 - Approved calm UI, full available width, and visible finished-thread history.
 - One active popup per thread; later updates replace it, and old events do not
   overwrite newer ones. Active-thread suppression and accessible dismissal.

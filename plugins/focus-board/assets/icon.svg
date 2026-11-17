@@ -7,7 +7,7 @@
        the surface behind shows through on every theme with no fixed
        hexes. The artwork fills the 24 grid to a ~2-unit margin: at the
        old 3.25/4.5 margin the mark rendered small next to its neighbors.
-       bb renders plugin icons as CSS masks keyed off alpha coverage:
+       alia renders plugin icons as CSS masks keyed off alpha coverage:
        solid fills + one honest hole are exactly what the pipeline
        survives, and the theme inversion rides the mask (currentColor
        tints per row), so one asset serves light and dark. -->

@@ -15,15 +15,15 @@ as [Recap](https://github.com/MacHatter1/bb-recap).
 
 ### Changed
 
-- Rename the plugin to Catch Up, with the plugin ID `catchup` and the command `bb catchup`. `bb recap recap` is `bb catchup generate`; the `summarize` alias is gone.
-- Require bb 0.48 and move to the current thread action, tab, and command APIs.
+- Rename the plugin to Catch Up, with the plugin ID `catchup` and the command `alia catchup`. `alia recap recap` is `alia catchup generate`; the `summarize` alias is gone.
+- Require VesnALIA 0.48 and move to the current thread action, tab, and command APIs.
 
 ### Added
 
 - Add a × button to the compact banner, expanded banner, and recap card. It hides the current recap on every client until a newer recap replaces it, and the Recap panel still shows it.
 - Add a Minimal display mode and make it the default: a card with no border that shows only the text and ×. Saved display modes stay as they are.
 - Add a Recap language setting. Empty follows the user's latest messages; a value such as Russian names that language in the prompt.
-- Add `bb recap preview`, which shows the recap card in open BB windows at once, without generating or storing anything.
+- Add `alia recap preview`, which shows the recap card in open VesnALIA windows at once, without generating or storing anything.
 
 ### Fixed
 
@@ -88,4 +88,4 @@ as [Recap](https://github.com/MacHatter1/bb-recap).
 
 ### Added
 
-- Release Recap as a BB plugin for generating and displaying thread summaries.
+- Release Recap as a VesnALIA plugin for generating and displaying thread summaries.

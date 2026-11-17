@@ -5,7 +5,7 @@
  * mounts plugin banners under a `display: contents` wrapper and the prompt
  * stack spaces itself with `margin-bottom: 8px`; a contents box generates no
  * box, so that margin is discarded and a `chrome: "card"` banner sits flush
- * against the card below. Owning the frame is what lets `.bbxs-stack-card` own
+ * against the card below. Owning the frame is what lets `.aliaxs-stack-card` own
  * the 8px — and it is `-bottom`, never `-top`, because the native stack spaces
  * downward.
  */
@@ -57,12 +57,12 @@ export function ActivityBanner() {
   return (
     <>
       {visible.map((row) => (
-        <div key={row.id} className={`bbxs-stack-card ${TONE_CLASS[row.tone]}`}>
+        <div key={row.id} className={`aliaxs-stack-card ${TONE_CLASS[row.tone]}`}>
           <div className="flex items-center gap-2 px-3 py-2">
             {row.tone === "dead" ? (
               <Icon name="AlertTriangle" className="size-3.5 shrink-0" />
             ) : (
-              <span className="bbxs-dot shrink-0" aria-hidden />
+              <span className="aliaxs-dot shrink-0" aria-hidden />
             )}
 
             <p className="min-w-0 flex-1 truncate text-sm">{row.sentence}</p>

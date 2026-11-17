@@ -141,7 +141,7 @@ test("a session keeps its shell while its tab is away, replays the output to the
 test("a session ends when its shell exits, and tells its tab", { skip }, async () => {
   const sessions = new TerminalSessions({ logError: () => {}, open: (_box, size) => openTerminal(["/bin/sh", "-c", "echo bye"], size) });
   const tab = viewer();
-  const session = await sessions.attach("box_2", "sess-0002-bbbb", tab, { cols: 80, rows: 24 });
+  const session = await sessions.attach("box_2", "sess-0002-aliabb", tab, { cols: 80, rows: 24 });
   await until(() => session.ended);
   assert.deepEqual(tab.closed, { code: 1000, reason: "The shell exited." });
   assert.match(tab.text(), /bye/);
@@ -204,7 +204,7 @@ test("the route opens a shell for a tab, takes its input and resizes, and detach
   assert.equal(tab.closed, null, "a tab that left is not told");
 
   // The tab closes while ssh is still connecting: the shell must not be left with a dead socket.
-  const late = open("box=box_1&session=sess-0002-bbbb&cols=80&rows=24");
+  const late = open("box=box_1&session=sess-0002-aliabb&cols=80&rows=24");
   const gone = socket();
   const opening = late.onOpen!(gone);
   await late.onClose!(gone, { code: 1001, reason: "" });

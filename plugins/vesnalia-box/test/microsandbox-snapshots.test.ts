@@ -63,7 +63,7 @@ test("070 unit 10: msb 0.7.7's recorded answers parse: a full snapshot that depe
   assert.equal(parseHead('{\n  "group": "ox",\n  "previous": "snap_a13191afaa479e9479770401bf4f90f5",\n  "head": "snap_a13191afaa479e9479770401bf4f90f5",\n  "reason": "unchanged",\n  "changed": false\n}'), "snap_a13191afaa479e9479770401bf4f90f5");
   const inspected = parseInspect(readFileSync(join(FIXTURES, "msb-snapshot-inspect.txt"), "utf8"));
   assert.deepEqual(inspected, { labels: {}, diskGiB: 4 });
-  assert.deepEqual(parseInspect("Source Sandbox:       bbbox-bx6shhmycajhqm-k3j9\nLabels:               bbbox.box=bx6shhmycajhqm, bbbox.install=inst-1a2b\n").labels, { "bbbox.box": "bx6shhmycajhqm", "bbbox.install": "inst-1a2b" });
+  assert.deepEqual(parseInspect("Source Sandbox:       aliabox-bx6shhmycajhqm-k3j9\nLabels:               aliabox.box=bx6shhmycajhqm, aliabox.install=inst-1a2b\n").labels, { "aliabox.box": "bx6shhmycajhqm", "aliabox.install": "inst-1a2b" });
 });
 
 test("070 unit 10: VesnALIA Box's microsandbox snapshots are pinned to the msb whose snapshots its checks measured, and any other msb turns them off with words", async () => {
@@ -229,8 +229,8 @@ test("070 unit 10: a take names the snapshot for its install, box and identity r
   const taken = await backend.snapshot(guest, { id: first, box, memory: false, forkSafe: 7 }, QUIET, signal());
   const create = fake.calls().find((call) => call[0] === "snapshot" && call[1] === "create")!;
   assert.equal(create[2], snapshotName("test", first, 7));
-  assert.deepEqual([after(create, "--sandbox")[0], after(create, "--group")[0]], [guest.ref, `bbbox-${box}`]);
-  assert.deepEqual(after(create, "--label").sort(), [`bbbox.box=${box}`, "bbbox.cores=2", "bbbox.disk-gib=32", "bbbox.install=test", "bbbox.memory-mib=4096", `bbbox.snapshot=${first}`]);
+  assert.deepEqual([after(create, "--sandbox")[0], after(create, "--group")[0]], [guest.ref, `aliabox-${box}`]);
+  assert.deepEqual(after(create, "--label").sort(), [`aliabox.box=${box}`, "aliabox.cores=2", "aliabox.disk-gib=32", "aliabox.install=test", "aliabox.memory-mib=4096", `aliabox.snapshot=${first}`]);
   assert.ok(!create.includes("--full"));
   assert.match(taken.ref, /^snap_[0-9a-f]{32}$/);
   assert.deepEqual([taken.holds, taken.size, taken.dependsOn], ["disk", { bytes: 2048 * 1024, means: "whole" }, []]);
@@ -261,7 +261,7 @@ test("070 unit 10: a box made before, whose Docker disk is a file of the host's,
   const { fake, backend } = setup();
   const box = identity();
   const name = sandboxName(box.boxId);
-  await new MsbCli(null, null, undefined, { dir: fake.dir }).ok(["create", "bbbox/linux:1", "--name", name, "--label", "bbbox.backend=microsandbox", "--label", "bbbox.install=test", "--label", `bbbox.box=${box.boxId}`, "--label", `bbbox.name=${box.name}`, "--cpus", "2", "--memory", "4096M", "--root-disk", "32G", "--mount-disk", `${fake.dir}/disks/${name}.ext4:/var/lib/docker`]);
+  await new MsbCli(null, null, undefined, { dir: fake.dir }).ok(["create", "aliabox/linux:1", "--name", name, "--label", "aliabox.backend=microsandbox", "--label", "aliabox.install=test", "--label", `aliabox.box=${box.boxId}`, "--label", `aliabox.name=${box.name}`, "--cpus", "2", "--memory", "4096M", "--root-disk", "32G", "--mount-disk", `${fake.dir}/disks/${name}.ext4:/var/lib/docker`]);
   const guest: Guest = { ref: name, host: null, address: null, size: SMALL, data: { box: box.boxId } };
   const plan = await backend.planSnapshots(guest, "linux", null, signal());
   assert.equal(plan.take.ok, false);
@@ -279,20 +279,20 @@ test("070 unit 10: a delete removes a snapshot others depend on with --force, as
   const ids = [snapshotId(), snapshotId(), snapshotId()];
   const taken = [];
   for (const id of ids) taken.push(await backend.snapshot(guest, { id, box, memory: false, forkSafe: 7 }, QUIET, signal()));
-  assert.equal(fake.heads()[`bbbox-${box}`], taken[2]!.ref);
+  assert.equal(fake.heads()[`aliabox-${box}`], taken[2]!.ref);
   await backend.labelKept({ id: ids[0]!, ref: taken[0]!.ref, guest }, "2026-11-29", signal());
   assert.equal((await backend.heldSnapshots(signal())).find((each) => each.id === ids[0])!.keptUntil, Date.UTC(2026, 10, 29, 23, 59, 59, 999));
   const tasks: string[] = [];
   await backend.deleteSnapshot({ id: ids[0]!, ref: taken[0]!.ref, guest }, { submitting: async () => {}, task: async (task) => void tasks.push(task.ref) }, signal());
   const removed = fake.calls().filter((call) => call[0] === "snapshot" && call[1] === "remove");
-  assert.deepEqual(removed.at(-1), ["snapshot", "remove", "--force", "--quiet", `bbbox-${box}:${snapshotName("test", ids[0]!, 7)}`], "msb refuses a parent without --force");
+  assert.deepEqual(removed.at(-1), ["snapshot", "remove", "--force", "--quiet", `aliabox-${box}:${snapshotName("test", ids[0]!, 7)}`], "msb refuses a parent without --force");
   assert.deepEqual(tasks, [`delete:${taken[0]!.ref}`]);
   assert.ok(!existsSync(join(fake.dir, "kept", taken[0]!.ref)), "its keep date goes with it");
   assert.deepEqual(fake.snapshots().map((each) => each.id).sort(), [taken[1]!.ref, taken[2]!.ref].sort());
   await backend.deleteSnapshot({ id: ids[2]!, ref: taken[2]!.ref, guest }, QUIET, signal());
   const head = fake.calls().filter((call) => call[0] === "snapshot" && call[1] === "head").at(-1)!;
-  assert.equal(head[2], `bbbox-${box}:${snapshotName("test", ids[1]!, 7)}`, "msb removes no group's head while it has other members");
-  assert.deepEqual(fake.calls().filter((call) => call[0] === "snapshot" && call[1] === "remove").at(-1), ["snapshot", "remove", "--quiet", `bbbox-${box}:${snapshotName("test", ids[2]!, 7)}`], "no --force for a snapshot nothing depends on");
+  assert.equal(head[2], `aliabox-${box}:${snapshotName("test", ids[1]!, 7)}`, "msb removes no group's head while it has other members");
+  assert.deepEqual(fake.calls().filter((call) => call[0] === "snapshot" && call[1] === "remove").at(-1), ["snapshot", "remove", "--quiet", `aliabox-${box}:${snapshotName("test", ids[2]!, 7)}`], "no --force for a snapshot nothing depends on");
   await backend.deleteSnapshot({ id: ids[2]!, ref: taken[2]!.ref, guest }, QUIET, signal());
   const other = new MsbBackend(msbConfig(), testContext(undefined, "other"), { dir: fake.dir, script: fake.script, readyTimeoutMs: 2_000 });
   await assert.rejects(other.deleteSnapshot({ id: ids[1]!, ref: taken[1]!.ref, guest }, QUIET, signal()), (error: unknown) => error instanceof SnapshotFailed && /is not ALIA Box's snapshot .* of this install's/.test(error.message));
@@ -314,12 +314,12 @@ test("070 unit 10: a restore makes the box a new microVM from the snapshot, with
   assert.notEqual(fresh.ref, guest.ref);
   assert.deepEqual(claimed, [fresh.ref, fresh.ref], "claimed before msb is asked");
   const restore = fake.calls().find((call) => call[0] === "snapshot" && call[1] === "restore")!;
-  assert.deepEqual([restore[2], after(restore, "--name")[0], after(restore, "--cpus")[0], after(restore, "--memory")[0], restore.includes("--disk-only")], [`bbbox-${box.boxId}:${snapshotName("test", diskId, 7)}`, fresh.ref, "2", "4096M", false]);
+  assert.deepEqual([restore[2], after(restore, "--name")[0], after(restore, "--cpus")[0], after(restore, "--memory")[0], restore.includes("--disk-only")], [`aliabox-${box.boxId}:${snapshotName("test", diskId, 7)}`, fresh.ref, "2", "4096M", false]);
   assert.deepEqual([after(restore, "--net-default"), after(restore, "--net-rule")], [["deny"], ["allow@dns,allow@public,allow@private,allow:ingress@any"]], "the box's own network profiles, as msb's create made them, which a restore does not keep: without private it cannot reach VesnALIA on a private address (found live)");
   const made = fake.inspect(fresh.ref);
-  assert.equal(made.config.labels["bbbox.box"], box.boxId);
-  assert.equal(made.config.labels["bbbox.thread"], box.threadId);
-  assert.deepEqual(made.config.env.sort(), [`BBBOX_HOSTNAME=${box.name}`, "BBBOX_DOCKERD=1", `BBBOX_IDENTITY=${box.boxId}`].sort(), "the box's own value, passed on in a same-box swap (070, section 9)");
+  assert.equal(made.config.labels["aliabox.box"], box.boxId);
+  assert.equal(made.config.labels["aliabox.thread"], box.threadId);
+  assert.deepEqual(made.config.env.sort(), [`ALIABOX_HOSTNAME=${box.name}`, "ALIABOX_DOCKERD=1", `ALIABOX_IDENTITY=${box.boxId}`].sort(), "the box's own value, passed on in a same-box swap (070, section 9)");
   assert.equal(readFileSync(join(fake.home(fresh.ref), "work.txt"), "utf8"), "before");
   assert.deepEqual(fresh.data, { box: box.boxId });
   await backend.start(fresh, signal());
@@ -331,7 +331,7 @@ test("070 unit 10: a restore makes the box a new microVM from the snapshot, with
   const back = await backend.adoptSnapshot({ id: "sn", ref: full.ref, guest: fresh }, box, { macs: {}, smbios: null, value: box.boxId }, hooks, signal());
   const resumed = fake.calls().filter((call) => call[0] === "snapshot" && call[1] === "restore").at(-1)!;
   assert.deepEqual([after(resumed, "--cpus"), after(resumed, "--memory"), resumed.includes("--disk-only")], [[], [], false], "a memory restore keeps the captured size, as msb requires");
-  assert.equal(fake.inspect(back.ref).config.labels["bbbox.box"], box.boxId);
+  assert.equal(fake.inspect(back.ref).config.labels["aliabox.box"], box.boxId);
 });
 
 test("070 unit 10: a part-made restored microVM, before VesnALIA Box labelled it, is deleted by a release and counted by power, and a fork's leftover is made again", async () => {
@@ -370,13 +370,13 @@ test("070 unit 10: a fork boots a new microVM from the snapshot's disk only, nev
   assert.deepEqual([after(own, "--name")[0], own.includes("--disk-only"), after(own, "--cpus")[0], after(own, "--memory")[0]], [leftover, true, "2", "4096M"]);
   assert.ok(fake.calls().some((call) => call[0] === "remove" && call.includes(leftover)), "the unlabelled leftover went first");
   const config = fake.inspect(made.ref).config;
-  assert.equal(config.labels["bbbox.box"], fork.boxId);
-  assert.ok(config.env.includes(`BBBOX_IDENTITY=${fork.boxId}`), "a value new to the fork, which its marker does not hold, so it resets");
-  assert.ok(!config.env.includes(`BBBOX_IDENTITY=${source.boxId}`));
+  assert.equal(config.labels["aliabox.box"], fork.boxId);
+  assert.ok(config.env.includes(`ALIABOX_IDENTITY=${fork.boxId}`), "a value new to the fork, which its marker does not hold, so it resets");
+  assert.ok(!config.env.includes(`ALIABOX_IDENTITY=${source.boxId}`));
   assert.ok(!existsSync(join(fake.dir, "..", "sandboxes", made.ref, "run", "alia-box", "ready")), "no memory, so nothing of the source runs: VesnALIA Box starts it");
   assert.equal(readFileSync(join(fake.home(made.ref), "work.txt"), "utf8"), "set up");
   const taken = identity();
-  await new MsbCli(null, null, undefined, { dir: fake.dir }).ok(["create", "bbbox/linux:1", "--name", sandboxName(taken.boxId), "--label", "bbbox.backend=microsandbox", "--label", "bbbox.install=test", "--label", "bbbox.box=bx999999999998", "--cpus", "1", "--memory", "512M", "--root-disk", "8G"]);
+  await new MsbCli(null, null, undefined, { dir: fake.dir }).ok(["create", "aliabox/linux:1", "--name", sandboxName(taken.boxId), "--label", "aliabox.backend=microsandbox", "--label", "aliabox.install=test", "--label", "aliabox.box=bx999999999998", "--cpus", "1", "--memory", "512M", "--root-disk", "8G"]);
   await assert.rejects(backend.forkSnapshot({ id: "sn", ref: full.ref, guest }, taken, null, acquiring(), signal()), /belongs to another box/);
 });
 
@@ -415,7 +415,7 @@ test("070 unit 10: in an image with no ip command, as microsandbox's, the fork c
     const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
     symlinkSync(found, join(bin, tool));
   }
-  const ran = spawnSync("/bin/sh", ["-c", forkCheckScript().replaceAll(IDENTITY_TOOL, join(bin, "alia-box-identity"))], { encoding: "utf8", env: { BBBOX_IDENTITY_ROOT: root, PATH: bin } });
+  const ran = spawnSync("/bin/sh", ["-c", forkCheckScript().replaceAll(IDENTITY_TOOL, join(bin, "alia-box-identity"))], { encoding: "utf8", env: { ALIABOX_IDENTITY_ROOT: root, PATH: bin } });
   const seen = parseForkSeen(ran.stdout, ran.status);
   assert.deepEqual([seen.addresses, seen.markerValue, seen.unreadable], [["172.16.0.6", "172.16.1.1"], "bxfork0000001", []]);
   const expected = { forkMacs: [], forkValue: "bxfork0000001", sourceMacs: [], sourceBox: "bxsource00001", sourceName: "amber-fox", sourceAddresses: [], freedSourceAddresses: [], ownAddress: null, boxAddresses: [], held: { machineId: "c".repeat(64), hostKeys: [] }, safeFrom: 7 };
@@ -426,7 +426,7 @@ test("070 unit 10: each start puts /run in memory again and the box's own hostna
   assert.match(RUN_IN_MEMORY, /\$2 == "\/run"/);
   assert.match(RUN_IN_MEMORY, /mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs \/run/);
   assert.match(RUN_IN_MEMORY, /rm -rf "\$held" \/run\/alia-box \/run\/alia-box-started/);
-  assert.match(OWN_HOSTNAME, /h=\$\{BBBOX_HOSTNAME:-\}/);
+  assert.match(OWN_HOSTNAME, /h=\$\{ALIABOX_HOSTNAME:-\}/);
   assert.match(OWN_HOSTNAME, /hostname "\$h"; printf '%s\\n' "\$h" >\/etc\/hostname/);
 });
 
@@ -514,7 +514,7 @@ test("070 unit 10 review (Opus 4): the upkeep removes the Docker disk template a
   const dir = join(tempDir("msb-templates"), "microsandbox");
   mkdirSync(join(dir, "templates"), { recursive: true });
   writeFileSync(join(dir, "templates", "docker-64G.ext4"), Buffer.alloc(4 * 1024 * 1024, 1));
-  const run = (name: "status" | "disks") => spawnSync("sh", ["-c", msbScript(name), "alia-box-msb"], { encoding: "utf8", env: { ...process.env, BBBOX_MSB_DIR: dir } });
+  const run = (name: "status" | "disks") => spawnSync("sh", ["-c", msbScript(name), "alia-box-msb"], { encoding: "utf8", env: { ...process.env, ALIABOX_MSB_DIR: dir } });
   assert.ok(Number(scriptValues(run("status").stdout).used_kib) < 1024, "the template's 4 MiB are not counted");
   assert.equal(run("disks").status, 0);
   assert.ok(!existsSync(join(dir, "templates")), "the template goes with the upkeep's sweep of Docker disks");

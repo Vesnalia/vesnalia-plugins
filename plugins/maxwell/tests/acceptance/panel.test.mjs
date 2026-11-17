@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DANCING, openBB, openMaxwell, ROTATING } from './harness.mjs';
+import { DANCING, openALIA, openMaxwell, ROTATING } from './harness.mjs';
 import { assertDancing, sceneTime, serveThreads } from './motion.mjs';
 
 const existingThread = () => {
@@ -10,7 +10,7 @@ const existingThread = () => {
 };
 
 test('Actions opens the locally bundled Maxwell beside the new-thread composer, dancing', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await openMaxwell(page);
     await page.getByText('Loading Maxwell').waitFor({ state: 'hidden' });
@@ -31,7 +31,7 @@ import { PNG } from 'pngjs';
 
 test('rendered rotation in a chat without a reading is 24 rpm with a 20-cycle bob, including reduced motion', async () => {
   for (const reducedMotion of ['no-preference', 'reduce']) {
-    const { browser, page } = await openBB({ reducedMotion });
+    const { browser, page } = await openALIA({ reducedMotion });
     try {
       const served = await serveThreads(page);
       served.context(existingThread(), { usage: null });
@@ -89,7 +89,7 @@ test('rendered rotation in a chat without a reading is 24 rpm with a 20-cycle bo
 });
 
 test('Actions also opens Maxwell beside an existing conversation', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await page.goto(new URL(`/threads/${existingThread()}`, page.url()).href);
     await openMaxwell(page);

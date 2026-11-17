@@ -52,16 +52,16 @@ class Host {
 
   constructor() {
     for (const dir of ["usr/local/sbin", "etc/systemd/system", "run/fake-systemd"]) mkdirSync(this.node.file(dir), { recursive: true });
-    writeFileSync(this.node.file("alia-box.env"), "BBBOX_POOL=bbbox\n");
+    writeFileSync(this.node.file("alia-box.env"), "ALIABOX_POOL=aliabox\n");
     this.env = {
       PATH: `${SETUP_BIN}:${this.node.file("bin")}:/usr/sbin:/usr/bin:/sbin:/bin`,
       PERL5LIB: FAKE_PVE,
-      BBBOX_ROOT: this.node.root,
-      BBBOX_GPU_ROOT: this.node.root,
-      BBBOX_ENV: this.node.file("alia-box.env"),
-      BBBOX_QEMU_CONFIGS: this.node.file("etc/pve/qemu-server"),
-      BBBOX_GPU_REPORT_STATE: this.node.file("run/alia-box-gpu-memory"),
-      BBBOX_GPU_REPORT_WAIT: "6",
+      ALIABOX_ROOT: this.node.root,
+      ALIABOX_GPU_ROOT: this.node.root,
+      ALIABOX_ENV: this.node.file("alia-box.env"),
+      ALIABOX_QEMU_CONFIGS: this.node.file("etc/pve/qemu-server"),
+      ALIABOX_GPU_REPORT_STATE: this.node.file("run/alia-box-gpu-memory"),
+      ALIABOX_GPU_REPORT_WAIT: "6",
     };
     this.node.guest(214, { box: "bx214", kind: "linux-desktop", marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "desktop"), running: true });
     this.node.guest(215, { box: "bx215", kind: "linux-desktop", lines: cardLines(CARD_B, "desktop") });
@@ -215,9 +215,9 @@ hosted("setup-gpu.sh starts the helper and retires the timer only once the helpe
   assert.ok(restart >= 0 && retire > restart, `the helper starts before the timer is retired: ${calls.join(" | ")}`);
   assert.ok(host.helperAt() >= started, "the report the handover waited for is this install's, not the stale one");
   assert.match(first.stdout, /setup-gpu\.sh: VM 9190's report: helper alia-box-gpu 0\.4\.4 protocol 1 writes off pve-container 6\.1\.14 tested\n/);
-  assert.match(first.stdout, /setup-gpu\.sh: VM 9190's report: serves other bbbox\n/);
-  assert.match(first.stdout, /wrote .*gpu\.conf: pools other bbbox, writes off \(it said writes on, but the helper's units did not run it so; writes stay off until setup-gpu\.sh --writes on\)/);
-  assert.equal(host.conf(), "pools other bbbox\nwrites off\n");
+  assert.match(first.stdout, /setup-gpu\.sh: VM 9190's report: serves other aliabox\n/);
+  assert.match(first.stdout, /wrote .*gpu\.conf: pools other aliabox, writes off \(it said writes on, but the helper's units did not run it so; writes stay off until setup-gpu\.sh --writes on\)/);
+  assert.equal(host.conf(), "pools other aliabox\nwrites off\n");
   assert.equal(host.timerInstalled(), false);
   assert.ok(host.active("alia-box-gpu.service") && host.enabled("alia-box-gpu.service") && host.enabled("alia-box-gpu-boot.service"));
   assert.match(readFileSync(host.state("alia-box-gpu.service.log"), "utf8"), /with writes off whatever the settings say \(--dry-run\)/);
@@ -276,7 +276,7 @@ hosted("--remove puts the timer back before it stops the helper, whether the dri
   assert.equal(host.active("alia-box-gpu.service"), false);
   assert.match(removed.stdout, /no guest's device lines or tags were changed/);
   assert.equal(readFileSync(host.node.ledgerPath(), "utf8"), ledger, "the ledger is kept");
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n", "gpu.conf is kept");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n", "gpu.conf is kept");
   const again = host.setup(["--remove", "--force"]);
   assert.equal(again.status, 0);
   assert.match(again.stdout, /nothing changed/);
@@ -296,7 +296,7 @@ hosted("removed and put back, the helper starts from the kept gpu.conf and ledge
   const back = host.setup();
   assert.equal(back.status, 0, back.stdout + back.stderr);
   assert.match(back.stdout, /stopped, disabled and removed alia-box-gpu-memory\.timer/);
-  assert.equal(host.conf(), "pools bbbox team\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox team\nwrites off\n");
   assert.ok(host.helperAt() >= started);
   assert.deepEqual(host.node.ledger().guests["214"]?.claim, claim, "the claim of record is the one from before the removal");
   assert.equal(host.timerInstalled(), false);
@@ -311,14 +311,14 @@ hosted("--pool adds a pool and restarts the helper, which reports serving it; a 
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /'-x' cannot be a pool's name/);
   assert.equal(host.setup(["--pool"]).status, 2);
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
 
-  const added = host.setup(["--pool", "team", "--pool", "bbbox", "--pool", "lab/gpu"]);
+  const added = host.setup(["--pool", "team", "--pool", "aliabox", "--pool", "lab/gpu"]);
   assert.equal(added.status, 0, added.stdout + added.stderr);
-  assert.match(added.stdout, /wrote .*gpu\.conf: pools bbbox team lab\/gpu, writes off\n/);
+  assert.match(added.stdout, /wrote .*gpu\.conf: pools aliabox team lab\/gpu, writes off\n/);
   assert.match(added.stdout, /pool team is not in \/etc\/pve\/user\.cfg yet; the helper serves it once it is/);
   assert.match(added.stdout, /setup-gpu\.sh: started alia-box-gpu\.service, with writes off/);
-  assert.match(added.stdout, /VM 9190's report: serves bbbox team lab\/gpu\n/);
+  assert.match(added.stdout, /VM 9190's report: serves aliabox team lab\/gpu\n/);
   assert.match(host.setup(["--pool", "team"]).stdout, /nothing changed\n$/);
   host.touchedNoGuest(guests);
 });
@@ -333,7 +333,7 @@ hosted("--writes on is refused before the helper is installed, and goes with no 
 
   const off = host.setup(["--writes", "off"]);
   assert.equal(off.status, 0, off.stdout + off.stderr);
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.match(host.setup(["--writes", "off"]).stdout, /nothing changed\n$/);
   for (const args of [["--writes", "maybe"], ["--writes"], ["--remove", "--pool", "x"], ["--remove", "--downgrade"], ["--remove", "--writes", "off"], ["--now"], ["--check"], ["--writes", "off", "--check"], ["--writes", "on", "--pool", "x"], ["--writes", "on", "--downgrade"], ["--remove", "--check"], ["--force"], ["--writes", "off", "--force"]]) {
     assert.equal(host.setup(args).status, 2, args.join(" "));
@@ -360,7 +360,7 @@ hosted("071 unit 5: --writes on --check prints what the helper's first pass with
   assert.match(check.stdout, /setup-gpu\.sh: preview: alia-box-gpu 0\.4\.4 on pve-container 6\.1\.14, as its first pass with writes on would go; nothing was written\n/);
   assert.match(check.stdout, /setup-gpu\.sh: preview: writes on would write no guest\n/);
   assert.match(check.stdout, /--check: writes on would write no guest; nothing was changed\. Run setup-gpu\.sh --writes on to turn them on\./);
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "the check starts and stops nothing");
   host.touchedNoGuest(guests);
@@ -368,10 +368,10 @@ hosted("071 unit 5: --writes on --check prints what the helper's first pass with
   const on = host.setup(["--writes", "on"]);
   assert.equal(on.status, 0, on.stdout + on.stderr + host.told());
   assert.match(on.stdout, /preview: writes on would write no guest\n/);
-  assert.match(on.stdout, /wrote .*gpu\.conf: pools bbbox, writes on\n/);
+  assert.match(on.stdout, /wrote .*gpu\.conf: pools aliabox, writes on\n/);
   assert.match(on.stdout, /restarted alia-box-gpu\.service with writes on, which were off; the ledger is kept/);
   assert.match(on.stdout, /VM 9190's report: helper alia-box-gpu 0\.4\.4 protocol 1 writes on pve-container 6\.1\.14 tested\n/);
-  assert.equal(host.conf(), "pools bbbox\nwrites on\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites on\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu", "/usr/local/sbin/alia-box-gpu --boot"]);
   assert.doesNotMatch(readFileSync(host.state("alia-box-gpu.service.log"), "utf8").split("alia-box-gpu 0.4.4, protocol 1").at(-1)!, /--dry-run/);
   assert.equal(host.node.ledger().guests["214"]?.claim?.answer, "granted", "the claim granted with writes off stands");
@@ -391,7 +391,7 @@ hosted("071 unit 5: --writes on is refused, changing nothing, when the helper's 
   assert.match(refused.stdout, /setup-gpu\.sh: would write CT 216 for request g2: remove nothing; add \/dev\/nvidia0,mode=0666/);
   assert.match(refused.stdout, /preview: writes on would write 1 guest\n/);
   assert.match(refused.stderr, /with writes on, alia-box-gpu 0\.4\.4 would write the guests above on its first pass, so writes stay off\. Find why with journalctl -u alia-box-gpu and the report's would lines: each write must be explained before writes come on\. Nothing was changed\./);
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "nothing is started or stopped");
   assert.equal(host.backupKept(), false);
@@ -413,7 +413,7 @@ hosted("071 unit 5: --writes on is refused for an older helper than this release
   const untested = host.setup(["--writes", "on"]);
   assert.equal(untested.status, 1, untested.stdout + untested.stderr);
   assert.match(untested.stderr, /alia-box-gpu 0\.4\.4 was not tested on the pve-container installed here \(helper alia-box-gpu 0\.4\.4 protocol 1 writes off pve-container 6\.1\.15 untested\), so it would write no guest even with writes on\. Nothing was changed\./);
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
 });
 
 hosted("071 unit 5: an upgrade keeps writes on, a failed one puts the helper before it back with writes on, and --writes off is a dry run again with the ledger kept", (host) => {
@@ -431,12 +431,12 @@ hosted("071 unit 5: an upgrade keeps writes on, a failed one puts the helper bef
   assert.equal(failed.status, 1);
   assert.match(failed.stderr, /alia-box-gpu 0\.4\.6 wrote no fresh, healthy report with writes on in VM 9190 within 6 s, so alia-box-gpu 0\.4\.5 is back as it was, with its settings and ledger/);
   assert.match(host.helperLine() ?? "", /^helper alia-box-gpu 0\.4\.5 protocol 1 writes on /);
-  assert.equal(host.conf(), "pools bbbox\nwrites on\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites on\n");
 
   const ledger = host.node.ledger().guests;
   const off = host.setup(["--writes", "off"], {}, newer);
   assert.equal(off.status, 0, off.stdout + off.stderr);
-  assert.match(off.stdout, /wrote .*gpu\.conf: pools bbbox, writes off\n/);
+  assert.match(off.stdout, /wrote .*gpu\.conf: pools aliabox, writes off\n/);
   assert.match(off.stdout, /restarted alia-box-gpu\.service with writes off, which were on; the ledger is kept/);
   assert.match(host.helperLine() ?? "", /^helper alia-box-gpu 0\.4\.5 protocol 1 writes off /);
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
@@ -455,7 +455,7 @@ hosted("071 unit 5, Astra 4 and Opus 2: --writes on and --writes on --check refu
     assert.match(refused.stdout, /setup-gpu\.sh: preview: incomplete, as it read no card, and 1 error line, so it cannot show what writes on would do/);
     assert.match(refused.stderr, /alia-box-gpu --preview could not show what writes on would do \(exit status 1; see its error and incomplete lines above\), so writes stay off\. Put right what it names, then run this again\. Nothing was changed\./);
   }
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "nothing is started or stopped");
   host.touchedNoGuest(guests);
@@ -479,7 +479,7 @@ hosted("071 unit 5, re-review R1: --writes on and --writes on --check refuse a p
       assert.match(refused.stderr, /alia-box-gpu --preview could not show what writes on would do \(exit status 1; see its error and incomplete lines above\), so writes stay off\. Put right what it names, then run this again\. Nothing was changed\./, name);
     }
   }
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "nothing is started or stopped");
   host.touchedNoGuest(guests);
@@ -497,7 +497,7 @@ hosted("071 unit 5, final review F3: --writes on and --writes on --check refuse 
     assert.match(refused.stdout, /setup-gpu\.sh: error: nvidia-smi's reading was incomplete \(nvidia-smi was killed by signal 9\)/);
     assert.match(refused.stderr, /alia-box-gpu --preview could not show what writes on would do \(exit status 1; see its error and incomplete lines above\), so writes stay off\./);
   }
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "nothing is started or stopped");
   host.touchedNoGuest(guests);
@@ -516,7 +516,7 @@ hosted("071 unit 5, go review N2: --writes on and --writes on --check refuse a p
     assert.match(refused.stdout, /setup-gpu\.sh: error: the helper cannot map card [0-9a-f-]+ at \S+ to its device nodes/);
     assert.match(refused.stderr, /alia-box-gpu --preview could not show what writes on would do \(exit status 1; see its error and incomplete lines above\), so writes stay off\./);
   }
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "nothing is started or stopped");
   host.touchedNoGuest(guests);
@@ -534,7 +534,7 @@ hosted("071 unit 5, go review 2 G2: --writes on and --writes on --check refuse a
     assert.match(refused.stdout, new RegExp(`setup-gpu\\.sh: error: card [0-9a-f-]+ at \\S+ lacks device nodes a guest of it needs \\(/dev/dri/${CARD_A.render} missing\\)`));
     assert.match(refused.stderr, /alia-box-gpu --preview could not show what writes on would do \(exit status 1; see its error and incomplete lines above\), so writes stay off\./);
   }
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n");
   assert.deepEqual(units(host), ["/usr/local/sbin/alia-box-gpu --dry-run", "/usr/local/sbin/alia-box-gpu --boot --dry-run"]);
   assert.deepEqual(host.calls().filter((call) => !/^is-active /.test(call)), [], "nothing is started or stopped");
   host.touchedNoGuest(guests);
@@ -565,10 +565,10 @@ hosted("071 unit 5: a removal leaves writes on in gpu.conf, and putting the help
   readyForWrites(host);
   assert.equal(host.setup(["--writes", "on"]).status, 0);
   assert.equal(host.setup(["--remove", "--force"]).status, 0);
-  assert.equal(host.conf(), "pools bbbox\nwrites on\n");
+  assert.equal(host.conf(), "pools aliabox\nwrites on\n");
   const back = host.setup();
   assert.equal(back.status, 0, back.stdout + back.stderr);
-  assert.match(back.stdout, /wrote .*gpu\.conf: pools bbbox, writes off \(it said writes on, but the helper's units did not run it so; writes stay off until setup-gpu\.sh --writes on\)/);
+  assert.match(back.stdout, /wrote .*gpu\.conf: pools aliabox, writes off \(it said writes on, but the helper's units did not run it so; writes stay off until setup-gpu\.sh --writes on\)/);
   assert.match(host.helperLine() ?? "", /^helper alia-box-gpu 0\.4\.4 protocol 1 writes off /);
 });
 
@@ -669,7 +669,7 @@ hosted("an upgrade whose helper writes no fresh report puts the helper before it
   assert.equal(failed.status, 1, failed.stdout + failed.stderr);
   assert.match(failed.stderr, /alia-box-gpu 0\.4\.5 wrote no fresh, healthy report with writes off in VM 9190 within 6 s, so alia-box-gpu 0\.4\.4 is back as it was, with its settings and ledger/);
   assert.deepEqual(readFileSync(host.node.file("usr/local/sbin/alia-box-gpu")), program);
-  assert.equal(host.conf(), "pools bbbox\nwrites off\n", "gpu.conf is as it was before the run");
+  assert.equal(host.conf(), "pools aliabox\nwrites off\n", "gpu.conf is as it was before the run");
   assert.ok(host.active("alia-box-gpu.service") && host.enabled("alia-box-gpu.service"));
   assert.ok(host.helperAt() >= started);
   assert.match(host.helperLine() ?? "", /^helper alia-box-gpu 0\.4\.4 /);
@@ -723,7 +723,7 @@ hosted("a helper stopped by hand is started again and writes its report on its f
   const written = host.helperAt();
   assert.equal(host.systemctl("stop", "alia-box-gpu.service"), 0);
   const began = Date.now();
-  const again = host.setup([], { BBBOX_GPU_REPORT_WAIT: "" });
+  const again = host.setup([], { ALIABOX_GPU_REPORT_WAIT: "" });
   const took = Date.now() - began;
   assert.equal(again.status, 0, again.stdout + again.stderr + host.told());
   assert.ok(took < 15_000, `the restarted helper reported on its first pass: the run took ${took} ms${host.told()}`);
@@ -740,7 +740,7 @@ hosted("a helper started again within the second of the report it left, as a qui
   const guests = host.guests();
   assert.equal(host.systemctl("stop", "alia-box-gpu.service"), 0);
   const began = Date.now();
-  const again = host.setup([], { ...sameSecond, BBBOX_GPU_REPORT_WAIT: "" });
+  const again = host.setup([], { ...sameSecond, ALIABOX_GPU_REPORT_WAIT: "" });
   const took = Date.now() - began;
   assert.equal(again.status, 0, again.stdout + again.stderr + host.told());
   assert.ok(took < 15_000, `the run took ${took} ms${host.told()}`);
@@ -759,7 +759,7 @@ hosted("the node's upgrade, from a helper that writes its report only on its hea
   const conf = host.conf();
   const ledger = host.node.ledger().guests;
   const began = Date.now();
-  const upgrade = host.setup([], { BBBOX_GPU_REPORT_WAIT: "" });
+  const upgrade = host.setup([], { ALIABOX_GPU_REPORT_WAIT: "" });
   const took = Date.now() - began;
   assert.equal(upgrade.status, 0, upgrade.stdout + upgrade.stderr);
   assert.ok(took < 20_000, `the run took ${took} ms`);
@@ -779,7 +779,7 @@ hosted("a helper put back by a rollback that writes its report only on its heart
   const guests = host.guests();
   host.forgetCalls();
   const began = Date.now();
-  const result = host.setup([], { BBBOX_GPU_REPORT_WAIT: "", FAKE_SYSTEMCTL_FAIL_NTH: "start alia-box-gpu.service#1" });
+  const result = host.setup([], { ALIABOX_GPU_REPORT_WAIT: "", FAKE_SYSTEMCTL_FAIL_NTH: "start alia-box-gpu.service#1" });
   const took = Date.now() - began;
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stderr, /alia-box-gpu 0\.4\.4 did not start, so alia-box-gpu 0\.1\.9 is back as it was, with its settings and ledger/);
@@ -802,7 +802,7 @@ for (const [how, fault] of [
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stderr, /alia-box-gpu\.service could not be stopped, so alia-box-gpu 0\.5\.0 is back as it was, with its settings and ledger/);
     assert.deepEqual(readFileSync(host.node.file("usr/local/sbin/alia-box-gpu")), program);
-    assert.equal(host.conf(), "pools bbbox\nwrites off\n");
+    assert.equal(host.conf(), "pools aliabox\nwrites off\n");
     assert.equal(host.node.ledger().protocol, 2);
     assert.ok(!readdirSync(host.node.file("var/lib/alia-box-gpu")).some((name) => name.startsWith("ledger.") || name.startsWith("setup-backup")), "no ledger set aside, and no backup left");
     assert.deepEqual(host.writers(), ["alia-box-gpu"]);
@@ -982,14 +982,14 @@ hosted("a failed upgrade across a protocol change puts back the ledger the helpe
   assert.notDeepEqual(marked, guests);
 });
 
-hosted("BBBOX_GPU_REPORT_WAIT is read from the process's environment alone, and must be a number of seconds (Opus 4)", (host) => {
-  writeFileSync(host.node.file("alia-box.env"), "BBBOX_POOL=bbbox\nBBBOX_GPU_REPORT_WAIT=abc\n");
-  const fromFile = host.setup([], { BBBOX_GPU_REPORT_WAIT: null });
+hosted("ALIABOX_GPU_REPORT_WAIT is read from the process's environment alone, and must be a number of seconds (Opus 4)", (host) => {
+  writeFileSync(host.node.file("alia-box.env"), "ALIABOX_POOL=aliabox\nBBBOX_GPU_REPORT_WAIT=abc\n");
+  const fromFile = host.setup([], { ALIABOX_GPU_REPORT_WAIT: null });
   assert.equal(fromFile.status, 0, fromFile.stdout + fromFile.stderr);
   for (const wait of ["abc", "0", "-5", "10000"]) {
-    const bad = host.setup([], { BBBOX_GPU_REPORT_WAIT: wait });
+    const bad = host.setup([], { ALIABOX_GPU_REPORT_WAIT: wait });
     assert.equal(bad.status, 2, wait);
-    assert.match(bad.stderr, new RegExp(`BBBOX_GPU_REPORT_WAIT, from this process's environment, must be a whole number of seconds from 1 to 9999, not '${wait}'`));
+    assert.match(bad.stderr, new RegExp(`ALIABOX_GPU_REPORT_WAIT, from this process's environment, must be a whole number of seconds from 1 to 9999, not '${wait}'`));
   }
 });
 

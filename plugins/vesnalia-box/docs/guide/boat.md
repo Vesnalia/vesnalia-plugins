@@ -82,7 +82,7 @@ Its ID is `boat:team-b`. **Add backend**, then **boat.dev**, in VesnALIA Box's s
 
 - **Each has its own settings**: API key, Most boxes, Auto-stop and Android SDK licence. It can also be kept for some VesnALIA projects, as any backend can, with `--projects` or on its settings page.
 - **Each is named by its ID.** `alia box kinds`, the Box panel and `box_list` call the second one boat.dev (team-b), and `--on`, or an agent's `on`, takes that name or its ID. Without them, a new box goes to the first backend with room.
-- **Each touches only its own sandboxes.** VesnALIA Box labels each sandbox it makes with its backend, `bbbox-backend`, as well as its install, `bbbox-install`. A backend's sweep, upkeep, template builds, doctor and cleanup see only sandboxes with its own label, even when 2 backends use one account.
+- **Each touches only its own sandboxes.** VesnALIA Box labels each sandbox it makes with its backend, `aliabox-backend`, as well as its install, `aliabox-install`. A backend's sweep, upkeep, template builds, doctor and cleanup see only sandboxes with its own label, even when 2 backends use one account.
 - **Most boxes counts the backend's own sandboxes**, its template builds included, but not another backend's. The plan's sandboxes at once are the account's, so they count every sandbox on it, and a refusal says how many are another backend's.
 - **Each builds its own templates**, in its own account. So the first box of each kind on each backend waits for its template, about 6 minutes for Linux and 13 for a Linux desktop, even where another backend shares its account. A backend forks only templates that a backend with its ID built, on this install or another VesnALIA Box install on the account. `alia box images list` lists each backend's templates, with when each was built.
 - **Each names its own saved snapshots.** The first backend's are named after the install, the box and the snapshot, as before; another's carry its ID after the install, such as `abcdefghij-boat-team-b-bx...-sn...`. A backend lists, keeps and deletes only its own. What boat.dev bills for saved snapshots is the account's, so where 2 backends share an account, each one's ceiling counts the other's saved snapshots too.
@@ -145,15 +145,15 @@ So on the trial, whose largest size is boat.dev's `default`, 4 cores and 8 GB, b
 
 ## Check that nothing is left running
 
-VesnALIA Box labels every sandbox it makes with `bbbox-install` and `bbbox-backend`, and its boxes with `bbbox-box`. To list them with boat.dev's command line:
+VesnALIA Box labels every sandbox it makes with `aliabox-install` and `aliabox-backend`, and its boxes with `aliabox-box`. To list them with boat.dev's command line:
 
 ```sh
 boat list --all
 ```
 
-Each one should be a box in VesnALIA Box's Boxes page, or a template, with the label `bbbox-role=template`, stopped. VesnALIA Box's saved snapshots are named after the install, the box and the snapshot, such as `abcdefghij-bx...-sn...`; `boat snapshots` lists them, and each should be a snapshot on the Boxes page's Snapshots tab. VesnALIA Box checks its backends every few minutes, and deletes a box's sandbox once VesnALIA says the box's thread has ended. It deletes an old template an hour after a new one replaces it. `alia box doctor` lists any sandbox no box claims. If one stays, delete it with `boat delete` followed by its ID.
+Each one should be a box in VesnALIA Box's Boxes page, or a template, with the label `aliabox-role=template`, stopped. VesnALIA Box's saved snapshots are named after the install, the box and the snapshot, such as `abcdefghij-bx...-sn...`; `boat snapshots` lists them, and each should be a snapshot on the Boxes page's Snapshots tab. VesnALIA Box checks its backends every few minutes, and deletes a box's sandbox once VesnALIA says the box's thread has ended. It deletes an old template an hour after a new one replaces it. `alia box doctor` lists any sandbox no box claims. If one stays, delete it with `boat delete` followed by its ID.
 
-A sandbox's `bbbox-backend` label says which boat.dev backend made it, such as `boat-team-b` for `boat:team-b`. Sandboxes from before several accounts have none, and are the backend `boat`'s.
+A sandbox's `aliabox-backend` label says which boat.dev backend made it, such as `boat-team-b` for `boat:team-b`. Sandboxes from before several accounts have none, and are the backend `boat`'s.
 
 ## Turn it off
 

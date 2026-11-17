@@ -1057,7 +1057,7 @@ func (beads *Tracker) Unlink(id, otherID string, options tracker.UnlinkOptions) 
 // note saying the repository is a Dolt remote, with the head and a time).
 // Dolt never reads it, but GitHub shows a "had recent pushes" banner for a
 // branch pushed in the last hours, and bend syncs every few minutes, so the
-// banner never left (bead-bb-7lb). Dolt reads DOLT_REMOTE_INFO_BRANCH: set
+// banner never left (bead-alia-7lb). Dolt reads DOLT_REMOTE_INFO_BRANCH: set
 // but empty means no such branch. Set here, so that every bd that bend
 // starts, and the bd of a sync the helper starts through bend, has it; a
 // bd typed by hand in a terminal is not covered.

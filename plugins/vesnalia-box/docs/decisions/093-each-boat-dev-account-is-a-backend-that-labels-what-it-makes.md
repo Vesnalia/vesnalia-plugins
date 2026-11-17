@@ -13,7 +13,7 @@ let each Namespace workspace be a backend, and said boat.dev could follow
 the same pattern.
 
 A boat.dev backend found what it made by the install's label alone,
-`bbbox-install`, and named its saved snapshots, its restores' deployed
+`aliabox-install`, and named its saved snapshots, its restores' deployed
 sandboxes and its idempotency keys by the install alone. Nothing in the
 configuration says which account a key belongs to, so two backends may
 share one. Two backends of one install on one account would each have held,
@@ -29,8 +29,8 @@ stale tailnet devices.
   Its driver's `several` names no host, so two may share an account and a
   key.
 - Each sandbox a boat.dev backend makes, for a box, a template build or a
-  template's trial fork, carries `bbbox-backend`, the backend's ID with `-`
-  for `:`, beside `bbbox-install`. A backend lists, holds, renews,
+  template's trial fork, carries `aliabox-backend`, the backend's ID with `-`
+  for `:`, beside `aliabox-install`. A backend lists, holds, renews,
   releases, sweeps, checks and tidies only sandboxes with its own label.
 - The backend with the ID `boat` also owns sandboxes and templates with the
   install's label and no backend label, which earlier versions made. No

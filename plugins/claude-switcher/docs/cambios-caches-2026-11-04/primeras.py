@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """La primera petición al modelo de cada tanda, leída de la transcripción de Claude Code de esta máquina.
 
-Corre en cada máquina con hilos (servidor de bb, Mac, i9). Entrada por stdin: JSON
+Corre en cada máquina con hilos (servidor de alia, Mac, i9). Entrada por stdin: JSON
 [{"h": hilo, "s": sesión, "t": ms desde}...]. Salida por stdout: JSONL con
 {"h","s","t","at","lee","escribe","entrada","modelo"} de la primera respuesta del agente principal
 (no de subagentes) con hora >= t. Ni textos ni rutas: solo tokens y hora.

@@ -5,7 +5,7 @@
 // beads' own kinds, removing one link of two, `status --quick`, the `facts`
 // command, and the kind of a failure in JSON.
 //
-// Why: the Airbender tab reaches issues by running bend (bead-bb-c9l.4), and
+// Why: the Airbender tab reaches issues by running bend (bead-alia-c9l.4), and
 // these are the things it does that an agent at a terminal had no need of.
 // They are checked here against the real bd, like the rest.
 

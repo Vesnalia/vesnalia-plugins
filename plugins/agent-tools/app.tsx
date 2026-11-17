@@ -515,7 +515,7 @@ function SkillStateLegend() {
 }
 
 /** Срезы одного набора скиллов — панель фильтров со счётчиками, как у новых серверов. */
-type SkillFilterKey = "all" | "copy" | "new" | "diverged" | "stray" | "bbdup";
+type SkillFilterKey = "all" | "copy" | "new" | "diverged" | "stray" | "aliadup";
 
 const skillFilters = (): Array<{ key: SkillFilterKey; label: string; hint: string }> => [
   { key: "all", label: t("Все"), hint: t("Все скиллы вне канона ~/.agents/skills") },
@@ -524,7 +524,7 @@ const skillFilters = (): Array<{ key: SkillFilterKey; label: string; hint: strin
   { key: "diverged", label: t("Расходятся"), hint: t("Содержимое отличается от канона") },
   { key: "stray", label: t("Лишние ссылки"), hint: t("Ссылки в папках, которые мы не используем") },
   {
-    key: "bbdup",
+    key: "aliadup",
     label: t("Дубли ALIA"),
     hint: t("Ссылки в ~/.vesnalia/skills: внутри ALIA скилл виден дважды, вне ALIA ссылка нужна — решение по каждой строке за тобой"),
   },
@@ -535,7 +535,7 @@ function skillFilterOf(state: string): SkillFilterKey | null {
   if (state === "only-here") return "new";
   if (state === "diverged" || state === "linked-external") return "diverged";
   if (state === "stray-link") return "stray";
-  if (state === "alia-registry") return "bbdup";
+  if (state === "alia-registry") return "aliadup";
   return null;
 }
 
@@ -3222,7 +3222,7 @@ function CatalogPage() {
     new: skillRows.filter((row) => row.state === "only-here").length,
     diverged: skillRows.filter((row) => skillFilterOf(row.state) === "diverged").length,
     stray: skillRows.filter((row) => row.state === "stray-link").length,
-    bbdup: skillRows.filter((row) => row.state === "alia-registry").length,
+    aliadup: skillRows.filter((row) => row.state === "alia-registry").length,
   };
   const skillVisible =
     skillFilter === "all"

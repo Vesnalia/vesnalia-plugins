@@ -48,7 +48,7 @@ function backend(file: string, errors: string[] = []): Backend {
 
 /** Runs a script as root on a rig machine, and gives its output. */
 async function onMachine(machine: string, script: string): Promise<string> {
-  const child = run("docker", ["exec", "-i", `bbbox-sshpool-${machine}`, "sh", "-s"], { timeout: 120_000 });
+  const child = run("docker", ["exec", "-i", `aliabox-sshpool-${machine}`, "sh", "-s"], { timeout: 120_000 });
   child.child.stdin!.end(script);
   return (await child).stdout.trim();
 }
@@ -217,7 +217,7 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
       const released = pool.release(guest, releaseHooks().hooks);
       await onMachine("systemd", "until [ -e /var/lib/alia-box/restore/restarting ]; do sleep 0.2; done");
       // The restart the hook asked for, as docker restart does to the rig's machine.
-      await run("docker", ["restart", "bbbox-sshpool-systemd"], { timeout: 120_000 });
+      await run("docker", ["restart", "aliabox-sshpool-systemd"], { timeout: 120_000 });
       await released;
       const after = await member(pool, "systemd");
       assert.equal(after.state, "free", after.reason ?? "");
@@ -240,7 +240,7 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
       const generation = (await member(pool, "systemd")).generation;
       const released = pool.release(guest, releaseHooks().hooks);
       await onMachine("systemd", "until [ -e /var/lib/alia-box/restore/boot ]; do sleep 0.2; done; sleep 1");
-      await run("docker", ["restart", "bbbox-sshpool-systemd"], { timeout: 120_000 });
+      await run("docker", ["restart", "aliabox-sshpool-systemd"], { timeout: 120_000 });
       await released;
       const broken = await member(pool, "systemd");
       assert.equal(broken.state, "out-of-service");
@@ -311,13 +311,13 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
 
   it("keeps a machine an earlier box left dirty out of service until an operator resets it", async () => {
     const pool = backend("settings.json");
-    await onMachine("plain", "useradd -m bbx-stray");
+    await onMachine("plain", "useradd -m aliax-stray");
     const dirty = await member(pool, "plain");
     assert.equal(dirty.state, "out-of-service");
-    assert.match(dirty.reason ?? "", /bbx-stray/);
+    assert.match(dirty.reason ?? "", /aliax-stray/);
     await onMachine("plain", `${HELPER} reset </dev/null`);
     assert.equal((await member(pool, "plain")).state, "free");
-    assert.equal(await onMachine("plain", "getent passwd bbx-stray | wc -l; ls /home | wc -l"), "0\n0");
+    assert.equal(await onMachine("plain", "getent passwd aliax-stray | wc -l; ls /home | wc -l"), "0\n0");
   });
 
   it("says the cores a box can use when the machine is a container with a CPU limit", async (t) => {
@@ -337,11 +337,11 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
     // Where the rig runs in a container with some of the host's CPUs, online CPUs count them all.
     assert.deepEqual(await cores(), { size: Number(all), nproc: Number(all) });
     // A CPU quota of one CPU, as docker run --cpus 1 sets: the box still sees every CPU.
-    await run("docker", ["update", "--cpu-quota", "100000", "bbbox-sshpool-plain"]);
+    await run("docker", ["update", "--cpu-quota", "100000", "aliabox-sshpool-plain"]);
     try {
       assert.deepEqual(await cores(), { size: 1, nproc: Number(all) });
     } finally {
-      await run("docker", ["update", "--cpu-quota", "-1", "bbbox-sshpool-plain"]);
+      await run("docker", ["update", "--cpu-quota", "-1", "aliabox-sshpool-plain"]);
     }
     // A CPU set of one CPU. Docker may not know the CPUs a container like this one has now, so taskset sets it.
     assert.equal(await onMachine("plain", `taskset -c ${cpus!.split(/[,-]/)[0]} ${HELPER} status </dev/null | grep '^cores='`), "cores=1");
@@ -362,12 +362,12 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
     };
     // Docker's memory limit is not in /proc/meminfo, which shows the host's memory.
     assert.equal(await memory(), all);
-    await run("docker", ["update", "--memory", "2g", "--memory-swap", "2g", "bbbox-sshpool-plain"]);
+    await run("docker", ["update", "--memory", "2g", "--memory-swap", "2g", "aliabox-sshpool-plain"]);
     try {
       assert.equal(await memory(), 2048);
     } finally {
       // Docker cannot remove a memory limit, so this one is the host's memory, which a machine says as without a limit.
-      await run("docker", ["update", "--memory", `${all}m`, "--memory-swap", `${all * 2}m`, "bbbox-sshpool-plain"]);
+      await run("docker", ["update", "--memory", `${all}m`, "--memory-swap", `${all * 2}m`, "aliabox-sshpool-plain"]);
     }
   });
 

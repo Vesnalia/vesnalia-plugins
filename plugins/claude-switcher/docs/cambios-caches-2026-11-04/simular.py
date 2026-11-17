@@ -58,7 +58,7 @@ class Estado:
         self.ts_plazas = {k: [x[0] for x in v] for k, v in self.plazas.items()}
         self.agotada = defaultdict(list)
         for x in an.leer_gz("agotadas.jsonl.gz"):
-            # Una espera de bb «until» de pocos minutos es un reintento, no el reset de la ventana.
+            # Una espera de alia «until» de pocos minutos es un reintento, no el reset de la ventana.
             if x["hasta"] - x["ts"] >= 10 * 60_000:
                 self.agotada[(x["cuenta"], x["modelo"])].append((x["ts"], x["hasta"]))
 
@@ -105,9 +105,9 @@ def simular():
     hilos = {h["t"]: h for h in an.leer_gz("hilos.jsonl.gz")}
     org = json.load(open(os.path.join(AQUI, "cuentas.json"), encoding="utf-8"))
     primeras = {(p["h"], p["t"]): p for p in an.leer_gz("primeras.jsonl.gz")}
-    # Los tics que bb dio por turno, de su evento: el registro de Calor no marca «enviado» los que se encolaron.
+    # Los tics que alia dio por turno, de su evento: el registro de Calor no marca «enviado» los que se encolaron.
     tics = defaultdict(list)
-    for x in an.leer_gz("tics-bb.jsonl.gz"):
+    for x in an.leer_gz("tics-alia.jsonl.gz"):
         tics[x["hilo"]].append(x["ts"])
     # Cuándo los mandó Calor, con el hilo parado («enviado») o retenidos por el plugin o por un turno («encolado»):
     # es el primer intento, el único que el plugin puede rechazar sin dejar una fila fallida.

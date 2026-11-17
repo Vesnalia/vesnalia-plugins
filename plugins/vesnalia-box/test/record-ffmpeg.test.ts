@@ -299,7 +299,7 @@ test("an install whose last step fails is not reported ready, and an earlier bui
   const failed = run(box, clipFfmpegScript("linux", [build]));
 
   assert.equal(failed.status, CLIP_FFMPEG_EXITS.publishFailed, failed.stdout);
-  assert.match(failed.stderr, /No space left on device\nBB Box could not put ffmpeg 9\.0\.2 in place in /);
+  assert.match(failed.stderr, /No space left on device\nALIA Box could not put ffmpeg 9\.0\.2 in place in /);
   assert.equal(failed.stdout, "", "no pair is offered");
 
   const earlier = underAGroupWritableUmask(() => installedBuild(box, "earlier-build", fakeFfmpegScript("8.0.1", EVERY_FILTER, "the earlier build")));

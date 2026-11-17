@@ -29,18 +29,18 @@ test("sudo in a fake box runs its command under the fake's stubs, so tailscale, 
   const testMachine = standInsForTheTestMachine();
 
   const ran = await withHostToolsFirstOnPath(testMachine, () =>
-    box.run(`sudo -n sh -c 'tailscale up --auth-key=file:/dev/null; systemctl restart bbbox-test-none'; sudo ${join(testMachine.dir, "reboot")}; pkill -0 -f bbbox-test-none`, { timeoutMs: 20_000 }),
+    box.run(`sudo -n sh -c 'tailscale up --auth-key=file:/dev/null; systemctl restart aliabox-test-none'; sudo ${join(testMachine.dir, "reboot")}; pkill -0 -f aliabox-test-none`, { timeoutMs: 20_000 }),
   );
 
   assert.equal(ran.exitCode, 0, ran.stderr);
   assert.deepEqual(testMachine.ran(), [], "nothing reached the test machine's own tools");
   assert.deepEqual(hostCommandsRecorded(fake.dir), [
-    "sudo -n sh -c tailscale up --auth-key=file:/dev/null; systemctl restart bbbox-test-none",
+    "sudo -n sh -c tailscale up --auth-key=file:/dev/null; systemctl restart aliabox-test-none",
     "tailscale up --auth-key=file:/dev/null",
-    "systemctl restart bbbox-test-none",
+    "systemctl restart aliabox-test-none",
     `sudo ${join(testMachine.dir, "reboot")}`,
     "reboot",
-    "pkill -0 -f bbbox-test-none",
+    "pkill -0 -f aliabox-test-none",
   ]);
 });
 
@@ -64,14 +64,14 @@ test("runuser, setpriv, killall5, osascript and pfctl in a fake box are only rec
     "killall5 -0",
     "osascript -e do shell script \"true\" with administrator privileges",
     "pfctl -s Running",
-    "ip link set bbbox-test-none down",
+    "ip link set aliabox-test-none down",
     "route del -host 192.0.2.1",
-    "sysctl -w bbbox.test.none=1",
+    "sysctl -w aliabox.test.none=1",
     "scutil --set AliaBoxTestNone none",
   ];
 
   const ran = await withHostToolsFirstOnPath(testMachine, () =>
-    box.run(`runuser -u nobody -- true; setpriv --reuid=65534 true; killall5 -0; osascript -e 'do shell script "true" with administrator privileges'; pfctl -s Running; ip link set bbbox-test-none down; route del -host 192.0.2.1; sysctl -w bbbox.test.none=1; scutil --set AliaBoxTestNone none; echo done`, { timeoutMs: 20_000 }),
+    box.run(`runuser -u nobody -- true; setpriv --reuid=65534 true; killall5 -0; osascript -e 'do shell script "true" with administrator privileges'; pfctl -s Running; ip link set aliabox-test-none down; route del -host 192.0.2.1; sysctl -w aliabox.test.none=1; scutil --set AliaBoxTestNone none; echo done`, { timeoutMs: 20_000 }),
   );
 
   assert.equal(ran.stdout.trim(), "done", ran.stderr);
@@ -124,12 +124,12 @@ test("ip and scutil in a fake box run only in the forms that read, so an abbrevi
   const testMachine = standInsForTheTestMachine();
 
   const ran = await withHostToolsFirstOnPath(testMachine, () =>
-    box.run("ip l s bbbox-test-none down; ip -batch /nonexistent/bbbox-test-batch; printf 'remove State:/Network/AliaBoxTestNone\\n' | scutil; ip -o -4 addr show >/dev/null 2>&1; echo done", { timeoutMs: 20_000 }),
+    box.run("ip l s aliabox-test-none down; ip -batch /nonexistent/aliabox-test-batch; printf 'remove State:/Network/AliaBoxTestNone\\n' | scutil; ip -o -4 addr show >/dev/null 2>&1; echo done", { timeoutMs: 20_000 }),
   );
 
   assert.equal(ran.stdout.trim(), "done", ran.stderr);
   assert.deepEqual(testMachine.ran(), [], "nothing reached the test machine's own tools");
-  assert.deepEqual(hostCommandsRecorded(fake.dir), ["ip l s bbbox-test-none down", "ip -batch /nonexistent/bbbox-test-batch", "scutil"]);
+  assert.deepEqual(hostCommandsRecorded(fake.dir), ["ip l s aliabox-test-none down", "ip -batch /nonexistent/aliabox-test-batch", "scutil"]);
 });
 
 test("the fake boat.dev guest's sudo runs its command under the stubs, even a command named by its full path", async () => {
@@ -176,7 +176,7 @@ test("the test's own folders are where VesnALIA Box makes its temporary folders,
 });
 
 test("the suite's guard comes after a test's own tools and before the test machine's, even in a child given no PATH", () => {
-  const guard = "/tmp/bbbox-test-guard-1000-abc/bin";
+  const guard = "/tmp/aliabox-test-guard-1000-abc/bin";
   const own = join(tempDir("own-tools"), "bin");
 
   assert.equal(guardedPath(`${own}:/usr/bin:/bin`, guard), `${own}:${guard}:/usr/bin:/bin`);
@@ -191,7 +191,7 @@ test("a test process that runs the test machine's own sudo, tailscale or systemc
   const testMachine = recordingStandInsForHostTools(join(dir, "machine"), ["sudo", "tailscale", "systemctl"]);
   const reachesTheMachine = [
     'import { spawnSync } from "node:child_process";',
-    'spawnSync("sh", ["-c", "sudo -n true; tailscale logout; systemctl restart bbbox-test-none"], { env: { PATH: `${process.env.MACHINE_TOOLS}:/usr/bin:/bin` }, stdio: "inherit" });',
+    'spawnSync("sh", ["-c", "sudo -n true; tailscale logout; systemctl restart aliabox-test-none"], { env: { PATH: `${process.env.MACHINE_TOOLS}:/usr/bin:/bin` }, stdio: "inherit" });',
   ].join("\n");
 
   const child = spawnSync(process.execPath, ["--import", EXIT_GUARD, "--input-type=module", "-e", reachesTheMachine], {
@@ -202,5 +202,5 @@ test("a test process that runs the test machine's own sudo, tailscale or systemc
   assert.deepEqual(testMachine.ran(), [], "the test machine's tools never ran");
   assert.equal(child.status, 1, child.stderr);
   assert.match(child.stderr, /ALIA Box test guard: a test ran the test machine's own sudo -n true\./);
-  assert.match(child.stderr, /This test file ran the test machine's own privileged tools, which ALIA Box's test guard stopped: sudo -n true; tailscale logout; systemctl restart bbbox-test-none\./);
+  assert.match(child.stderr, /This test file ran the test machine's own privileged tools, which ALIA Box's test guard stopped: sudo -n true; tailscale logout; systemctl restart aliabox-test-none\./);
 });

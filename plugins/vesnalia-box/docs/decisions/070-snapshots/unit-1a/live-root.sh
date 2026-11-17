@@ -3,22 +3,22 @@ set -euo pipefail
 usage() {
   cat >&2 <<'TEXT'
 The root steps of 070 unit 1a's live check, on the Proxmox node. Each acts
-only on the VMIDs in BBBOX_VMIDS, and on snapshots BBBOX_INSTALL labelled.
+only on the VMIDs in ALIABOX_VMIDS, and on snapshots ALIABOX_INSTALL labelled.
 
-  BBBOX_VMIDS="3240 3241" live-root.sh kill-take <vmid> [seconds]
+  ALIABOX_VMIDS="3240 3241" live-root.sh kill-take <vmid> [seconds]
       waits for a snapshot task on <vmid>, SIGKILLs that task's worker
       only, and exits: a take killed part way (gate G1)
-  BBBOX_VMIDS="3240 3241" live-root.sh unlock <vmid>
+  ALIABOX_VMIDS="3240 3241" live-root.sh unlock <vmid>
       thaws and unlocks <vmid>, as alia-box then asks
-  BBBOX_VMIDS="3240 3241" BBBOX_INSTALL=<id> live-root.sh keep-label <vmid> <snapshot> <yyyy-mm-dd>
+  ALIABOX_VMIDS="3240 3241" ALIABOX_INSTALL=<id> live-root.sh keep-label <vmid> <snapshot> <yyyy-mm-dd>
       adds a keep date to the label of one of that install's snapshots (gate G3)
 TEXT
   exit 2
 }
-[ $# -ge 2 ] && [ -n "${BBBOX_VMIDS:-}" ] || usage
+[ $# -ge 2 ] && [ -n "${ALIABOX_VMIDS:-}" ] || usage
 command=$1
 vmid=$2
-[[ " $BBBOX_VMIDS " == *" $vmid "* ]] || { echo "VMID $vmid is not in BBBOX_VMIDS: $BBBOX_VMIDS" >&2; exit 2; }
+[[ " $ALIABOX_VMIDS " == *" $vmid "* ]] || { echo "VMID $vmid is not in ALIABOX_VMIDS: $ALIABOX_VMIDS" >&2; exit 2; }
 node=$(hostname)
 type=lxc
 [ -e "/etc/pve/nodes/$node/qemu-server/$vmid.conf" ] && type=qemu
@@ -53,14 +53,14 @@ case $command in
     echo "unlocked $vmid"
     ;;
   keep-label)
-    [ $# -eq 4 ] && [ -n "${BBBOX_INSTALL:-}" ] || usage
+    [ $# -eq 4 ] && [ -n "${ALIABOX_INSTALL:-}" ] || usage
     name=$3
     date=$4
     [[ $date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || usage
     path=/nodes/$node/$type/$vmid/snapshot/$name/config
     label=$(pvesh get "$path" --output-format json | jq -r '.description // ""')
-    ours="^alia-box install ${BBBOX_INSTALL} box [^ ]+ snapshot sn[a-z2-7]{12}$"
-    [[ $label =~ $ours ]] || { echo "not a label of install $BBBOX_INSTALL: $label" >&2; exit 2; }
+    ours="^alia-box install ${ALIABOX_INSTALL} box [^ ]+ snapshot sn[a-z2-7]{12}$"
+    [[ $label =~ $ours ]] || { echo "not a label of install $ALIABOX_INSTALL: $label" >&2; exit 2; }
     pvesh set "$path" --description "$label kept $date"
     echo "labelled $vmid $name: $label kept $date"
     ;;

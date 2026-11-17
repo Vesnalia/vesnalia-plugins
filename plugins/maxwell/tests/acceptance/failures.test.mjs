@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeMaxwell, openBB, openMaxwell, baseURL } from './harness.mjs';
+import { closeMaxwell, openALIA, openMaxwell, baseURL } from './harness.mjs';
 
 async function assertStopped(page) {
   const before = await page.evaluate(() => ({ draws: window.maxwellBrowserProbe.draws, decodes: window.maxwellBrowserProbe.imageDecodes }));
@@ -10,7 +10,7 @@ async function assertStopped(page) {
 }
 
 test('unavailable WebGL gives a stable readable failure with attribution', async () => {
-  const { browser, context, page } = await openBB();
+  const { browser, context, page } = await openALIA();
   try {
     await context.addInitScript(() => {
       const getContext = HTMLCanvasElement.prototype.getContext;
@@ -26,7 +26,7 @@ test('unavailable WebGL gives a stable readable failure with attribution', async
 });
 
 test('an invalid bundled texture fails once and keeps attribution', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     const inventory = await (await page.request.get(`${baseURL}/api/v1/plugins`)).json();
     const plugin = inventory.plugins.find((item) => item.id === 'maxwell');
@@ -44,7 +44,7 @@ test('an invalid bundled texture fails once and keeps attribution', async () => 
 });
 
 test('graphics context loss stops rendering and a fresh panel recovers', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await openMaxwell(page);
     await page.waitForFunction(() => window.maxwellBrowserProbe.draws > 6);
@@ -59,7 +59,7 @@ test('graphics context loss stops rendering and a fresh panel recovers', async (
 });
 
 test('a thrown browser draw stops without retaining an animation loop', async () => {
-  const { browser, context, page } = await openBB();
+  const { browser, context, page } = await openALIA();
   try {
     await context.addInitScript(() => {
       for (const prototype of [WebGLRenderingContext.prototype, WebGL2RenderingContext.prototype]) {
@@ -76,7 +76,7 @@ test('a thrown browser draw stops without retaining an animation loop', async ()
 });
 
 test('creator, model and license links open their actual destinations', async () => {
-  const { browser, context, page } = await openBB();
+  const { browser, context, page } = await openALIA();
   try {
     await context.addInitScript(() => {
       const getContext = HTMLCanvasElement.prototype.getContext;

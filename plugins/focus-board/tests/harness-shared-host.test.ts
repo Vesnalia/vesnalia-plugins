@@ -176,7 +176,7 @@ describe("shared host log", () => {
   it("publishes one record per write, so two windows never clobber one row", () => {
     const storage = fakeStorage();
     const first = createHostLog({ storage, clock: () => 1000, nonce: () => "aaaaaa" });
-    const second = createHostLog({ storage, clock: () => 1000, nonce: () => "bbbbbb" });
+    const second = createHostLog({ storage, clock: () => 1000, nonce: () => "aliabbbb" });
     const keyA = first.publish({ kind: "done_set", threadId: "thr_a", done: true });
     const keyB = second.publish({ kind: "done_set", threadId: "thr_b", done: true });
 

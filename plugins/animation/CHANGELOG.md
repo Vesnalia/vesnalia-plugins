@@ -10,7 +10,7 @@ All notable changes to Animation are documented here. The format follows
 
 ### Fixed
 
-- Agents wrote chat embeds as `::scene{file="…",height=640}`, which BB shows
+- Agents wrote chat embeds as `::scene{file="…",height=640}`, which VesnALIA shows
   as plain text because directive attributes are separated by spaces. The
   skill and README now show a directive with a height, and `animation_validate`
   and `animation_export_html` return the exact line to paste.
@@ -20,7 +20,7 @@ All notable changes to Animation are documented here. The format follows
 ### Added
 
 - README logo, changelog and `.gitattributes`, following the house layout for
-  BB plugin repos.
+  VesnALIA plugin repos.
 
 ### Fixed
 
@@ -73,10 +73,10 @@ All notable changes to Animation are documented here. The format follows
 - `.anim.json` documents from Nimbalyst Animation open in the same editor.
 - Click a part on the stage to quote its current state into chat.
 - HTML export to one self-contained page that loops, from the editor,
-  `bb animation export`, or the `animation_export_html` agent tool.
-- `bb animation new`, `validate` and `export`, each with `--json`.
+  `alia animation export`, or the `animation_export_html` agent tool.
+- `alia animation new`, `validate` and `export`, each with `--json`.
 - `animation_validate` agent tool and a bundled `animation` skill.
 - Inline chat preview with `::scene{file="…"}` (`::animation` still works).
 - New animation panel in a thread's Actions, a command palette action and a
   composer **Embed scene** item.
-- A Using Animation page under BB Settings.
+- A Using Animation page under VesnALIA Settings.

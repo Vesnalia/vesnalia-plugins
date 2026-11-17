@@ -3,7 +3,7 @@
 //
 // What: runs every function over the inputs in testdata/vectors.json and
 // compares with the answers recorded there, which were produced by
-// server/prompts.ts before it was removed (bead-bb-c9l.9). The inputs
+// server/prompts.ts before it was removed (bead-alia-c9l.9). The inputs
 // include files that a real `bd init` and `bd setup codex` wrote.
 //
 // Why: a repository set up by an earlier version must be read exactly as
@@ -94,7 +94,7 @@ func TestSameAnswersAsThePluginGave(t *testing.T) {
 		check("BeadsLeftovers", BeadsLeftovers(WithoutBeadsBlocks(want.Text)), want.BeadsLeftovers)
 		// What the recording says a CLAUDE.md "should become" is not
 		// compared any more: setup no longer adds import lines to one
-		// (bead-bb-c9l.12); see the tests of WithoutImports and OwnText.
+		// (bead-alia-c9l.12); see the tests of WithoutImports and OwnText.
 	}
 }
 

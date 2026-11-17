@@ -31,7 +31,7 @@ the player used last. Run `alia music app` to see the setting.
 | `alia music shuffle on\|off` | Turn shuffle on or off. |
 | `alia music repeat off\|all\|one` | Set repeat. Spotify treats `one` as `all`. |
 | `alia music app [auto\|spotify\|music]` | Show or set the app to control. |
-| `alia music style [name]` | Show or set the panel style: `default`, `minimal`, `cover`, `hifi`, `terminal`, `pocket`, or `bbamp`. |
+| `alia music style [name]` | Show or set the panel style: `default`, `minimal`, `cover`, `hifi`, `terminal`, `pocket`, or `aliaamp`. |
 
 Add `--json` to any command when the output drives code.
 

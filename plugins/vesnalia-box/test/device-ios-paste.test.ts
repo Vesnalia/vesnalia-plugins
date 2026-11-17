@@ -126,8 +126,8 @@ test("simctl waits for a just-booted device's pasteboard, which exits 60 until i
     return { code: 0, stdout: "held", stderr: "" } satisfies Ran;
   };
   const simctl = new Simctl({ run, pasteboard: { run, ready: async () => null }, pasteboardAnswerWait: { mostMs: 1_000, everyMs: 10 } });
-  await simctl.setClipboard("UDID-1", "bbtest ✓");
-  assert.deepEqual(calls, ["pbcopy bbtest ✓", "pbcopy bbtest ✓", "pbcopy bbtest ✓"]);
+  await simctl.setClipboard("UDID-1", "aliatest ✓");
+  assert.deepEqual(calls, ["pbcopy aliatest ✓", "pbcopy aliatest ✓", "pbcopy aliatest ✓"]);
   silent = 1;
   assert.equal(await simctl.pasteboardAnswers("UDID-1"), false);
   assert.equal(await simctl.pasteboardAnswers("UDID-1"), true);

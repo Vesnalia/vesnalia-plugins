@@ -151,7 +151,7 @@ const overviewSchema = z.object({
       merge: mergeSchema.nullable(),
       needsYou: z.number(),
       members: z.array(z.object({ key: z.string(), lead: z.boolean(), activity: z.string(), needsYou: z.array(z.string()) })),
-      /** VesnALIA tasks carrying the label `crew-<name>` (BBP-84): the factory tick never sets `task`, so this is their only link to the diagram. */
+      /** VesnALIA tasks carrying the label `crew-<name>` (ALIAP-84): the factory tick never sets `task`, so this is their only link to the diagram. */
       labelTasks: z.array(z.object({ key: z.string(), title: z.string(), status: z.string() })),
     }),
   ),
@@ -413,7 +413,7 @@ export const rpcContract = defineRpcContract({
     output: z.object({
       rows: z.array(z.object({ threadId: z.string(), status: rowStatusSchema.nullable() })),
       needsYou: z.number(),
-      /** BBP-95: errors and decisions counted apart, so the badge can tell them apart (red vs. amber). */
+      /** ALIAP-95: errors and decisions counted apart, so the badge can tell them apart (red vs. amber). */
       errors: z.number().default(0),
       decisions: z.number().default(0),
       /** Needs you per project: the header counts every project, the panel shows one. */
@@ -754,7 +754,7 @@ export default async function plugin(alia: AliaPluginApi) {
     getCrew: async ({ projectId, name }) => {
       const crew = store.findCrew(projectId, name);
       if (!crew) return { crew: null, members: [], links: [] };
-      // BBP-79: listCrews decorates projectName for the switch; getCrew fed the
+      // ALIAP-79: listCrews decorates projectName for the switch; getCrew fed the
       // same dto() straight through, so a crew opened on its own (a directive, the
       // thread side panel) showed the project id in its title instead of its name.
       let projectName: string | null = null;

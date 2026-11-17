@@ -4,35 +4,35 @@
   "files": [
     {
       "product": "alia",
-      "path": "Contents/Resources/app.asar/node_modules/bb-app/package.json",
+      "path": "Contents/Resources/app.asar/node_modules/alia-app/package.json",
       "size": 2735,
       "mode": "644",
       "sha256": "466055f490e9594140177b76fab95980d2baabf132957fd40a2eade8884d166a"
     },
     {
       "product": "alia",
-      "path": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
+      "path": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js",
       "size": 8496290,
       "mode": "644",
       "sha256": "7107e7dc8f5ddc377a3fc74d669d7899b3b41bc53d516edb185acc007d2ff77b"
     },
     {
       "product": "alia",
-      "path": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js.map",
+      "path": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/start-server.js.map",
       "size": 16070753,
       "mode": "644",
       "sha256": "da3e09db508e59944e50e05ebf5b20ca220aae51648c71a006852eed0c156b89"
     },
     {
       "product": "alia",
-      "path": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
+      "path": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-codex/dist/host.js",
       "size": 602905,
       "mode": "644",
       "sha256": "00ae179cbf018b6803b43c9c54ed90947f8c175f94f6f7ea25b073d60db3f644"
     },
     {
       "product": "alia",
-      "path": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-claude-code/dist/host.js",
+      "path": "Contents/Resources/app.asar/node_modules/alia-app/server/dist/builtin-plugins/provider-claude-code/dist/host.js",
       "size": 2159957,
       "mode": "644",
       "sha256": "bf624bdd69f04219d55fc7ac8ad11a0a86c2c63c49ca6f929fd7c893a99fdb32"

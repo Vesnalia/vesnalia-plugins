@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { formatContextShare } from "../lib/format";
 
 describe("formatContextShare", () => {
-  it("rounds a 0..1 share to a whole percent (BBP-96: 0.084573 read as 8%, not 0.084573%)", () => {
+  it("rounds a 0..1 share to a whole percent (ALIAP-96: 0.084573 read as 8%, not 0.084573%)", () => {
     expect(formatContextShare(0.084573)).toBe("8%");
   });
 

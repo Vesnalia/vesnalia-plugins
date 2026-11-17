@@ -1,5 +1,5 @@
 // What: checks the environment bend gives bd: Dolt's info branch is switched
-// off unless the owner chose otherwise (bead-bb-7lb).
+// off unless the owner chose otherwise (bead-alia-7lb).
 package beads
 
 import (

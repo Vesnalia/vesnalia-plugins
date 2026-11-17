@@ -57,7 +57,7 @@ the full table.
 - **A licence for each box.** By default the template installs Windows 11 Pro
   with Microsoft's generic install key, which installs without activating:
   Windows works, with a watermark and some personalisation settings locked.
-  Set `BBBOX_WINDOWS_KEY` to your own key, or `BBBOX_WINDOWS_EDITION` to the
+  Set `ALIABOX_WINDOWS_KEY` to your own key, or `ALIABOX_WINDOWS_EDITION` to the
   edition your ISO and key are for. alia-box never ships Windows images.
 - **About 40 GiB free** on the box storage, and internet access from the box
   bridge: the first logon downloads OpenSSH, PowerShell 7, Git, GitHub CLI,
@@ -256,7 +256,7 @@ The host's Proxmox LXC parts stay until you remove that backend too.
 - **INACCESSIBLE_BOOT_DEVICE on the console, in a restart loop:** Windows did
   not get the VirtIO SCSI driver. Build with `--sata`.
 - **Setup stops on a screen:** the ISO is not English (United States), or the
-  edition is not on it. Check `BBBOX_WINDOWS_EDITION`.
+  edition is not on it. Check `ALIABOX_WINDOWS_EDITION`.
 - **A box is not logged in to its desktop, and does not join VesnALIA:** in a
   template built before VesnALIA Box set the box user's password never to expire,
   the password expires 42 days after it was set, and Windows then shows its

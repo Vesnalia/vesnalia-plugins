@@ -195,6 +195,7 @@ const readme = [
   "npm install",
   "node scripts/import.mjs --catalog v2.json --licenses licenses.tsv   # исходники в plugins/",
   "node scripts/adapt.mjs                                              # кодмод под alia-core",
+  "node scripts/deep-clean.mjs                                         # дочистка имён, lock-файлов, source map",
   "ALIA_CORE=../alia-core SDK_TGZ=/tmp/vesnalia-plugin-sdk.tgz \\",
   "  node scripts/verify.mjs                                           # сборка сборщиком alia-core",
   "node scripts/catalog.mjs                                            # catalog.json, STATUS.md, README.md",

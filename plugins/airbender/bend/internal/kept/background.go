@@ -7,7 +7,7 @@
 // old.
 //
 // Why: a change must return as soon as the tracker has answered, and a read
-// must not wait for a reread it does not strictly need (bead-bb-c9l.14).
+// must not wait for a reread it does not strictly need (bead-alia-c9l.14).
 // The reread costs one start of the tracker's program; done behind the
 // command, the next read finds a fresh copy and costs nothing.
 //

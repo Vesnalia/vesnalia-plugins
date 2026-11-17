@@ -199,7 +199,7 @@ test("the doctor lists each host with its age, boxes and cost, the month's spend
     serverType: "cpx42",
     location: "nbg1",
     imageNameOrSnapshotId: "ubuntu-24.04",
-    labels: { "bbbox-install": "test", "bbbox-host": "stray0001", "bbbox-role": "host" },
+    labels: { "aliabox-install": "test", "aliabox-host": "stray0001", "aliabox-role": "host" },
   });
   const report = await hetzner.doctor(signal());
   const byId = new Map(report.checks.map((each) => [each.id, each]));
@@ -246,7 +246,7 @@ test("a host that never answers is deleted after the idle time; one that answere
     serverType: "cpx42",
     location: "nbg1",
     imageNameOrSnapshotId: "ubuntu-24.04",
-    labels: { "bbbox-install": "test", "bbbox-host": "silent01", "bbbox-role": "host" },
+    labels: { "aliabox-install": "test", "aliabox-host": "silent01", "aliabox-role": "host" },
   });
   await hetzner.acquire(identity(), null, hooks().value, signal());
   await hetzner.held(signal());

@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "pveum $*" >>"$BBBOX_ROOT/run/fake-pveum.log"
+echo "pveum $*" >>"$ALIABOX_ROOT/run/fake-pveum.log"

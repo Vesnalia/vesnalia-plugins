@@ -11,7 +11,7 @@
 //
 // Design notes:
 //   - It imitates only what was checked against real GitHub on 2026-10-09
-//     (bead-bb-c9l.1): a label exists once it is applied; a sub-issue has one
+//     (bead-alia-c9l.1): a label exists once it is applied; a sub-issue has one
 //     parent and adding it elsewhere moves it; a blocker is named by its
 //     database id; a missing issue is "no such issue", not an error.
 //   - It counts requests the way the real client does: one per call, so a

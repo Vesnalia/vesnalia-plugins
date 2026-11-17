@@ -7,7 +7,7 @@ gets a new version. Each version is tagged `pool-usage/v<version>`.
 
 - Pool Usage counts every Account Pooler account again. Newer Account Pooler
   versions report quota windows only in `limitWindows`, so the plugin failed to
-  read them and fell back to BB's own usage sources, which know only each
+  read them and fell back to VesnALIA's own usage sources, which know only each
   provider's signed-in account. Claude could then show one account's 99%
   instead of the pool's total, and Codex the signed-in account or nothing.
 
@@ -37,7 +37,7 @@ gets a new version. Each version is tagged `pool-usage/v<version>`.
   account would stay limited; of resets worth about the same, the one that
   expires first. When none can lower the total, a gray line only counts them,
   such as "3 resets available".
-- Clicking that line asks first, in bb's dialog or its bottom sheet on a
+- Clicking that line asks first, in VesnALIA's dialog or its bottom sheet on a
   phone, naming the account, when the reset expires, and the total before and
   after. **Use reset** spends it, a toast confirms it, and the card reads
   usage again. A failed try offers **Try again**, which never uses a second
@@ -63,7 +63,7 @@ gets a new version. Each version is tagged `pool-usage/v<version>`.
 
 - The sidebar footer shows each provider's logo with the share of its capacity
   in use, at the right end of the footer row. Besides Account Pooler's Claude
-  and Codex accounts, it covers every provider that reports usage to BB, such
+  and Codex accounts, it covers every provider that reports usage to VesnALIA, such
   as Cursor, and works without Account Pooler.
 - Accounts count by the vendors' stated plan multipliers: Claude Pro 1x, Max
   5x or 20x, Team 1.25x (premium 6.25x); Codex Plus 1x, Pro $100 5x, Pro $200
@@ -77,9 +77,9 @@ gets a new version. Each version is tagged `pool-usage/v<version>`.
 - A new setting, **Red at, %** (80 by default), sets the percentage at which
   the numbers turn red.
 - The per-account rows with usage bars are gone. If the footer summary can't
-  find its place in bb's footer, the **Account usage** icon stays and opens the
+  find its place in VesnALIA's footer, the **Account usage** icon stays and opens the
   same cards.
-- Needs bb 0.43.4 or later.
+- Needs VesnALIA 0.43.4 or later.
 
 ## 0.2.1 (2026-09-22)
 
@@ -94,7 +94,7 @@ gets a new version. Each version is tagged `pool-usage/v<version>`.
 - A window counts as spent at Account Pooler's own switch threshold, a window
   past its reset is dropped as stale, and a row the pool won't route to turns
   red whatever its percentage reads.
-- The plugin moved to this repository from rebryk/bb-plugin-pool-usage.
+- The plugin moved to this repository from rebryk/alia-plugin-pool-usage.
 
 ## 0.1.0 (2026-09-11)
 

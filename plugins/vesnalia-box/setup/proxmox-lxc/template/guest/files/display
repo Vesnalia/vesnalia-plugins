@@ -1,31 +1,31 @@
 #!/bin/bash
-# bb-box: the desktop's display :99 and its VNC server, run as the box user
-# by bb-box-display.service.
+# alia-box: the desktop's display :99 and its VNC server, run as the box user
+# by alia-box-display.service.
 #
 #   display        start the display (the service's main process)
 #   display wait   wait until :99 answers (the service's ExecStartPost)
 #
-# DISPLAY_MODE in /etc/bb-box/desktop.env:
+# DISPLAY_MODE in /etc/alia-box/desktop.env:
 #   auto  gpu when the GPU's device nodes exist, the host's NVIDIA driver
 #         matches the template's userspace and the GPU has at least
 #         MIN_FREE_VRAM_MIB free; cpu otherwise (the default)
 #   gpu   Xorg with NVIDIA's driver on a virtual screen, served by
-#         x0tigervncserver: OpenGL and Vulkan on the GPU; bb-box resizes it
+#         x0tigervncserver: OpenGL and Vulkan on the GPU; alia-box resizes it
 #         with xrandr
 #   cpu   Xtigervnc: OpenGL and Vulkan on the CPU (llvmpipe, lavapipe); resizable
 #
 # GPU_BUS_ID, which a Docker box's start sets when the box sees every GPU
 # on the host, is the GPU whose free memory auto reads.
 #
-# The path taken is in /run/bb-box/display-mode (gpu or cpu), and why in
-# /run/bb-box/display-reason. After freeing GPU memory, `systemctl restart
-# bb-box-display` tries the GPU again (it restarts the desktop session).
+# The path taken is in /run/alia-box/display-mode (gpu or cpu), and why in
+# /run/alia-box/display-reason. After freeing GPU memory, `systemctl restart
+# alia-box-display` tries the GPU again (it restarts the desktop session).
 set -u
-run=/run/bb-box
+run=/run/alia-box
 auth=$run/Xauthority
 geometry=${DISPLAY_GEOMETRY:-1920x1080}
 min_free=${MIN_FREE_VRAM_MIB:-384}
-passwd=/var/lib/bb-box/vnc.passwd
+passwd=/var/lib/alia-box/vnc.passwd
 
 wait_display() {
   for _ in $(seq 1 200); do
@@ -47,7 +47,7 @@ security=(-SecurityTypes VncAuth -PasswordFile "$passwd")
 mode=${DISPLAY_MODE:-auto}
 reason="DISPLAY_MODE=$mode"
 if [ "$mode" = auto ]; then
-  want=$(cat /usr/share/bb-box/nvidia-version 2>/dev/null)
+  want=$(cat /usr/share/alia-box/nvidia-version 2>/dev/null)
   have=$(cat /sys/module/nvidia/version 2>/dev/null)
   if ! [ -c /dev/nvidiactl ] || ! ls /dev/nvidia[0-9]* >/dev/null 2>&1; then
     mode=cpu reason="no NVIDIA device nodes"
@@ -99,7 +99,7 @@ printf '%s\n' "$entries" | sed 's/^..../ffff/' | xauth -q -f "$auth" nmerge -
 case "$mode" in
   gpu)
     # Rootless Xorg: no console or VT needed. -s 0 -dpms: never blank.
-    Xorg :99 -config bb-box-xorg.conf -auth "$auth" -noreset -nolisten tcp -novtswitch -sharevts \
+    Xorg :99 -config alia-box-xorg.conf -auth "$auth" -noreset -nolisten tcp -novtswitch -sharevts \
       -s 0 -dpms &
     xorg=$!
     wait_display || { kill "$xorg"; exit 1; }

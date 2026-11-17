@@ -7,7 +7,7 @@
 #   python3 -I scripts/measure/paired.py judge  OUT
 #   python3 -I scripts/measure/paired.py report TASKS OUT ARM ARM [ARM ...]
 # TASKS: {"rule": str, "tasks": [{"id", "kind", "project", "environment" | "newEnvironment", "messages": [str]}]}
-# ARMS:  {"name": ["bb thread spawn flags", ...]} or {"name": {"flags": [...], "environments": {"project id": "path"}}}
+# ARMS:  {"name": ["alia thread spawn flags", ...]} or {"name": {"flags": [...], "environments": {"project id": "path"}}}
 import argparse, collections, concurrent.futures as cf, datetime, glob, json, os, random, re, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from prices import priced_as, usd
@@ -16,39 +16,39 @@ from sources import CLAUDE, CODEX, claude, codex
 EPOCH = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
 UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
-def bb(*args, stdin=None, timeout=3700, as_user=False):
-    """as_user drops BB_THREAD_ID, so BB delivers a message as the user's and not as one from this thread."""
-    env = {k: v for k, v in os.environ.items() if k != "BB_THREAD_ID"} if as_user else None
-    p = subprocess.run(["bb", *args], input=stdin, capture_output=True, text=True, timeout=timeout, env=env)
+def alia(*args, stdin=None, timeout=3700, as_user=False):
+    """as_user drops ALIA_THREAD_ID, so ALIA delivers a message as the user's and not as one from this thread."""
+    env = {k: v for k, v in os.environ.items() if k != "ALIA_THREAD_ID"} if as_user else None
+    p = subprocess.run(["alia", *args], input=stdin, capture_output=True, text=True, timeout=timeout, env=env)
     if p.returncode:
-        raise RuntimeError(f"bb {' '.join(args[:3])}: {p.stderr.strip()[-400:]}")
+        raise RuntimeError(f"alia {' '.join(args[:3])}: {p.stderr.strip()[-400:]}")
     return p.stdout
 
 def completed_turns(thread):
-    return sum(e["type"] == "turn/completed" for e in json.loads(bb("thread", "log", thread, "--all", "--json")))
+    return sum(e["type"] == "turn/completed" for e in json.loads(alia("thread", "log", thread, "--all", "--json")))
 
 def user_messages(thread):
     return sum(e["type"] == "client/turn/requested" and e["data"].get("initiator") == "user"
-               for e in json.loads(bb("thread", "log", thread, "--all", "--json")))
+               for e in json.loads(alia("thread", "log", thread, "--all", "--json")))
 
 def settled(thread):
     """Idle with nothing pending: no queued message, no background agent, and every child thread idle.
     A background helper's report arrives later as a new turn, so a turn that ends while one runs is not the answer."""
-    t = json.loads(bb("thread", "show", thread, "--json"))["thread"]
+    t = json.loads(alia("thread", "show", thread, "--json"))["thread"]
     if t["status"] != "idle" or t.get("queuedMessageCount") or t.get("activeBackgroundAgentCount"):
         return False
-    children = json.loads(bb("thread", "list", "--parent-thread", thread, "--include-hidden", "--json"))
+    children = json.loads(alia("thread", "list", "--parent-thread", thread, "--include-hidden", "--json"))
     return all(c["status"] == "idle" or awaiting_approval(c["id"]) for c in children)
 
 def awaiting_approval(thread):
     """True when the thread waits on an approval nobody can see, as Model Pilot 0.4.4 helpers do in auto mode.
     It never moves again, so the runner stops it and treats it as settled."""
     pending = {}
-    for e in json.loads(bb("thread", "log", thread, "--all", "--json")):
+    for e in json.loads(alia("thread", "log", thread, "--all", "--json")):
         if e["type"] == "system/interaction/lifecycle":
             pending[e["data"]["interaction"]["id"]] = e["data"]["interaction"]["status"] == "pending"
     if any(pending.values()):
-        bb("thread", "stop", thread)
+        alia("thread", "stop", thread)
         return True
     return False
 
@@ -57,7 +57,7 @@ def wait_turn(thread, before, timeout_s=3600):
     apart. Returns "done", "error" or "timeout"."""
     end = time.time() + timeout_s
     while time.time() < end:
-        status = json.loads(bb("thread", "show", thread, "--json"))["thread"]["status"]
+        status = json.loads(alia("thread", "show", thread, "--json"))["thread"]["status"]
         if status == "error":
             return "error"
         if status == "idle" and completed_turns(thread) > before and settled(thread):
@@ -81,7 +81,7 @@ def run_arm(task, rule, arm, spec, thread=None, turns=None):
     else:
         where = ["--new-environment", task["newEnvironment"]]
     if thread is None:
-        thread = json.loads(bb("thread", "spawn", "--json", "--parent-self", "--project", task["project"], *where, *flags,
+        thread = json.loads(alia("thread", "spawn", "--json", "--parent-self", "--project", task["project"], *where, *flags,
                                "--title", f"measure {task['id']} {arm}", "--prompt-file", "-", stdin=msgs[0]))["id"]
     turns, state = list(turns or []), "done"
     for i, m in enumerate(msgs):
@@ -90,13 +90,13 @@ def run_arm(task, rule, arm, spec, thread=None, turns=None):
         # One message can take several turns, because a background helper's report starts a turn of its own.
         before = completed_turns(thread)
         if i and user_messages(thread) <= i:
-            bb("thread", "tell", thread, "--message-file", "-", stdin=m, as_user=True)
+            alia("thread", "tell", thread, "--message-file", "-", stdin=m, as_user=True)
         elif before:
             before -= 1
         state = wait_turn(thread, before)
-        turns.append(json.loads(bb("thread", "output", thread, "--json")).get("output") or "")
+        turns.append(json.loads(alia("thread", "output", thread, "--json")).get("output") or "")
         if state != "done":
-            bb("thread", "stop", thread)
+            alia("thread", "stop", thread)
             break
     return {"task": task["id"], "arm": arm, "thread": thread, "turns": turns, "finished": state == "done", "state": state,
             "minutes": round((time.time() - started) / 60, 1)}
@@ -104,12 +104,12 @@ def run_arm(task, rule, arm, spec, thread=None, turns=None):
 def thread_tree(thread):
     """The thread and every helper. Background helpers are child threads. Model Pilot's other helpers are hidden,
     archived threads with no parent, so they are found by their lifecycle owner."""
-    root = json.loads(bb("thread", "show", thread, "--json"))["thread"]
+    root = json.loads(alia("thread", "show", thread, "--json"))["thread"]
     hidden = []
     for flags in ([], ["--archived"]):
-        hidden += json.loads(bb("thread", "list", "--project", root["projectId"], "--include-hidden", *flags, "--json"))
+        hidden += json.loads(alia("thread", "list", "--project", root["projectId"], "--include-hidden", *flags, "--json"))
     candidates = {t["id"] for t in hidden if (t.get("title") or "").startswith("Auto helper") and t["createdAt"] >= root["createdAt"]}
-    owner = {c: json.loads(bb("thread", "show", c, "--json"))["thread"]["lifecycleOwnerThreadId"] for c in candidates}
+    owner = {c: json.loads(alia("thread", "show", c, "--json"))["thread"]["lifecycleOwnerThreadId"] for c in candidates}
     out, todo = [], [thread]
     while todo:
         t = todo.pop()
@@ -118,11 +118,11 @@ def thread_tree(thread):
         out.append(t)
         todo += [c for c, o in owner.items() if o == t]
         for flags in ([], ["--archived"]):
-            todo += [c["id"] for c in json.loads(bb("thread", "list", "--parent-thread", t, "--include-hidden", *flags, "--json"))]
+            todo += [c["id"] for c in json.loads(alia("thread", "list", "--parent-thread", t, "--include-hidden", *flags, "--json"))]
     return out
 
 def session_ids(thread):
-    log = bb("thread", "log", thread, "--all", "--json")
+    log = alia("thread", "log", thread, "--all", "--json")
     return set(re.findall(rf'"(?:session_id|providerSessionId|providerThreadId)":\s*"({UUID})"', log))
 
 def transcripts(ids):
@@ -137,15 +137,15 @@ def transcripts(ids):
 
 def classifier_usd(thread):
     try:
-        return json.loads(bb("auto", "status", "--thread", thread))["usage"]["jev"]["usd"]
+        return json.loads(alia("auto", "status", "--thread", thread))["usage"]["jev"]["usd"]
     except (RuntimeError, KeyError, TypeError, ValueError):
         return 0.0
 
 def stop_children(thread):
     """Helpers can wait on a permission prompt that nobody answers. Stop them once the parent is done."""
     for t in thread_tree(thread)[1:]:
-        if json.loads(bb("thread", "show", t, "--json"))["thread"]["status"] != "idle":
-            bb("thread", "stop", t)
+        if json.loads(alia("thread", "show", t, "--json"))["thread"]["status"] != "idle":
+            alia("thread", "stop", t)
 
 def price_thread(thread):
     tree = thread_tree(thread)
@@ -258,12 +258,12 @@ def judge_prompt(n):
             f'{{{fields}, "better": {choices}|"tie", "reason": "<one sentence>"}}\n\n')
 
 def judge_one(o, task, pair, n):
-    t = json.loads(bb("thread", "spawn", "--json", "--parent-self", "--project", o.project, "--environment", o.environment,
+    t = json.loads(alia("thread", "spawn", "--json", "--parent-self", "--project", o.project, "--environment", o.environment,
                       "--provider", "claude-code", "--model", "claude-opus-5-5", "--reasoning-level", "medium",
                       "--title", f"measure judge {task}", "--prompt-file", "-", stdin=judge_prompt(n) + pair))["id"]
     if wait_turn(t, 0) != "done":
         raise RuntimeError(f"judge thread {t} did not finish")
-    text = json.loads(bb("thread", "output", t, "--json")).get("output") or ""
+    text = json.loads(alia("thread", "output", t, "--json")).get("output") or ""
     return task, {"thread": t, **json.loads(text[text.index("{"): text.rindex("}") + 1])}
 
 def cmd_judge(o):

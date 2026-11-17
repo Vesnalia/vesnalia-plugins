@@ -101,7 +101,7 @@ const INTERACTIVE_BROWSER_PATTERNS =
  * `VesnALIA` is outside the killable set. The plugin would have looked like it was
  * working and quietly refused to reclaim anything.
  */
-const ALIA_PATTERNS = /(alia\.app[\\/]Contents|\bbb Helper\b|alia-app[\\/]server[\\/]dist)/;
+const ALIA_PATTERNS = /(alia\.app[\\/]Contents|\aliab Helper\b|alia-app[\\/]server[\\/]dist)/;
 /**
  * Processes owned by the OS. Matching here is a refusal, not a label: nothing
  * classified `system` is ever offered as a candidate, so a false positive

@@ -14,7 +14,7 @@ const HELPER = join(GUEST, "docker-first-start.sh");
 const TEST_LIMIT_MS = 400;
 const TEST_DEADLINE_MS = 3000;
 const DEADLINE_OUT_OF_REACH_MS = 60_000;
-const DEADLINE_IN_PLAY = { BBBOX_DOCKER_START_DEADLINE_MS: String(TEST_DEADLINE_MS) };
+const DEADLINE_IN_PLAY = { ALIABOX_DOCKER_START_DEADLINE_MS: String(TEST_DEADLINE_MS) };
 const SLOW_START_S = 0.9;
 const HELD_BY_ANOTHER_UNIT_S = 3;
 const KILL_GRACE_MS = 1000;
@@ -110,11 +110,11 @@ function judge(box: FakeBox, env: Record<string, string> = {}): Promise<Judged> 
   const helper = spawn("bash", [HELPER], {
     env: {
       PATH: `${join(box.dir, "bin")}:/usr/bin:/bin`,
-      BBBOX_DOCKER_START_LIMIT_MS: String(TEST_LIMIT_MS),
-      BBBOX_DOCKER_START_DEADLINE_MS: String(DEADLINE_OUT_OF_REACH_MS),
-      BBBOX_SYSTEMD_RUN_DIR: join(box.dir, box.runtime === "systemd" ? "systemd" : "no-systemd"),
-      BBBOX_DOCKER_SOCKET: join(box.dir, "docker.sock"),
-      BBBOX_DOCKER_PID_FILE: join(box.dir, "docker.pid"),
+      ALIABOX_DOCKER_START_LIMIT_MS: String(TEST_LIMIT_MS),
+      ALIABOX_DOCKER_START_DEADLINE_MS: String(DEADLINE_OUT_OF_REACH_MS),
+      ALIABOX_SYSTEMD_RUN_DIR: join(box.dir, box.runtime === "systemd" ? "systemd" : "no-systemd"),
+      ALIABOX_DOCKER_SOCKET: join(box.dir, "docker.sock"),
+      ALIABOX_DOCKER_PID_FILE: join(box.dir, "docker.pid"),
       ...env,
     },
   });
@@ -169,7 +169,7 @@ test("a slow first start passes when a second first start is quick, and the line
 test("an activation held 3 s by another unit fails, as it holds both first starts, under 041's 2 s limit", async () => {
   const box = fakeBox([HELD_BY_ANOTHER_UNIT_S, HELD_BY_ANOTHER_UNIT_S]);
 
-  const judged = await judge(box, { BBBOX_DOCKER_START_LIMIT_MS: "", BBBOX_DOCKER_START_DEADLINE_MS: "" });
+  const judged = await judge(box, { ALIABOX_DOCKER_START_LIMIT_MS: "", ALIABOX_DOCKER_START_DEADLINE_MS: "" });
 
   assert.equal(judged.status, 1, judged.line);
   assert.match(judged.line, /^slow both times: 3\d{3} ms, then 3\d{3} ms at a second first start \(limit 2000 ms\)$/);

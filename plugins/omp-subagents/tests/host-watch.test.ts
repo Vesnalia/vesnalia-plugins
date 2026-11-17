@@ -15,7 +15,7 @@ import host, { sweepIdleWatches } from "../src/host.ts";
 type Handler = (input: unknown, context?: unknown) => Promise<unknown>;
 const handlers = host.handlers as unknown as Record<string, Handler>;
 
-const UUID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+const UUID = "aliabbbbbb-aliabb-aliabb-aliabb-aliabbbbbbbbbb";
 const session = join(root, "-ws", `2026-02-02T00-00-00-000Z_${UUID}`);
 
 type Event =

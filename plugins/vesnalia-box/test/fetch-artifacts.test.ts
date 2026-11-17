@@ -44,7 +44,7 @@ function world(files: Record<string, string>) {
   const run = (art: string) => {
     const ran = spawnSync("bash", [join(root, "template", "fetch-artifacts.sh"), join(root, art), "linux", "x86_64"], {
       encoding: "utf8",
-      env: { ...process.env, BBBOX_ENV: "/nonexistent", BBBOX_ALIA_URL: "", BBBOX_ARTIFACT_CACHE: cache },
+      env: { ...process.env, ALIABOX_ENV: "/nonexistent", ALIABOX_ALIA_URL: "", ALIABOX_ARTIFACT_CACHE: cache },
     });
     assert.equal(ran.status, 0, ran.stderr);
     return ran.stdout;
@@ -96,7 +96,7 @@ test("only the Wayland desktop fetches the Ubuntu 26.04 pins, which the X11 desk
   const fetched = (kind: string, art: string) => {
     const ran = spawnSync("bash", [join(w.root, "template", "fetch-artifacts.sh"), w.art(art), kind, "x86_64"], {
       encoding: "utf8",
-      env: { ...process.env, BBBOX_ENV: "/nonexistent", BBBOX_ALIA_URL: "", BBBOX_ARTIFACT_CACHE: "" },
+      env: { ...process.env, ALIABOX_ENV: "/nonexistent", ALIABOX_ALIA_URL: "", ALIABOX_ARTIFACT_CACHE: "" },
     });
     assert.equal(ran.status, 0, ran.stderr);
     return readdirSync(w.art(art)).sort();
@@ -133,10 +133,10 @@ test("a download that stalls is retried, then fails within its stall limits, nam
     writeFileSync(join(w.root, "template", "pins.json"), JSON.stringify({ tools: [{ name: "big", arch: "x86_64", version: "1", url, sha256: sha256("never sent") }] }));
     const ran = await runAsync(join(w.root, "template", "fetch-artifacts.sh"), [w.art("art"), "linux", "x86_64"], {
       ...process.env,
-      BBBOX_ENV: "/nonexistent",
-      BBBOX_ALIA_URL: "",
-      BBBOX_ARTIFACT_CACHE: "",
-      BBBOX_DOWNLOAD_STALL_SECONDS: "1",
+      ALIABOX_ENV: "/nonexistent",
+      ALIABOX_ALIA_URL: "",
+      ALIABOX_ARTIFACT_CACHE: "",
+      ALIABOX_DOWNLOAD_STALL_SECONDS: "1",
     });
     assert.equal(ran.status, 1, ran.stderr);
     assert.match(ran.stderr, /download failed, as it stalled, under 10240 bytes a second for 1 s, after its retries: big-tool-1\.0\.tar\.gz from http:\/\/127\.0\.0\.1:\d+\/big-tool-1\.0\.tar\.gz/);
@@ -155,5 +155,5 @@ test("each download has a connect timeout, a stall abort, a cap per file and its
   for (const flag of ["--connect-timeout", "--speed-limit", "--speed-time", "--max-time"]) assert.match(script, new RegExp(`download_limits=\\(.*${flag} `), flag);
   assert.match(script, /retried_download_limits=\(.*--retry 3 /);
   assert.equal(script.match(/curl -fsS/g)?.length, script.match(/curl -fsSL? "\$\{(retried_)?download_limits\[@\]\}"/g)?.length, "every curl has the limits");
-  assert.match(script, /download_cap_seconds=\$\{BBBOX_DOWNLOAD_CAP_SECONDS:-1800\}/);
+  assert.match(script, /download_cap_seconds=\$\{ALIABOX_DOWNLOAD_CAP_SECONDS:-1800\}/);
 });

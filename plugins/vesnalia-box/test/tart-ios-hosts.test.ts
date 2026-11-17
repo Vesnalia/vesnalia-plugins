@@ -86,7 +86,7 @@ test("three ios boxes acquired at once make one host, not three: the first start
   assert.equal(readFileSync(join(ssh.home("192.168.64.2"), "installed-helper"), "utf8"), readFileSync(join(setupDir(), "tart/ios/device-host.sh"), "utf8"), "the host runs this VesnALIA Box's helper");
   assert.match(readFileSync(join(ssh.home("192.168.64.2"), "helper.log"), "utf8"), /^init\n/);
   const targets = ssh.log().map((entry) => entry.target);
-  for (const user of ["bbd-i1", "bbd-i2", "bbd-1"]) assert.ok(targets.includes(`${user}@192.168.64.2`), `VesnALIA Box reached ${user} as itself`);
+  for (const user of ["aliad-i1", "aliad-i2", "aliad-1"]) assert.ok(targets.includes(`${user}@192.168.64.2`), `VesnALIA Box reached ${user} as itself`);
 });
 
 test("a box on a serving host claims a ready slot in its take; releases leave the host for the others, and the last deletes it and frees the Mac's VM slot (064)", async () => {
@@ -174,7 +174,7 @@ test("a slot box's transports reach it as its slot's user, with the host keeping
   const { guest } = await place(backend, box);
   const slot = await backend.acquire(box, guest, hooks().hooks, signal());
   const transports = await backend.transports(slot, "ios");
-  assert.equal(transports.access?.ssh?.user, "bbd-i1");
+  assert.equal(transports.access?.ssh?.user, "aliad-i1");
   assert.deepEqual(transports.displays, []);
   assert.deepEqual(transports.daemonKeptByHost?.installerEnvironment, { ALIA_INSTALL_SKIP_SERVICE: "1" });
   assert.equal(transports.daemonKeptByHost?.daemonPort, 38900, "each slot's VesnALIA daemon has its own port, from its place on the host");
@@ -437,7 +437,7 @@ test("a new shared host goes to the Mac whose video encoder streams least; a VM'
   const starting: string[] = [];
   const context = { ...testContext(new MemoryStorage()), encoder: { load: (mac: string) => load.get(mac) ?? 0, vmStarting: (mac: string, chip: string | null) => void starting.push(`${mac} ${chip}`) } };
   const backend = new TartBackend(
-    tartConfig({ ...IOS_HOST_SETTINGS, "tart-hosts": `mac1 bbbox-admin@${FAKE_MAC}\nmac2 bbbox-admin@${other}`, "tart-host-keys": `${FAKE_MAC} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests\n${other} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests` }),
+    tartConfig({ ...IOS_HOST_SETTINGS, "tart-hosts": `mac1 aliabox-admin@${FAKE_MAC}\nmac2 aliabox-admin@${other}`, "tart-host-keys": `${FAKE_MAC} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests\n${other} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeHostKeyForTests` }),
     context,
     IOS_HOST_FAKES,
   );

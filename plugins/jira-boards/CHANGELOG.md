@@ -34,10 +34,10 @@ Release notes are generated from the merged pull requests when a version tag is 
 
 - The plugin now installs as **Jira Boards** (`jira-boards`) instead of `jira`,
   so it can sit in a marketplace beside other Jira plugins. Remove the old
-  installation and enter the URL and token again; BB keeps settings per plugin.
+  installation and enter the URL and token again; VesnALIA keeps settings per plugin.
 - Comment on issues and move them through workflow transitions from the issue
   panel, the `jira_comment`/`jira_transitions`/`jira_transition` agent tools and
-  new `bb jira comment|transitions|transition` commands. Writes run as the
+  new `alia jira comment|transitions|transition` commands. Writes run as the
   token's Jira account and never edit fields, assignees or boards.
 - Cloud comment bodies are converted to ADF; Server/Data Center keeps plain text.
 
@@ -51,24 +51,24 @@ Release notes are generated from the merged pull requests when a version tag is 
 - Connection testing and board refresh controls in plugin settings.
 - README screenshots using fictional demonstration data.
 
-- Open Jira in BB’s full-height side panel, alongside Browser and Terminal,
+- Open Jira in VesnALIA’s full-height side panel, alongside Browser and Terminal,
   with a header button in existing threads and a launcher on the New thread screen.
 - Drag issue cards into the composer as native Jira mentions.
-- Use a distinct Jira-inspired diamond icon throughout BB.
+- Use a distinct Jira-inspired diamond icon throughout VesnALIA.
 
 ## 0.1.0 — 2026-10-29
 
 Initial release.
 
-- Jira board browser in the BB sidebar and thread panels, configured columns,
+- Jira board browser in the VesnALIA sidebar and thread panels, configured columns,
   JQL filtering and paginated issue cards.
 - Issue detail with descriptions, custom fields, comments, links, subtasks and
   attachment metadata.
 - Add-to-chat mentions that fetch current issue context when sent; issue
   search from the @ menu and a new-chat shortcut.
-- Four native agent tools, the `bb jira` CLI and a bundled Jira skill.
+- Four native agent tools, the `alia jira` CLI and a bundled Jira skill.
 - Data Center / Server PAT and Cloud classic API token authentication using
-  BB secret settings.
+  VesnALIA secret settings.
 
 Read-only. Card dragging, attachment bodies and full issue history are not
 included. Jira compatibility has automated coverage with fake responses;

@@ -1,4 +1,4 @@
--- @conn docker-bb-sql-test
+-- @conn docker-alia-sql-test
 -- Smoke for multi-statement editor (0.4.1) + query params (0.4.2):
 -- caret + Run → one statement under the caret.
 -- select several statements + Run → each runs separately, in order

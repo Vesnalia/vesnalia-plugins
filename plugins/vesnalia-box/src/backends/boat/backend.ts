@@ -68,15 +68,15 @@ import { BACKEND_LABEL, BoatOwner, INSTALL_LABEL } from "./owner.ts";
 export const LABELS = {
   install: INSTALL_LABEL,
   backend: BACKEND_LABEL,
-  box: "bbbox-box",
-  thread: "bbbox-thread",
-  name: "bbbox-name",
-  kind: "bbbox-kind",
-  created: "bbbox-created",
-  role: "bbbox-role",
-  key: "bbbox-key",
-  guest: "bbbox-guest",
-  template: "bbbox-template",
+  box: "aliabox-box",
+  thread: "aliabox-thread",
+  name: "aliabox-name",
+  kind: "aliabox-kind",
+  created: "aliabox-created",
+  role: "aliabox-role",
+  key: "aliabox-key",
+  guest: "aliabox-guest",
+  template: "aliabox-template",
 } as const;
 
 const SAVE_TASK = "save:";
@@ -1084,7 +1084,7 @@ export class BoatBackend implements Backend {
       const found = stagingOf(sandbox.name, this.#owner.stagingMark);
       if (!found || Object.keys(sandbox.labels).length || this.#making.has(`${found.box}:${found.token}`)) continue;
       const copied = all.some((each) => this.#owner.owns(each.labels) && each.labels[LABELS.box] === found.box && tokenOf(each) === found.token && each.state !== "error");
-      const done = copied && (recordedGuests?.has(`bbbox-${found.box}-${found.token}`) ?? false);
+      const done = copied && (recordedGuests?.has(`aliabox-${found.box}-${found.token}`) ?? false);
       const abandoned = sandbox.createdAt !== null && this.#now() - sandbox.createdAt > STAGING_ABANDONED_MS;
       if (!done && !abandoned) continue;
       await this.#api.delete(sandbox.id, signal);
@@ -1330,14 +1330,14 @@ export class BoatBackend implements Backend {
 
   #refOf(sandbox: Sandbox): string {
     const token = tokenOf(sandbox);
-    return `bbbox-${sandbox.labels[LABELS.box] ?? sandbox.id}${token ? `-${token}` : ""}`;
+    return `aliabox-${sandbox.labels[LABELS.box] ?? sandbox.id}${token ? `-${token}` : ""}`;
   }
 
   #guest(boxId: string, sandbox: Sandbox | null, shape: SizeShape | null, facts: readonly GuestFact[] = [], token: string | null = sandbox ? tokenOf(sandbox) : null): Guest {
     const reach = sandbox ? this.#reaches.get(sandbox.id) : undefined;
     const all: GuestFact[] = [...(shape ? [{ label: "Size", value: sizeWords(shape) }] : []), ...facts];
     return {
-      ref: `bbbox-${boxId}${token ? `-${token}` : ""}`,
+      ref: `aliabox-${boxId}${token ? `-${token}` : ""}`,
       host: BOAT_HOST,
       address: reach ? `${reach.host}:${reach.port}` : null,
       size: shape ? { cores: shape.cores, memoryMiB: shape.memoryGB * MIB_PER_GB, diskGiB: shape.diskGB } : null,

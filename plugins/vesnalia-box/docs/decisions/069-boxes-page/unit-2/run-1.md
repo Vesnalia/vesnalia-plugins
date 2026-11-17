@@ -1,6 +1,6 @@
 # Live check run-1, 2026-10-30T04:22:47.304Z
 
-Box: amber-coral (bxi4ygvp2o2x4i), container bbbox-bxi4ygvp2o2x4i.
+Box: amber-coral (bxi4ygvp2o2x4i), container aliabox-bxi4ygvp2o2x4i.
 
 - PASS [Activity] the page shows Live tiles for a box being read, with the time of its last reading: Read at 4:22:49 AM, then Read at 4:22:55 AM; CPU tile "CPU pressure 2%  0 %  idle · 4 cores"
 - PASS [Activity] the box's terminal: stress-ng --cpu 2 and top: typed into the page's Terminal view; screenshot terminal-top-1440.png

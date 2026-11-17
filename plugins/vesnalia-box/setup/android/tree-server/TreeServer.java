@@ -35,7 +35,7 @@ public final class TreeServer {
 
     final Object lock = new Object();
     final long lingerMs;
-    final HandlerThread thread = new HandlerThread("bb-box-tree");
+    final HandlerThread thread = new HandlerThread("alia-box-tree");
     UiAutomation held;
     long lastReadAt;
     volatile boolean instrumentation;
@@ -54,7 +54,7 @@ public final class TreeServer {
     }
 
     void serve() throws Exception {
-        Thread watch = new Thread(this::watch, "bb-box-tree-watch");
+        Thread watch = new Thread(this::watch, "alia-box-tree-watch");
         watch.setDaemon(true);
         watch.start();
         PrintStream out = new PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out), false, "UTF-8");
@@ -184,7 +184,7 @@ public final class TreeServer {
         if (!wasHeld) {
             String other = anotherUser();
             instrumentation = other != null;
-            if (other != null) throw new Refused(refusal("instrumentation", "bb-box's tree server gives way to " + other + " running on the device."));
+            if (other != null) throw new Refused(refusal("instrumentation", "alia-box's tree server gives way to " + other + " running on the device."));
         }
         UiAutomation automation;
         try {

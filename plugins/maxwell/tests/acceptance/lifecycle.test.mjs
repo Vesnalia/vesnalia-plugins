@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeMaxwell, openBB, openMaxwell } from './harness.mjs';
+import { closeMaxwell, openALIA, openMaxwell } from './harness.mjs';
 import { contentBounds, difference, freeze, sample } from './images.mjs';
 
 const draws = (page) => page.evaluate(() => window.maxwellBrowserProbe.draws);
@@ -12,7 +12,7 @@ async function assertPaused(page) {
 }
 
 test('panel and page visibility pause rendering, and reopening releases old contexts', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     for (let repetition = 0; repetition < 3; repetition++) {
       await openMaxwell(page);
@@ -51,7 +51,7 @@ test('panel and page visibility pause rendering, and reopening releases old cont
 });
 
 test('the cat stays framed on resize and credits follow live host themes', async () => {
-  const { browser, page } = await openBB();
+  const { browser, page } = await openALIA();
   try {
     await openMaxwell(page);
     await page.waitForFunction(() => window.maxwellBrowserProbe.draws > 6);

@@ -15,8 +15,8 @@ import { toneClass, type Tone } from "../src/select/tone.js";
  * therefore carry their position-derived fill rather than all collapsing to
  * the same half wedge.
  *
- * Every path uses `currentColor`, and the colour comes from `--bbl` on an
- * ancestor via `.bbl-glyph`. One class swap on the row recolours the glyph,
+ * Every path uses `currentColor`, and the colour comes from `--alial` on an
+ * ancestor via `.alial-glyph`. One class swap on the row recolours the glyph,
  * the identifier and the border tint together.
  *
  * `aria-hidden` throughout: the state is already in the row's accessible name,
@@ -41,7 +41,7 @@ export function StateGlyph({
       width="14"
       height="14"
       fill="none"
-      className={`${toneClass(tone)} bbl-glyph shrink-0 ${className ?? ""}`}
+      className={`${toneClass(tone)} alial-glyph shrink-0 ${className ?? ""}`}
       aria-hidden
       focusable="false"
     >
@@ -103,7 +103,7 @@ export function AliaFactGlyph({ fact }: { fact: AliaFact }) {
       viewBox="0 0 14 14"
       width="14"
       height="14"
-      className={`${fact === "none" ? "bbl-neutral" : "bbl-started"} bbl-glyph shrink-0`}
+      className={`${fact === "none" ? "alial-neutral" : "alial-started"} alial-glyph shrink-0`}
       aria-hidden
       focusable="false"
       data-fact={label}

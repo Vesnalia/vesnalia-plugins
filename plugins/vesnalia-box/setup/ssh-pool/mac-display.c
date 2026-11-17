@@ -1,12 +1,12 @@
 /*
- * bb-box-display: gives the desktop the HiDPI mode of its size, for the
+ * alia-box-display: gives the desktop the HiDPI mode of its size, for the
  * session only.
  *
- *   bb-box-display hidpi
+ *   alia-box-display hidpi
  *
  * A Mac with a display, or an HDMI dummy plug, offers each size at 1x and,
  * for some, at 2x: the same points with twice the pixels each way. Screen
- * Sharing sends pixels, and bb-box's viewer draws them on a screen that is
+ * Sharing sends pixels, and alia-box's viewer draws them on a screen that is
  * usually 2x, so a 2x mode is as sharp there as on the Mac, where a 1x one
  * is magnified. The points stay, so computer use's coordinates do too. The
  * change lasts until the user logs out, which the reset does. The helper
@@ -20,13 +20,13 @@
 
 int main(int argc, char **argv) {
   if (argc != 2 || strcmp(argv[1], "hidpi") != 0) {
-    fprintf(stderr, "usage: bb-box-display hidpi\n");
+    fprintf(stderr, "usage: alia-box-display hidpi\n");
     return 2;
   }
   CGDirectDisplayID display = CGMainDisplayID();
   CGDisplayModeRef current = CGDisplayCopyDisplayMode(display);
   if (!current) {
-    fprintf(stderr, "bb-box-display: the display has no mode: is the user signed in?\n");
+    fprintf(stderr, "alia-box-display: the display has no mode: is the user signed in?\n");
     return 1;
   }
   size_t width = CGDisplayModeGetWidth(current), height = CGDisplayModeGetHeight(current);
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   if (error == kCGErrorSuccess) error = CGConfigureDisplayWithDisplayMode(config, display, best, NULL);
   if (error == kCGErrorSuccess) error = CGCompleteDisplayConfiguration(config, kCGConfigureForSession);
   if (error != kCGErrorSuccess) {
-    fprintf(stderr, "bb-box-display: macOS refused the mode: CGError %d\n", error);
+    fprintf(stderr, "alia-box-display: macOS refused the mode: CGError %d\n", error);
     return 1;
   }
   printf("hidpi=%zux%zu\n", CGDisplayModeGetPixelWidth(best), CGDisplayModeGetPixelHeight(best));

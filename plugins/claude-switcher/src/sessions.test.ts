@@ -140,9 +140,9 @@ describe("shareSessions", () => {
     fs.addDir(PROJECT);
     fs.addFile(`${TEAM1}/projects/${KEY}/aaa.jsonl`);
     fs.addDir(`${TEAM1}/projects/${KEY}/aaa/subagents`);
-    fs.addFile(`${TEAM1}/projects/${KEY}/bbb.jsonl`);
+    fs.addFile(`${TEAM1}/projects/${KEY}/aliab.jsonl`);
     // Already in the target: left alone, though team1 has it too.
-    fs.addFile(`${TEAM2}/projects/${KEY}/bbb.jsonl`);
+    fs.addFile(`${TEAM2}/projects/${KEY}/aliab.jsonl`);
     // Not a session's folder (no jsonl of that name): not linked.
     fs.addDir(`${TEAM1}/projects/${KEY}/memory`);
     const result = await shareSessions({
@@ -211,13 +211,13 @@ describe("shareSessions", () => {
     const fs = memoryFs();
     fs.addDir(PROJECT);
     fs.addFile(`${TEAM1}/projects/${KEY}/aaa.jsonl`);
-    fs.addFile(`${TEAM1}/projects/${KEY}/bbb.jsonl`);
+    fs.addFile(`${TEAM1}/projects/${KEY}/aliab.jsonl`);
     fs.addFile(`${DEFAULT}/projects/${KEY}/ccc.jsonl`);
     fs.addDir(`${TEAM2}/projects/${KEY}`);
     fs.fail("link", `${TEAM2}/projects/${KEY}/aaa.jsonl`, "EACCES");
     // A source that cannot be listed does not stop the next one.
     fs.fail("entries", `${DEFAULT}/projects/${KEY}`, "EIO");
-    fs.addFile(`${TEAM1}/projects/${KEY}/bbb.jsonl`);
+    fs.addFile(`${TEAM1}/projects/${KEY}/aliab.jsonl`);
     const result = await shareSessions({
       projectPath: PROJECT,
       target: TEAM2,
@@ -267,11 +267,11 @@ describe("shareSessions", () => {
     fs.addDir(PROJECT);
     fs.addFile(`${TEAM1}/archive/aaa.jsonl`);
     fs.addFile(`${TEAM1}/projects/${KEY}/aaa.jsonl`);
-    fs.addFile(`${TEAM1}/archive/bbb.jsonl`);
-    fs.addFile(`${TEAM1}/projects/${KEY}/bbb.jsonl`);
+    fs.addFile(`${TEAM1}/archive/aliab.jsonl`);
+    fs.addFile(`${TEAM1}/projects/${KEY}/aliab.jsonl`);
     fs.real.set(`${TEAM1}/projects/${KEY}/aaa.jsonl`, `${TEAM1}/archive/aaa.jsonl`);
-    fs.real.set(`${TEAM1}/projects/${KEY}/bbb.jsonl`, `${TEAM1}/archive/bbb.jsonl`);
-    fs.fail("link", `${TEAM2}/projects/${KEY}/bbb.jsonl`, "EXDEV");
+    fs.real.set(`${TEAM1}/projects/${KEY}/aliab.jsonl`, `${TEAM1}/archive/aliab.jsonl`);
+    fs.fail("link", `${TEAM2}/projects/${KEY}/aliab.jsonl`, "EXDEV");
     await shareSessions({
       projectPath: PROJECT,
       target: TEAM2,
@@ -280,7 +280,7 @@ describe("shareSessions", () => {
     });
     expect(fs.made.filter((m) => !m.startsWith("mkdir"))).toEqual([
       `link ${TEAM1}/archive/aaa.jsonl -> ${TEAM2}/projects/${KEY}/aaa.jsonl`,
-      `symlink ${TEAM1}/archive/bbb.jsonl -> ${TEAM2}/projects/${KEY}/bbb.jsonl`,
+      `symlink ${TEAM1}/archive/aliab.jsonl -> ${TEAM2}/projects/${KEY}/aliab.jsonl`,
     ]);
   });
 
@@ -321,7 +321,7 @@ describe("shareSessions", () => {
     const fs = memoryFs();
     fs.addDir(PROJECT);
     fs.addFile(`${TEAM1}/projects/${KEY}/aaa.jsonl`);
-    fs.addFile(`${DEFAULT}/projects/${KEY}/bbb.jsonl`);
+    fs.addFile(`${DEFAULT}/projects/${KEY}/aliab.jsonl`);
     fs.fail("realpath", `${TEAM1}/projects`, "EACCES");
     const result = await shareSessions({
       projectPath: PROJECT,

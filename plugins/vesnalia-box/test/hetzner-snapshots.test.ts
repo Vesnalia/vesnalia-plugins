@@ -14,9 +14,9 @@ import { hetznerConfig, hetznerWorld } from "./fake-hetzner-world.ts";
 import { MemoryStorage, tempDir } from "./helpers.ts";
 import { COMMAND, THREAD, rejection, standing, untilHeld, world, type World } from "./snapshot-world.ts";
 
-const LINUX_IMAGE = "bbbox/linux:1";
+const LINUX_IMAGE = "aliabox/linux:1";
 const SOURCE_CREDENTIALS = { "home/box/.alia-machines/alia.example/auth.json": '{"token":"source"}\n' } as const;
-const RESTORED = /^bbbox-bx[0-9a-z]+-[0-9a-f]{8}$/;
+const RESTORED = /^aliabox-bx[0-9a-z]+-[0-9a-f]{8}$/;
 const SMALL_HOST_MiB = 8192;
 
 interface HetznerSnapshotWorld {
@@ -59,11 +59,11 @@ function readBoth(fake: FakeDockerHost, box: BoxRecord): readonly [string, strin
 }
 
 function snapshotImages(fake: FakeDockerHost): string[] {
-  return Object.keys(JSON.parse(readFileSync(join(fake.root, "images.json"), "utf8"))).filter((image) => image.startsWith("bbbox-snapshot/"));
+  return Object.keys(JSON.parse(readFileSync(join(fake.root, "images.json"), "utf8"))).filter((image) => image.startsWith("aliabox-snapshot/"));
 }
 
 function snapshotListings(fake: FakeDockerHost): number {
-  return fake.calls().filter((args) => args[0] === "image" && args[1] === "ls" && args.some((arg) => arg.startsWith("label=bbbox.snapshot.install="))).length;
+  return fake.calls().filter((args) => args[0] === "image" && args[1] === "ls" && args.some((arg) => arg.startsWith("label=aliabox.snapshot.install="))).length;
 }
 
 async function readyHetznerBox(state: World): Promise<BoxRecord> {
@@ -114,7 +114,7 @@ test("Hetzner Cloud forks a snapshot on the same host, and the fork passes the i
   const fork = (await state.boxes.settled(answer.box!))!;
   assert.equal(fork.state, "ready", fork.error ?? "");
   assert.equal(fork.guest!.data?.hetznerHost, box.guest!.data?.hetznerHost, "the fork is on its snapshot's host");
-  assert.ok(fake.inspect(fork.guest!.ref).Config.Env.includes(`BBBOX_IDENTITY=${fork.id}`));
+  assert.ok(fake.inspect(fork.guest!.ref).Config.Env.includes(`ALIABOX_IDENTITY=${fork.id}`));
   assert.match(readFileSync(join(fake.identityRoot(fork.guest!.ref), "var/lib/alia-box/identity-resets"), "utf8"), /not the marker's/, "its boot reset ran");
   assert.equal(existsSync(join(fake.identityRoot(fork.guest!.ref), Object.keys(SOURCE_CREDENTIALS)[0]!)), false, "the source's VesnALIA credentials are gone");
   assert.deepEqual(readBoth(fake, fork), ["A", "A"]);
@@ -136,16 +136,16 @@ test("Hetzner Cloud refuses a fork its snapshot's host has no room for, before a
 });
 
 test("a fork refused for a Hetzner Cloud host's memory gives Docker's reason once, then what to do", () => {
-  const refused = forkRoomRefusal("bbbox-test-hz1", "Docker on bbbox-test-hz1 cannot take this linux box: bbbox-test-hz1 has 3.6 GiB of memory free, less than a box with 4 GiB needs. Ask for less memory or release a box.", { key: "", name: "", type: "", percentFull: 0, metadataPercentFull: null, metadataUnread: null, totalBytes: null, usedBytes: null }, null);
+  const refused = forkRoomRefusal("aliabox-test-hz1", "Docker on aliabox-test-hz1 cannot take this linux box: aliabox-test-hz1 has 3.6 GiB of memory free, less than a box with 4 GiB needs. Ask for less memory or release a box.", { key: "", name: "", type: "", percentFull: 0, metadataPercentFull: null, metadataUnread: null, totalBytes: null, usedBytes: null }, null);
 
-  assert.equal(refused, "a fork goes on the same Hetzner Cloud host as its snapshot, bbbox-test-hz1, and it has no room for one: Docker on bbbox-test-hz1 cannot take this linux box: bbbox-test-hz1 has 3.6 GiB of memory free, less than a box with 4 GiB needs. Release a box there, then try again");
+  assert.equal(refused, "a fork goes on the same Hetzner Cloud host as its snapshot, aliabox-test-hz1, and it has no room for one: Docker on aliabox-test-hz1 cannot take this linux box: aliabox-test-hz1 has 3.6 GiB of memory free, less than a box with 4 GiB needs. Release a box there, then try again");
 });
 
 test("a fork's room on a Hetzner Cloud host counts the Docker disk its snapshots fill", () => {
   const full: SnapshotStorage = { key: "docker:x", name: "", type: "docker-overlay2", percentFull: 90, metadataPercentFull: null, metadataUnread: null, totalBytes: 100e9, usedBytes: 99e9 };
 
-  const refused = forkRoomRefusal("bbbox-test-hz1", null, full, 2e9);
-  const fits = forkRoomRefusal("bbbox-test-hz1", null, full, 0.5e9);
+  const refused = forkRoomRefusal("aliabox-test-hz1", null, full, 2e9);
+  const fits = forkRoomRefusal("aliabox-test-hz1", null, full, 0.5e9);
 
   assert.match(refused ?? "", /its Docker disk has 1(\.0)? GB free, less than the fork's 2(\.0)? GB\. Delete snapshots or release a box there, then try again$/);
   assert.equal(fits, null);

@@ -86,7 +86,7 @@ export default definePluginApp((app) => {
     // the right frame but mounts it under a `display: contents` wrapper, and
     // the stack spaces itself with `space-y-2` — a margin rule that a
     // contents box silently drops. The banner therefore owns its own frame
-    // (`.bbx-stack-card`, a faithful copy of PromptStackCard driven by the
+    // (`.aliax-stack-card`, a faithful copy of PromptStackCard driven by the
     // host's own CSS variables) so it can also own the 8px gap.
     banners: [
       { id: "live-runs", chrome: "bare", component: XcodeActivityBanner },

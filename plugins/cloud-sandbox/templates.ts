@@ -259,7 +259,7 @@ export async function buildImage(
     await stage("Authenticate registry", `vercel vcr login buildah ${cli} >/dev/null 2>&1 && echo "authenticated"`);
     await stage(
       "Write Dockerfile",
-      `mkdir -p /tmp/img && cat > /tmp/img/Dockerfile <<'BBDOCKERFILE'\n${dockerfile}BBDOCKERFILE\ncat /tmp/img/Dockerfile`,
+      `mkdir -p /tmp/img && cat > /tmp/img/Dockerfile <<'ALIADOCKERFILE'\n${dockerfile}ALIADOCKERFILE\ncat /tmp/img/Dockerfile`,
     );
     // --isolation chroot is required: the default tries to create a container
     // namespace, which a microVM refuses with `mount proc to proc: Operation

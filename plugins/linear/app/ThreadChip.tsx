@@ -60,7 +60,7 @@ export function ThreadChip({ threadId }: Pick<ExperimentalThreadContextSegmentPr
         size="sm"
         variant="ghost"
         className={`${toneClass(binding.tone)} h-6 gap-1.5 rounded px-2 text-xs font-medium`}
-        style={binding.glyph.color === null ? undefined : ({ "--bbl": binding.glyph.color } as CSSProperties)}
+        style={binding.glyph.color === null ? undefined : ({ "--alial": binding.glyph.color } as CSSProperties)}
         aria-label={`${activeCount} active Linear issues. Current issue ${binding.identifier} · ${binding.title} — ${binding.stateName}, bound via ${binding.origin}${binding.provenance === null ? "" : ` — ${binding.provenance}`}`}
         onClick={() => {
           panel.openTab({ tab: ISSUE_TAB, title: binding.identifier });
@@ -70,7 +70,7 @@ export function ThreadChip({ threadId }: Pick<ExperimentalThreadContextSegmentPr
             everywhere, so "half-filled ring" means started on the chip
             exactly as it does in the list. */}
         <StateGlyph tone={binding.tone} glyph={binding.glyph} />
-        <span className="bbl-text">{binding.identifier}</span>
+        <span className="alial-text">{binding.identifier}</span>
         {activeCount > 1 && <span className="text-muted-foreground">+{activeCount - 1}</span>}
       </Button>
     );

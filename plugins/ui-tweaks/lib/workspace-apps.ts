@@ -19,7 +19,7 @@ export interface WorkspaceAppCatalogItem {
 }
 
 const WORKSPACE_EDITOR_PATTERN =
-  /\b(android studio|atom|bbedit|bluefish|brackets|code - oss|code-oss|codium|cursor|eclipse|emacs|fleet|geany|gnome builder|goland|helix|intellij|kate|kdevelop|lapce|lite xl|mousepad|neovim|notepad\+\+|nova|phpstorm|pulsar|pycharm|qt creator|rider|rstudio|rustrover|scite|sublime text|text editor|textmate|vim|visual studio|vs code|vscode|vscodium|webstorm|xcode|xed|zed)\b/i;
+  /\b(android studio|atom|aliaedit|bluefish|brackets|code - oss|code-oss|codium|cursor|eclipse|emacs|fleet|geany|gnome builder|goland|helix|intellij|kate|kdevelop|lapce|lite xl|mousepad|neovim|notepad\+\+|nova|phpstorm|pulsar|pycharm|qt creator|rider|rstudio|rustrover|scite|sublime text|text editor|textmate|vim|visual studio|vs code|vscode|vscodium|webstorm|xcode|xed|zed)\b/i;
 const WORKSPACE_FILE_MANAGER_PATTERN =
   /\b(caja|dolphin|double commander|file manager|files|finder|krusader|nautilus|nemo|pcmanfm|spacefm|thunar|yazi)\b/i;
 const WORKSPACE_TERMINAL_PATTERN =

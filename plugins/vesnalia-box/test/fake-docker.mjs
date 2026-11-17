@@ -59,7 +59,7 @@ const find = (ref) => names().map(load).find((container) => container.Name === `
 const MiB = 1024 * 1024;
 const IDENTITY_TOOL = "/usr/local/sbin/alia-box-identity";
 const FORK_HOLD_SCRIPT = fileURLToPath(new URL("../setup/docker/fork-hold", import.meta.url));
-const IMAGE_HOLDS_FORKS = "bbbox.fork-hold";
+const IMAGE_HOLDS_FORKS = "aliabox.fork-hold";
 const SERVICES_LOG = join(root, "services.log");
 const HOLD_PID = "fork-hold.pid";
 const identityRoot = (name) => join(dir(name), "identity");
@@ -68,9 +68,9 @@ const identityToolIn = (rootDir) => join(rootDir, IDENTITY_TOOL.slice(1));
 const identityEnv = (name, container) => ({
   PATH: pathWithHostStubs(root, [join(root, "identity-bin")], process.env.PATH),
   ...ownedFoldersEnv([root], join(root, "tmp")),
-  BBBOX_IDENTITY_ROOT: identityRoot(name),
-  BBBOX_IDENTITY_NIC_WAIT_SECONDS: "0",
-  BBBOX_IDENTITY_SETTLE_SECONDS: "0",
+  ALIABOX_IDENTITY_ROOT: identityRoot(name),
+  ALIABOX_IDENTITY_NIC_WAIT_SECONDS: "0",
+  ALIABOX_IDENTITY_SETTLE_SECONDS: "0",
   FAKE_ADDRESS: Object.values(container.NetworkSettings?.Networks ?? {})[0]?.IPAddress ?? "",
   FAKE_ALSO_HOLDS: host.guestAlsoHolds ?? "",
 });
@@ -154,7 +154,7 @@ function probeCards(devices) {
   for (const card of cardsGiven(devices, false)) console.log(`${card.index}, GPU-${card.uuid}, ${card.name}, ${card.totalMiB}, ${card.freeMiB}`);
 }
 
-const COPY_INTO = "bbbox.snapshot.copy-into";
+const COPY_INTO = "aliabox.snapshot.copy-into";
 const COPY_LANDING = "copy-landing.json";
 const COPY_MAY_LAND = "copy-may-land";
 const COPY_LANDED = "copy-landed";
@@ -231,7 +231,7 @@ function runCopy(found) {
   const name = found.Name.slice(1);
   const source = found.HostConfig.Mounts.find((mount) => mount.Target === "/from").Name;
   const target = found.HostConfig.Mounts.find((mount) => mount.Target === "/to").Name;
-  const restoring = source.startsWith("bbbox-snapshot-");
+  const restoring = source.startsWith("aliabox-snapshot-");
   found.State = { Status: "running", Running: true, Paused: false, ExitCode: 0 };
   save(found);
   if (host.holdRestoreCopy && restoring) waitFor(host.holdRestoreCopy);
@@ -252,11 +252,11 @@ function run(rest) {
     const { source, target } = copyVolumes(rest);
     const volumes = read("volumes.json", {});
     const copier = copyContainer(rest, "running").Name.slice(1);
-    if (host.holdRestoreCopy && source.startsWith("bbbox-snapshot-")) waitFor(host.holdRestoreCopy);
-    if (host.holdTakeCopy && !source.startsWith("bbbox-snapshot-")) waitFor(host.holdTakeCopy);
+    if (host.holdRestoreCopy && source.startsWith("aliabox-snapshot-")) waitFor(host.holdRestoreCopy);
+    if (host.holdTakeCopy && !source.startsWith("aliabox-snapshot-")) waitFor(host.holdTakeCopy);
     if (!existsSync(join(dir(copier), "config.json"))) fail("The copy's container was removed while it ran", 137);
     rmSync(dir(copier), { recursive: true, force: true });
-    if (host.failRestoreCopy && source.startsWith("bbbox-snapshot-")) fail("Restore copy failed");
+    if (host.failRestoreCopy && source.startsWith("aliabox-snapshot-")) fail("Restore copy failed");
     if (!volumes[source] || !read("volumes.json", {})[target]) fail("Snapshot copy has a missing volume");
     const now = read("volumes.json", {});
     now[target].Files = structuredClone(volumes[source].Files ?? {});
@@ -394,7 +394,7 @@ function bootIdentity(name, found) {
   if (!existsSync(identity)) return { ok: true };
   rmSync(join(identity, "run"), { recursive: true, force: true });
   if (host.skipIdentityBootMatching && new RegExp(host.skipIdentityBootMatching).test(name)) return { ok: true };
-  const boot = spawnSync("bash", [identityToolIn(identity), "boot", "--value", envValue(found, "BBBOX_IDENTITY")], { env: identityEnv(name, found), encoding: "utf8" });
+  const boot = spawnSync("bash", [identityToolIn(identity), "boot", "--value", envValue(found, "ALIABOX_IDENTITY")], { env: identityEnv(name, found), encoding: "utf8" });
   return { ok: boot.status === 0, said: `${boot.stdout ?? ""}${boot.stderr ?? ""}` };
 }
 
@@ -443,7 +443,7 @@ function startServicesAfterTheHold(name, found) {
   ].join("\n");
   const [command, ...commandArgs] = [...JSON.parse(process.env.FAKE_GROUP ?? "[]"), "bash", "-c", afterTheHold];
   const child = spawn(command, commandArgs, {
-    env: { PATH: pathWithHostStubs(root, [], process.env.PATH), ...ownedFoldersEnv([root], join(root, "tmp")), BBBOX_FORK_HOLD: envValue(found, "BBBOX_FORK_HOLD"), BBBOX_IDENTITY: envValue(found, "BBBOX_IDENTITY") },
+    env: { PATH: pathWithHostStubs(root, [], process.env.PATH), ...ownedFoldersEnv([root], join(root, "tmp")), ALIABOX_FORK_HOLD: envValue(found, "ALIABOX_FORK_HOLD"), ALIABOX_IDENTITY: envValue(found, "ALIABOX_IDENTITY") },
     stdio: "ignore",
   });
   child.unref();
@@ -521,7 +521,7 @@ function container(command, rest) {
       } else if (!identity.ok) {
         writeFileSync(join(dir(name), "logs"), `${identity.said}alia-box-start: the identity reset failed, so the box starts nothing and never says it is ready\n`);
         found.State = { Status: "exited", ExitCode: 1 };
-      } else if (found.Config.Labels[IMAGE_HOLDS_FORKS] === "1" && envValue(found, "BBBOX_FORK_HOLD") === "1") {
+      } else if (found.Config.Labels[IMAGE_HOLDS_FORKS] === "1" && envValue(found, "ALIABOX_FORK_HOLD") === "1") {
         found.State = { Status: "running", ExitCode: 0 };
         startServicesAfterTheHold(name, found);
       } else {
@@ -869,7 +869,7 @@ switch (command) {
       console.log(`Untagged: ${gone.join(" ")}`);
     } else if (sub === "ls") {
       if (more.includes("dangling=true")) {
-        const install = more.find((arg) => arg.startsWith("label=bbbox.snapshot.install="))?.split("=").at(-1);
+        const install = more.find((arg) => arg.startsWith("label=aliabox.snapshot.install="))?.split("=").at(-1);
         for (const image of host.snapshotDangling ?? []) if (image.install === install) console.log(image.id);
         break;
       }
@@ -884,7 +884,7 @@ switch (command) {
       }
     } else if (sub === "prune") {
       if (host.failSnapshotPrune) fail("a prune operation is already running");
-      const install = more.find((arg) => arg.startsWith("label=bbbox.snapshot.install="))?.split("=").at(-1);
+      const install = more.find((arg) => arg.startsWith("label=aliabox.snapshot.install="))?.split("=").at(-1);
       if (host.snapshotDangling) write("host.json", { ...host, snapshotDangling: (host.snapshotDangling ?? []).filter((image) => image.install !== install || image.inUse) });
       console.log("Total reclaimed space: 0B");
     } else fail(`fake docker: unknown command image ${sub}`, 2);

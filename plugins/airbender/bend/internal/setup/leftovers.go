@@ -5,10 +5,10 @@
 // only beads' hooks or none, Codex's config with only beads' switch,
 // beads' Codex skill), and removes them with the folders left empty.
 //
-// Why: the owner's rule (bead-bb-cnv): every file Airbender or beads
+// Why: the owner's rule (bead-alia-cnv): every file Airbender or beads
 // touches is committed, ignored or removed, and setup leaves nothing in
 // between. Beads' agent setup belongs to "removed" (Airbender's
-// instructions replace it, bead-bb-c9l.8), but beads' own removal does not
+// instructions replace it, bead-alia-c9l.8), but beads' own removal does not
 // finish: `bd setup codex --remove` leaves .codex/config.toml with an empty
 // [features], `bd setup claude --remove` leaves .claude/settings.json as
 // {"hooks": {}}, and an older beads wrote a Codex hook (`bd prime
@@ -20,7 +20,7 @@
 //     in it is beads' (or there is none), and nothing else is in it. A file
 //     that also holds the owner's settings is never rewritten here; beads'
 //     own removal takes its entries out, and what it cannot is named.
-//   - Read only from the main folder, where these files live (bead-bb-ak0).
+//   - Read only from the main folder, where these files live (bead-alia-ak0).
 //
 // Gotchas:
 //   - The checks know what beads 1.3.1 writes (tried 2026-10-15): .codex/
@@ -37,7 +37,7 @@ import (
 )
 
 // beadsCommand is the mark of a hook beads installed, in any of its forms.
-var beadsCommand = regexp.MustCompile(`\bbd (prime|codex-hook)\b`)
+var beadsCommand = regexp.MustCompile(`\aliad (prime|codex-hook)\b`)
 
 // leftoverPlaces are, per agent, the files and folders beads' setup for it
 // may leave, relative to the main folder.

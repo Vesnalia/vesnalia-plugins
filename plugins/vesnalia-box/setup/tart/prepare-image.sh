@@ -117,7 +117,7 @@ tart clone "$from" "$build"
 step "booting $build"
 boot
 step "customising $build"
-tart exec -i "$build" env BBBOX_SSH_PUBLIC_KEY="$key" CUA_VERSION="$CUA_VERSION" CUA_SHA256="$CUA_SHA256" \
+tart exec -i "$build" env ALIABOX_SSH_PUBLIC_KEY="$key" CUA_VERSION="$CUA_VERSION" CUA_SHA256="$CUA_SHA256" \
   BLACKHOLE_VERSION="$BLACKHOLE_VERSION" BLACKHOLE_SHA256="$BLACKHOLE_SHA256" ALIA_URL="$alia_url" /bin/sh -s \
   <"$here/guest/customize.sh"
 step "setting Xcode up in $build"

@@ -105,7 +105,7 @@ With concurrency 1, the same design reduces to a classic serial loop. It isn't a
 ```mermaid
 flowchart LR
   human([Human])
-  subgraph bbserver["ALIA server"]
+  subgraph aliaserver["ALIA server"]
     plugin["autoresearch plugin<br/>scheduler · pipeline · stats · budget"]
     db[("SQLite<br/>alia.storage")]
     ui["Study page<br/>navPanel + header badge"]

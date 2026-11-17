@@ -61,7 +61,7 @@ M = [
     ("S8 degradado", "una lectura fallida no se cuenta ni se avisa", "server.ts",
      "await within(latestTurn(thread.id), DISPATCH_LIMIT_MS, what);",
      "await within(latestTurn(thread.id).catch(() => null), DISPATCH_LIMIT_MS, what);",
-     "server.test.ts", "a read of bb that fails is said once"),
+     "server.test.ts", "a read of alia that fails is said once"),
     ("S8 degradado", "una lista de hilos fallida no avisa", "server.ts",
      "        \"the threads not listed to read each project's model at load; the preferred model judges those with none stored\",\n",
      "        \"\",\n",
@@ -76,7 +76,7 @@ M = [
      "      if (typeof page !== \"object\") return;\n      for (const t of page.value)", "      if (typeof page !== \"object\") break;\n      for (const t of page.value)",
      "server.test.ts", "a list of archived threads that fails"),
     ("S10 lista de proyectos (Astra r3 MLC-002)", "una lista de proyectos tardía no se avisa", "server.ts",
-     "    if (listed === \"late\")\n      bb.log.warn(", "    if (listed === \"never\" as string)\n      bb.log.warn(",
+     "    if (listed === \"late\")\n      alia.log.warn(", "    if (listed === \"never\" as string)\n      alia.log.warn(",
      "server.test.ts", "a list of projects that does not answer in time"),
 ]
 

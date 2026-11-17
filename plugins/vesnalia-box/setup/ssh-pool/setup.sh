@@ -3,7 +3,7 @@
 # the machine and run it there as root:
 #
 #   sudo sh setup.sh --key "ssh-ed25519 AAAA... alia-box" [--name build-1]
-#     [--address 192.0.2.21] [--port 22] [--admin bbbox-admin]
+#     [--address 192.0.2.21] [--port 22] [--admin aliabox-admin]
 #     [--reset-hook /path/to/reset-machine]
 #
 # --key is the public key alia-box's doctor shows. Give it once for each
@@ -28,7 +28,7 @@ export PATH
 
 LIBEXEC=/usr/local/libexec/alia-box
 here=$(cd "$(dirname "$0")" && pwd)
-keys='' admin=bbbox-admin name='' address='' port='' hook=''
+keys='' admin=aliabox-admin name='' address='' port='' hook=''
 
 die() {
   printf 'setup.sh: %s\n' "$*" >&2
@@ -63,7 +63,7 @@ done
 [ "$(uname -s)" = Linux ] || die "The SSH host pool lends Linux machines only."
 [ -n "$keys" ] || die "Give --key the public key alia-box's doctor shows, starting ssh-ed25519."
 printf '%s\n' "$admin" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$' || die "--admin must be a user name."
-case $admin in bbx-*) die "bbx- names are for box users. Choose another admin user." ;; esac
+case $admin in aliax-*) die "aliax- names are for box users. Choose another admin user." ;; esac
 [ -f "$here/machine.sh" ] || die "machine.sh must be beside setup.sh. Copy the whole setup/ssh-pool directory."
 [ -z "$hook" ] || [ -f "$hook" ] || die "The reset hook $hook does not exist."
 
@@ -113,8 +113,8 @@ if [ -d /etc/tmpfiles.d ] || [ -d /run/systemd/system ]; then
   install -d -m 0755 /etc/tmpfiles.d
   cat >/etc/tmpfiles.d/alia-box.conf <<'EOF'
 # alia-box: ALIA daemon state a hard stop leaves in box users' homes.
-R /home/bbx-*/.alia-machines/*/daemon.lock.lock
-r /home/bbx-*/.alia-machines/*/install-daemon.pid
+R /home/aliax-*/.alia-machines/*/daemon.lock.lock
+r /home/aliax-*/.alia-machines/*/install-daemon.pid
 EOF
 fi
 
@@ -135,15 +135,15 @@ probed() { printf '%s\n' "$snapshots" | sed -n "s/^snapshot\.$1=//p" | head -n 1
 sshd=$(command -v sshd || echo /usr/sbin/sshd)
 config=$("$sshd" -T 2>/dev/null || true)
 if [ -z "$config" ]; then
-  warn "sshd -T did not run, so its settings were not checked. Box users bbx-* and $admin must be able to log in with a key."
+  warn "sshd -T did not run, so its settings were not checked. Box users aliax-* and $admin must be able to log in with a key."
 else
   value() { printf '%s\n' "$config" | sed -n "s/^$1 //p"; }
   [ "$(value pubkeyauthentication)" != no ] || warn "sshd has PubkeyAuthentication no. alia-box logs in with keys only."
   users=$(value allowusers) groups=$(value allowgroups)
   if [ -n "$users$groups" ]; then
-    warn "sshd lets only some users log in (AllowUsers or AllowGroups). Allow $admin and bbx-*, for example AllowUsers $admin bbx-* followed by your own users."
+    warn "sshd lets only some users log in (AllowUsers or AllowGroups). Allow $admin and aliax-*, for example AllowUsers $admin aliax-* followed by your own users."
   fi
-  if value denyusers | grep -q .; then warn "sshd has DenyUsers. Check that it denies neither $admin nor bbx-*."; fi
+  if value denyusers | grep -q .; then warn "sshd has DenyUsers. Check that it denies neither $admin nor aliax-*."; fi
 fi
 
 # What ALIA's installer and a box's GitHub access need.

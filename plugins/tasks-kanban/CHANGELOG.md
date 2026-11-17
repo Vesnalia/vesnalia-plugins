@@ -13,14 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which both `server.ts` and `app.tsx` import. `app.tsx` keeps only a
   type-only import from `server.ts` (erased at build time). This fixes the
   production frontend installation, where the app bundle failed to resolve
-  the server-only `@get-bb/plugin-sdk` root pulled in by `server.ts`.
+  the server-only `@vesnalia/plugin-sdk` root pulled in by `server.ts`.
 
 ## [0.2.2] - 2026-11-14
 
 ### Documentation
 
 - Fixed the language note in the README (EN/RU): settings-page labels
-  follow the OS locale of the bb server process and are not refreshed by
+  follow the OS locale of the VesnALIA server process and are not refreshed by
   reloading the plugin; the sidebar panel title follows the browser
   language at app load. The previous advice ("reload the plugin or use a
   matching browser language") was incorrect.
@@ -66,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Project-wide "Task board" nav panel: a Kanban over BB's built-in Tasks.
+- Project-wide "Task board" nav panel: a Kanban over VesnALIA's built-in Tasks.
 - Six status lanes (backlog, todo, in_progress, in_review, done, canceled)
   with per-lane counts.
 - Drag & drop between lanes, including drop-before-card ordering, via the
@@ -75,14 +75,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   delete with confirmation.
 - Comment history: read and write the task's comments from the dialog.
 - New-task dialog (title, description, status, priority, due date, labels).
-- Tracker-project switcher; the project linked to the current BB project is
+- Tracker-project switcher; the project linked to the current VesnALIA project is
   preselected.
 - Overdue due dates highlighted on cards.
-- English and Russian UI, picked from the BB/browser language
+- English and Russian UI, picked from the ALIA/browser language
   (`lib/i18n.ts`).
-- `board` skill so agents can work the board through `bb tasks`.
-- Server test suite (built bundle + mocked `bb.sdk`) and CI: build with
-  `bb plugin build`, `node --test`, marketplace catalog validation against
-  the official BB marketplace v2 schema.
+- `board` skill so agents can work the board through `alia tasks`.
+- Server test suite (built bundle + mocked `alia.sdk`) and CI: build with
+  `alia plugin build`, `node --test`, marketplace catalog validation against
+  the official VesnALIA marketplace v2 schema.
 - Self-hosted marketplace catalog (`marketplace.json`, schema v2) in the
   repository root.

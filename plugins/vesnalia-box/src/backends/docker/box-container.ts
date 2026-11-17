@@ -10,24 +10,24 @@ const DOCKER_DATA = "/var/lib/docker";
 
 export const BOX_START = "/usr/local/sbin/alia-box-start";
 
-export const VOLUME_OF = "bbbox.volume-of";
+export const VOLUME_OF = "aliabox.volume-of";
 
-export const IMAGE_HOLDS_FORKS = "bbbox.fork-hold";
+export const IMAGE_HOLDS_FORKS = "aliabox.fork-hold";
 
-export const FORK_HOLD_VARIABLE = "BBBOX_FORK_HOLD";
+export const FORK_HOLD_VARIABLE = "ALIABOX_FORK_HOLD";
 
 export type FirstStart = "runs-its-services" | "holds-them-for-the-fork-check";
 
 export const ENV_A_BOX_IS_GIVEN = [
   IDENTITY_VARIABLE,
   FORK_HOLD_VARIABLE,
-  "BBBOX_DOCKERD",
+  "ALIABOX_DOCKERD",
   "NVIDIA_DRIVER_CAPABILITIES",
   "CUDA_VISIBLE_DEVICES",
   "NVIDIA_VISIBLE_DEVICES",
-  "BBBOX_GPU_CARD",
-  "BBBOX_GPU",
-  "BBBOX_GPU_ID",
+  "ALIABOX_GPU_CARD",
+  "ALIABOX_GPU",
+  "ALIABOX_GPU_ID",
   "OMP_NUM_THREADS",
 ] as const;
 
@@ -113,7 +113,7 @@ function firstStartArgs(firstStart: FirstStart): readonly string[] {
 
 function dockerArgs(settings: BoxContainerSettings): readonly string[] {
   return [
-    ...(settings.privileged ? ["--privileged", ...given("BBBOX_DOCKERD", "1")] : []),
+    ...(settings.privileged ? ["--privileged", ...given("ALIABOX_DOCKERD", "1")] : []),
     ...(settings.dockerVolume ? ["--volume", `${settings.dockerVolume}:${DOCKER_DATA}`] : []),
   ];
 }
@@ -127,10 +127,10 @@ function gpuArgs(settings: BoxContainerSettings): readonly string[] {
     "--device", gpu,
     ...given("NVIDIA_DRIVER_CAPABILITIES", "all"),
     ...(card
-      ? [...given("CUDA_VISIBLE_DEVICES", cudaVisible(card)), ...given("NVIDIA_VISIBLE_DEVICES", cudaVisible(card)), ...given("BBBOX_GPU_CARD", cudaVisible(card))]
+      ? [...given("CUDA_VISIBLE_DEVICES", cudaVisible(card)), ...given("NVIDIA_VISIBLE_DEVICES", cudaVisible(card)), ...given("ALIABOX_GPU_CARD", cudaVisible(card))]
       : []),
-    ...(settings.box.kind === "linux-desktop" ? given("BBBOX_GPU", "1") : []),
-    ...(settings.box.kind === "linux-desktop" && seesEveryCard && desktopGpuId ? given("BBBOX_GPU_ID", desktopGpuId) : []),
+    ...(settings.box.kind === "linux-desktop" ? given("ALIABOX_GPU", "1") : []),
+    ...(settings.box.kind === "linux-desktop" && seesEveryCard && desktopGpuId ? given("ALIABOX_GPU_ID", desktopGpuId) : []),
   ];
 }
 
@@ -175,7 +175,7 @@ export function createArgs(settings: BoxContainerSettings | ImageContainerSettin
       "--hostname", "alia-box-image",
       ...resourceArgs(settings.cores, settings.memoryMiB),
       "--network", settings.network,
-      ...(settings.privileged ? ["--privileged", ...given("BBBOX_DOCKERD", "1"), "--volume", DOCKER_DATA] : []),
+      ...(settings.privileged ? ["--privileged", ...given("ALIABOX_DOCKERD", "1"), "--volume", DOCKER_DATA] : []),
       settings.image, BOX_START,
     ];
   }

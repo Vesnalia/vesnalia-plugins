@@ -1,4 +1,4 @@
-// Auto-layout for the fullscreen overview diagram (BBP-71): one frame per
+// Auto-layout for the fullscreen overview diagram (ALIAP-71): one frame per
 // project, crews in a row, their tasks in a row above. Pure geometry so it
 // is testable without @xyflow/react or a DOM.
 import type { OverviewGraph, OverviewNode } from "./overview-graph";
@@ -12,7 +12,7 @@ export const GAP_Y = 48;
 export const FRAME_PAD = 28;
 export const FRAME_HEADER = 36;
 export const FRAME_GAP = 56;
-/** BBP-83: a frame wraps its crews (and tasks) after this many, so a busy project is a block, not a strip. */
+/** ALIAP-83: a frame wraps its crews (and tasks) after this many, so a busy project is a block, not a strip. */
 export const MAX_CREWS_PER_ROW = 3;
 /** Frames wrap onto a new row past this width, so the top level stays readable when fitted. */
 export const MAX_ROW_WIDTH = 2400;

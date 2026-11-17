@@ -30,7 +30,7 @@ const OTHER = "f00dbabef00dbabef00dbabef00dbabef00dbabe";
 const PR_HEAD = "9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e";
 const OLD = "0ld0000000000000000000000000000000000000".replace(/l/g, "1");
 /** The files the review read, as VesnALIA's revisions: a.ts shown, .env kept out by the secrets filter. */
-const REVIEWED = { "src/a.ts": "100644:aaa:100644:bbb", ".env": "000000:000:100644:eee" };
+const REVIEWED = { "src/a.ts": "100644:aaa:100644:aliab", ".env": "000000:000:100644:eee" };
 const ok = (stdout = "") => ({ stdout, stderr: "", code: 0 });
 
 /**

@@ -1,4 +1,4 @@
-// BBP-14 part 1: integration runs only where the plugin server can reach the
+// ALIAP-14 part 1: integration runs only where the plugin server can reach the
 // worktree. Local host → unchanged; remote or unknown host → a clear refusal
 // at plan, apply, deliver, merge, rebase and approve, and git is never run.
 import { describe, expect, it } from "vitest";
@@ -40,7 +40,7 @@ describe("selectBackend", () => {
   it("another host → the remote backend; the stub says why", () => {
     const choice = selectBackend({ hostId: REMOTE, localHostId: "h1", local, remote: unavailableRemoteGit });
     expect(choice.ok).toBe(false);
-    if (!choice.ok) expect(choice.reason).toMatch(new RegExp(`^integration unavailable on remote host ${REMOTE}: .*BBP-14`));
+    if (!choice.ok) expect(choice.reason).toMatch(new RegExp(`^integration unavailable on remote host ${REMOTE}: .*ALIAP-14`));
   });
   it("another host with a working remote backend → that backend (the seam)", () => {
     const remoteGit = createFakeGit();

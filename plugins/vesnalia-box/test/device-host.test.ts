@@ -21,9 +21,9 @@ import {
 import { illegal, legal } from "./device-host-types.ts";
 
 test("a slot's user and UID come from its generation: carried slots 79991 and 79992, made ones from 80000, never a UID macOS gives (064)", () => {
-  assert.equal(slotUser({ carried: true, generation: 1 }), "bbd-i1");
+  assert.equal(slotUser({ carried: true, generation: 1 }), "aliad-i1");
   assert.equal(slotUid({ carried: true, generation: 2 }), 79992);
-  assert.equal(slotUser({ carried: false, generation: 1 }), "bbd-1");
+  assert.equal(slotUser({ carried: false, generation: 1 }), "aliad-1");
   assert.equal(slotUid({ carried: false, generation: 1 }), 80001);
   assert.equal(slotUid({ carried: false, generation: 9999 }), 89999, "the last: no UID wraps, as the helper refuses generation 10000");
   for (let generation = 1; generation < 10_000; generation += 997) {
@@ -57,7 +57,7 @@ test("a slot's host is named by its Mac where VesnALIA Box knows it, never by th
   assert.equal(slotHostName({ guest: { ref: "alia-box-host-0a1b2c3d4e/3", host: "mac-1", address: null, size: null, data: placementData(tart) } }), "mac-1");
   const pool: SlotPlacement = { ...tart, host: "mac-2", hostOn: "pool-mac" };
   assert.equal(slotHostName({ guest: { ref: "mac-2/3", host: "mac-2", address: null, size: null, data: placementData(pool) } }), "mac-2");
-  const namespace: SlotPlacement = { ...tart, host: "bbbox-install-ios-host-abc123", hostOn: "namespace" };
+  const namespace: SlotPlacement = { ...tart, host: "aliabox-install-ios-host-abc123", hostOn: "namespace" };
   assert.equal(slotHostName({ guest: { ref: "r", host: null, address: null, size: null, data: placementData(namespace) } }), "its Namespace Mac", "a Namespace Mac has no name of its own");
   assert.equal(slotHostName({ guest: { ref: "r", host: "pve-1", address: null, size: null, data: { box: "bx1" } } }), null);
 });

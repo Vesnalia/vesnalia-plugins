@@ -40,23 +40,23 @@ type Look = { icon: LucideIcon; tone: Tone; word: string };
 
 /** State is an icon shape plus a word (its accessible name); colour only repeats it. */
 function StatusIcon({ icon: Icon, tone, word }: Look) {
-  return <Icon className="bbui-reports-icon" data-tone={tone} size={14} strokeWidth={1.75} role="img" aria-label={word} />;
+  return <Icon className="aliaui-reports-icon" data-tone={tone} size={14} strokeWidth={1.75} role="img" aria-label={word} />;
 }
 
 /** A skeleton in the shape of a report: a lede, an optional row of figures, then list rows. */
 function Shape({ label, figures = 0, rows = 4 }: { label: string; figures?: number; rows?: number }) {
   return (
-    <div className="bbui-skeleton bbui-reports-shape" role="status" aria-label={`Loading ${label}`}>
+    <div className="aliaui-skeleton aliaui-reports-shape" role="status" aria-label={`Loading ${label}`}>
       <span style={{ width: "40%" }} />
       {figures > 0 ? (
-        <div className="bbui-reports-shape-figures">
+        <div className="aliaui-reports-shape-figures">
           {Array.from({ length: figures }, (_, i) => (
             <span key={i} />
           ))}
         </div>
       ) : null}
       {Array.from({ length: rows }, (_, i) => (
-        <span key={i} className="bbui-reports-shape-row" style={{ width: `${92 - ((i * 17) % 40)}%` }} />
+        <span key={i} className="aliaui-reports-shape-row" style={{ width: `${92 - ((i * 17) % 40)}%` }} />
       ))}
     </div>
   );
@@ -86,8 +86,8 @@ function Report<T>({ title, source, ...view }: ViewProps<T> & { title?: string; 
   else if (path) body = <FileView {...view} path={path} />;
   else body = <EmptyState title={`No ${view.label} to show`} hint="Pass a file path from this thread, or the rows inline." />;
   return (
-    <section className="bbui bbui-reports" aria-label={title ?? view.label}>
-      {title ? <h3 className="bbui-head bbui-reports-title">{title}</h3> : null}
+    <section className="aliaui aliaui-reports" aria-label={title ?? view.label}>
+      {title ? <h3 className="aliaui-head aliaui-reports-title">{title}</h3> : null}
       {body}
     </section>
   );
@@ -115,7 +115,7 @@ function View<T>({ label, parse, isEmpty, empty, skeleton, children, loaded, inl
 
 function Lede({ look, children }: { look: Look; children: ReactNode }) {
   return (
-    <p className="bbui-reports-lede">
+    <p className="aliaui-reports-lede">
       <StatusIcon {...look} />
       <span>{children}</span>
     </p>
@@ -124,15 +124,15 @@ function Lede({ look, children }: { look: Look; children: ReactNode }) {
 
 function Where({ file, line }: { file?: string; line?: number }) {
   if (!file) return null;
-  return <span className="bbui-mono bbui-reports-where">{line ? `${file}:${line}` : file}</span>;
+  return <span className="aliaui-mono aliaui-reports-where">{line ? `${file}:${line}` : file}</span>;
 }
 
 /** A collapsed list ("41 passed"), opened on demand. */
 function Fold({ summary, children }: { summary: string; children: ReactNode }) {
   return (
-    <details className="bbui-reports-fold">
-      <summary className="bbui-reports-summary">
-        <ChevronRight className="bbui-reports-chevron" size={14} strokeWidth={1.75} aria-hidden="true" />
+    <details className="aliaui-reports-fold">
+      <summary className="aliaui-reports-summary">
+        <ChevronRight className="aliaui-reports-chevron" size={14} strokeWidth={1.75} aria-hidden="true" />
         {summary}
       </summary>
       {children}
@@ -159,9 +159,9 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 function Bar({ value, max, tone }: { value: number; max: number; tone?: "muted" | "bad" }) {
   const w = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
-    <svg className="bbui-reports-bar" aria-hidden="true" focusable="false">
-      <rect className="bbui-reports-bar-fill" data-tone={tone} width={`${w}%`} height="100%" rx="2" />
-      {w > 2 ? <rect className="bbui-reports-bar-fill" data-tone={tone} width="4" height="100%" /> : null}
+    <svg className="aliaui-reports-bar" aria-hidden="true" focusable="false">
+      <rect className="aliaui-reports-bar-fill" data-tone={tone} width={`${w}%`} height="100%" rx="2" />
+      {w > 2 ? <rect className="aliaui-reports-bar-fill" data-tone={tone} width="4" height="100%" /> : null}
     </svg>
   );
 }
@@ -176,23 +176,23 @@ const TEST_LOOK: Record<TestStatus, Look> = {
 
 function TestRow({ test }: { test: TestCase }) {
   return (
-    <li className="bbui-reports-row">
+    <li className="aliaui-reports-row">
       <StatusIcon {...TEST_LOOK[test.status]} />
-      <div className="bbui-reports-main">
-        <div className="bbui-reports-line">
-          <span className="bbui-reports-name">{test.name}</span>
-          {test.ms !== undefined && test.status !== "skipped" ? <span className="bbui-label">{duration(test.ms)}</span> : null}
+      <div className="aliaui-reports-main">
+        <div className="aliaui-reports-line">
+          <span className="aliaui-reports-name">{test.name}</span>
+          {test.ms !== undefined && test.status !== "skipped" ? <span className="aliaui-label">{duration(test.ms)}</span> : null}
         </div>
         <Where file={test.file} line={test.line} />
-        {test.message && test.status === "failed" ? <pre className="bbui-mono bbui-reports-pre">{test.message}</pre> : null}
-        {test.message && test.status === "skipped" ? <span className="bbui-label">{test.message}</span> : null}
+        {test.message && test.status === "failed" ? <pre className="aliaui-mono aliaui-reports-pre">{test.message}</pre> : null}
+        {test.message && test.status === "skipped" ? <span className="aliaui-label">{test.message}</span> : null}
       </div>
     </li>
   );
 }
 
 const testList = (label: string) => (tests: TestCase[]) => (
-  <ol className="bbui-reports-list" aria-label={label}>
+  <ol className="aliaui-reports-list" aria-label={label}>
     {tests.map((t, i) => (
       <TestRow key={i} test={t} />
     ))}
@@ -229,7 +229,7 @@ const Tests = defineComponent({
           <>
             <Lede look={failed ? TEST_LOOK.failed : TEST_LOOK.passed}>
               {failed ? `${failed} of ${total} failed` : `All ${plural(total, "test")} passed`}
-              <span className="bbui-label">{failed ? `, ${countWords([[passed, "passed"], [skipped, "skipped"]])}` : skipped ? `, ${skipped} skipped` : ""}</span>
+              <span className="aliaui-label">{failed ? `, ${countWords([[passed, "passed"], [skipped, "skipped"]])}` : skipped ? `, ${skipped} skipped` : ""}</span>
             </Lede>
             {failed ? testList("Failed tests")(pick("failed")) : null}
             {passed ? <Fold summary={`${passed} passed`}>{testList("Passed tests")(pick("passed"))}</Fold> : null}
@@ -253,16 +253,16 @@ function FindingRow({ finding: f }: { finding: Finding }) {
   const look = SEVERITY_LOOK[f.severity];
   const meta = [look.word, f.line ? `line ${f.line}` : null, f.status ?? null].filter(Boolean).join(", ");
   return (
-    <li className="bbui-reports-row">
+    <li className="aliaui-reports-row">
       <StatusIcon {...look} />
-      <div className="bbui-reports-main">
-        <span className="bbui-reports-name">{f.title}</span>
-        <div className="bbui-reports-line bbui-reports-meta">
-          <span className="bbui-label">{meta}</span>
-          {f.rule ? <span className="bbui-mono bbui-reports-where">{f.rule}</span> : null}
+      <div className="aliaui-reports-main">
+        <span className="aliaui-reports-name">{f.title}</span>
+        <div className="aliaui-reports-line aliaui-reports-meta">
+          <span className="aliaui-label">{meta}</span>
+          {f.rule ? <span className="aliaui-mono aliaui-reports-where">{f.rule}</span> : null}
         </div>
-        {f.detail ? <pre className="bbui-mono bbui-reports-pre">{f.detail}</pre> : null}
-        {f.fix ? <span className="bbui-reports-fix">Fix: {f.fix}</span> : null}
+        {f.detail ? <pre className="aliaui-mono aliaui-reports-pre">{f.detail}</pre> : null}
+        {f.fix ? <span className="aliaui-reports-fix">Fix: {f.fix}</span> : null}
       </div>
     </li>
   );
@@ -300,21 +300,21 @@ const Findings = defineComponent({
               [r.counts.warning, r.counts.warning === 1 ? "warning" : "warnings"],
               [r.counts.info, r.counts.info === 1 ? "note" : "notes"],
             ])}
-            <span className="bbui-label">{r.files.some((g) => g.file) ? ` in ${plural(r.files.length, "file")}` : ""}</span>
+            <span className="aliaui-label">{r.files.some((g) => g.file) ? ` in ${plural(r.files.length, "file")}` : ""}</span>
           </Lede>
           <Capped
             items={r.files}
             max={8}
             more={(n) => `${plural(n, "more file")}`}
             render={(groups) => (
-              <ul className="bbui-reports-groups">
+              <ul className="aliaui-reports-groups">
                 {groups.map((g, i) => (
-                  <li key={i} className="bbui-reports-group">
-                    <div className="bbui-reports-line bbui-reports-group-head">
-                      <span className="bbui-mono bbui-reports-path">{g.file ?? "No file"}</span>
-                      <span className="bbui-label">{plural(g.findings.length, "finding")}</span>
+                  <li key={i} className="aliaui-reports-group">
+                    <div className="aliaui-reports-line aliaui-reports-group-head">
+                      <span className="aliaui-mono aliaui-reports-path">{g.file ?? "No file"}</span>
+                      <span className="aliaui-label">{plural(g.findings.length, "finding")}</span>
                     </div>
-                    <ol className="bbui-reports-list">
+                    <ol className="aliaui-reports-list">
                       {g.findings.map((f, j) => (
                         <FindingRow key={j} finding={f} />
                       ))}
@@ -336,11 +336,11 @@ const METRIC_WORD: Record<MetricName, string> = { lines: "Lines", branches: "Bra
 
 function MetricFigure({ name, metric }: { name: MetricName; metric?: Metric }) {
   return (
-    <div className="bbui-reports-figure">
-      <dt className="bbui-label">{METRIC_WORD[name]}</dt>
-      <dd className={metric ? "bbui-figure" : "bbui-label"}>{metric ? pct(metric.pct) : "Not reported"}</dd>
+    <div className="aliaui-reports-figure">
+      <dt className="aliaui-label">{METRIC_WORD[name]}</dt>
+      <dd className={metric ? "aliaui-figure" : "aliaui-label"}>{metric ? pct(metric.pct) : "Not reported"}</dd>
       {metric ? (
-        <dd className="bbui-label">{metric.total !== undefined ? `${fmt(metric.covered!, { decimals: 0 })} of ${fmt(metric.total, { decimals: 0 })}` : "Mean of files"}</dd>
+        <dd className="aliaui-label">{metric.total !== undefined ? `${fmt(metric.covered!, { decimals: 0 })} of ${fmt(metric.total, { decimals: 0 })}` : "Mean of files"}</dd>
       ) : null}
     </div>
   );
@@ -371,7 +371,7 @@ const Coverage = defineComponent({
         const metricFor = (f: (typeof r.files)[number]) => METRICS.map((m) => [m, f.metrics[m]] as const).find(([, v]) => v !== undefined);
         return (
           <>
-            <dl className="bbui-reports-figures">
+            <dl className="aliaui-reports-figures">
               {METRICS.map((m) => (
                 <MetricFigure key={m} name={m} metric={r.totals[m]} />
               ))}
@@ -382,14 +382,14 @@ const Coverage = defineComponent({
                 max={10}
                 more={(n) => plural(n, "more file")}
                 render={(files) => (
-                  <ol className="bbui-reports-list" aria-label="Files, least covered first">
+                  <ol className="aliaui-reports-list" aria-label="Files, least covered first">
                     {files.map((f, i) => {
                       const [name, metric] = metricFor(f) ?? ["lines", undefined];
                       return (
-                        <li key={i} className="bbui-reports-meter">
-                          <span className="bbui-mono bbui-reports-path">{f.file}</span>
+                        <li key={i} className="aliaui-reports-meter">
+                          <span className="aliaui-mono aliaui-reports-path">{f.file}</span>
                           <Bar value={metric?.pct ?? 0} max={100} />
-                          <span className="bbui-reports-num" aria-label={metric ? `${METRIC_WORD[name]} ${pct(metric.pct)}` : "Not measured"}>
+                          <span className="aliaui-reports-num" aria-label={metric ? `${METRIC_WORD[name]} ${pct(metric.pct)}` : "Not measured"}>
                             {metric ? pct(metric.pct) : "-"}
                           </span>
                         </li>
@@ -440,25 +440,25 @@ const Dependencies = defineComponent({
               <>
                 <Lede look={VULN_LOOK[r.vulnerabilities[0]!.severity]}>
                   {plural(r.vulnerabilities.length, "vulnerability", "vulnerabilities")}
-                  <span className="bbui-label">{`: ${countWords(levels)}`}</span>
+                  <span className="aliaui-label">{`: ${countWords(levels)}`}</span>
                 </Lede>
                 <Capped
                   items={r.vulnerabilities}
                   max={8}
                   more={(n) => plural(n, "more vulnerability", "more vulnerabilities")}
                   render={(vulns) => (
-                    <ol className="bbui-reports-list" aria-label="Vulnerabilities, most severe first">
+                    <ol className="aliaui-reports-list" aria-label="Vulnerabilities, most severe first">
                       {vulns.map((v, i) => (
-                        <li key={i} className="bbui-reports-row">
+                        <li key={i} className="aliaui-reports-row">
                           <StatusIcon {...VULN_LOOK[v.severity]} />
-                          <div className="bbui-reports-main">
-                            <div className="bbui-reports-line">
-                              <span className="bbui-mono bbui-reports-name">{v.name}</span>
-                              <span className="bbui-label">{[VULN_LOOK[v.severity].word, v.direct === false ? "indirect" : null].filter(Boolean).join(", ")}</span>
+                          <div className="aliaui-reports-main">
+                            <div className="aliaui-reports-line">
+                              <span className="aliaui-mono aliaui-reports-name">{v.name}</span>
+                              <span className="aliaui-label">{[VULN_LOOK[v.severity].word, v.direct === false ? "indirect" : null].filter(Boolean).join(", ")}</span>
                             </div>
-                            {v.title ? v.url ? <UrlLink href={v.url} className="bbui-reports-link">{v.title}</UrlLink> : <span>{v.title}</span> : null}
-                            {v.range ? <span className="bbui-label">Affects {v.range}</span> : null}
-                            {v.fix ? <span className="bbui-reports-fix">Fix: {v.fix}</span> : null}
+                            {v.title ? v.url ? <UrlLink href={v.url} className="aliaui-reports-link">{v.title}</UrlLink> : <span>{v.title}</span> : null}
+                            {v.range ? <span className="aliaui-label">Affects {v.range}</span> : null}
+                            {v.fix ? <span className="aliaui-reports-fix">Fix: {v.fix}</span> : null}
                           </div>
                         </li>
                       ))}
@@ -471,10 +471,10 @@ const Dependencies = defineComponent({
               <>
                 <Lede look={{ icon: CircleAlert, tone: gaps("major") || gaps("missing") ? "warn" : "neutral", word: "Outdated" }}>
                   {`${r.outdated.length} outdated`}
-                  <span className="bbui-label">{`: ${countWords([[gaps("missing"), "not installed"], [gaps("major"), "major"], [gaps("minor"), "minor"], [gaps("patch"), "patch"]])}`}</span>
+                  <span className="aliaui-label">{`: ${countWords([[gaps("missing"), "not installed"], [gaps("major"), "major"], [gaps("minor"), "minor"], [gaps("patch"), "patch"]])}`}</span>
                 </Lede>
-                <div className="bbui-reports-scroll">
-                  <table className="bbui-reports-table">
+                <div className="aliaui-reports-scroll">
+                  <table className="aliaui-reports-table">
                     <thead>
                       <tr>
                         <th scope="col">Package</th>
@@ -486,9 +486,9 @@ const Dependencies = defineComponent({
                     <tbody>
                       {r.outdated.map((d, i) => (
                         <tr key={i}>
-                          <td className="bbui-mono bbui-reports-path">{d.name}</td>
-                          <td className="bbui-mono">{d.current ?? "-"}</td>
-                          <td className="bbui-mono">{d.latest ?? "-"}</td>
+                          <td className="aliaui-mono aliaui-reports-path">{d.name}</td>
+                          <td className="aliaui-mono">{d.current ?? "-"}</td>
+                          <td className="aliaui-mono">{d.latest ?? "-"}</td>
                           <td data-gap={d.gap}>{GAP_WORD[d.gap]}</td>
                         </tr>
                       ))}
@@ -517,13 +517,13 @@ const RUN_LOOK: Record<RunStatus, Look> = {
 
 function StepList({ steps }: { steps: Step[] }) {
   return (
-    <ol className="bbui-reports-list bbui-reports-steps">
+    <ol className="aliaui-reports-list aliaui-reports-steps">
       {steps.map((s, i) => (
-        <li key={i} className="bbui-reports-row">
+        <li key={i} className="aliaui-reports-row">
           <StatusIcon {...RUN_LOOK[s.status]} />
-          <div className="bbui-reports-line">
-            <span className="bbui-reports-name">{s.name}</span>
-            <span className="bbui-label">{s.time ?? RUN_LOOK[s.status].word}</span>
+          <div className="aliaui-reports-line">
+            <span className="aliaui-reports-name">{s.name}</span>
+            <span className="aliaui-label">{s.time ?? RUN_LOOK[s.status].word}</span>
           </div>
         </li>
       ))}
@@ -535,18 +535,18 @@ function JobRow({ job }: { job: Job }) {
   const look = RUN_LOOK[job.status];
   const open = job.status === "failure" || job.status === "running";
   return (
-    <li className="bbui-reports-row">
+    <li className="aliaui-reports-row">
       <StatusIcon {...look} />
-      <div className="bbui-reports-main">
-        <div className="bbui-reports-line">
+      <div className="aliaui-reports-main">
+        <div className="aliaui-reports-line">
           {job.url ? (
-            <UrlLink href={job.url} className="bbui-reports-link bbui-reports-name">
+            <UrlLink href={job.url} className="aliaui-reports-link aliaui-reports-name">
               {job.name}
             </UrlLink>
           ) : (
-            <span className="bbui-reports-name">{job.name}</span>
+            <span className="aliaui-reports-name">{job.name}</span>
           )}
-          <span className="bbui-label">{[look.word, job.time].filter(Boolean).join(", ")}</span>
+          <span className="aliaui-label">{[look.word, job.time].filter(Boolean).join(", ")}</span>
         </div>
         {job.steps.length ? (
           open ? (
@@ -594,28 +594,28 @@ const Pipeline = defineComponent({
         const failed = run.jobs.filter((j) => j.status === "failure").length;
         return (
           <>
-            <div className="bbui-reports-line">
-              <h3 className="bbui-head bbui-reports-title">{run.workflow ?? "Pipeline"}</h3>
+            <div className="aliaui-reports-line">
+              <h3 className="aliaui-head aliaui-reports-title">{run.workflow ?? "Pipeline"}</h3>
               {url ? (
-                <UrlLink href={url} className="bbui-reports-link bbui-reports-out">
+                <UrlLink href={url} className="aliaui-reports-link aliaui-reports-out">
                   Open run
                   <ExternalLink size={14} strokeWidth={1.75} aria-hidden="true" />
                 </UrlLink>
               ) : null}
             </div>
-            {run.title ? <p className="bbui-reports-sub">{run.title}</p> : null}
+            {run.title ? <p className="aliaui-reports-sub">{run.title}</p> : null}
             <Lede look={look}>
               {failed ? `${look.word}: ${failed} of ${plural(run.jobs.length, "job")}` : `${look.word}, ${plural(run.jobs.length, "job")}`}
-              <span className="bbui-label">{run.time ? ` in ${run.time}` : ""}</span>
+              <span className="aliaui-label">{run.time ? ` in ${run.time}` : ""}</span>
             </Lede>
             {run.branch || run.sha ? (
-              <p className="bbui-reports-line bbui-reports-meta">
-                {run.branch ? <span className="bbui-mono bbui-reports-where">{run.branch}</span> : null}
-                {run.sha ? <span className="bbui-mono bbui-reports-where">{run.sha.slice(0, 7)}</span> : null}
-                {run.event ? <span className="bbui-label">{run.event.replace(/_/g, " ")}</span> : null}
+              <p className="aliaui-reports-line aliaui-reports-meta">
+                {run.branch ? <span className="aliaui-mono aliaui-reports-where">{run.branch}</span> : null}
+                {run.sha ? <span className="aliaui-mono aliaui-reports-where">{run.sha.slice(0, 7)}</span> : null}
+                {run.event ? <span className="aliaui-label">{run.event.replace(/_/g, " ")}</span> : null}
               </p>
             ) : null}
-            <ol className="bbui-reports-list" aria-label="Jobs">
+            <ol className="aliaui-reports-list" aria-label="Jobs">
               {run.jobs.map((j, i) => (
                 <JobRow key={i} job={j} />
               ))}
@@ -643,23 +643,23 @@ function CompareRow({ row, max, unit }: { row: Comparison; max: number; unit?: s
   const look = VERDICT_LOOK[row.verdict];
   const value = (n: number) => fmt(n, { unit });
   return (
-    <li className="bbui-reports-row">
+    <li className="aliaui-reports-row">
       <StatusIcon {...look} />
-      <div className="bbui-reports-main">
-        <div className="bbui-reports-line">
-          <span className="bbui-reports-name">{row.name}</span>
+      <div className="aliaui-reports-main">
+        <div className="aliaui-reports-line">
+          <span className="aliaui-reports-name">{row.name}</span>
           <span>
             {changeWords(row, unit)}
-            <span className="bbui-label">{row.verdict === "better" || row.verdict === "worse" ? `, ${look.word.toLowerCase()}` : ""}</span>
+            <span className="aliaui-label">{row.verdict === "better" || row.verdict === "worse" ? `, ${look.word.toLowerCase()}` : ""}</span>
           </span>
         </div>
-        <div className="bbui-reports-pair">
-          <span className="bbui-label">Before</span>
+        <div className="aliaui-reports-pair">
+          <span className="aliaui-label">Before</span>
           <Bar value={row.before} max={max} tone="muted" />
-          <span className="bbui-reports-num">{value(row.before)}</span>
-          <span className="bbui-label">After</span>
+          <span className="aliaui-reports-num">{value(row.before)}</span>
+          <span className="aliaui-label">After</span>
           <Bar value={row.after} max={max} />
-          <span className="bbui-reports-num">{value(row.after)}</span>
+          <span className="aliaui-reports-num">{value(row.after)}</span>
         </div>
       </div>
     </li>
@@ -693,24 +693,24 @@ const Benchmark = defineComponent({
             <>
               <Lede look={VERDICT_LOOK.better}>
                 {`${r.runs[0]!.name} is fastest`}
-                <span className="bbui-label">{`, ${seconds(r.runs[0]!.mean)} mean`}</span>
+                <span className="aliaui-label">{`, ${seconds(r.runs[0]!.mean)} mean`}</span>
               </Lede>
-              <ol className="bbui-reports-list" aria-label="Commands, fastest first">
+              <ol className="aliaui-reports-list" aria-label="Commands, fastest first">
                 {r.runs.map((run, i) => (
-                  <li key={i} className="bbui-reports-row">
+                  <li key={i} className="aliaui-reports-row">
                     <StatusIcon {...(run.failed ? { icon: CircleX, tone: "bad", word: "Exited with an error" } : i === 0 ? VERDICT_LOOK.better : VERDICT_LOOK.same)} />
-                    <div className="bbui-reports-main">
-                      <div className="bbui-reports-line">
-                        <span className="bbui-mono bbui-reports-name">{run.name}</span>
+                    <div className="aliaui-reports-main">
+                      <div className="aliaui-reports-line">
+                        <span className="aliaui-mono aliaui-reports-name">{run.name}</span>
                         <span>
                           {i === 0 ? "Fastest" : `${fmt(run.ratio, { decimals: 2 })} times slower`}
-                          {run.failed ? <span className="bbui-label">, a run exited with an error</span> : null}
+                          {run.failed ? <span className="aliaui-label">, a run exited with an error</span> : null}
                         </span>
                       </div>
-                      <div className="bbui-reports-pair">
-                        <span className="bbui-label">Mean</span>
+                      <div className="aliaui-reports-pair">
+                        <span className="aliaui-label">Mean</span>
                         <Bar value={run.mean} max={max} tone={i === 0 ? undefined : "muted"} />
-                        <span className="bbui-reports-num">{`${seconds(run.mean)}${run.stddev !== undefined ? ` ± ${seconds(run.stddev)}` : ""}`}</span>
+                        <span className="aliaui-reports-num">{`${seconds(run.mean)}${run.stddev !== undefined ? ` ± ${seconds(run.stddev)}` : ""}`}</span>
                       </div>
                     </div>
                   </li>
@@ -725,9 +725,9 @@ const Benchmark = defineComponent({
           <>
             <Lede look={worse ? VERDICT_LOOK.worse : better ? VERDICT_LOOK.better : VERDICT_LOOK.same}>
               {countWords([[better, "better"], [worse, "worse"]]) || "No change"}
-              <span className="bbui-label">{` of ${plural(r.rows.length, "measurement")}`}</span>
+              <span className="aliaui-label">{` of ${plural(r.rows.length, "measurement")}`}</span>
             </Lede>
-            <ol className="bbui-reports-list" aria-label="Measurements">
+            <ol className="aliaui-reports-list" aria-label="Measurements">
               {r.rows.map((row, i) => (
                 <CompareRow key={i} row={row} max={Math.max(row.before, row.after)} unit={props.unit} />
               ))}
@@ -777,29 +777,29 @@ const Waterfall = defineComponent({
         const shown = t.spans.slice(0, 60);
         const failed = t.spans.filter((s) => s.failed).length;
         return (
-          <figure className="bbui-reports-figure-block">
-            <figcaption className="bbui-reports-lede">
+          <figure className="aliaui-reports-figure-block">
+            <figcaption className="aliaui-reports-lede">
               <span>
                 {`${plural(t.spans.length, "span")} over ${at(t.end - origin)}`}
-                <span className="bbui-label">{failed ? `, ${failed} failed` : ""}</span>
+                <span className="aliaui-label">{failed ? `, ${failed} failed` : ""}</span>
               </span>
             </figcaption>
-            <ol className="bbui-reports-list bbui-reports-lanes">
+            <ol className="aliaui-reports-list aliaui-reports-lanes">
               {shown.map((s, i) => (
-                <li key={i} className="bbui-reports-lane">
-                  <span className="bbui-reports-lane-name" style={{ paddingInlineStart: `calc(${s.depth} * var(--bbui-s3))` }}>
+                <li key={i} className="aliaui-reports-lane">
+                  <span className="aliaui-reports-lane-name" style={{ paddingInlineStart: `calc(${s.depth} * var(--aliaui-s3))` }}>
                     {s.failed ? <StatusIcon icon={CircleX} tone="bad" word="Failed" /> : null}
-                    <span className="bbui-reports-path" title={s.name}>
+                    <span className="aliaui-reports-path" title={s.name}>
                       {s.name}
                     </span>
-                    {s.detail ? <span className="bbui-label bbui-reports-num">{s.detail}</span> : null}
+                    {s.detail ? <span className="aliaui-label aliaui-reports-num">{s.detail}</span> : null}
                   </span>
-                  <svg className="bbui-reports-track" role="img" aria-label={`Starts at ${at(s.start - origin)}, takes ${at(s.duration)}`}>
+                  <svg className="aliaui-reports-track" role="img" aria-label={`Starts at ${at(s.start - origin)}, takes ${at(s.duration)}`}>
                     {marks.map((m) => (
-                      <line key={m} className="bbui-reports-grid" x1={`${x(m)}%`} x2={`${x(m)}%`} y1="0" y2="100%" />
+                      <line key={m} className="aliaui-reports-grid" x1={`${x(m)}%`} x2={`${x(m)}%`} y1="0" y2="100%" />
                     ))}
                     <rect
-                      className="bbui-reports-span"
+                      className="aliaui-reports-span"
                       data-tone={s.failed ? "bad" : undefined}
                       x={`${x(s.start)}%`}
                       width={`${Math.max(0.4, (s.duration / span) * 100)}%`}
@@ -808,22 +808,22 @@ const Waterfall = defineComponent({
                       rx="2"
                     />
                   </svg>
-                  <span className="bbui-reports-num">{at(s.duration)}</span>
+                  <span className="aliaui-reports-num">{at(s.duration)}</span>
                 </li>
               ))}
             </ol>
-            <div className="bbui-reports-lane bbui-reports-axis" aria-hidden="true">
+            <div className="aliaui-reports-lane aliaui-reports-axis" aria-hidden="true">
               <span />
-              <span className="bbui-reports-ticks">
+              <span className="aliaui-reports-ticks">
                 {marks.map((m) => (
-                  <span key={m} className="bbui-label" style={{ insetInlineStart: `${x(m)}%` }}>
+                  <span key={m} className="aliaui-label" style={{ insetInlineStart: `${x(m)}%` }}>
                     {fmt(m)}
                   </span>
                 ))}
               </span>
-              <span className="bbui-label">{t.unit}</span>
+              <span className="aliaui-label">{t.unit}</span>
             </div>
-            {t.spans.length > shown.length ? <p className="bbui-label">{`${t.spans.length - shown.length} more not shown`}</p> : null}
+            {t.spans.length > shown.length ? <p className="aliaui-label">{`${t.spans.length - shown.length} more not shown`}</p> : null}
           </figure>
         );
       }}
@@ -862,38 +862,38 @@ const Provenance = defineComponent({
     const r = parseProvenance(props.stages, props.expected);
     if (r.stages.length === 0) {
       return (
-        <section className="bbui bbui-reports" aria-label="Provenance">
-          <h3 className="bbui-head bbui-reports-title">Provenance</h3>
+        <section className="aliaui aliaui-reports" aria-label="Provenance">
+          <h3 className="aliaui-head aliaui-reports-title">Provenance</h3>
           <EmptyState title="No stages yet" hint="List the stages from source to live, each with the facts it reported." />
         </section>
       );
     }
     const first = r.drift[0];
     return (
-      <section className="bbui bbui-reports" aria-label="Provenance">
-        <h3 className="bbui-head bbui-reports-title">Provenance</h3>
+      <section className="aliaui aliaui-reports" aria-label="Provenance">
+        <h3 className="aliaui-head aliaui-reports-title">Provenance</h3>
         <Lede look={first ? DRIFT : STAGE_LOOK.done}>
           {first ? `${plural(r.drift.length, "fact differs", "facts differ")}` : "Facts agree from source to live"}
-          <span className="bbui-label">{first ? `: ${r.drift.map((d) => `${d.fact.key} at ${d.stage}`).join(", ")}` : ""}</span>
+          <span className="aliaui-label">{first ? `: ${r.drift.map((d) => `${d.fact.key} at ${d.stage}`).join(", ")}` : ""}</span>
         </Lede>
-        <ol className="bbui-reports-list" aria-label="Stages, source to live">
+        <ol className="aliaui-reports-list" aria-label="Stages, source to live">
           {r.stages.map((s, i) => (
-            <li key={i} className="bbui-reports-row">
+            <li key={i} className="aliaui-reports-row">
               <StatusIcon {...STAGE_LOOK[s.status]} />
-              <div className="bbui-reports-main">
-                <div className="bbui-reports-line">
-                  <span className="bbui-reports-name">{s.name}</span>
-                  <span className="bbui-label">{STAGE_LOOK[s.status].word}</span>
+              <div className="aliaui-reports-main">
+                <div className="aliaui-reports-line">
+                  <span className="aliaui-reports-name">{s.name}</span>
+                  <span className="aliaui-label">{STAGE_LOOK[s.status].word}</span>
                 </div>
-                {s.detail ? <span className="bbui-label">{s.detail}</span> : null}
+                {s.detail ? <span className="aliaui-label">{s.detail}</span> : null}
                 {s.facts.length ? (
-                  <dl className="bbui-reports-facts">
+                  <dl className="aliaui-reports-facts">
                     {s.facts.map((f) => (
-                      <div key={f.key} className="bbui-reports-fact" data-drift={f.expected || f.changed ? "" : undefined}>
-                        <dt className="bbui-label">{f.key}</dt>
-                        <dd className="bbui-mono">{f.value}</dd>
+                      <div key={f.key} className="aliaui-reports-fact" data-drift={f.expected || f.changed ? "" : undefined}>
+                        <dt className="aliaui-label">{f.key}</dt>
+                        <dd className="aliaui-mono">{f.value}</dd>
                         {f.expected || f.changed ? (
-                          <dd className="bbui-reports-drift">
+                          <dd className="aliaui-reports-drift">
                             <StatusIcon {...DRIFT} />
                             <span>
                               {[f.expected ? `expected ${f.expected}` : null, f.changed ? `was ${f.changed.value} at ${f.changed.stage}` : null].filter(Boolean).join(", ")}

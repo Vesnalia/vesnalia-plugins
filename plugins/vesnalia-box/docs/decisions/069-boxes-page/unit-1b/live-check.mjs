@@ -20,7 +20,7 @@ const expect = (condition, message) => {
 };
 
 function alia(args) {
-  return execFileSync(process.env.LIVE_BBC ?? join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  return execFileSync(process.env.LIVE_BBC ?? join(home, "aliac"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
 async function rpc(method, input = null) {
@@ -57,7 +57,7 @@ async function agent(thread, tool, args = {}) {
 }
 
 function events(boxId) {
-  const db = new DatabaseSync(join(process.env.LIVE_DATA ?? join(home, "bbdata"), "plugins", "alia-box", "box-log.db"), { readOnly: true });
+  const db = new DatabaseSync(join(process.env.LIVE_DATA ?? join(home, "aliadata"), "plugins", "alia-box", "box-log.db"), { readOnly: true });
   try {
     return db.prepare("SELECT seq, at, kind, who, agent, why, words, observed FROM box_events WHERE box = ? ORDER BY seq").all(boxId);
   } finally {
@@ -127,7 +127,7 @@ box = await view(boxId);
 line(`- an agent, box_start: ${box.state}, lastStart by ${who(box.log.lastStart.by)}`);
 expect(box.log.lastStart.by?.is === "agent", "the agent's start");
 
-const container = execFileSync("/usr/bin/docker", ["ps", "--filter", `label=bbbox.box=${boxId}`, "--format", "{{.Names}}"], { encoding: "utf8" }).trim() || execFileSync("/usr/bin/docker", ["ps", "--format", "{{.Names}}"], { encoding: "utf8" }).split("\n").find((each) => each.includes(boxId.slice(2, 8))) || "";
+const container = execFileSync("/usr/bin/docker", ["ps", "--filter", `label=aliabox.box=${boxId}`, "--format", "{{.Names}}"], { encoding: "utf8" }).trim() || execFileSync("/usr/bin/docker", ["ps", "--format", "{{.Names}}"], { encoding: "utf8" }).split("\n").find((each) => each.includes(boxId.slice(2, 8))) || "";
 expect(container, "the box's container");
 execFileSync("/usr/bin/docker", ["stop", container]);
 line(`- outside alia-box: docker stop ${container} on the host`);

@@ -127,7 +127,7 @@ Be kind. Be weird. Don't be a jerk. No spam, and no personal data. Humans post; 
 <details>
 <summary><b>Which VesnALIA versions work?</b></summary>
 
-VesnALIA 0.45 or newer. Keep VesnALIA up to date and aliaBBS comes along. If a VesnALIA update ever breaks it, a fix follows: run `alia plugin update bbbbs`.
+VesnALIA 0.45 or newer. Keep VesnALIA up to date and aliaBBS comes along. If a VesnALIA update ever breaks it, a fix follows: run `alia plugin update aliabbs`.
 </details>
 
 <details>

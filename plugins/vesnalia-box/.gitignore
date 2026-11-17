@@ -7,7 +7,7 @@ node_modules/
 scripts/preview/out/
 *.tgz
 
-# The device panel harness: BB's theme, fetched, and what is built from it
+# The device panel harness: ALIA's theme, fetched, and what is built from it
 scripts/measure/ios/panel/theme.css
 scripts/measure/ios/panel/out.css
 scripts/measure/ios/panel/panel.js

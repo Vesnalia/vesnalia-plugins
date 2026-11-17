@@ -47,7 +47,7 @@ All notable changes to GitHub Extended are documented here. The format follows
 
 ### Added
 
-- Discover and track repositories from BB projects or extra repository settings.
+- Discover and track repositories from VesnALIA projects or extra repository settings.
 - Browse GitHub issues, pull requests, and Dependabot alerts from a local cache.
 - Read discussions and diffs, edit GitHub items, and link agent work to them.
 - Search, saved views, composer mentions, and CLI commands for cached GitHub work.

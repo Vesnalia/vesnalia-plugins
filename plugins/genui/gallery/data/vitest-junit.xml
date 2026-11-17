@@ -59,7 +59,7 @@
         </testcase>
         <testcase classname="core/test-results.test.ts" name="stack frames &gt; finds the first frame of the code under test" time="0.00036">
         </testcase>
-        <testcase classname="core/test-results.test.ts" name="paths &gt; gives BB a workspace-relative path or none" time="0.000164917">
+        <testcase classname="core/test-results.test.ts" name="paths &gt; gives ALIA a workspace-relative path or none" time="0.000164917">
         </testcase>
         <testcase classname="core/test-results.test.ts" name="paths &gt; shortens absolute paths to the directory they share" time="0.000124417">
         </testcase>

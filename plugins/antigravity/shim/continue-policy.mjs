@@ -10,7 +10,7 @@ export const CONTINUE_PROMPT =
 export const MAX_AUTO_CONTINUES = 16;
 
 const YIELD_PATTERNS = [
-  /\bbackground (?:task|job|process|command|agent)\b/i,
+  /\aliaackground (?:task|job|process|command|agent)\b/i,
   /\bis running\b/i,
   /\bin the background\b/i,
   /\bonce (?:it|that|this) finishes\b/i,

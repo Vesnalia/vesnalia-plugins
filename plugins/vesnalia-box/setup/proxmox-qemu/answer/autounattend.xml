@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  An unattended Windows 11 install for bb-box's Windows template, on Proxmox
+  An unattended Windows 11 install for alia-box's Windows template, on Proxmox
   QEMU: q35, OVMF, TPM 2.0, VirtIO SCSI and network. build.sh fills in the
   @...@ values. For an English (United States) ISO; Setup stops and asks if
   the ISO's language differs.
@@ -72,7 +72,7 @@
   </settings>
   <settings pass="specialize">
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <ComputerName>bb-box-win</ComputerName>
+      <ComputerName>alia-box-win</ComputerName>
       <TimeZone>UTC</TimeZone>
     </component>
     <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
@@ -88,7 +88,7 @@
         </RunSynchronousCommand>
         <RunSynchronousCommand wcm:action="add">
           <Order>3</Order>
-          <Path>cmd /c "for %d in (D E F G H I J K) do @if exist %d:\bb-box\firstlogon.ps1 xcopy /e /i /y %d:\bb-box C:\bb-box"</Path>
+          <Path>cmd /c "for %d in (D E F G H I J K) do @if exist %d:\alia-box\firstlogon.ps1 xcopy /e /i /y %d:\alia-box C:\alia-box"</Path>
         </RunSynchronousCommand>
       </RunSynchronous>
     </component>
@@ -128,8 +128,8 @@
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add">
           <Order>1</Order>
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\bb-box\firstlogon.ps1</CommandLine>
-          <Description>bb-box first logon</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\alia-box\firstlogon.ps1</CommandLine>
+          <Description>alia-box first logon</Description>
         </SynchronousCommand>
       </FirstLogonCommands>
     </component>

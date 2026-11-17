@@ -65,11 +65,11 @@ function Region<T>({ loaded, failed, lines = 3, children }: { loaded: Loaded<T>;
 
 function Block({ icon, title, meta, label, children }: { icon: ReactNode; title: ReactNode; meta?: ReactNode; label: string; children: ReactNode }) {
   return (
-    <section className="bbui bbui-project" aria-label={label}>
-      <header className="bbui-project-head">
+    <section className="aliaui aliaui-project" aria-label={label}>
+      <header className="aliaui-project-head">
         {icon}
-        <span className="bbui-head">{title}</span>
-        {meta ? <span className="bbui-label">{meta}</span> : null}
+        <span className="aliaui-head">{title}</span>
+        {meta ? <span className="aliaui-label">{meta}</span> : null}
       </header>
       {children}
     </section>
@@ -80,17 +80,17 @@ const plural = (n: number, one: string, many = `${one}s`) => `${fmt(n, { decimal
 
 function Counts({ additions, deletions }: { additions: number; deletions: number }) {
   return (
-    <span className="bbui-project-counts">
-      <span className="bbui-project-add">+{fmt(additions, { decimals: 0 })}</span>
-      <span className="bbui-project-del">-{fmt(deletions, { decimals: 0 })}</span>
+    <span className="aliaui-project-counts">
+      <span className="aliaui-project-add">+{fmt(additions, { decimals: 0 })}</span>
+      <span className="aliaui-project-del">-{fmt(deletions, { decimals: 0 })}</span>
     </span>
   );
 }
 
 function Disclosure({ open, onToggle, children }: { open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
-    <button type="button" className="bbui-project-row" aria-expanded={open} onClick={onToggle}>
-      <ChevronRight {...ICON} className="bbui-project-chevron" />
+    <button type="button" className="aliaui-project-row" aria-expanded={open} onClick={onToggle}>
+      <ChevronRight {...ICON} className="aliaui-project-chevron" />
       {children}
     </button>
   );
@@ -105,14 +105,14 @@ function FileDiff({ file, target }: { file: ChangeRow; target: GitTarget }) {
   const loaded = useLive<PatchResult>(needsLoad ? `${file.path}|${file.revision}` : "", (rpc, threadId) =>
     needsLoad ? rpc.call("project_patch", { threadId, target, path: file.path, revision: file.revision }) : Promise.resolve({ ok: true, patch: file.patch ?? "", truncated: file.patchTruncated }),
   );
-  if (file.binary) return <p className="bbui-label bbui-project-note">Binary file, no text diff.</p>;
-  if (file.tooLarge) return <p className="bbui-label bbui-project-note">Too large to show here. Open VesnALIA’s Diff tab to read it.</p>;
+  if (file.binary) return <p className="aliaui-label aliaui-project-note">Binary file, no text diff.</p>;
+  if (file.tooLarge) return <p className="aliaui-label aliaui-project-note">Too large to show here. Open VesnALIA’s Diff tab to read it.</p>;
   return (
     <Region loaded={loaded} failed="This diff could not be read" lines={4}>
       {({ patch, truncated }) => (
-        <div className="bbui-project-diff">
+        <div className="aliaui-project-diff">
           <Diff patch={patch} path={file.path} />
-          {truncated ? <p className="bbui-label bbui-project-note">The diff is cut short here.</p> : null}
+          {truncated ? <p className="aliaui-label aliaui-project-note">The diff is cut short here.</p> : null}
         </div>
       )}
     </Region>
@@ -122,13 +122,13 @@ function FileDiff({ file, target }: { file: ChangeRow; target: GitTarget }) {
 function FileItem({ file, target }: { file: ChangeRow; target: GitTarget }) {
   const [open, setOpen] = useState(false);
   return (
-    <li className="bbui-project-item">
+    <li className="aliaui-project-item">
       <Disclosure open={open} onToggle={() => setOpen(!open)}>
-        <span className="bbui-project-grow bbui-mono bbui-project-path">
+        <span className="aliaui-project-grow aliaui-mono aliaui-project-path">
           {file.previousPath !== null ? `${file.previousPath} to ${file.path}` : file.path}
         </span>
-        {file.untracked ? <span className="bbui-label">new, untracked</span> : KIND_WORDS[file.kind] ? <span className="bbui-label">{KIND_WORDS[file.kind]}</span> : null}
-        {file.binary ? <span className="bbui-label">binary</span> : <Counts additions={file.additions} deletions={file.deletions} />}
+        {file.untracked ? <span className="aliaui-label">new, untracked</span> : KIND_WORDS[file.kind] ? <span className="aliaui-label">{KIND_WORDS[file.kind]}</span> : null}
+        {file.binary ? <span className="aliaui-label">binary</span> : <Counts additions={file.additions} deletions={file.deletions} />}
       </Disclosure>
       {open ? <FileDiff file={file} target={target} /> : null}
     </li>
@@ -173,12 +173,12 @@ function ChangesBody({ target, paths, onTitle }: { target?: string; paths?: stri
         const deletions = changes.files.reduce((sum, f) => sum + f.deletions, 0);
         return (
           <>
-            <p className="bbui-project-summary">
+            <p className="aliaui-project-summary">
               <span>{plural(changes.total, "file")}</span>
               <Counts additions={additions} deletions={deletions} />
-              {changes.truncated ? <span className="bbui-label">first {fmt(changes.files.length, { decimals: 0 })} shown</span> : null}
+              {changes.truncated ? <span className="aliaui-label">first {fmt(changes.files.length, { decimals: 0 })} shown</span> : null}
             </p>
-            <ol className="bbui-project-list">
+            <ol className="aliaui-project-list">
               {changes.files.map((file) => (
                 <FileItem key={file.path} file={file} target={changes.target} />
               ))}
@@ -223,16 +223,16 @@ function ago(at: number): string {
 function CommitItem({ commit }: { commit: Ok<CommitsResult>["commits"][number] }) {
   const [open, setOpen] = useState(false);
   return (
-    <li className="bbui-project-item">
+    <li className="aliaui-project-item">
       <Disclosure open={open} onToggle={() => setOpen(!open)}>
-        <span className="bbui-project-grow">{commit.subject}</span>
-        <span className="bbui-label">
+        <span className="aliaui-project-grow">{commit.subject}</span>
+        <span className="aliaui-label">
           {commit.author}, {ago(commit.authoredAt)}
         </span>
-        <span className="bbui-mono bbui-project-sha">{commit.shortSha}</span>
+        <span className="aliaui-mono aliaui-project-sha">{commit.shortSha}</span>
       </Disclosure>
       {open ? (
-        <div className="bbui-project-nested">
+        <div className="aliaui-project-nested">
           <ChangesBody target={commit.sha} />
         </div>
       ) : null}
@@ -261,13 +261,13 @@ const Commits = defineComponent({
               />
             ) : (
               <>
-                <ol className="bbui-project-list">
+                <ol className="aliaui-project-list">
                   {commits.commits.map((commit) => (
                     <CommitItem key={commit.sha} commit={commit} />
                   ))}
                 </ol>
                 {commits.total > commits.commits.length ? (
-                  <p className="bbui-label bbui-project-note">Newest {fmt(commits.commits.length, { decimals: 0 })} of {fmt(commits.total, { decimals: 0 })} shown.</p>
+                  <p className="aliaui-label aliaui-project-note">Newest {fmt(commits.commits.length, { decimals: 0 })} of {fmt(commits.total, { decimals: 0 })} shown.</p>
                 ) : null}
               </>
             )
@@ -316,38 +316,38 @@ function PullRequestBody({ pr }: { pr: PullRequestView }) {
   const checksTone: ToneName = pr.checks.failed > 0 ? "bad" : pr.checks.pending > 0 ? "warn" : pr.checks.total > 0 ? "good" : "neutral";
   return (
     <>
-      <p className="bbui-project-pr-title">
-        <UrlLink href={pr.url} className="bbui-project-link">
+      <p className="aliaui-project-pr-title">
+        <UrlLink href={pr.url} className="aliaui-project-link">
           {pr.title}
         </UrlLink>
-        <span className="bbui-label">#{pr.number}</span>
-        <span className="bbui-project-tone" data-tone={stateTone}>
+        <span className="aliaui-label">#{pr.number}</span>
+        <span className="aliaui-project-tone" data-tone={stateTone}>
           {state}
         </span>
       </p>
       {attention && attention[0] !== state ? (
-        <p className="bbui-project-tone bbui-project-attention" data-tone={attention[1]}>
+        <p className="aliaui-project-tone aliaui-project-attention" data-tone={attention[1]}>
           {attention[0]}
         </p>
       ) : null}
-      <dl className="bbui-project-facts">
-        <dt className="bbui-label">Checks</dt>
-        <dd className="bbui-project-tone" data-tone={checksTone}>
+      <dl className="aliaui-project-facts">
+        <dt className="aliaui-label">Checks</dt>
+        <dd className="aliaui-project-tone" data-tone={checksTone}>
           {checksWords(pr.checks)}
         </dd>
-        <dt className="bbui-label">Review</dt>
+        <dt className="aliaui-label">Review</dt>
         <dd>
           {REVIEW_WORDS[pr.review.state] ?? pr.review.state}
           {pr.review.requests > 0 && pr.review.state !== "approved" ? `, ${plural(pr.review.requests, "reviewer")} asked` : ""}
         </dd>
         {pr.state === "open" || pr.state === "draft" ? (
           <>
-            <dt className="bbui-label">Merge</dt>
+            <dt className="aliaui-label">Merge</dt>
             <dd>{MERGE_WORDS[pr.mergeability] ?? pr.mergeability}</dd>
           </>
         ) : null}
-        <dt className="bbui-label">Branch</dt>
-        <dd className="bbui-mono bbui-project-path">
+        <dt className="aliaui-label">Branch</dt>
+        <dd className="aliaui-mono aliaui-project-path">
           {pr.head} into {pr.base}
         </dd>
       </dl>
@@ -421,15 +421,15 @@ export function statusWords(thread: ThreadState): string {
 function ThreadItem({ thread }: { thread: PluginSidebarThread }) {
   const navigate = useAliaNavigate();
   return (
-    <li className="bbui-project-item">
-      <button type="button" className="bbui-project-row" onClick={() => navigate.toThread(thread.id)} aria-label={`Open ${thread.displayTitle}, ${statusWords(thread)}`}>
-        <span className="bbui-project-glyph">
+    <li className="aliaui-project-item">
+      <button type="button" className="aliaui-project-row" onClick={() => navigate.toThread(thread.id)} aria-label={`Open ${thread.displayTitle}, ${statusWords(thread)}`}>
+        <span className="aliaui-project-glyph">
           <StatusGlyph indicator={thread.indicator} archived={thread.isArchived} size="compact" />
         </span>
-        <span className="bbui-project-grow">
+        <span className="aliaui-project-grow">
           <ThreadTitleText title={thread.title ?? thread.displayTitle} />
         </span>
-        <span className="bbui-label">{statusWords(thread)}</span>
+        <span className="aliaui-label">{statusWords(thread)}</span>
       </button>
     </li>
   );
@@ -466,11 +466,11 @@ const Threads = defineComponent({
                 hint={ids === null ? "Threads this one starts show here with their live status." : "Pass thread ids from this project."}
               />
             ) : (
-              <ol className="bbui-project-list">
+              <ol className="aliaui-project-list">
                 {rows.map((row) =>
                   typeof row === "string" ? (
-                    <li key={row} className="bbui-project-item bbui-project-missing bbui-label">
-                      <span className="bbui-mono">{row}</span> is not an active thread in this project.
+                    <li key={row} className="aliaui-project-item aliaui-project-missing aliaui-label">
+                      <span className="aliaui-mono">{row}</span> is not an active thread in this project.
                     </li>
                   ) : (
                     <ThreadItem key={row.id} thread={row} />
@@ -492,12 +492,12 @@ const THREADS_PER_ENVIRONMENT = 3;
 function EnvironmentItem({ env, threads }: { env: Ok<EnvironmentsResult>["environments"][number]; threads: PluginSidebarThread[] }) {
   const pr = env.pullRequest;
   return (
-    <li className="bbui-project-env" aria-current={env.current ? "true" : undefined}>
-      <p className="bbui-project-env-head">
-        <span className="bbui-mono bbui-project-path bbui-project-grow">{env.branch ?? env.name ?? env.id}</span>
-        <span className="bbui-label">{env.current ? `${env.kind}, this thread's environment` : env.kind}</span>
+    <li className="aliaui-project-env" aria-current={env.current ? "true" : undefined}>
+      <p className="aliaui-project-env-head">
+        <span className="aliaui-mono aliaui-project-path aliaui-project-grow">{env.branch ?? env.name ?? env.id}</span>
+        <span className="aliaui-label">{env.current ? `${env.kind}, this thread's environment` : env.kind}</span>
       </p>
-      <p className="bbui-project-env-facts bbui-label">
+      <p className="aliaui-project-env-facts aliaui-label">
         {env.note !== null ? (
           <span>{env.note}</span>
         ) : (
@@ -514,18 +514,18 @@ function EnvironmentItem({ env, threads }: { env: Ok<EnvironmentsResult>["enviro
           </>
         )}
         {pr ? (
-          <UrlLink href={pr.url} className="bbui-project-link" title={pr.title}>
+          <UrlLink href={pr.url} className="aliaui-project-link" title={pr.title}>
             #{pr.number} {STATE_WORDS[pr.state]?.[0].toLowerCase() ?? pr.state}
           </UrlLink>
         ) : null}
       </p>
       {threads.length > 0 ? (
-        <ol className="bbui-project-list bbui-project-env-threads">
+        <ol className="aliaui-project-list aliaui-project-env-threads">
           {threads.slice(0, THREADS_PER_ENVIRONMENT).map((thread) => (
             <ThreadItem key={thread.id} thread={thread} />
           ))}
           {threads.length > THREADS_PER_ENVIRONMENT ? (
-            <li className="bbui-label bbui-project-note">and {plural(threads.length - THREADS_PER_ENVIRONMENT, "more thread")}</li>
+            <li className="aliaui-label aliaui-project-note">and {plural(threads.length - THREADS_PER_ENVIRONMENT, "more thread")}</li>
           ) : null}
         </ol>
       ) : null}
@@ -555,13 +555,13 @@ const Environments = defineComponent({
               <EmptyState title="No environments" hint="Start a thread in this project and its checkout or worktree shows here." />
             ) : (
               <>
-                <ol className="bbui-project-envs">
+                <ol className="aliaui-project-envs">
                   {environments.map((env) => (
                     <EnvironmentItem key={env.id} env={env} threads={byEnvironment.get(env.id) ?? []} />
                   ))}
                 </ol>
                 {total > environments.length ? (
-                  <p className="bbui-label bbui-project-note">The {fmt(environments.length, { decimals: 0 })} most recent of {fmt(total, { decimals: 0 })} shown.</p>
+                  <p className="aliaui-label aliaui-project-note">The {fmt(environments.length, { decimals: 0 })} most recent of {fmt(total, { decimals: 0 })} shown.</p>
                 ) : null}
               </>
             )

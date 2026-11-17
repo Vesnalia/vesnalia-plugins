@@ -44,7 +44,7 @@ function policyMarker(lang: "en" | "ru"): string {
   return lang === "ru" ? "Правила автономного руководителя" : "Autonomous lead operating rules";
 }
 
-describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
+describe("loadRolePrompt lead policy (aliat-er6.2)", () => {
   it("custom executor preserves its text and receives the deferred handoff path once", async () => {
     const original = "  Custom executor.\n";
     const role = { name: "developer", prompt: original } as unknown as Role;

@@ -1,8 +1,8 @@
-﻿# BBDesk
+﻿# AliaDesk
 
 Your VesnALIA projects, chats and applications in one workspace.
 
-BBDesk combines an application launcher, project tabs and live activity indicators. Embedded chat and new-thread creation use VesnALIA's native components.
+AliaDesk combines an application launcher, project tabs and live activity indicators. Embedded chat and new-thread creation use VesnALIA's native components.
 
 ## What's new in 0.1.8
 
@@ -24,7 +24,7 @@ The pool holds up to 50 conversations, including unavailable saved entries. When
 
 Drag a bottom thread tab or a conversation from the history panel into the workspace to open it alongside the current chat. Drop on the left or right half of a column to insert there. Drag the dividers to resize adjacent chats; arrow keys also resize and double-click equalizes widths. Click a column to activate it: bottom tabs replace only that column, or focus a chat already open beside it. Alt+Enter on a bottom tab and the history panel's Open alongside button provide keyboard alternatives. Close a column with its header X; this does not hide, archive or stop the thread. Layouts are remembered locally per project. Columns have a minimum width of 320px and scroll horizontally when necessary.
 
-![BBDesk with four projects, application shortcuts, live thread indicators, an active conversation with two subagents, conversation history, and tabs showing working, action needed, queued, new reply, error and read states.](https://raw.githubusercontent.com/devalextelematika/BBDesk/main/docs/images/bbdesk-overview.png)
+![AliaDesk with four projects, application shortcuts, live thread indicators, an active conversation with two subagents, conversation history, and tabs showing working, action needed, queued, new reply, error and read states.](https://raw.githubusercontent.com/devalextelematika/BBDesk/main/docs/images/bbdesk-overview.png)
 
 [What the preview shows](docs/SHOWCASE.md).
 
@@ -40,7 +40,7 @@ Drag a bottom thread tab or a conversation from the history panel into the works
 - Browse recent conversations with two-line titles, dates and environments, or open the full project in VesnALIA. On narrow workspaces history overlays the chat; project tabs stay in a single scrolling row.
 - Hidden tabs disappear as soon as hiding succeeds, without a timed placeholder. Hiding the current conversation selects a neighboring tab; hiding a background conversation keeps the current chat open.
 - Start a thread with its project preselected in VesnALIA's native composer.
-- Change permission mode before the next prompt in an existing thread. New threads start with the last mode successfully used in BBDesk, remembered in this browser; VesnALIA still enforces provider and machine limits.
+- Change permission mode before the next prompt in an existing thread. New threads start with the last mode successfully used in AliaDesk, remembered in this browser; VesnALIA still enforces provider and machine limits.
 - Open registered application screens here or alongside using VesnALIA's native split action.
 - Collapse and resize the application panel; its layout is remembered in your browser.
 - Follow delegated agents through activity indicators without retaining completed subagent rows.
@@ -89,20 +89,20 @@ VesnALIA must be running for installation. It builds local plugins again during 
 
 ## Get started
 
-Open **BBDesk** in VesnALIA navigation, then use the small **Configure projects and applications** settings button on the right of the top toolbar to connect projects and add application shortcuts. The stable plugin ID is `dashboard`; the page is `/plugins/dashboard/home` on your VesnALIA server.
+Open **AliaDesk** in VesnALIA navigation, then use the small **Configure projects and applications** settings button on the right of the top toolbar to connect projects and add application shortcuts. The stable plugin ID is `dashboard`; the page is `/plugins/dashboard/home` on your VesnALIA server.
 
-If the launcher asks you to enable its navigation provider, choose **BBDesk** under **Settings → Appearance → Navigation**. It preserves VesnALIA's original rail and supplies the registered screens and native actions. Settings-only plugins do not provide launchable screens.
+If the launcher asks you to enable its navigation provider, choose **AliaDesk** under **Settings → Appearance → Navigation**. It preserves VesnALIA's original rail and supplies the registered screens and native actions. Settings-only plugins do not provide launchable screens.
 
 Selected projects, their order, Shared pool visibility and application shortcuts are stored on the VesnALIA server and shared by its clients. The application panel's width and open state, per-project split layouts and the shared pool's conversations and layout are stored separately in each browser.
 
 ## Interface language
 
-Open VesnALIA's settings for installed plugins, select **BBDesk**, and change **Interface language**:
+Open VesnALIA's settings for installed plugins, select **AliaDesk**, and change **Interface language**:
 
 - **English** is the default for new and existing installations without a saved preference.
 - **Русский** enables the Russian interface.
 
-The choice is stored by VesnALIA and shared across clients of the same VesnALIA server. No automatic language detection is used. Switching language updates BBDesk labels without resetting the selected project, open chat or settings.
+The choice is stored by VesnALIA and shared across clients of the same VesnALIA server. No automatic language detection is used. Switching language updates AliaDesk labels without resetting the selected project, open chat or settings.
 
 Project names, thread content, user-defined shortcut names and other applications keep their original text. VesnALIA's native chat and composer manage their own labels. The language selector itself uses the stable labels English and Русский.
 

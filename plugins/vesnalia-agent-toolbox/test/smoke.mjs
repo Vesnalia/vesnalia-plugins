@@ -95,39 +95,39 @@ const ctx = { threadId: "thr_self", projectId: "proj_personal", signal: new Abor
 const results = {};
 const run = async (name, params) => { results[name] = await tools.get(name).execute(params, ctx); };
 
-await run("bbtools_threads_list", {});
-await run("bbtools_thread_get", { threadId: "thr_child" });
-await run("bbtools_thread_outline", { threadId: "thr_child" });
-const sentNow = await tools.get("bbtools_thread_send").execute({ threadId: "thr_child", text: "hi" }, ctx);
-const sentLater = await tools.get("bbtools_thread_send").execute({ threadId: "thr_child", text: "hi", sendAt: new Date(Date.now() + 3600_000).toISOString() }, ctx);
-const sentBad = await tools.get("bbtools_thread_send").execute({ threadId: "thr_child", text: "hi", sendAt: "not-a-date" }, ctx);
-results["bbtools_thread_send"] = [sentNow, sentLater, sentBad].join(" || ");
-await run("bbtools_thread_spawn", { prompt: "do it" });
-await run("bbtools_thread_wait", { threadId: "thr_child", timeoutMs: 5000 });
-await run("bbtools_thread_interactions_list", { threadId: "thr_child" });
-await run("bbtools_thread_interaction_respond", { threadId: "thr_child", interactionId: "ia_1", decision: "deny" });
-await run("bbtools_thread_interaction_respond", { threadId: "thr_child", interactionId: "ia_2", answers: { q1: { selected: ["yes"] } } });
-await run("bbtools_thread_interaction_respond", { threadId: "thr_child", interactionId: "ia_1" });
-await run("bbtools_thread_retry", { threadId: "thr_child" });
-await run("bbtools_thread_clear_context", { threadId: "thr_child" });
-await run("bbtools_thread_compact", { threadId: "thr_child" });
-await run("bbtools_thread_search", { query: "x" });
-await run("bbtools_projects_list", {});
-await run("bbtools_workspace_list", { path: "" });
-await run("bbtools_workspace_read", { path: "a.txt" });
-await run("bbtools_workspace_write", { path: "a.txt", content: "x" });
-await run("bbtools_workspace_mkdir", { path: "d" });
-await run("bbtools_terminals_list", {});
-await run("bbtools_terminal_create", { title: "t" });
-await run("bbtools_terminal_output", { terminalId: "term_1" });
-await run("bbtools_terminal_input", { terminalId: "term_1", text: "ls" });
-await run("bbtools_terminal_close", { terminalId: "term_1" });
-await run("bbtools_machines_list", {});
-await run("bbtools_environments_list", {});
-await run("bbtools_browser_list", {});
-await run("bbtools_browser_open", { url: "https://example.com" });
-await run("bbtools_browser_capture", { tabId: "tab_1" });
-await run("bbtools_browser_close", { tabId: "tab_1" });
+await run("aliatools_threads_list", {});
+await run("aliatools_thread_get", { threadId: "thr_child" });
+await run("aliatools_thread_outline", { threadId: "thr_child" });
+const sentNow = await tools.get("aliatools_thread_send").execute({ threadId: "thr_child", text: "hi" }, ctx);
+const sentLater = await tools.get("aliatools_thread_send").execute({ threadId: "thr_child", text: "hi", sendAt: new Date(Date.now() + 3600_000).toISOString() }, ctx);
+const sentBad = await tools.get("aliatools_thread_send").execute({ threadId: "thr_child", text: "hi", sendAt: "not-a-date" }, ctx);
+results["aliatools_thread_send"] = [sentNow, sentLater, sentBad].join(" || ");
+await run("aliatools_thread_spawn", { prompt: "do it" });
+await run("aliatools_thread_wait", { threadId: "thr_child", timeoutMs: 5000 });
+await run("aliatools_thread_interactions_list", { threadId: "thr_child" });
+await run("aliatools_thread_interaction_respond", { threadId: "thr_child", interactionId: "ia_1", decision: "deny" });
+await run("aliatools_thread_interaction_respond", { threadId: "thr_child", interactionId: "ia_2", answers: { q1: { selected: ["yes"] } } });
+await run("aliatools_thread_interaction_respond", { threadId: "thr_child", interactionId: "ia_1" });
+await run("aliatools_thread_retry", { threadId: "thr_child" });
+await run("aliatools_thread_clear_context", { threadId: "thr_child" });
+await run("aliatools_thread_compact", { threadId: "thr_child" });
+await run("aliatools_thread_search", { query: "x" });
+await run("aliatools_projects_list", {});
+await run("aliatools_workspace_list", { path: "" });
+await run("aliatools_workspace_read", { path: "a.txt" });
+await run("aliatools_workspace_write", { path: "a.txt", content: "x" });
+await run("aliatools_workspace_mkdir", { path: "d" });
+await run("aliatools_terminals_list", {});
+await run("aliatools_terminal_create", { title: "t" });
+await run("aliatools_terminal_output", { terminalId: "term_1" });
+await run("aliatools_terminal_input", { terminalId: "term_1", text: "ls" });
+await run("aliatools_terminal_close", { terminalId: "term_1" });
+await run("aliatools_machines_list", {});
+await run("aliatools_environments_list", {});
+await run("aliatools_browser_list", {});
+await run("aliatools_browser_open", { url: "https://example.com" });
+await run("aliatools_browser_capture", { tabId: "tab_1" });
+await run("aliatools_browser_close", { tabId: "tab_1" });
 
 for (const [name, value] of Object.entries(results)) {
   const v = String(value).replace(/\n/g, " | ");
@@ -135,17 +135,17 @@ for (const [name, value] of Object.entries(results)) {
 }
 
 // respond must be blocked while enableInteractionRespond is off
-const blocked = results["bbtools_thread_interaction_respond"];
+const blocked = results["aliatools_thread_interaction_respond"];
 console.log(blocked.includes("disabled") ? "GATE OK (default off)" : "GATE FAIL: " + blocked);
 
 // with the setting on, both response kinds must go through
 await host.harness.setSettings({ enableInteractionRespond: true });
-const approved = await tools.get("bbtools_thread_interaction_respond").execute({ threadId: "thr_child", interactionId: "ia_1", decision: "allow_for_session" }, ctx);
-const answered = await tools.get("bbtools_thread_interaction_respond").execute({ threadId: "thr_child", interactionId: "ia_2", answers: { q1: { selected: ["yes"], freeText: "go" } } }, ctx);
+const approved = await tools.get("aliatools_thread_interaction_respond").execute({ threadId: "thr_child", interactionId: "ia_1", decision: "allow_for_session" }, ctx);
+const answered = await tools.get("aliatools_thread_interaction_respond").execute({ threadId: "thr_child", interactionId: "ia_2", answers: { q1: { selected: ["yes"], freeText: "go" } } }, ctx);
 console.log("RESPOND approval:", approved);
 console.log("RESPOND answers:", answered);
 const respondCalls = host.harness.sdk.callsTo("threads.interactions.respond");
 console.log("respond payloads:", JSON.stringify(respondCalls.map((c) => c[0].value)));
-console.log("WS after env fix:", results["bbtools_workspace_list"]);
-console.log("capture:", results["bbtools_browser_capture"]);
+console.log("WS after env fix:", results["aliatools_workspace_list"]);
+console.log("capture:", results["aliatools_browser_capture"]);
 console.log("instructions:\n" + host.harness.registrations.instructionProvider({ threadId: "t", projectId: "p" }));

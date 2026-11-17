@@ -30,7 +30,7 @@ async function until(what: string, check: () => boolean, ms = 30_000): Promise<v
 
 test("alia-box-stream's qemu mode maps QEMU's shared screen through its D-Bus display, and streams it as video (#885)", { skip: !can && "needs macOS, QEMU and swiftc", timeout: 240_000 }, async () => {
   // A short path of its own: Unix sockets have a short limit, and this test needs no other helper.
-  const dir = mkdtempSync(join(tmpdir(), "bbbox-qd-"));
+  const dir = mkdtempSync(join(tmpdir(), "aliabox-qd-"));
   after(() => rmSync(dir, { recursive: true, force: true }));
   const binary = join(dir, "alia-box-stream");
   const built = spawnSync("xcrun", ["swiftc", "-O", "-o", binary, SWIFT], { encoding: "utf8" });

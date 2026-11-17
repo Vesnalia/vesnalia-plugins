@@ -4,9 +4,9 @@ import { setupDir } from "../setup-dir.ts";
 import { PRODUCT } from "../../brand.ts";
 
 export const IDENTITY_DAEMON = "dev.alia-box.identity";
-const TOOL_END = "BBBOX_IDENTITY_TOOL";
-const PLIST_END = "BBBOX_IDENTITY_PLIST";
-const INSTALL_END = "BBBOX_IDENTITY_INSTALL";
+const TOOL_END = "ALIABOX_IDENTITY_TOOL";
+const PLIST_END = "ALIABOX_IDENTITY_PLIST";
+const INSTALL_END = "ALIABOX_IDENTITY_INSTALL";
 
 let tool: string | null = null;
 

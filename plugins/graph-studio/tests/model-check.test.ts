@@ -7,7 +7,7 @@ const providers = [
   { id: "off", available: false },
 ];
 
-// Mirrors what VesnALIA answered live (BBP-21): one catalogue per provider.
+// Mirrors what VesnALIA answered live (ALIAP-21): one catalogue per provider.
 const catalogs: Record<string, ModelCatalog> = {
   "claude-code": {
     providers,

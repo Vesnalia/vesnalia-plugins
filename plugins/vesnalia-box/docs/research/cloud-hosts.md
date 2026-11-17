@@ -254,11 +254,11 @@ As every backend (018, 019), and as 055 sets out:
   `alia-box-<install>-<host ID>`, unique in the project, so a retried create
   meets `uniqueness_error` (HTTP 409) and finds the server the first made.
 - **The owner on the server.** Labels from the create:
-  `bbbox-install=<install ID>`, `bbbox-host=<host ID>`,
-  `bbbox-role=host` and `bbbox-image=<build>`. The SSH key, firewall and
+  `aliabox-install=<install ID>`, `aliabox-host=<host ID>`,
+  `aliabox-role=host` and `aliabox-image=<build>`. The SSH key, firewall and
   snapshots carry the install's label too.
 - **The sweep** lists servers with the label selector
-  `bbbox-install=<install ID>`, and:
+  `aliabox-install=<install ID>`, and:
   - deletes a server that no record claims, once it is older than 10
     minutes, so a create in flight is never swept;
   - drops a record whose server is gone;

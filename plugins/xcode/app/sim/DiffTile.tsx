@@ -46,7 +46,7 @@ export function DiffTile({ row, onOpenFilmstrip, onAccept }: DiffTileProps) {
         >
           {frame === null ? (
             <div
-              className="bbxs-skeleton w-full"
+              className="aliaxs-skeleton w-full"
               style={{ aspectRatio: "9 / 19.5" }}
               aria-label="This frame is no longer on disk"
             />
@@ -56,7 +56,7 @@ export function DiffTile({ row, onOpenFilmstrip, onAccept }: DiffTileProps) {
                 src={(showingBase ? row.baseUrl : null) ?? frame.thumbUrl ?? frame.url}
                 alt=""
                 loading="lazy"
-                className="bbxs-tile-crossfade block w-full"
+                className="aliaxs-tile-crossfade block w-full"
                 style={{ aspectRatio: `${frame.width} / ${frame.height}` }}
               />
               {/* Painted over the head frame, which is why odiff runs with
@@ -64,7 +64,7 @@ export function DiffTile({ row, onOpenFilmstrip, onAccept }: DiffTileProps) {
                   with changed pixels tinted, and overlaying that renders a
                   washed-out second copy of the frame rather than a highlight. */}
               {row.maskUrl !== null && !showingBase ? (
-                <img src={row.maskUrl} alt="" aria-hidden className="bbxs-mask" />
+                <img src={row.maskUrl} alt="" aria-hidden className="aliaxs-mask" />
               ) : null}
             </>
           )}
@@ -111,7 +111,7 @@ function Side({
   return (
     <div className="min-w-0 flex-1">
       {url === null ? (
-        <div className="bbxs-skeleton w-full" style={{ aspectRatio: "9 / 19.5" }} aria-hidden />
+        <div className="aliaxs-skeleton w-full" style={{ aspectRatio: "9 / 19.5" }} aria-hidden />
       ) : (
         <img src={url} alt="" loading="lazy" className="block w-full" />
       )}

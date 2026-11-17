@@ -3,7 +3,7 @@ host (a Tart VM, slot 1 of 9), iPhone 18 Pro, iOS 27.0 (24A434), Xcode 27.0,
 slim on, as the slot's user (no sudo). Timed with perl's Time::HiRes.
 
 device folder (~/Library/Developer/CoreSimulator/Devices/<udid>)  352 MB
-a user default written in the device: bbsnapMarker=before
+a user default written in the device: aliasnapMarker=before
 xcrun simctl shutdown                         3.19 s
 xcrun simctl clone of the shut-down device    1.62 s
 cp -c -R of the device folder (APFS clones)   0.96 s, 346 MB as du counts it

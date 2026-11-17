@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Canarios del informe: casos leídos a mano en el evento de bb, que el cálculo debe repetir.
+"""Canarios del informe: casos leídos a mano en el evento de alia, que el cálculo debe repetir.
 
-Uso: comprobar.py  (sale 1 si alguno falla). Los valores salen de `bb thread log` de cada hilo, no de analizar.py.
+Uso: comprobar.py  (sale 1 si alguno falla). Los valores salen de `alia thread log` de cada hilo, no de analizar.py.
 """
 import importlib.util
 import os
@@ -31,7 +31,7 @@ c = filas("thr_4kfyv6knny")
 caso("el canario del encargo sale en la tabla, joytorm → team5", any(f["de"] == "joytorm" and f["a"] == "team5" for f in c))
 caso("y está fría, no matada: 130,9 min sin peticiones", all(f["clase"] != "mata" for f in c) and any(f["clase"] == "fria" and f["hueco_min"] > 120 for f in c))
 
-# DEBE SER matada: el 11-03 a las 23:04 UTC el evento de bb da «session rebuilt» y una escritura de 170.249.
+# DEBE SER matada: el 11-03 a las 23:04 UTC el evento de alia da «session rebuilt» y una escritura de 170.249.
 c = [f for f in filas("thr_pf5wnyyu4p") if f["de"] == "siloeads" and f["a"] == "aitor"]
 caso("un cambio con reconstrucción y escritura de 170.249 tokens cuenta como matada", any(f["clase"] == "mata" and f["escribe1"] > 100_000 for f in c))
 

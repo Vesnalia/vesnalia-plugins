@@ -4,7 +4,7 @@
 // needs no network path to a box, and a Docker host over SSH works as the
 // local socket does (031).
 //
-// - Acquire: the box's container is named bbbox-<box ID>, so it is claimed
+// - Acquire: the box's container is named aliabox-<box ID>, so it is claimed
 //   before anything is made. It is made with its owner in its labels, on a
 //   network of alia-box's own, then started; its main process, setup/docker/
 //   start, writes /run/alia-box/ready once the box is up. There is no warm
@@ -226,7 +226,7 @@ const BUILD_TARGET: Readonly<Record<DockerKind, string>> = {
  */
 export const DOCKER_CHECK = String.raw`t() { name=$1; shift; if out=$("$@" 2>&1); then echo "$name ok   $(echo "$out" | head -n 1)"; else echo "$name FAIL $(echo "$out" | head -n 1)"; fi; }
 for tool in node git gh claude codex pi rg fd jj uv; do t "$tool" "$tool" --version; done
-[ "${"$"}{BBBOX_DOCKERD:-0}" != 1 ] || t "docker on first use" docker version --format '{{.Server.Version}}'
+[ "${"$"}{ALIABOX_DOCKERD:-0}" != 1 ] || t "docker on first use" docker version --format '{{.Server.Version}}'
 if [ -e /usr/local/libexec/alia-box/display ]; then
   for i in $(seq 1 60); do [ -s /run/alia-box/display-mode ] && break; sleep 1; done
   t "display" cat /run/alia-box/display-mode
@@ -333,7 +333,7 @@ function formatMiB(value: number): string {
 
 /** The container of a box. Box IDs are letters and digits; anything else becomes "-". */
 export function containerName(boxId: string): string {
-  return `bbbox-${boxId.replace(/[^A-Za-z0-9_.-]/g, "-")}`;
+  return `aliabox-${boxId.replace(/[^A-Za-z0-9_.-]/g, "-")}`;
 }
 
 export { hostnameOf };
@@ -2758,7 +2758,7 @@ export class DockerBackend implements Backend {
     await this.#cli.prepare(signal);
     await this.#network(signal);
     const kind = this.#kind(build.kind);
-    const name = `bbbox-image-${randomBytes(6).toString("hex")}`;
+    const name = `aliabox-image-${randomBytes(6).toString("hex")}`;
     const { cores, memoryMiB } = this.#context.kind(build.kind).defaultSize;
     const privileged = this.#privileged(build.kind);
     const args = createArgs({
@@ -2785,7 +2785,7 @@ export class DockerBackend implements Backend {
   }
 
   /**
-   * Stops an image box and commits it as bbbox-image/<image>:<build>, with
+   * Stops an image box and commits it as aliabox-image/<image>:<build>, with
    * its record in the image's labels; the container then goes. Docker is
    * off in the image, and the image-box label empty, so a box of it is a box.
    */
@@ -2793,7 +2793,7 @@ export class DockerBackend implements Backend {
     const read = await box.command.run("cat /usr/share/alia-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
     const record = read.exitCode === 0 ? recordFromJson(read.stdout.trim()) : null;
     if (!record) throw new Error(`Image box ${box.ref} has no image record in /usr/share/alia-box/image.json, which finalizing writes.`);
-    const tag = `bbbox-image/${image}:${record.build.replace(/^build\./, "")}`;
+    const tag = `aliabox-image/${image}:${record.build.replace(/^build\./, "")}`;
     await this.#cli.ok(["container", "stop", "--time", "30", box.ref], { timeoutMs: 120_000, signal });
     const label = (key: string, value: string) => ["--change", `LABEL ${key}=${JSON.stringify(value)}`];
     await this.#cli.ok(
@@ -2803,7 +2803,7 @@ export class DockerBackend implements Backend {
         ...label(LABELS.image, image),
         ...label(LABELS.kind, from.kind),
         ...label(LABELS.imageBox, ""),
-        "--change", "ENV BBBOX_DOCKERD=0",
+        "--change", "ENV ALIABOX_DOCKERD=0",
         box.ref,
         tag,
       ],

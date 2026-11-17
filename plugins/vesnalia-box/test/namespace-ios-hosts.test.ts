@@ -165,7 +165,7 @@ async function serving(hosts: NamespaceHosts): Promise<NamespaceHostRecord> {
 }
 
 const HOST_RECORD_WRITTEN_BEFORE_SEVERAL_WORKSPACES = {
-  tag: "bbbox-inst1-ios-host-a1b2c3",
+  tag: "aliabox-inst1-ios-host-a1b2c3",
   instance: "ns-1",
   made: 1_000_000,
   endsAt: 1_000_000 + 4 * 3600_000,
@@ -215,12 +215,12 @@ test("a host's setup unpacks VesnALIA Box's setup and runs mac-ios.sh as root wi
 });
 
 test("a slot's commands run as its user, in its launchd session, through the host's own SSH and sudo, as Namespace's Macs have no sshd for other users", async () => {
-  assert.equal(asSlotUser("bbd-3", "echo hi"), "sudo -n launchctl asuser \"$(id -u 'bbd-3')\" /usr/bin/sudo -n -H -u 'bbd-3' -- /bin/zsh -c 'cd ~ 2>/dev/null || exit 1\necho hi'");
+  assert.equal(asSlotUser("aliad-3", "echo hi"), "sudo -n launchctl asuser \"$(id -u 'aliad-3')\" /usr/bin/sudo -n -H -u 'aliad-3' -- /bin/zsh -c 'cd ~ 2>/dev/null || exit 1\necho hi'");
   const ran: { script: string; stdin: unknown }[] = [];
   const host = { run: async (script: string, options: RunOptions = {}) => (ran.push({ script, stdin: options.stdin }), { exitCode: 0, stdout: "x\nbb-box-read:aGVsbG8=\n", stderr: "", timedOut: false }) };
-  const slot = new SlotUserTransport(host as never, "bbd-3");
+  const slot = new SlotUserTransport(host as never, "aliad-3");
   await slot.writeFile("notes/a.txt", new TextEncoder().encode("hello"), { mode: "600" });
-  assert.match(ran[0]!.script, /^sudo -n launchctl asuser "\$\(id -u 'bbd-3'\)" \/usr\/bin\/sudo -n -H -u 'bbd-3' -- \/bin\/zsh -c /);
+  assert.match(ran[0]!.script, /^sudo -n launchctl asuser "\$\(id -u 'aliad-3'\)" \/usr\/bin\/sudo -n -H -u 'aliad-3' -- \/bin\/zsh -c /);
   assert.match(ran[0]!.script, /cat > "\$p" && chmod '\\''600'\\'' "\$p"/);
   assert.equal(new TextDecoder().decode(await slot.readFile("notes/a.txt", { maxBytes: 100 })), "hello");
   assert.equal(await slot.probe(), true);

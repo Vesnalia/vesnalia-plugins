@@ -18,7 +18,7 @@ import {
   userspaceNotice,
   wrongCardNotice,
 } from "../src/plugin/gpu-page.ts";
-const CARD = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+const CARD = "aaaaaaaa-aliabb-cccc-dddd-eeeeeeeeeeee";
 const NOW = Date.UTC(2026, 10, 6, 12, 0, 0);
 
 function box(patch: Partial<BoxView> = {}): BoxView {

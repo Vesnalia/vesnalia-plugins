@@ -396,7 +396,7 @@ describe("WatchRunner", () => {
     // The two oldest went, whole: counted first, and no piece of either is left.
     expect(note.startsWith('<firstmate-watch-dropped count="2"/>\n\n<firstmate-watch name="third"')).toBe(true);
     expect(note).not.toContain("aaa");
-    expect(note).not.toContain("bbb");
+    expect(note).not.toContain("aliab");
     expect(note).toContain(`${"c".repeat(12000)}\n</firstmate-watch>`);
     expect(note).toContain(`${"d".repeat(12000)}\n</firstmate-watch>`);
     // What the captain's line is drawn from: the notes that went, and the count the tag carries.

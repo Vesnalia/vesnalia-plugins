@@ -1,18 +1,18 @@
 # Changelog
 
 Derived from the private monorepo's CHANGELOG (`unifedev/unife` 9081404): the parts that
-concern the bb plugin and the server vendored into it. References to `reviews/`, `NOTES.md`, `DESIGN.md`,
-`RELEASE-*.md` and branch names are to that monorepo; `packages/bb-pages` is this plugin's directory there.
+concern the VesnALIA plugin and the server vendored into it. References to `reviews/`, `NOTES.md`, `DESIGN.md`,
+`RELEASE-*.md` and branch names are to that monorepo; `packages/alia-pages` is this plugin's directory there.
 Versions 1.9.0 and earlier were a different implementation of the same plugin; their changelog is in the
 `v1.9.0` tag of this repository.
 
-## 1.14.13 (bb plugin) — 2026-11-10
+## 1.14.13 (VesnALIA plugin) — 2026-11-10
 
-The bb plugin's release of the 0.6.33 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.13`): it carries pages-core 0.6.14 (a page's
+The VesnALIA plugin's release of the 0.6.33 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.13`): it carries pages-core 0.6.14 (a page's
 `sessions.start` checks and names the reasoning level and names the permission mode; Back and Forward between a
 document's fragment steps move it in place), and a contributor that starts after Thread Pages mounts reaches fresh
-threads' instruction at once (unife-bb-contributor-cold-start).
+threads' instruction at once (unife-alia-contributor-cold-start).
 
 ### `@unifedev/thread-pages`
 
@@ -23,11 +23,11 @@ threads' instruction at once (unife-bb-contributor-cold-start).
 Four fixes for `@unifedev/claude-pages` (unife-claude-home-start-folder-realpath,
 unife-claude-start-without-mode-runs-unlisted-default, unife-claude-default-model-from-settings,
 unife-daemon-stop-returns-before-exit), one for
-the bb plugin `@unifedev/thread-pages` (unife-bb-contributor-cold-start), three for `@unifedev/pages-core`
+the VesnALIA plugin `@unifedev/thread-pages` (unife-alia-contributor-cold-start), three for `@unifedev/pages-core`
 (unife-sessions-start-reasoning-level-unchecked, unife-sessions-start-dialog-omits-permission-mode,
 unife-shell-back-after-reload), and one to the test and release tooling (unife-instruction-check-spec-source).
 
-`@unifedev/pages-core` 0.6.14, `@unifedev/claude-pages` 0.6.33, the bb plugin `@unifedev/thread-pages` 1.14.13. No
+`@unifedev/pages-core` 0.6.14, `@unifedev/claude-pages` 0.6.33, the VesnALIA plugin `@unifedev/thread-pages` 1.14.13. No
 agent text changed.
 
 ### Fixed
@@ -54,13 +54,13 @@ agent text changed.
   document stays loaded: after a reload, a new version or another document, Back does not return to it (spec 01
   R1.12f, 08 A144c). Tests: `packages/pages-core/test/browser/history.mjs`,
   `packages/pages-core/test/runtime/shell/install.test.ts`, `packages/pages-core/test/runtime/kernel/anchors.test.ts`.
-- **bb: a contributor plugin that starts after Thread Pages reaches fresh threads' instruction at once.** Thread
-  Pages read the contributors when it mounted and then only when a page call or `bb pages status` asked, so a
+- **VesnALIA: a contributor plugin that starts after Thread Pages reaches fresh threads' instruction at once.** Thread
+  Pages read the contributors when it mounted and then only when a page call or `alia pages status` asked, so a
   contributor that started, stopped or changed after the mount (enabled, installed, updated, removed, or loaded after
   `thread-pages`) was missing from, or still in, the instruction fresh threads got until such a read; a fresh thread
   2 s after the mount got no syns fragment. Thread Pages now reads the contributors again and places the instruction
-  whenever bb says its plugins changed (`system:changed` with `plugins-changed`). Test:
-  `packages/bb-pages/test/plugin.test.ts`.
+  whenever VesnALIA says its plugins changed (`system:changed` with `plugins-changed`). Test:
+  `packages/alia-pages/test/plugin.test.ts`.
 
 ### Tests
 
@@ -76,14 +76,14 @@ agent text changed.
 
 Fixes for `@unifedev/claude-pages` 0.6.32 (unife-claude-session-titles, unife-claude-slash-first-message-lost,
 unife-claude-bg-env-from-service-starter, unife-open-empty-origin, unife-claude-resume-stopped-agent-on-send). No agent
-text changed. pages-core stays 0.6.13 and the bb plugin `@unifedev/thread-pages` 1.14.12.
+text changed. pages-core stays 0.6.13 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.12.
 
-## 1.14.12 (bb plugin) — 2026-11-09
+## 1.14.12 (VesnALIA plugin) — 2026-11-09
 
-The bb plugin's release of the 0.6.31 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.12`): it carries pages-core 0.6.13, whose
+The VesnALIA plugin's release of the 0.6.31 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.12`): it carries pages-core 0.6.13, whose
 `reinject()` reads the contributors again first, so the instruction placed after a settings change holds the
-contributors bb lists now rather than those of the 10 s cache. Its pages work as in 1.14.11.
+contributors VesnALIA lists now rather than those of the 10 s cache. Its pages work as in 1.14.11.
 
 ### `@unifedev/thread-pages`
 
@@ -95,7 +95,7 @@ On Claude Code, `unife-pages open --address` gives a machine's operator a page's
 (unife-workspace-address-without-signin), and a contributor's instruction fragment reaches the next session at once
 after a page-server start (B-0094).
 
-`@unifedev/pages-core` 0.6.13, `@unifedev/claude-pages` 0.6.31, the bb plugin `@unifedev/thread-pages` 1.14.12. No
+`@unifedev/pages-core` 0.6.13, `@unifedev/claude-pages` 0.6.31, the VesnALIA plugin `@unifedev/thread-pages` 1.14.12. No
 agent text changed.
 
 ### Fixed
@@ -106,7 +106,7 @@ agent text changed.
   standing instruction without any fragment. Now every change of the daemon's contributor registry (a registration, an
   unregistration, a mod's session gone, a declared process stopped for good, an endpoint cleared) calls
   `PagesServer.reinject()`, which reads the contributors again whatever the 10 s cache's age; a registration is
-  answered once the new instruction is placed, and running sessions hear `instruction.changed` as before. On bb,
+  answered once the new instruction is placed, and running sessions hear `instruction.changed` as before. On VesnALIA,
   `reinject()` after a settings change now reads the contributors again too. Tests:
   `packages/claude-pages/test/daemon/contributor-instruction.test.ts`, `packages/pages-core/test/serving/mount.test.ts`,
   `test/serving/contributed.test.ts`.
@@ -114,13 +114,13 @@ agent text changed.
 ## 0.6.30 — 2026-11-09
 
 A patch for `@unifedev/claude-pages` 0.6.30 (B-0262): no behaviour changed, no agent text changed. pages-core stays
-0.6.12 and the bb plugin `@unifedev/thread-pages` 1.14.11.
+0.6.12 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.11.
 
-## 1.14.11 (bb plugin) — 2026-11-08
+## 1.14.11 (VesnALIA plugin) — 2026-11-08
 
-The bb plugin's release of the 0.6.29 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.11`): it carries pages-core 0.6.12, whose only
-change is the wording of two reasons bb never gives, so its pages work as in 1.14.10.
+The VesnALIA plugin's release of the 0.6.29 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.11`): it carries pages-core 0.6.12, whose only
+change is the wording of two reasons VesnALIA never gives, so its pages work as in 1.14.10.
 
 ### `@unifedev/thread-pages`
 
@@ -134,7 +134,7 @@ and the reader's first message from it starts that agent (unife-claude-new-sessi
 starts no longer takes its first prompt from `claude`'s command line, so a prompt that looks like an option stays
 text, and a page reply that begins with `/` is answered as not sent instead of being pushed again at every idle.
 
-`@unifedev/pages-core` 0.6.12, `@unifedev/claude-pages` 0.6.29, the bb plugin `@unifedev/thread-pages` 1.14.11. No
+`@unifedev/pages-core` 0.6.12, `@unifedev/claude-pages` 0.6.29, the VesnALIA plugin `@unifedev/thread-pages` 1.14.11. No
 agent text changed.
 
 ### Added
@@ -143,10 +143,10 @@ agent text changed.
   open it once in the agent's own app and accept, then send again.") and `not_submitted` ("The agent did not take
   this message, so it was not sent."). Test: `packages/pages-core/test/domain/provider-reasons.test.ts`.
 
-## 1.14.10 (bb plugin) — 2026-11-08
+## 1.14.10 (VesnALIA plugin) — 2026-11-08
 
-The bb plugin's release of the 0.6.28 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.10`): it carries pages-core 0.6.11. bb offers no
+The VesnALIA plugin's release of the 0.6.28 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.10`): it carries pages-core 0.6.11. VesnALIA offers no
 new-session page, so its pages work as in 1.14.9, and `context.get` also answers `newSession: false`.
 
 ### `@unifedev/thread-pages`
@@ -157,10 +157,10 @@ new-session page, so its pages work as in 1.14.9, and `context.get` also answers
 
 A page can now exist before its agent: on the reference server, `/page?workspace=<id>` opens the page of the agent
 that workspace would start next, and the reader's first message from it starts that agent and makes the page its own,
-with no reload (B-0259). Only pages-core's reference server offers it in this release; bb and Claude Code carry the
+with no reload (B-0259). Only pages-core's reference server offers it in this release; VesnALIA and Claude Code carry the
 new pages-core with no new-session page, so their pages work as before. There is no 0.6.27.
 
-`@unifedev/pages-core` 0.6.11, `@unifedev/claude-pages` 0.6.28, the bb plugin `@unifedev/thread-pages` 1.14.10. No
+`@unifedev/pages-core` 0.6.11, `@unifedev/claude-pages` 0.6.28, the VesnALIA plugin `@unifedev/thread-pages` 1.14.10. No
 agent text changed.
 
 ### Added
@@ -180,15 +180,15 @@ agent text changed.
   `test/runtime/kernel/new-session.test.ts`; fixture 16.
 - **`pages.open { workspaceId, newSession: true }`, in pages-core,** and a link to `page?workspace=<id>` open a fresh
   new-session page in place. A workspace the reader cannot see is `not_found`; one that offers no new-session page,
-  as on every bb and Claude Code workspace, `unavailable`.
+  as on every VesnALIA and Claude Code workspace, `unavailable`.
 - **`newSession` on `context.get`, in pages-core:** `false` on every agent's page.
 - **`workspaces.newSession?(id)`, an optional pages-core provider member:** the folder and machine a new session in
   that workspace would work in, or null where it offers no new-session page. The start itself is `sessions.start`.
 
-## 1.14.9 (bb plugin) — 2026-10-30
+## 1.14.9 (VesnALIA plugin) — 2026-10-30
 
-The bb plugin's release of the 0.6.26 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.9`): the page server stops waiting on a host call
+The VesnALIA plugin's release of the 0.6.26 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.9`): the page server stops waiting on a host call
 after 30 seconds (90 for a file upload), and the home recovers on its own from a call that never answers, both from
 pages-core.
 
@@ -203,14 +203,14 @@ not answer, and frees the call's place, so a page or the home keeps working inst
 eight such calls (B-0232); file uploads get the same after 90 seconds (B-0238). The home also recovers on its own when
 one of its reads never comes back (B-0228). All three are in pages-core, so both hosts carry them.
 
-`@unifedev/pages-core` 0.6.9, `@unifedev/claude-pages` 0.6.26, the bb plugin `@unifedev/thread-pages` 1.14.9.
+`@unifedev/pages-core` 0.6.9, `@unifedev/claude-pages` 0.6.26, the VesnALIA plugin `@unifedev/thread-pages` 1.14.9.
 
 ### Fixed
 
 - **A host call that never answers no longer uses up a page's calls.** The page server waited for the host as long as
   it took, and each call still waiting held one of the eight a page may have in flight. After eight that never came
   back, every call from that page was refused as rate limited, sends included, until the host gave up on those calls
-  (bb does after 75 seconds) or the server restarted; for the home those eight are shared by every home tab on every
+  (VesnALIA does after 75 seconds) or the server restarted; for the home those eight are shared by every home tab on every
   device, so a reload did not help. Now the server stops waiting after 30 seconds, answers `unavailable` with reason
   `timeout` ("The host did not answer within 30 seconds"), and the call's place is free again at once. A send or
   another write may still go through later: a form answer or a confirmed action tried again is not done a second
@@ -220,7 +220,7 @@ one of its reads never comes back (B-0228). All three are in pages-core, so both
 - **A file upload the host never takes no longer uses up a page's calls.** A form's file upload and a file attached to
   a prompt waited for the host as long as it took, in one of the page's eight places. Now the server stops waiting 90
   seconds after the upload took its place, and the form shows "The host did not answer within 90 seconds". 90 seconds
-  is above the 75 seconds after which bb itself gives up on a host call, and a 24 MiB file took under a second on bb
+  is above the 75 seconds after which VesnALIA itself gives up on a host call, and a 24 MiB file took under a second on VesnALIA
   on the same machine, so no host call that would succeed is cut on its own. An attachment the host takes after that
   is not added to the prompt; an upload that lands late stays in the page's `uploads/` folder, named by no answer.
   Test: `packages/pages-core/test/serving/file-timeout.test.ts`.
@@ -237,7 +237,7 @@ one of its reads never comes back (B-0228). All three are in pages-core, so both
 
 On Claude Code under LXCFS (LXD, Incus, some Kubernetes nodes), the page server now says in its log why it drops its
 notes of the processes it pushed answers to, where 0.6.24 dropped them without a word (B-0257).
-`@unifedev/claude-pages` 0.6.25; `@unifedev/pages-core` stays 0.6.8 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.25; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.8: neither changes.
 
 ## 0.6.24 — 2026-10-30
@@ -247,7 +247,7 @@ conversation in, at once, instead of waiting until the first terminal closes (B-
 narrower cases of one conversation open in two terminals are fixed with it (B-0252, B-0253). On Linux, the page
 server's check of the processes it pushed answers to now also works in Alpine and Debian slim containers, and its
 log says when it cannot check (B-0254, B-0256).
-`@unifedev/claude-pages` 0.6.24; `@unifedev/pages-core` stays 0.6.8 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.24; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.8: neither changes.
 
 ## 0.6.23 — 2026-10-30
@@ -255,45 +255,45 @@ log says when it cannot check (B-0254, B-0256).
 On Claude Code, an answer taken across a `/clear` now runs once and reads delivered even when the page server
 restarted in between (B-0244), and a terminal that lost its page to another terminal no longer reports the
 conversation ended when it leaves it (B-0249). `@unifedev/claude-pages` 0.6.23; `@unifedev/pages-core` stays 0.6.8
-and the bb plugin `@unifedev/thread-pages` 1.14.8: neither changes.
+and the VesnALIA plugin `@unifedev/thread-pages` 1.14.8: neither changes.
 
 ## 0.6.22 — 2026-10-30
 
 On Claude Code, with one conversation open in two terminals, an answer from the page now runs once, in one terminal
 (B-0239), and typing in a terminal while its own turn runs takes the page back to it (B-0241). A background session
 you remove with `claude rm` leaves the home, and the "Untitled session" rows the agent view left before 0.6.20 are
-cleared (B-0240). `@unifedev/claude-pages` 0.6.22; `@unifedev/pages-core` stays 0.6.8 and the bb plugin
+cleared (B-0240). `@unifedev/claude-pages` 0.6.22; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin
 `@unifedev/thread-pages` 1.14.8: neither changes.
 
 ## 0.6.21 — 2026-10-30
 
 On Claude Code, a page answer that runs after a `/clear` now reads "delivered" and runs only once, also when the page
 server was away at that moment, or when you typed `/clear` and then `/branch` or `/resume` quickly (B-0234, B-0236).
-`@unifedev/claude-pages` 0.6.21; `@unifedev/pages-core` stays 0.6.8 and the bb plugin `@unifedev/thread-pages` 1.14.8:
+`@unifedev/claude-pages` 0.6.21; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.8:
 neither changes.
 
 ## 0.6.20 — 2026-10-30
 
 On Claude Code, opening the agent view no longer adds an "Untitled session" to the home (B-0233).
-`@unifedev/claude-pages` 0.6.20; `@unifedev/pages-core` stays 0.6.8 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.20; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.8: neither changes.
 
 ## 0.6.19 — 2026-10-29
 
 On Claude Code, a conversation open in two terminals at once no longer makes its page flicker: the page follows the
-terminal you last typed in (B-0230). `@unifedev/claude-pages` 0.6.19; `@unifedev/pages-core` stays 0.6.8 and the bb
+terminal you last typed in (B-0230). `@unifedev/claude-pages` 0.6.19; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA
 plugin `@unifedev/thread-pages` 1.14.8: neither changes.
 
 ## 0.6.18 — 2026-10-29
 
 On Claude Code, a page answer that runs after two quick `/clear`s now reads "delivered" on the page it came from, and
-runs only once (B-0231). `@unifedev/claude-pages` 0.6.18; `@unifedev/pages-core` stays 0.6.8 and the bb plugin
+runs only once (B-0231). `@unifedev/claude-pages` 0.6.18; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin
 `@unifedev/thread-pages` 1.14.8: neither changes.
 
 ## 0.6.17 — 2026-10-29
 
 On Claude Code, a page answer that runs after you type `/resume` or `/branch` now reads "delivered" on the page it came
-from, and runs only once (B-0229). `@unifedev/claude-pages` 0.6.17; `@unifedev/pages-core` stays 0.6.8 and the bb
+from, and runs only once (B-0229). `@unifedev/claude-pages` 0.6.17; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA
 plugin `@unifedev/thread-pages` 1.14.8: neither changes.
 
 ## 0.6.16 — 2026-10-29
@@ -301,13 +301,13 @@ plugin `@unifedev/thread-pages` 1.14.8: neither changes.
 On Claude Code, a conversation you resume or branch inside a session gets its own page (B-0222), the page of a session
 you left stays ended (B-0224), and an answer run after a `/clear` is reported delivered even when the new session
 reaches the page server late, without running a second time when you go back to the old conversation (B-0225).
-`@unifedev/claude-pages` 0.6.16; `@unifedev/pages-core` stays 0.6.8 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.16; `@unifedev/pages-core` stays 0.6.8 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.8: neither changes.
 
-## 1.14.8 (bb plugin) — 2026-10-29
+## 1.14.8 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.15 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.8`): an older session the home reopens after a
+The VesnALIA plugin's release of the 0.6.15 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.8`): an older session the home reopens after a
 reload comes back with its state and its questions, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -319,7 +319,7 @@ reload comes back with its state and its questions, from pages-core.
 An older session the home reopens after a reload comes back with its state and its questions, however deep it is in
 its workspace. In pages-core's built-in home, so both hosts carry it (B-0221): spec 08 A201.
 
-`@unifedev/pages-core` 0.6.8, `@unifedev/claude-pages` 0.6.15, the bb plugin `@unifedev/thread-pages` 1.14.8.
+`@unifedev/pages-core` 0.6.8, `@unifedev/claude-pages` 0.6.15, the VesnALIA plugin `@unifedev/thread-pages` 1.14.8.
 
 ### Fixed
 
@@ -335,13 +335,13 @@ its workspace. In pages-core's built-in home, so both hosts carry it (B-0221): s
 ## 0.6.14 — 2026-10-29
 
 On Claude Code, a page that sent answers just before you typed `/clear` now reads them as delivered (B-0217).
-`@unifedev/claude-pages` 0.6.14; `@unifedev/pages-core` stays 0.6.7 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.14; `@unifedev/pages-core` stays 0.6.7 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.7: neither changes.
 
-## 1.14.7 (bb plugin) — 2026-10-29
+## 1.14.7 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.13 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.7`): a reload comes back to an older session opened
+The VesnALIA plugin's release of the 0.6.13 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.7`): a reload comes back to an older session opened
 from the home's search, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -353,7 +353,7 @@ from the home's search, from pages-core.
 A reload comes back to an older session opened from the home's search. In pages-core's built-in home, so both hosts
 carry it (B-0214): spec 08 A201.
 
-`@unifedev/pages-core` 0.6.7, `@unifedev/claude-pages` 0.6.13, the bb plugin `@unifedev/thread-pages` 1.14.7.
+`@unifedev/pages-core` 0.6.7, `@unifedev/claude-pages` 0.6.13, the VesnALIA plugin `@unifedev/thread-pages` 1.14.7.
 
 ### Fixed
 
@@ -370,13 +370,13 @@ carry it (B-0214): spec 08 A201.
 ## 0.6.12 — 2026-10-29
 
 On Claude Code, page answers run in the order you sent them also when one of them asks for a model or effort (B-0212).
-`@unifedev/claude-pages` 0.6.12; `@unifedev/pages-core` stays 0.6.6 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.12; `@unifedev/pages-core` stays 0.6.6 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.6: neither changes.
 
-## 1.14.6 (bb plugin) — 2026-10-29
+## 1.14.6 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.11 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.6`): an older session picked from the home's search
+The VesnALIA plugin's release of the 0.6.11 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.6`): an older session picked from the home's search
 opens, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -388,7 +388,7 @@ opens, from pages-core.
 An older session found with the home's search opens and stays open. In pages-core's built-in home, so both hosts
 carry it (B-0205): spec 08 A201.
 
-`@unifedev/pages-core` 0.6.6, `@unifedev/claude-pages` 0.6.11, the bb plugin `@unifedev/thread-pages` 1.14.6.
+`@unifedev/pages-core` 0.6.6, `@unifedev/claude-pages` 0.6.11, the VesnALIA plugin `@unifedev/thread-pages` 1.14.6.
 
 ### Fixed
 
@@ -405,13 +405,13 @@ carry it (B-0205): spec 08 A201.
 
 On Claude Code, a page answer that Claude Code throws away after a stop in the terminal is no longer lost (B-0208),
 and answers after a stop run in the order you sent them (B-0210).
-`@unifedev/claude-pages` 0.6.10; `@unifedev/pages-core` stays 0.6.5 and the bb plugin `@unifedev/thread-pages`
+`@unifedev/claude-pages` 0.6.10; `@unifedev/pages-core` stays 0.6.5 and the VesnALIA plugin `@unifedev/thread-pages`
 1.14.5: neither changes.
 
-## 1.14.5 (bb plugin) — 2026-10-29
+## 1.14.5 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.9 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.5`): an `html` frame given no folder starts fresh
+The VesnALIA plugin's release of the 0.6.9 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.5`): an `html` frame given no folder starts fresh
 again on each `embed`, and a restored scroll survives a frame's late viewport, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -424,7 +424,7 @@ Only an `html` frame its page gave a folder is a new version of one document; on
 `embed`, as in 0.5.2. A restored scroll is applied again only once a frame has a height. In pages-core, so both hosts
 carry it (B-0159, B-0158): spec 02 R4.42a, R4.48a; 08 A207; fixture 15.
 
-`@unifedev/pages-core` 0.6.5, `@unifedev/claude-pages` 0.6.9, the bb plugin `@unifedev/thread-pages` 1.14.5.
+`@unifedev/pages-core` 0.6.5, `@unifedev/claude-pages` 0.6.9, the VesnALIA plugin `@unifedev/thread-pages` 1.14.5.
 
 ### Changed
 
@@ -448,12 +448,12 @@ carry it (B-0159, B-0158): spec 02 R4.42a, R4.48a; 08 A207; fixture 15.
 ## 0.6.8 — 2026-10-29
 
 On Claude Code, page answers that reach a session together are each delivered once (B-0185). `@unifedev/claude-pages`
-0.6.8; `@unifedev/pages-core` stays 0.6.4 and the bb plugin `@unifedev/thread-pages` 1.14.4: neither changes.
+0.6.8; `@unifedev/pages-core` stays 0.6.4 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.4: neither changes.
 
-## 1.14.4 (bb plugin) — 2026-10-29
+## 1.14.4 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.7 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.4`): a page opened in the home shows its own
+The VesnALIA plugin's release of the 0.6.7 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.4`): a page opened in the home shows its own
 frames as on its own address, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -463,7 +463,7 @@ frames as on its own address, from pages-core.
 ## 0.6.7 — 2026-10-29
 
 A page opened in the home shows its own frames, as on its own address (B-0189). `@unifedev/pages-core` 0.6.4,
-`@unifedev/claude-pages` 0.6.7 and the bb plugin `@unifedev/thread-pages` 1.14.4: the same change on both hosts.
+`@unifedev/claude-pages` 0.6.7 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.4: the same change on both hosts.
 Spec 02 R4.48b, R4.52; 03 R5.59a, R5.61a; 05 R3.9; 07 R5.93; 08 A213. No agent text changed.
 
 ### Fixed
@@ -477,10 +477,10 @@ Spec 02 R4.48b, R4.52; 03 R5.59a, R5.61a; 05 R3.9; 07 R5.93; 08 A213. No agent t
   grant and framing line. Uploads, files in forms and large media stay out of the home's view and its frames.
   Tests: `packages/pages-core/test/serving/home-view.test.ts`, `test/runtime/kernel/embed.test.ts`.
 
-## 1.14.3 (bb plugin) — 2026-10-29
+## 1.14.3 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.6 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.3`): a form's *Sent* stands until the agent's turn
+The VesnALIA plugin's release of the 0.6.6 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.3`): a form's *Sent* stands until the agent's turn
 ends, on the page and inside another page's embed of it.
 
 ### `@unifedev/thread-pages`
@@ -490,7 +490,7 @@ ends, on the page and inside another page's embed of it.
 ## 0.6.6 — 2026-10-29
 
 A form's delivery word (*Sent*, *Queued*, *Steered*) stands until the session is next idle (B-0186).
-`@unifedev/pages-core` 0.6.3, `@unifedev/claude-pages` 0.6.6 and the bb plugin `@unifedev/thread-pages` 1.14.3: the
+`@unifedev/pages-core` 0.6.3, `@unifedev/claude-pages` 0.6.6 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.3: the
 same change on both hosts. Spec 05 R2.24; 08 A212.
 
 ### Fixed
@@ -503,10 +503,10 @@ same change on both hosts. Spec 05 R2.24; 08 A212.
   types in that form again; the page's other forms show the working text as before, and an error still stands until
   the reader types in its form. Test: `packages/pages-core/test/runtime/kernel/session-state.test.ts`.
 
-## 1.14.2 (bb plugin) — 2026-10-29
+## 1.14.2 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.5 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.2`): an app's answer from a frame of the page no
+The VesnALIA plugin's release of the 0.6.5 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.2`): an app's answer from a frame of the page no
 longer says it was given on an earlier version when only the page around it changed.
 
 ### `@unifedev/thread-pages`
@@ -517,7 +517,7 @@ longer says it was given on an earlier version when only the page around it chan
 
 An answer sent from an app shown in a frame of the agent's page no longer says it was given on an earlier version
 when only the page around it changed (B-0181). `@unifedev/pages-core` 0.6.2, `@unifedev/claude-pages` 0.6.5 and the
-bb plugin `@unifedev/thread-pages` 1.14.2: the same change on both hosts.
+VesnALIA plugin `@unifedev/thread-pages` 1.14.2: the same change on both hosts.
 
 ### Fixed
 
@@ -528,31 +528,31 @@ bb plugin `@unifedev/thread-pages` 1.14.2: the same change on both hosts.
   from what is on screen, so the line is now never added to it. Answers from the page's own forms and from a frame
   showing another file of the page keep the line as before. Test: `packages/pages-core/test/serving/submit.test.ts`.
 
-### bb
+### VesnALIA
 
-- The same fix: the bb plugin's server is the shared one.
+- The same fix: the VesnALIA plugin's server is the shared one.
 
 ## 0.6.4 — 2026-10-29
 
 On Claude Code, the page server uses the Claude Code config folder its sessions use, and keeps its own internal
-settings to itself (B-0179, B-0182). `@unifedev/claude-pages` 0.6.4; `@unifedev/pages-core` stays 0.6.1 and the bb
+settings to itself (B-0179, B-0182). `@unifedev/claude-pages` 0.6.4; `@unifedev/pages-core` stays 0.6.1 and the VesnALIA
 plugin `@unifedev/thread-pages` 1.14.1: neither changes.
 
 ## 0.6.3 — 2026-10-29
 
 On Claude Code, the page server no longer takes on the settings of the session that started it, and a second stop
 request no longer cuts its stop short (B-0175, B-0176). `@unifedev/claude-pages` 0.6.3; `@unifedev/pages-core` stays
-0.6.1 and the bb plugin `@unifedev/thread-pages` 1.14.1: neither changes.
+0.6.1 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.1: neither changes.
 
 ## 0.6.2 — 2026-10-29
 
 On Claude Code, an update reaches the running daemon (B-0171). `@unifedev/claude-pages` 0.6.2; `@unifedev/pages-core`
-stays 0.6.1 and the bb plugin `@unifedev/thread-pages` 1.14.1: neither changes.
+stays 0.6.1 and the VesnALIA plugin `@unifedev/thread-pages` 1.14.1: neither changes.
 
-## 1.14.1 (bb plugin) — 2026-10-29
+## 1.14.1 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.1`): `bb pages init`, `bb pages status` and the
+The VesnALIA plugin's release of the 0.6.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.1`): `alia pages init`, `alia pages status` and the
 answer wording for uploads give absolute paths, and with Connect on `init` also prints the page's loopback address
 for the agent's own check.
 
@@ -562,22 +562,22 @@ for the agent's own check.
 
 ## 0.6.1 — 2026-10-29
 
-On bb, `init` gives paths every file tool takes, and an address the agent can open itself (B-0165, B-0166): spec 02
+On VesnALIA, `init` gives paths every file tool takes, and an address the agent can open itself (B-0165, B-0166): spec 02
 §The answer wording, 04 R6.7a, 05 §The serving host interface and R-S9, 06 R-P12; 08 A211.
 
-`@unifedev/pages-core` 0.6.1, `@unifedev/claude-pages` 0.6.1, the bb plugin `@unifedev/thread-pages` 1.14.1.
+`@unifedev/pages-core` 0.6.1, `@unifedev/claude-pages` 0.6.1, the VesnALIA plugin `@unifedev/thread-pages` 1.14.1.
 
 ### Changed
 
-- **bb: absolute paths for the agent.** `bb pages init` printed the page as `$BB_THREAD_STORAGE/index.html` and the
-  root as `Root: $BB_THREAD_STORAGE/`; `bb pages status` and the file lines of an answer with uploads used the same
-  form. Only a shell expands that variable: a file tool given it made a folder named `$BB_THREAD_STORAGE` in the
-  working directory, so the page was written where nobody reads it. They now give the thread's storage path as bb
+- **VesnALIA: absolute paths for the agent.** `alia pages init` printed the page as `$ALIA_THREAD_STORAGE/index.html` and the
+  root as `Root: $ALIA_THREAD_STORAGE/`; `alia pages status` and the file lines of an answer with uploads used the same
+  form. Only a shell expands that variable: a file tool given it made a folder named `$ALIA_THREAD_STORAGE` in the
+  working directory, so the page was written where nobody reads it. They now give the thread's storage path as VesnALIA
   reports it (`/…/index.html`, `Root: /…/`, `/…/uploads/<name>`). The folder is the same one, so pages already
   written are where they were and nothing moves. The standing instruction still names the folder as "your thread
-  storage, `$BB_THREAD_STORAGE`"; that wording waits for the next guide batch. Tests:
-  `packages/bb-pages/test/provider/sessions.test.ts`, `packages/bb-pages/test/integration/fixtures.test.ts`.
-- **bb: a local address for the agent's own check.** With Connect paired, the URL `init` prints is the Connect
+  storage, `$ALIA_THREAD_STORAGE`"; that wording waits for the next guide batch. Tests:
+  `packages/alia-pages/test/provider/sessions.test.ts`, `packages/alia-pages/test/integration/fixtures.test.ts`.
+- **VesnALIA: a local address for the agent's own check.** With Connect paired, the URL `init` prints is the Connect
   address, which a browser on this machine is refused without signing in. `init` now adds one line after it,
   `Local: http://127.0.0.1:<port>/api/v1/plugins/thread-pages/http/page?session=<id> (this machine only, for your own
   check)`. That address opens the page on this machine with no sign-in and carries no credential. Without Connect the
@@ -585,10 +585,10 @@ On bb, `init` gives paths every file tool takes, and an address the agent can op
   `ServingHost.checkOrigin()`, used by `init` only. The Claude Code host has none, by design: its agent does not
   open the reader's page. Test: `packages/pages-core/test/agent/commands.test.ts`.
 
-## 1.14.0 (bb plugin) — 2026-10-29
+## 1.14.0 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.6.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.14.0`): a shortcut or installed app of the home or a
+The VesnALIA plugin's release of the 0.6.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.14.0`): a shortcut or installed app of the home or a
 page carries the Syns mark and a sensible name, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -597,10 +597,10 @@ page carries the Syns mark and a sensible name, from pages-core.
 
 ## 0.6.0 — 2026-10-29
 
-Shortcuts and installed apps carry the Syns mark and a sensible name, on bb and Claude Code alike, in pages-core
+Shortcuts and installed apps carry the Syns mark and a sensible name, on VesnALIA and Claude Code alike, in pages-core
 (B-0130): spec 05 R2.14, R2.14a, §Routes; 08 A210. A new route and head; no agent text changed.
 
-`@unifedev/pages-core` 0.6.0, `@unifedev/claude-pages` 0.6.0, the bb plugin `@unifedev/thread-pages` 1.14.0.
+`@unifedev/pages-core` 0.6.0, `@unifedev/claude-pages` 0.6.0, the VesnALIA plugin `@unifedev/thread-pages` 1.14.0.
 
 ### Added
 
@@ -610,15 +610,15 @@ Shortcuts and installed apps carry the Syns mark and a sensible name, on bb and 
   `Syns`; a page: its project's name), the bar colour in light and dark, and a link to the address's web app
   manifest. On iPhone, Add to Home Screen makes the home an app named `Syns` and a page one named by its title; on
   macOS, Safari's Add to Dock and Chrome's Install do the same, each address its own app. On iPhone they open without
-  Safari's bars, and on macOS each in a window of its own; over bb's remote address, a sign-in the app asks for is
+  Safari's bars, and on macOS each in a window of its own; over VesnALIA's remote address, a sign-in the app asks for is
   finished inside the app and returns to its address. The tab title is
   unchanged (the home's stays `Home`), nothing is drawn, no page can change the mark, and nothing is stored offline
   (no service worker).
 
-## 1.13.4 (bb plugin) — 2026-10-29
+## 1.13.4 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.5.4 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.13.4`): an `html` frame stays in the folder its page
+The VesnALIA plugin's release of the 0.5.4 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.13.4`): an `html` frame stays in the folder its page
 gave it, and a plugin is told a call came from it, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -631,7 +631,7 @@ An `html` frame is bound to the folder its page gave it, and a plugin is told a 
 both hosts carry it (B-0154, B-0155): spec 02 R4.42a, R4.48a, R4.63; 04; 05 R3.9; 07 R5.83a, R5.84c and the call's
 shape; 08 A208, A209; fixture 15.
 
-`@unifedev/pages-core` 0.5.4, `@unifedev/claude-pages` 0.5.4, the bb plugin `@unifedev/thread-pages` 1.13.4.
+`@unifedev/pages-core` 0.5.4, `@unifedev/claude-pages` 0.5.4, the VesnALIA plugin `@unifedev/thread-pages` 1.13.4.
 
 ### Changed
 
@@ -647,10 +647,10 @@ shape; 08 A208, A209; fixture 15.
   without `scope` now starts that frame in its scope instead of in none. Tests:
   `packages/pages-core/test/serving/frame-bound.test.ts`, `packages/pages-core/test/runtime/kernel/embed.test.ts`.
 
-## 1.13.3 (bb plugin) — 2026-10-29
+## 1.13.3 (VesnALIA plugin) — 2026-10-29
 
-The bb plugin's release of the 0.5.3 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.13.3`): an `html` frame keeps the reader's work across
+The VesnALIA plugin's release of the 0.5.3 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.13.3`): an `html` frame keeps the reader's work across
 a new version of its document, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -662,7 +662,7 @@ a new version of its document, from pages-core.
 An `html` frame keeps the reader's drafts and scroll across a new version of its document, in pages-core, so both
 hosts carry it (B-0153): spec 02 R4.42a, R4.48a, 08 A207, fixture 15.
 
-`@unifedev/pages-core` 0.5.3, `@unifedev/claude-pages` 0.5.3, the bb plugin `@unifedev/thread-pages` 1.13.3.
+`@unifedev/pages-core` 0.5.3, `@unifedev/claude-pages` 0.5.3, the VesnALIA plugin `@unifedev/thread-pages` 1.13.3.
 
 ### Changed
 
@@ -692,10 +692,10 @@ hosts carry it (B-0153): spec 02 R4.42a, R4.48a, 08 A207, fixture 15.
   version of an `html` frame; it applies to every frame the kernel restores. Tests:
   `packages/pages-core/test/runtime/kernel/restore.test.ts`.
 
-## 1.13.2 (bb plugin) — 2026-10-28
+## 1.13.2 (VesnALIA plugin) — 2026-10-28
 
-The bb plugin's release of the 0.5.2 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.13.2`): the owner's guide batch, from pages-core.
+The VesnALIA plugin's release of the 0.5.2 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.13.2`): the owner's guide batch, from pages-core.
 
 ### `@unifedev/thread-pages`
 
@@ -707,7 +707,7 @@ The owner's guide batch, in pages-core, so both hosts carry it (B-0143): spec 04
 Under Tests, the fixtures are read from the protocol's tree only (B-0149) and the instruction test reads its
 committed copy only (B-0121).
 
-`@unifedev/pages-core` 0.5.2, `@unifedev/claude-pages` 0.5.2, the bb plugin `@unifedev/thread-pages` 1.13.2.
+`@unifedev/pages-core` 0.5.2, `@unifedev/claude-pages` 0.5.2, the VesnALIA plugin `@unifedev/thread-pages` 1.13.2.
 
 ### Changed
 
@@ -715,13 +715,13 @@ committed copy only (B-0121).
   "Every turn, rewrite one HTML page whole from what is true now", it says to run init "at the start and whenever you
   lose the page's path", and it ends its form line with "end with one form holding an empty text field for anything
   else". The sentence "Your page is yours alone." left it; the guide still teaches it in full. The text is 787 bytes
-  around its placeholders. On bb, an *Agent instruction text* that is a verbatim copy of the 1.11.0–1.13.1 built-in
+  around its placeholders. On VesnALIA, an *Agent instruction text* that is a verbatim copy of the 1.11.0–1.13.1 built-in
   text reads as the built-in text, so it moves to the new one; any other operator text is kept as it is.
 - **The guide keeps one composer at the bottom of the page.** *Forms* now asks for the empty text field in one
   captured form at the bottom of the page, always visible, as how the reader starts the agent, with the page's other
   controls joined to it by `form="<its id>"` so their picks arrive with what was typed; that field is a `<textarea>`,
   so it takes files, and voice where the host transcribes. Tests: `packages/pages-core/test/agent/instruction.test.ts`,
-  `guide.test.ts`, `packages/bb-pages/test/provider/instruction.test.ts`.
+  `guide.test.ts`, `packages/alia-pages/test/provider/instruction.test.ts`.
 
 ### Tests
 
@@ -740,10 +740,10 @@ committed copy only (B-0121).
   `packages/pages-core/scripts/check-instruction-spec.mjs`, compares the copy with spec 04 at the spec's head, and the
   release's check step runs it. Nothing a page or a reader sees changes.
 
-## 1.13.1 (bb plugin) — 2026-10-28
+## 1.13.1 (VesnALIA plugin) — 2026-10-28
 
-The bb plugin's release of the 0.5.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.13.1`): Stop on the page's own agent works at the
+The VesnALIA plugin's release of the 0.5.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.13.1`): Stop on the page's own agent works at the
 first Confirm while the agent saves, a Copy button works in Chrome and other Chromium browsers, and a document
 whose own query names `file` opens as that document, from pages-core.
 
@@ -756,9 +756,9 @@ whose own query names `file` opens as that document, from pages-core.
 Three fixes in pages-core, so both hosts carry them: Stop on the page's own session works at the first Confirm while
 the agent saves (B-0120): spec 03 R5.28, 05 R2.13, R3.19, 02 R-K1, 08 A15, A49, 04's guide. A page may write the
 clipboard on the reader's press in every browser (B-0133): spec 05 R3.3b, 02 R4.43, 08 A94; fixture 09. And a
-document whose own query names `file` opens as that document on bb (B-0140), as 01 R1.12g already said.
+document whose own query names `file` opens as that document on VesnALIA (B-0140), as 01 R1.12g already said.
 
-`@unifedev/pages-core` 0.5.1, `@unifedev/claude-pages` 0.5.1, the bb plugin `@unifedev/thread-pages` 1.13.1.
+`@unifedev/pages-core` 0.5.1, `@unifedev/claude-pages` 0.5.1, the VesnALIA plugin `@unifedev/thread-pages` 1.13.1.
 
 ### Fixed
 
@@ -770,17 +770,17 @@ document whose own query names `file` opens as that document on bb (B-0140), as 
   session, and every other call, is still refused `stale_page` once the page changed. The guide also says that a
   page with `onPageUpdate` is handed its new version rather than reloaded. Tests:
   `packages/pages-core/test/serving/bridge.test.ts` (§11a).
-- **A Copy button in a page works in Chrome, other Chromium browsers and the bb desktop app.**
+- **A Copy button in a page works in Chrome, other Chromium browsers and the VesnALIA desktop app.**
   `navigator.clipboard.writeText()` on the reader's click was refused in Chromium-based browsers, in the page and in
   any page shown inside it, while Safari and Firefox copied. The page frame and every frame the kernel shows now carry
   `allow="fullscreen *; clipboard-write *"`, so a click copies there too (measured in Chromium, WebKit and Firefox on
-  both hosts, and in Chrome and the bb desktop app's Browser tab on bb). A write without the reader's recent click, in that
+  both hosts, and in Chrome and the VesnALIA desktop app's Browser tab on VesnALIA). A write without the reader's recent click, in that
   frame or in a frame inside it, is still refused in every browser measured, and a page still cannot read the
   clipboard. A page that shows another page inside it can write the clipboard in the seconds after the reader clicks
   inside the page it shows, as Safari and Firefox already allowed. Tests:
   `packages/pages-core/test/runtime/shell/swap.test.ts`, `test/runtime/kernel/embed.test.ts`, and fixture 09 in
   Chromium, WebKit and Firefox.
-- **On bb, a document whose own query names `file` opens as that document.** A link, `pages.open` or a typed page
+- **On VesnALIA, a document whose own query names `file` opens as that document.** A link, `pages.open` or a typed page
   address to `tool.html?file=report.pdf` showed the file `report.pdf` in the frame instead of `tool.html`, and on
   every host a `file` typed as a further parameter of the page address (`&path=tool.html&file=report.pdf`) was
   dropped. The document now opens with `?file=report.pdf` as its own query, as with any other name the host does not
@@ -796,10 +796,10 @@ document whose own query names `file` opens as that document on bb (B-0140), as 
   that row comes; one that never records it gets a FAIL row of the runner's own and the run exits 1. Nothing a page or
   a reader sees changes. Tests: `packages/pages-core/test/browser/runner.mjs` (`pnpm test:runner`).
 
-## 1.13.0 (bb plugin) — 2026-10-28
+## 1.13.0 (VesnALIA plugin) — 2026-10-28
 
-The bb plugin's release of the 0.5.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.13.0`): a page shows a document it holds as a frame
+The VesnALIA plugin's release of the 0.5.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.13.0`): a page shows a document it holds as a frame
 of its own session, which works as the page itself, and `pages.open` opens another page at a document and a place,
 from pages-core.
 
@@ -814,7 +814,7 @@ R4.42a, R4.48a (R4.44, R4.48–R4.53 now about another session's page), 03 R5.59
 A104, A131, A205; fixture 15. And `pages.open` takes a document and a fragment (B-0135): spec 03 R5.29b, R5.32b,
 01 R1.12d, 08 A206.
 
-`@unifedev/pages-core` 0.5.0, `@unifedev/claude-pages` 0.5.0, the bb plugin `@unifedev/thread-pages` 1.13.0.
+`@unifedev/pages-core` 0.5.0, `@unifedev/claude-pages` 0.5.0, the VesnALIA plugin `@unifedev/thread-pages` 1.13.0.
 
 ### Added
 
@@ -827,7 +827,7 @@ A104, A131, A205; fixture 15. And `pages.open` takes a document and a fragment (
   further, up to 4 frames deep. Its form answers reach the page's own session worded `The user answered the form in
   <title> on your Thread Page — <form title>.` The page's kernel passes everything the frame sends to the host as the
   page's own, so the frame cannot name another session. Its links resolve as the page's; its relative images, styles
-  and scripts load from the page's folder on Claude Code, which serves files by URL, and not on bb, which carries a
+  and scripts load from the page's folder on Claude Code, which serves files by URL, and not on VesnALIA, which carries a
   page's files inside it: there a frame inlines them or names them absolutely. A plugin's page script runs inside each
   such frame too; the kernel's `data-config` says `embedded: true` there. Tests: `packages/pages-core/test/runtime/kernel/embed.test.ts` (the frame and
   its relay), `test/serving/submit.test.ts` (the answer), `test/runtime/protocol.test.ts`,
@@ -843,10 +843,10 @@ A104, A131, A205; fixture 15. And `pages.open` takes a document and a fragment (
   document exists is the opened page's to show. Tests: `packages/pages-core/test/serving/bridge.test.ts`,
   `test/domain/scope.test.ts`.
 
-## 1.12.1 (bb plugin) — 2026-10-28
+## 1.12.1 (VesnALIA plugin) — 2026-10-28
 
-The bb plugin's release of the 0.4.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.12.1`): a link to another session's page or to the
+The VesnALIA plugin's release of the 0.4.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.12.1`): a link to another session's page or to the
 home opens it in place, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -858,7 +858,7 @@ home opens it in place, from pages-core.
 One change in pages-core, so both hosts carry it: a link to the host's own page address opens that page (B-0134):
 spec 02 R4.15, 03 R5.32b, 04's guide, 08 A204.
 
-`@unifedev/pages-core` 0.4.1, `@unifedev/claude-pages` 0.4.1, the bb plugin `@unifedev/thread-pages` 1.12.1.
+`@unifedev/pages-core` 0.4.1, `@unifedev/claude-pages` 0.4.1, the VesnALIA plugin `@unifedev/thread-pages` 1.12.1.
 
 ### Fixed
 
@@ -872,10 +872,10 @@ spec 02 R4.15, 03 R5.32b, 04's guide, 08 A204.
   `path` or fragment in such a link is not carried yet: the page opens at its entry. Tests:
   `packages/pages-core/test/domain/scope.test.ts` (the address) and `test/serving/bridge.test.ts` (the dispatch).
 
-## 1.12.0 (bb plugin) — 2026-10-25
+## 1.12.0 (VesnALIA plugin) — 2026-10-25
 
-The bb plugin's release of the 0.4.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.12.0`): contributed calls and page storage inside an
+The VesnALIA plugin's release of the 0.4.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.12.0`): contributed calls and page storage inside an
 embed, the built-in home listing every project's sessions, and `pages.open { home: true }`, from pages-core.
 
 ### `@unifedev/thread-pages`
@@ -891,7 +891,7 @@ Three changes in pages-core, so both hosts carry them:
 - a page can send the reader to the host's home (B-0126): spec 03 R5.29a, 05 R2.15 and R-S12, 08 A173 and A202,
   decision U58; and a page shown in the home may make 60 calls a minute (02 R4.49, 08 A203, decision U59).
 
-`@unifedev/pages-core` 0.4.0, `@unifedev/claude-pages` 0.4.0, the bb plugin `@unifedev/thread-pages` 1.12.0.
+`@unifedev/pages-core` 0.4.0, `@unifedev/claude-pages` 0.4.0, the VesnALIA plugin `@unifedev/thread-pages` 1.12.0.
 
 ### Changed
 
@@ -910,7 +910,7 @@ Three changes in pages-core, so both hosts carry them:
   `test/runtime/kernel/embed.test.ts` (the relay), `test/runtime/protocol.test.ts`.
 - **The built-in home lists the sessions of every workspace.** Where the host lists more than one workspace, the
   home reads each workspace's newest sessions rather than the first rows of one list, since a host's one list
-  promises no order across workspaces (bb's comes project after project, so the home showed two or three projects).
+  promises no order across workspaces (VesnALIA's comes project after project, so the home showed two or three projects).
   Workspaces with a session working, waiting, unread or active in the last 15 minutes, the open one and one a
   session was just started into are read every 12 s; the others in turn; near 40 calls a minute. Search reads each
   workspace's older sessions while a query is typed. A host with one workspace keeps the single list.
@@ -932,16 +932,16 @@ Three changes in pages-core, so both hosts carry them:
   quickly. Elsewhere an embedded page keeps 30 a minute. Spec 02 R4.49, 08 §Limits (`homeEmbedCallsPerMinute`) and
   A203, decision U59. Tests: `packages/pages-core/test/runtime/kernel/embed.test.ts`.
 
-## 1.11.0 (bb plugin) — 2026-10-23
+## 1.11.0 (VesnALIA plugin) — 2026-10-23
 
-The bb plugin's release of the 0.3.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.11.0`): contributors' page scripts, asked over the
+The VesnALIA plugin's release of the 0.3.0 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.11.0`): contributors' page scripts, asked over the
 plugin RPC `threadPagesPageScript`; `threadPage.onPageUpdate`, a page stopping its own session once the reader
 confirms, and the shorter standing instruction, from pages-core.
 
 ### `@unifedev/thread-pages`
 
-- An operator who kept a verbatim copy of the old built-in text (as the spec writes it, or as `bb pages status`
+- An operator who kept a verbatim copy of the old built-in text (as the spec writes it, or as `alia pages status`
   printed it) gets the new one, as one who never set the text does; any other text is kept.
 - `package.json` version 1.11.0.
 
@@ -955,7 +955,7 @@ Four contract changes in pages-core, so both hosts carry them:
 - a page may stop its own session once the reader confirms (B-0113): spec 03 R5.28, 08 A49, decision U52;
 - a shorter standing instruction (B-0114): spec 04 §The text, §It MUST convey, R6.17, R6.24 and A56, decision U54.
 
-`@unifedev/pages-core` 0.3.0, `@unifedev/claude-pages` 0.3.0, the bb plugin `@unifedev/thread-pages` 1.11.0.
+`@unifedev/pages-core` 0.3.0, `@unifedev/claude-pages` 0.3.0, the VesnALIA plugin `@unifedev/thread-pages` 1.11.0.
 
 ### Added
 
@@ -968,7 +968,7 @@ Four contract changes in pages-core, so both hosts carry them:
   version; a script over 256 KiB, or one containing `</script` or `<!--`, is refused whole and logged; a contributor
   that does not answer within 2 s, throws or answers a wrong shape is left out of that serve and logged once. A
   contributor that does not declare the key is never asked: with none, every document is served exactly as before.
-  bb: the plugin RPC `threadPagesPageScript`. Claude Code: a process gets `{ namespace, kind: "pageScript", … }` at
+  VesnALIA: the plugin RPC `threadPagesPageScript`. Claude Code: a process gets `{ namespace, kind: "pageScript", … }` at
   its registered endpoint; a mod passes a third argument to `$.pages.contribute(declaration, handler, pageScript)`.
   The guide names a contributor that gives documents a script. Tests:
   `packages/pages-core/test/serving/page-scripts.test.ts` (who is asked, the order, home and embeds, the cache, the
@@ -995,7 +995,7 @@ Four contract changes in pages-core, so both hosts carry them:
 - **A page may stop its own session, once the reader confirms** (spec 03 R5.28, 08 A49, decision U52).
   `sessions.stop` on the page's own session used to be refused before any dialog (`invalid_params`), so a chat on a
   page could not offer Stop while its agent worked. It now shows the host's usual dialog, naming it as this page's
-  session ("Stop this page's own session, “‹title›” (‹id›)?"); Confirm stops the running turn (bb `threads.stop`;
+  session ("Stop this page's own session, “‹title›” (‹id›)?"); Confirm stops the running turn (VesnALIA `threads.stop`;
   Claude Code aborts the live turn, and the session takes the next message), Cancel rejects with `cancelled` and
   stops nothing. A page alone still cannot stop the turn that reads it: unconfirmed, forged or replayed, the call
   stops nothing. `sessions.send`, `sessions.archive` and `sessions.respond` still refuse the own session. Tests:
@@ -1008,11 +1008,11 @@ Four contract changes in pages-core, so both hosts carry them:
 - `@unifedev/pages-core` 0.3.0; `@unifedev/claude-pages` (`package.json`, `plugin.json`) 0.3.0;
   `@unifedev/thread-pages` 1.11.0.
 
-## 1.10.3 (bb plugin) — 2026-10-14
+## 1.10.3 (VesnALIA plugin) — 2026-10-14
 
-The bb plugin's release of the 0.2.4 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.10.3`). What changes for bb is the shell's Back and
-Forward fix, from pages-core; no bb host code changed.
+The VesnALIA plugin's release of the 0.2.4 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.10.3`). What changes for VesnALIA is the shell's Back and
+Forward fix, from pages-core; no VesnALIA host code changed.
 
 ### `@unifedev/thread-pages`
 
@@ -1021,7 +1021,7 @@ Forward fix, from pages-core; no bb host code changed.
 ## 0.2.4 — 2026-10-14
 
 A shell fix in pages-core (B-0105), so both hosts carry it: `@unifedev/pages-core` 0.2.3, `@unifedev/claude-pages`
-0.2.4, the bb plugin `@unifedev/thread-pages` 1.10.3. No protocol change: spec 01 R1.12f, R1.12g and 08 A149 already
+0.2.4, the VesnALIA plugin `@unifedev/thread-pages` 1.10.3. No protocol change: spec 01 R1.12f, R1.12g and 08 A149 already
 say what Back and Forward do; the shell now does it.
 
 ### Fixed
@@ -1047,13 +1047,13 @@ say what Back and Forward do; the shell now does it.
 ## 0.2.3 — 2026-10-13
 
 A Claude Code host fix (B-0001). No protocol change, no pages-core change (`@unifedev/pages-core` stays 0.2.2), no
-bb host change (no bb release from this tag).
+VesnALIA host change (no VesnALIA release from this tag).
 
-## 1.10.2 (bb plugin) — 2026-10-11
+## 1.10.2 (VesnALIA plugin) — 2026-10-11
 
-The bb plugin's release of the 0.2.2 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.10.2`; the marketplace entry's range `^1.3.1` reaches
-it). What changes for bb is the built-in home (the hub) and the shell's grants refresh, both from pages-core; no bb
+The VesnALIA plugin's release of the 0.2.2 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.10.2`; the marketplace entry's range `^1.3.1` reaches
+it). What changes for VesnALIA is the built-in home (the hub) and the shell's grants refresh, both from pages-core; no VesnALIA
 host code changed. Root `pnpm check` on the release commit passes.
 
 ### `@unifedev/thread-pages`
@@ -1090,11 +1090,11 @@ and three code rounds (findings fixed with tests that fail before each fix).
   `If-None-Match`, so the home's Page permissions list shows the new pair without a reload
   (`src/runtime/shell/poll.ts`, `install.ts`; test in `test/runtime/shell/poll.test.ts`).
 
-## 1.10.1 (bb plugin) — 2026-10-10
+## 1.10.1 (VesnALIA plugin) — 2026-10-10
 
-The bb plugin's release of the 0.2.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
-`thread-pages`, repository `unifedev/bb-thread-pages`, tag `v1.10.1`; the marketplace entry's range `^1.3.1` reaches
-it). What changes for bb is U50: `context.get`'s `session.settings` carries the thread's current model, reasoning
+The VesnALIA plugin's release of the 0.2.1 tree below under the released identity (`@unifedev/thread-pages`, plugin id
+`thread-pages`, repository `unifedev/alia-thread-pages`, tag `v1.10.1`; the marketplace entry's range `^1.3.1` reaches
+it). What changes for VesnALIA is U50: `context.get`'s `session.settings` carries the thread's current model, reasoning
 level and permission mode as provider ids, read from `threads.defaultExecutionOptions` on `sessions.get`; snapshot
 rows carry no `settings` (one SDK call per row per poll is not paid). Review: `reviews/current-settings.md`. Root
 `pnpm check` on `main` after the merge (`175a86b`): 101 files, 671 tests passed, 1 skipped.
@@ -1120,7 +1120,7 @@ merge: 101 files, 671 tests passed, 1 skipped.
   host knows them, in the ids `providers.list` uses; a field the host cannot tell is absent, never guessed. The guide's
   "Settings for the next turn" tells a composer to start from them. `SessionRecord.settings?` on the provider contract
   (06 R-P2); `knownSettings` in `@unifedev/pages-core`'s `serving/bridge/handlers/settings.ts` bounds what is
-  projected. On **bb**, `sessions.get` reads
+  projected. On **VesnALIA**, `sessions.get` reads
   `threads.defaultExecutionOptions` for all three (snapshot rows carry none: one SDK call per row per poll is not
   paid). On **Claude Code**, the mod reports the model (`$.config.list()`'s alias, `$.session.model()`'s id) and the
   effort from the `Set effort level to …` line any `/effort` prints — the person's in the terminal or its own — at
@@ -1144,26 +1144,26 @@ merge: 101 files, 671 tests passed, 1 skipped.
   `serving/bridge/handlers/context.ts`, `handlers/sessions.ts`, `handlers/settings.ts` (`knownSettings`),
   `agent/guide.ts`. Tests: `test/serving/bridge.test.ts`, `test/agent/guide.test.ts`.
 
-## 1.10.0 (bb plugin) — 2026-10-10
+## 1.10.0 (VesnALIA plugin) — 2026-10-10
 
-The bb plugin's release of the 0.2.0 tree below, under the released identity: package `@unifedev/thread-pages`, plugin
-id `thread-pages`, display name "Thread Pages", repository `unifedev/bb-thread-pages`, the Community marketplace entry
-`thread-pages`. The owner's decision (`unife-bb-plugin/docs/DECISIONS.md` D47): the switch from the 1.9.0
+The VesnALIA plugin's release of the 0.2.0 tree below, under the released identity: package `@unifedev/thread-pages`, plugin
+id `thread-pages`, display name "Thread Pages", repository `unifedev/alia-thread-pages`, the Community marketplace entry
+`thread-pages`. The owner's decision (`unife-alia-plugin/docs/DECISIONS.md` D47): the switch from the 1.9.0
 implementation to this one is a **plugin update** with no backward compatibility, and the version is **1.10.0** —
 a minor, so that the marketplace entry's range `^1.3.1` reaches it without a marketplace PR — although the release is
 breaking for everything but the pages themselves. Root `pnpm check` on the branch: 102 files, 666 tests passed, 1 skipped. Nothing in `@unifedev/pages-core` or `@unifedev/claude-pages` changes in this release.
 
 ### Breaking
 
-- **`@unifedev/bb-pages` is renamed `@unifedev/thread-pages`** (`packages/bb-pages`; the directory keeps its working
-  name). The plugin id is `thread-pages`: routes are `/api/v1/plugins/thread-pages/http/*`, `bb pages init` prints
-  `plugin: thread-pages`, settings are `bb plugin config thread-pages`, logs `bb plugin logs thread-pages`. On a bb that
-  ran a `bb-pages` 0.x path install, that install is a separate plugin with its own kv and settings: remove it, it
+- **`@unifedev/alia-pages` is renamed `@unifedev/thread-pages`** (`packages/alia-pages`; the directory keeps its working
+  name). The plugin id is `thread-pages`: routes are `/api/v1/plugins/thread-pages/http/*`, `alia pages init` prints
+  `plugin: thread-pages`, settings are `alia plugin config thread-pages`, logs `alia plugin logs thread-pages`. On a VesnALIA that
+  ran a `alia-pages` 0.x path install, that install is a separate plugin with its own kv and settings: remove it, it
   is not updated into this one.
-- **1.9.0 → 1.10.0 is a different implementation under the same id.** Kept: the pages (`$BB_THREAD_STORAGE/index.html`
+- **1.9.0 → 1.10.0 is a different implementation under the same id.** Kept: the pages (`$ALIA_THREAD_STORAGE/index.html`
   is a file), the five settings by name and value (an unedited 1.9 instruction text reads as the built-in one), the
-  contributor RPC methods and the caller id. Gone: `bb thread-page` (the command is `bb pages`), the bar and every
-  bar-era behaviour (0.2.0 Breaking below), the `homeSessionId` setting (the home designation is `bb pages home`), and
+  contributor RPC methods and the caller id. Gone: `alia thread-page` (the command is `alia pages`), the bar and every
+  bar-era behaviour (0.2.0 Breaking below), the `homeSessionId` setting (the home designation is `alia pages home`), and
   every kv row 1.9 wrote: offline copies (`cache:*`), storage pages (`state:*`), grants (`grants:v1`) and the signing
   key (`signing-key:v3`) are **deleted once on the first start** by `src/migrate.ts`, guarded by the marker
   `pages-core:migrated-from:thread-pages-1`, with one `info` line giving the count; `pages-core:*` is never touched. A
@@ -1172,36 +1172,36 @@ breaking for everything but the pages themselves. Root `pnpm check` on the branc
   `{{DATE}}` now render literally: edit the seed to `{title}`; there is no date placeholder. A seed equal to one of
   1.0.3–1.2.0's shipped defaults reads as "no seed", like an instruction text equal to a shipped default reads as the
   built-in text (`PAST_SEED_DEFAULTS`, `PAST_INSTRUCTION_DEFAULTS` in `src/settings.ts`: all of 1.9's hashes carried).
-- **Coexistence removed** (DESIGN §E, D-bb-1 superseded): `src/coexistence.ts`, the `defer()` hook of the two
+- **Coexistence removed** (DESIGN §E, D-alia-1 superseded): `src/coexistence.ts`, the `defer()` hook of the two
   instruction slots, the `onPlugins` hook of the contributor refresh and the `instructions: deferred — …` line of
-  `bb pages status` are gone. There is one plugin under one id.
+  `alia pages status` are gone. There is one plugin under one id.
 
 ### Upgrade
 
 **An installed 1.9** (`git:https://github.com/unifedev/bb-thread-pages` or the marketplace entry): after the owner
-pushes `v1.10.0`, `bb plugin update thread-pages` (or `bb plugin outdated` to see it offered). The first start sweeps
-the kv rows and logs it. Sessions started under 1.9 keep an instruction naming `bb thread-page`; tell them to use
-`bb pages`, or start new threads.
+pushes `v1.10.0`, `alia plugin update thread-pages` (or `alia plugin outdated` to see it offered). The first start sweeps
+the kv rows and logs it. Sessions started under 1.9 keep an instruction naming `alia thread-page`; tell them to use
+`alia pages`, or start new threads.
 
-**This machine** (`bb-pages@0.2.0` from `path:…/unife-mono/packages/bb-pages`, `thread-pages@1.9.0` disabled):
-`bb plugin remove bb-pages` first (its settings and kv go with it; the pages stay), then `bb plugin enable
-thread-pages` and `bb plugin update thread-pages`. `RELEASE-0.2.0.md` §5 has the order and the checks.
+**This machine** (`alia-pages@0.2.0` from `path:…/unife-mono/packages/alia-pages`, `thread-pages@1.9.0` disabled):
+`alia plugin remove alia-pages` first (its settings and kv go with it; the pages stay), then `alia plugin enable
+thread-pages` and `alia plugin update thread-pages`. `RELEASE-0.2.0.md` §5 has the order and the checks.
 
-### `@unifedev/thread-pages` (was `@unifedev/bb-pages`)
+### `@unifedev/thread-pages` (was `@unifedev/alia-pages`)
 
-- `package.json`: name, version 1.10.0, `bb.name` "Thread Pages", `bb.description` from the marketplace entry's
-  wording (no bar, no `bb thread-page`); the CLI stays `bb pages`.
+- `package.json`: name, version 1.10.0, `alia.name` "Thread Pages", `alia.description` from the marketplace entry's
+  wording (no bar, no `alia thread-page`); the CLI stays `alia pages`.
 - `src/migrate.ts` and `test/migrate.test.ts`: the one-time kv sweep over the SDK's `storage.kv.list()`.
-- `scripts/release-bb.mjs <checkout of unifedev/bb-thread-pages> [--commit] [--tag] [--push]`: fills the public
-  repository with a standalone, bb-buildable tree — the host sources, `@unifedev/pages-core` vendored under
+- `scripts/release-alia.mjs <checkout of unifedev/alia-thread-pages> [--commit] [--tag] [--push]`: fills the public
+  repository with a standalone, alia-buildable tree — the host sources, `@unifedev/pages-core` vendored under
   `core/src/` with the two import specifiers rewritten to relative paths, `package.json` with `parse5` as the one
   dependency (devDependencies for typecheck only: the SDK pinned exactly, its type-level peers `zod` and
-  `@types/better-sqlite3`, `hono`, `@types/node`, `typescript`), the lockfile, README, this CHANGELOG derived (bb and pages-core parts), PLUGIN_OVERVIEW.md, LICENSE; of the core's
-  `src/testing/` only the in-memory stores the server runs on — proves the generated runtimes are current, typechecks and runs `bb plugin build` there,
-  and prints the owner's git commands (`v1.10.0`). **`dist/` is untracked**: 1.9 committed `dist/server.js`, and bb
-  loads a shipped bundle in place of the sources; from 1.10.0 every install builds from source (bb's one-time
+  `@types/better-sqlite3`, `hono`, `@types/node`, `typescript`), the lockfile, README, this CHANGELOG derived (VesnALIA and pages-core parts), PLUGIN_OVERVIEW.md, LICENSE; of the core's
+  `src/testing/` only the in-memory stores the server runs on — proves the generated runtimes are current, typechecks and runs `alia plugin build` there,
+  and prints the owner's git commands (`v1.10.0`). **`dist/` is untracked**: 1.9 committed `dist/server.js`, and VesnALIA
+  loads a shipped bundle in place of the sources; from 1.10.0 every install builds from source (VesnALIA's one-time
   toolchain download on a machine that never built a plugin).
-- Tests pin `pluginId: "thread-pages"`; README, DESIGN (§E, §G, D-bb-1, D-bb-2), NOTES, `TESTING.md` and
+- Tests pin `pluginId: "thread-pages"`; README, DESIGN (§E, §G, D-alia-1, D-alia-2), NOTES, `TESTING.md` and
   `RELEASE-0.2.0.md` §5 follow.
 
 ## 0.2.0 — 2026-10-09
@@ -1251,9 +1251,9 @@ see wording and layout changes only.
 
 ### Upgrade
 
-**bb**: superseded by 1.10.0 (bb plugin) above — the plugin ships as `thread-pages` 1.10.0, not as a `bb-pages` path
-install. (As written for the path install: `cd packages/bb-pages && pnpm exec bb plugin build && bb plugin reload
-bb-pages`; nothing to migrate between 0.1.0 and 0.2.0 of that install.) A reader with a page open gets the new shell on
+**VesnALIA**: superseded by 1.10.0 (VesnALIA plugin) above — the plugin ships as `thread-pages` 1.10.0, not as a `alia-pages` path
+install. (As written for the path install: `cd packages/alia-pages && pnpm exec VesnALIA plugin build && VesnALIA plugin reload
+alia-pages`; nothing to migrate between 0.1.0 and 0.2.0 of that install.) A reader with a page open gets the new shell on
 the next load of the page; a form answered on the old shell still arrives.
 
 **Pages** need no change: the bar is gone, so a page that relied on the bar's title, status line, Update button,
@@ -1330,20 +1330,20 @@ lines; the guide's "Around your page" says how); `threadPage.version` stays `1`.
   instruction slot (`2fa5986`).
 - 71 test files, 455 tests.
 
-### `@unifedev/bb-pages`
+### `@unifedev/alia-pages`
 
 - **U47**: all three settings on `threads.send` with explicit `executionInputSources`, scope `turn`; per-model
   `reasoningLevels` (the union flattening fixed); a level without a model is checked against the thread's current
   model, the provider taken from the thread record (RS-1); a pass-through is warned (RS-8); `threads.send` is called
-  with the SDK's own types (RS-16). `TESTING.md` item 12 is the owner's look at bb's queued row (X61).
+  with the SDK's own types (RS-16). `TESTING.md` item 12 is the owner's look at VesnALIA's queued row (X61).
 - **U49**: `hostName` no longer passed at mount (NS-12); the pin member is implemented but unused; the
   `workingLabel` setting now describes the forms' status line.
 - **U44**: `workspaceOf` answers with the thread's environment folder (a worktree or the checkout).
 - Instruction fragments in the order 04 R6.29 gives, under one heading (`b8b0864`, `316b998`).
-- Live on the owner's bb (0.45.0, path install, `bb plugin reload bb-pages`): `TESTING.md` is the owner's walk-through
-  and `packages/bb-pages/test/live/2026-10-09/` the record (`2a957ed`; the second run after the merge, `3d6db95`:
+- Live on the owner's VesnALIA (0.45.0, path install, `alia plugin reload alia-pages`): `TESTING.md` is the owner's walk-through
+  and `packages/alia-pages/test/live/2026-10-09/` the record (`2a957ed`; the second run after the merge, `3d6db95`:
   the page edge to edge with nothing drawn, the home's rows and actions, 13 of 14 checks — the one FAIL is the home
-  regression below). Not covered by an agent: a remote reader over bb Connect, iPhone Safari on the device, the
+  regression below). Not covered by an agent: a remote reader over VesnALIA Connect, iPhone Safari on the device, the
   desktop app's Browser tab.
 - Bar-era wording in the `home` command's summary and the README replaced (`c38acfd`).
 
@@ -1356,7 +1356,7 @@ lines; the guide's "Around your page" says how); `threadPage.version` stays `1`.
 ### Open after this version
 
 - The rule-7 checks that need the owner's device or sign-in (`RELEASE-0.2.0.md` lists them): a remote reader over
-  bb Connect, iPhone Safari, the desktop app's Browser pane, Safari and Firefox pressing the sign-in button, bb's
+  VesnALIA Connect, iPhone Safari, the desktop app's Browser pane, Safari and Firefox pressing the sign-in button, VesnALIA's
   queued row with reply settings (X61), a refused `/model` in an interactive Claude session.
 
 ## 0.1.0 — 2026-10-09
@@ -1371,10 +1371,10 @@ Tagged by the owner as `v0.1.0` at `fc4681e` on 9 October 2026; nothing publishe
   budgets, submissions), the browser runtime (kernel and shell, bundled into `src/generated/`), serving (the page,
   document, file, submit, bridge and home routes), pages, the agent instruction and guide, the built-in home
   page. Knows no host: a host mounts it through the serving, provider and contributor contracts (spec 05–07).
-- `@unifedev/bb-pages` (`packages/bb-pages`) — the bb plugin. `ProviderHost` and `ServingHost` over the bb
+- `@unifedev/alia-pages` (`packages/alia-pages`) — the VesnALIA plugin. `ProviderHost` and `ServingHost` over the VesnALIA
   plugin SDK (sessions, messages, files, kv, workspaces, providers, attachments, voice), the instruction slots,
-  contributors, settings, the `bb pages` CLI, coexistence with the installed `thread-pages` plugin. Not installed
-  on any bb yet.
+  contributors, settings, the `alia pages` CLI, coexistence with the installed `thread-pages` plugin. Not installed
+  on any VesnALIA yet.
 
 ### What is verified
 
@@ -1383,23 +1383,23 @@ Tagged by the owner as `v0.1.0` at `fc4681e` on 9 October 2026; nothing publishe
   (`packages/pages-core/test/browser/EXPECTATIONS.md`); re-run on the tagged tree after the PC fixes in all three
   engines at once, and the regenerated record is byte-identical to the committed one. `build-runtime --check` and
   `check-neutral` pass.
-- bb-pages: 19 files, 99 tests green against the SDK fake: every provider member, the serving adapter, settings,
+- alia-pages: 19 files, 99 tests green against the SDK fake: every provider member, the serving adapter, settings,
   the CLI, coexistence, the composition root, and fixtures 01 and 06 served through the real core over the
   adapters (routes, headers, the submission wording that reaches the thread, the roster, the instruction).
-  `bb plugin build` green. Run on the owner's bb (0.45.0) beside the released `thread-pages` 1.9.0
-  (`packages/bb-pages/test/live/2026-10-09/REPORT.md`): both plugins running, instructions deferred, the old
-  plugin's route and CLI unchanged; `bb pages status`, `init` (EXISTING, the Connect URL, no credential) and
-  `guide` as designed; the owner's page opened through bb-pages in Chromium with the document in the sandboxed
+  `alia plugin build` green. Run on the owner's VesnALIA (0.45.0) beside the released `thread-pages` 1.9.0
+  (`packages/alia-pages/test/live/2026-10-09/REPORT.md`): both plugins running, instructions deferred, the old
+  plugin's route and CLI unchanged; `alia pages status`, `init` (EXISTING, the Connect URL, no credential) and
+  `guide` as designed; the owner's page opened through alia-pages in Chromium with the document in the sandboxed
   frame, the poll answered, the home listing 106 sessions and 7 providers, no console errors; WebKit with an
   iPhone viewport as an emulation. Found there and fixed in the core (`20f809c`): `providers.list` dropped a
   provider's default when it trimmed a catalog longer than 64 models, so the home's start form listed no
-  provider on a bb whose Pi provider offers 450. Not covered: a remote reader over Connect (401 without the
+  provider on a VesnALIA whose Pi provider offers 450. Not covered: a remote reader over Connect (401 without the
   owner's session), the device, the in-app Browser, and every interaction that sends a message.
 
 ### What the host statements mark absent
 
-- bb (`unife-bb-plugin/HOST-STATEMENT.md`, the `bb-pages` column): `delivery` is never `steered`; files are
-  carried (R-S7 as core, X31); `storagePageBytes` is host-limited by bb's 256 KiB kv page; no
+- VesnALIA (`unife-alia-plugin/HOST-STATEMENT.md`, the `alia-pages` column): `delivery` is never `steered`; files are
+  carried (R-S7 as core, X31); `storagePageBytes` is host-limited by VesnALIA's 256 KiB kv page; no
   `attachments.remove` (X54); `session.usage` is `context` only (X55); `kind: "other"` waits are reported, not
   answerable; A187 and A188 do not apply (no daemon registration, no cookie of its own).
 
@@ -1407,8 +1407,8 @@ Tagged by the owner as `v0.1.0` at `fc4681e` on 9 October 2026; nothing publishe
 
 - pages-core (delta: ship): the spec amendment PC-15 records — `unife-pages` 03 §`pages.answer` gains
   `form.action?` and 05 R2.32 names the submitter's value — before the guide is generated from the roster.
-- bb-pages (delta: ship-after BB-2b, applied in `dd004a4`): the rule-7 run on a live bb is done for `bb pages
-  init` and the owner's page through `bb-pages` (above); still owed to the owner: a remote reader over bb
+- alia-pages (delta: ship-after ALIA-2b, applied in `dd004a4`): the rule-7 run on a live VesnALIA is done for `alia pages
+  init` and the owner's page through `alia-pages` (above); still owed to the owner: a remote reader over VesnALIA
   Connect, iPhone Safari, the desktop in-app Browser, and the interactions; the Connect status's `sharedPorts`
   shape (O-10) is read from bundles only.
 - The core's `providers.list` fix (`20f809c`) has its delta review appended to `reviews/pages-core-0.1.0.md`

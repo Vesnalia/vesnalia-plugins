@@ -48,7 +48,7 @@ export interface QemuConfig {
 }
 
 export const QEMU_DEFAULTS = {
-  pool: "bbbox",
+  pool: "aliabox",
   windowsTemplate: 9104,
   vmidFirst: 9700,
   vmidLast: 9799,
@@ -123,7 +123,7 @@ export const QEMU_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   [QEMU_KEYS.tokenId]: {
     type: "string",
     label: "API token ID",
-    description: `The Proxmox API token ${PRODUCT} signs in with, such as bbbox@pve!plugin. The setup guide lists the privileges it needs.`,
+    description: `The Proxmox API token ${PRODUCT} signs in with, such as aliabox@pve!plugin. The setup guide lists the privileges it needs.`,
     group: "credentials",
     default: "",
   },
@@ -132,7 +132,7 @@ export const QEMU_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
     type: "string",
     label: "SSH private key",
     description:
-      `The SSH key ${PRODUCT} reaches boxes with. Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, ${PRODUCT} makes a key, which the template does not accept until you add its public key.`,
+      `The SSH key ${PRODUCT} reaches boxes with. Paste ALIABOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, ${PRODUCT} makes a key, which the template does not accept until you add its public key.`,
     secret: true,
     group: "credentials",
   },

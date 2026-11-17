@@ -14,10 +14,10 @@ export const MSB_EXCLUDES = "/run, which lives in the box's memory, unless the s
 export const DOCKER_GUEST = "/var/lib/docker";
 
 const SNAPSHOT_NAME = /^([a-z0-9][a-z0-9-]*)-(sn[a-z2-7]{12})-r(\d{1,3})$/;
-const SNAPSHOT_GROUP = /^bbbox-(bx[a-z0-9]{12})$/;
+const SNAPSHOT_GROUP = /^aliabox-(bx[a-z0-9]{12})$/;
 
 export function snapshotGroup(boxId: string): string {
-  return `bbbox-${boxId}`;
+  return `aliabox-${boxId}`;
 }
 
 export function snapshotName(install: string, snapshot: string, forkSafe: number | null | undefined): string {
@@ -273,10 +273,10 @@ export const DELETE_TASK = "delete:";
 export const RESTORED_NAME = /^-[0-9a-f]{8}$/;
 
 export const SNAPSHOT_LABELS = {
-  snapshot: "bbbox.snapshot",
-  cores: "bbbox.cores",
-  memory: "bbbox.memory-mib",
-  disk: "bbbox.disk-gib",
+  snapshot: "aliabox.snapshot",
+  cores: "aliabox.cores",
+  memory: "aliabox.memory-mib",
+  disk: "aliabox.disk-gib",
 } as const;
 
 export interface InspectedSnapshot {

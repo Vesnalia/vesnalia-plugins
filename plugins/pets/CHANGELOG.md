@@ -8,13 +8,13 @@
 
 ## 0.3.0 — 2026-11-07
 
-Requires bb 0.49 or later. bb installs from git skip tags whose engines don't match, so older bb stays on 0.2.4.
+Requires VesnALIA 0.49 or later. VesnALIA installs from git skip tags whose engines don't match, so older VesnALIA stays on 0.2.4.
 
 ### Changed
 
-- **Current bb plugin SDK**: the plugin now builds against the `@get-bb/plugin-sdk` npm package (0.6.132) instead of vendored types. `engines.bb` is `>=0.49` and `engines.bbPluginSdk` is `>=0.6.132`. The frontend packages bb shims at runtime are type-only dev dependencies now, so a git install pulls 37 packages instead of 69. (#4)
-- **The overlay is an app overlay slot**: the floating pet mounts through `app.slots.experimental_appOverlay` and reads through bb's SDK hooks (`useRpc`, `useRealtime`, `useBbContext`, `useBbNavigate`). It no longer opens its own WebSocket, patches the history API to watch routes, or fakes `popstate` to navigate. Behavior is unchanged, including the compact-viewport gate. (#5)
-- **README**: redesigned with light and dark screenshots and GIFs captured on bb 0.49. (#6)
+- **Current VesnALIA plugin SDK**: the plugin now builds against the `@vesnalia/plugin-sdk` npm package (0.6.132) instead of vendored types. `engines.alia` is `>=0.49` and `engines.aliaPluginSdk` is `>=0.6.132`. The frontend packages VesnALIA shims at runtime are type-only dev dependencies now, so a git install pulls 37 packages instead of 69. (#4)
+- **The overlay is an app overlay slot**: the floating pet mounts through `app.slots.experimental_appOverlay` and reads through VesnALIA's SDK hooks (`useRpc`, `useRealtime`, `useAliaContext`, `useAliaNavigate`). It no longer opens its own WebSocket, patches the history API to watch routes, or fakes `popstate` to navigate. Behavior is unchanged, including the compact-viewport gate. (#5)
+- **README**: redesigned with light and dark screenshots and GIFs captured on VesnALIA 0.49. (#6)
 
 ### Fixed
 
@@ -24,7 +24,7 @@ Requires bb 0.49 or later. bb installs from git skip tags whose engines don't ma
 
 ### Changed
 
-- Refresh the shipped frontend artifacts for the current bb runtime.
+- Refresh the shipped frontend artifacts for the current VesnALIA runtime.
 
 ## 0.2.3 — 2026-08-28
 
@@ -44,7 +44,7 @@ Requires bb 0.49 or later. bb installs from git skip tags whose engines don't ma
   UI stalls to the overlay content script's rAF tick loop and per-tick
   DOM scans; the render-time `hideOnCompact` check only blanked the pet
   while every loop kept running. The content script now gates the React
-  root mount on `window.matchMedia("(max-width: 767px)")` — bb's compact
+  root mount on `window.matchMedia("(max-width: 767px)")` — VesnALIA's compact
   breakpoint — so phones never load the overlay at all, unless the
   "Hide on small viewports" setting was explicitly turned off (checked
   via the read-only `getOverlay` rpc, failing closed).
@@ -54,12 +54,12 @@ Requires bb 0.49 or later. bb installs from git skip tags whose engines don't ma
 ### Fixed
 
 - **Git installs resolve `zod`**: moved `zod` from `devDependencies` to
-  `dependencies`. BB installs a git source with
-  `npm install --ignore-scripts --omit=dev` and then bundles `bb.server`
+  `dependencies`. VesnALIA installs a git source with
+  `npm install --ignore-scripts --omit=dev` and then bundles `alia.server`
   from `server.ts`, so a dev-only `zod` was never installed and the build
   failed with `Could not resolve "zod"`. Local builds were unaffected,
   which is why it survived to marketplace review
-  (get-bb/marketplace#7). Audited the rest of the runtime imports at the
+  (get-alia/marketplace#7). Audited the rest of the runtime imports at the
   same time; every other one is already a production dependency or a
   host-provided external.
 
@@ -134,7 +134,7 @@ Requires bb 0.49 or later. bb installs from git skip tags whose engines don't ma
 
 ## 0.1.0 — 2026-08-14
 
-Initial public release: an AI-hatched pixel companion that roams your bb
+Initial public release: an AI-hatched pixel companion that roams your VesnALIA
 window and mirrors your fleet. Includes the hatchery (describe a creature,
 pick from four drafts, get a fully animated pet), XP and evolution through
 five stages, the autonomy director that gives the pet a life of its own,

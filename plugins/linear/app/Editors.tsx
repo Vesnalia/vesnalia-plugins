@@ -186,7 +186,7 @@ export function PropertyEditors({
                   <Current on={fields.assignee === null} />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <div className="bbl-scroller max-h-64 overflow-y-auto">
+                <div className="alial-scroller max-h-64 overflow-y-auto">
                   {options.value.members.map((member) => (
                     <DropdownMenuItem
                       key={member.id}
@@ -289,11 +289,11 @@ export function PropertyEditors({
                 {detail.labels.slice(0, 3).map((label) => (
                   <span
                     key={label.id}
-                    className="bbl-label-dot size-1.5 shrink-0 rounded-full"
+                    className="alial-label-dot size-1.5 shrink-0 rounded-full"
                     style={
                       label.color === null
                         ? undefined
-                        : ({ "--bbl-label": label.color } as React.CSSProperties)
+                        : ({ "--alial-label": label.color } as React.CSSProperties)
                     }
                     aria-hidden
                   />
@@ -308,7 +308,7 @@ export function PropertyEditors({
             {options.value === null ? (
               <Loading />
             ) : (
-              <div className="bbl-scroller max-h-64 overflow-y-auto">
+              <div className="alial-scroller max-h-64 overflow-y-auto">
                 {options.value.labels.length === 0 ? (
                   <p className="px-2 py-1.5 text-xs text-muted-foreground">
                     This team has no labels.
@@ -335,11 +335,11 @@ export function PropertyEditors({
                         }}
                       >
                         <span
-                          className="bbl-label-dot size-2 shrink-0 rounded-full"
+                          className="alial-label-dot size-2 shrink-0 rounded-full"
                           style={
                             label.color === null
                               ? undefined
-                              : ({ "--bbl-label": label.color } as React.CSSProperties)
+                              : ({ "--alial-label": label.color } as React.CSSProperties)
                           }
                           aria-hidden
                         />
@@ -375,7 +375,7 @@ export function PropertyEditors({
                   <Current on={fields.projectId === null} />
                 </DropdownMenuItem>
                 {options.value.projects.length > 0 ? <DropdownMenuSeparator /> : null}
-                <div className="bbl-scroller max-h-64 overflow-y-auto">
+                <div className="alial-scroller max-h-64 overflow-y-auto">
                   {options.value.projects.map((project) => (
                     <DropdownMenuItem
                       key={project.id}
@@ -549,7 +549,7 @@ function PriorityMark({ priority }: { priority: number }) {
       viewBox="0 0 16 16"
       width="14"
       height="14"
-      className="bbl-neutral bbl-text w-3.5 shrink-0"
+      className="alial-neutral alial-text w-3.5 shrink-0"
       aria-hidden
       focusable="false"
     >
@@ -580,7 +580,7 @@ function PriorityMark({ priority }: { priority: number }) {
         viewBox="0 0 16 16"
         width="14"
         height="14"
-        className="bbl-danger bbl-text w-3.5 shrink-0"
+        className="alial-danger alial-text w-3.5 shrink-0"
         aria-hidden
         focusable="false"
       >

@@ -58,7 +58,7 @@ export function FramesStrip({ frames, now, onOpen }: FramesStripProps) {
                     // No thumbnail is a degraded grid, not a broken one: the
                     // full frame is always there.
                     <span
-                      className="bbxs-skeleton flex h-16 w-10 items-center justify-center"
+                      className="aliaxs-skeleton flex h-16 w-10 items-center justify-center"
                       aria-hidden
                     >
                       <Icon name="File" className="size-4 text-muted-foreground" />
