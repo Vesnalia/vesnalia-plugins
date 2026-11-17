@@ -2,9 +2,9 @@
 // Собирает итоговые файлы из data/sources.json, data/adapt-report.json и
 // data/verify.json: catalog.json (магазин VesnALIA, только собранные плагины),
 // status.json и STATUS.md (все плагины), README.md, THIRD_PARTY_NOTICES.md.
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { extname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { brandProse } from "./adapt.mjs";
 import { DISPLAY_NAMES, fixProse } from "./renames.mjs";
 
@@ -19,31 +19,6 @@ const adapt = await read("data/adapt-report.json", {});
 const verify = await read("data/verify.json", {});
 const skipped = await read("data/skipped.json", []);
 const fixes = await read("data/fixes.json", {});
-
-// ---------- остатки имён bb после кодмода ----------
-const URL_RE = /\b(?:https?|wss?|git\+https?|ssh):\/\/[^\s"'`<>)\]]+|\b(?:www\.)?github\.com\/[^\s"'`<>)\]]+|\b[\w.-]*getbb\.app\b[^\s"'`<>)\]]*/g;
-const SEG = /(?<![A-Za-z0-9])bb(?![a-z0-9])|(?<![A-Z])Bb(?![a-z0-9])|(?<![A-Za-z0-9])BB(?![A-Za-z0-9])|@get-bb/;
-const SKIP = /^(licen[cs]e|copying|notice)(\.[a-z]+)?$|^changelog|lock/i;
-const EXT = new Set([".ts", ".tsx", ".js", ".mjs", ".cjs", ".css"]);
-function walk(dir, out = []) {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) {
-      if (!["node_modules", "dist", ".git"].includes(e.name)) walk(join(dir, e.name), out);
-    } else if (e.isFile()) out.push(join(dir, e.name));
-  }
-  return out;
-}
-function residualCodeRefs(id) {
-  let count = 0;
-  for (const file of walk(join(ROOT, "plugins", id))) {
-    const name = file.split("/").pop();
-    if (SKIP.test(name) || !EXT.has(extname(file)) || statSync(file).size > 1.5e6) continue;
-    for (const line of readFileSync(file, "utf8").split("\n")) {
-      if (SEG.test(line.replace(URL_RE, ""))) count += 1;
-    }
-  }
-  return count;
-}
 
 // ---------- статус ----------
 function firstLine(text) {
@@ -125,12 +100,11 @@ for (const id of ids) {
       ...(fixes[id] ?? []),
     ],
     problems: s.problems.map((p) =>
-      /Could not resolve "@get-bb\//.test(p)
+      /Could not resolve "(@get-bb\/|<старый SDK>)/.test(p)
         ? `${p.split(":")[0]}: внешняя зависимость плагина импортирует SDK старого хоста, сборка не проходит`
         : p,
     ),
     warnings: s.warnings,
-    residualBbRefs: residualCodeRefs(id),
   };
   for (const part of ["app", "server", "host"]) {
     if (status[id].parts[part] && status[id].parts[part] !== "ok") status[id].parts[part] = "fail";

@@ -22,6 +22,8 @@ export const ID_RENAMES = {
   bbium: "alium",
   "matt-pocock-skills-for-bb": "matt-pocock-skills-for-vesnalia",
   "pstack-for-bb": "pstack-for-vesnalia",
+  // не перенесён, но числится в data/skipped.json
+  "bb-ui-reference": "ui-reference",
 };
 
 export const ourId = (id) => ID_RENAMES[id] ?? id;

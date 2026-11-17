@@ -2,7 +2,7 @@
   "name": "vesnalia-plugins",
   "private": true,
   "type": "module",
-  "description": "Плагины для VesnALIA, адаптированные из открытого каталога bb",
+  "description": "Плагины для платформы ИИ-агентов VesnALIA",
   "scripts": {
     "import": "node scripts/import.mjs",
     "adapt": "node scripts/adapt.mjs",

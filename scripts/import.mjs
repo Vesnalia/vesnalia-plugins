@@ -16,6 +16,7 @@ import { promisify } from "node:util";
 import semver from "semver";
 import { brandProse } from "./adapt.mjs";
 import { DISPLAY_NAMES, fixProse, ourId } from "./renames.mjs";
+import { cleanSource } from "./clean-source.mjs";
 
 const exec = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, "..");
@@ -233,7 +234,7 @@ async function main() {
     if (only.length > 0 && !only.includes(plugin.id)) continue;
     const gitSource = plugin.source?.git;
     if (!gitSource) {
-      skipped.push({ id: plugin.id, reason: "в каталоге bb только npm-источник" });
+      skipped.push({ id: plugin.id, reason: "в исходном каталоге только npm-источник" });
       continue;
     }
     const spdx = licenses.get(normalizeRepoUrl(gitSource.url));
@@ -328,9 +329,9 @@ async function main() {
         omittedMedia: omitted,
       };
       await writeFile(join(target, "NOTICE.md"), noticeText(entry));
-      sources[ourId(plugin.id)] = entry;
+      sources[ourId(plugin.id)] = cleanSource(entry);
     } catch (error) {
-      failures.push({ id: plugin.id, reason: String(error.message ?? error).split("\n")[0] });
+      failures.push({ id: plugin.id, reason: String(error.message ?? error).split("\n")[0].replace(/https?:\/\/\S+/g, "<репозиторий автора>") });
     } finally {
       done += 1;
       if (done % 25 === 0) console.error(`${done}/${queue.length}`);
@@ -350,11 +351,11 @@ async function main() {
   const previousSkipped = existsSync(skippedPath)
     ? JSON.parse(await readFile(skippedPath, "utf8"))
     : [];
-  const handled = new Set([...queue.map((q) => q.plugin.id), ...skipped.map((s) => s.id)]);
+  const handled = new Set([...queue.map((q) => ourId(q.plugin.id)), ...skipped.map((s) => ourId(s.id))]);
   const mergedSkipped = [
     ...previousSkipped.filter((s) => !handled.has(s.id)),
-    ...skipped,
-    ...failures.map((f) => ({ ...f, reason: `ошибка импорта: ${f.reason}` })),
+    ...skipped.map((s) => ({ ...s, id: ourId(s.id) })),
+    ...failures.map((f) => ({ ...f, id: ourId(f.id), reason: `ошибка импорта: ${f.reason}` })),
   ].sort((a, b) => a.id.localeCompare(b.id));
   await writeFile(skippedPath, `${JSON.stringify(mergedSkipped, null, 2)}\n`);
   console.log(

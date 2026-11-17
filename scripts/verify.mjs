@@ -118,5 +118,14 @@ await Promise.all(
     }
   }),
 );
-const sorted = Object.fromEntries(Object.entries(results).sort(([a], [b]) => a.localeCompare(b)));
+// В логах сборки - пути зависимостей и имя старого SDK; в отчёт их не пишем.
+const cleanLog = (v) =>
+  typeof v === "string"
+    ? v.replace(/@get-bb\/plugin-sdk/g, "<старый SDK>").replace(/node_modules\/(@[\w.-]+\/)?[\w.-]*bb[\w.-]*/g, "node_modules/<зависимость>")
+    : Array.isArray(v)
+      ? v.map(cleanLog)
+      : v && typeof v === "object"
+      ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, cleanLog(x)]))
+      : v;
+const sorted = Object.fromEntries(Object.entries(results).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, cleanLog(v)]));
 await writeFile(outPath, `${JSON.stringify(sorted, null, 2)}\n`);

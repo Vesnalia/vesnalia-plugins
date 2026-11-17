@@ -2757,11 +2757,11 @@
     "id": "impromptu-ui",
     "install": "ok",
     "manifest": "ok",
-    "app": "Build failed with 1 error:\nnode_modules/@danielbachhuber/bb-plugin-component-library/start-thread/start-thread.tsx:14:7: ERROR: Could not resolve \"@get-bb/plugin-sdk/app\"",
+    "app": "Build failed with 1 error:\nnode_modules/<зависимость>/start-thread/start-thread.tsx:14:7: ERROR: Could not resolve \"<старый SDK>/app\"",
     "server": "ok",
     "host": null,
     "warnings": [],
-    "seconds": 12
+    "seconds": 5
   },
   "inbox": {
     "id": "inbox",

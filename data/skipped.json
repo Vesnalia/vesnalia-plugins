@@ -5,11 +5,11 @@
   },
   {
     "id": "agentation-mentions",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "ai-usage",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "ambient",
@@ -21,15 +21,11 @@
   },
   {
     "id": "attention",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "auto-archive",
-    "reason": "в каталоге bb только npm-источник"
-  },
-  {
-    "id": "bb-ui-reference",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "context-katamari",
@@ -37,11 +33,11 @@
   },
   {
     "id": "dbf-viewer",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "dispatch",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "emoji-picker",
@@ -53,23 +49,23 @@
   },
   {
     "id": "global-workflows",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "jsonl-viewer",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "lanes",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "lazygit",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "mdb-viewer",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "mesh-gradient",
@@ -77,19 +73,19 @@
   },
   {
     "id": "ntfy",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "parquet-viewer",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "perspectives",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "postgres-viewer",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "prism-frame",
@@ -97,11 +93,11 @@
   },
   {
     "id": "provider-pi-durable",
-    "reason": "ошибка импорта: Command failed: git fetch --quiet --depth 1 https://github.com/VanDalkvist/bb-plugin-provider-pi-durable.git 933855be980b4aa8017ca197931cc8267290ee7a"
+    "reason": "ошибка импорта: Command failed: git fetch --quiet --depth 1 <репозиторий автора> 933855be980b4aa8017ca197931cc8267290ee7a"
   },
   {
     "id": "repo-watch",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "server-switcher",
@@ -109,18 +105,22 @@
   },
   {
     "id": "sidebar-filter",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "sqlite-viewer",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "sticky-notes",
-    "reason": "в каталоге bb только npm-источник"
+    "reason": "в исходном каталоге только npm-источник"
   },
   {
     "id": "thread-organizer",
     "reason": "package.json license: UNLICENSED"
+  },
+  {
+    "id": "ui-reference",
+    "reason": "в исходном каталоге только npm-источник"
   }
 ]

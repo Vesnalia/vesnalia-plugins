@@ -318,12 +318,12 @@ export function adaptPackageJson(pkg, id, notes) {
       for (const [k, v] of Object.entries(value)) {
         if (k === "bb") {
           const r = clampRange(v, ALIA_VERSION);
-          if (r.changed) notes.push(`engines.bb ${v} -> engines.alia ${r.range} (alia-core ${ALIA_VERSION})`);
+          if (r.changed) notes.push(`engines.alia: ${v} -> ${r.range} (alia-core ${ALIA_VERSION})`);
           engines.alia = r.range;
         } else if (k === "bbPluginSdk") {
           const r = clampRange(v, ALIA_PLUGIN_SDK_VERSION);
           if (r.changed)
-            notes.push(`engines.bbPluginSdk ${v} -> engines.aliaPluginSdk ${r.range} (SDK ${ALIA_PLUGIN_SDK_VERSION})`);
+            notes.push(`engines.aliaPluginSdk: ${v} -> ${r.range} (SDK ${ALIA_PLUGIN_SDK_VERSION})`);
           engines.aliaPluginSdk = r.range;
         } else engines[k] = v;
       }
@@ -337,11 +337,11 @@ export function adaptPackageJson(pkg, id, notes) {
           continue;
         }
         if (DROP_DEV.has(name)) {
-          notes.push(`убрана зависимость ${name} (${key})`);
+          notes.push(`убрана зависимость старого хоста (${key})`);
           continue;
         }
         if (/^@bb\//.test(name)) {
-          notes.push(`убрана workspace-зависимость ${name} (${key})`);
+          notes.push(`убрана workspace-зависимость старого хоста (${key})`);
           continue;
         }
         deps[name] = typeof spec === "string" && /^(file|link):/.test(spec) ? renameCode(spec) : spec;
@@ -381,7 +381,7 @@ export function adaptPackageJson(pkg, id, notes) {
   // id плагина выводится из имени пакета; он должен совпасть со slug в каталоге
   const derived = deriveId(out.name ?? "");
   if (derived !== id) {
-    notes.push(`имя пакета ${out.name} даёт id "${derived}", переименовано в alia-plugin-${id}`);
+    notes.push(`имя пакета приведено к alia-plugin-${id}`);
     out.name = `alia-plugin-${id}`;
   }
   if (out.alia && DISPLAY_NAMES[id]) out.alia.name = DISPLAY_NAMES[id];
@@ -421,7 +421,7 @@ async function renamePaths(dir, notes) {
     const next = renameSegments(entry.name);
     if (next !== entry.name && !existsSync(join(dir, next))) {
       await rename(join(dir, entry.name), join(dir, next));
-      notes.push(`переименован ${entry.name} -> ${next}`);
+      notes.push(`переименован файл -> ${next}`);
     }
   }
 }
