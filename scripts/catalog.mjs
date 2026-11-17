@@ -95,6 +95,15 @@ function statusOf(id) {
 }
 
 const ids = Object.keys(sources).sort();
+// Заметки кодмода для STATUS без старых имён: что поменялось, а не откуда.
+function cleanNote(note, id) {
+  return note
+    .replace(/^убрана зависимость bb-app \((\w+)\)$/, "убрана зависимость старого хоста ($1)")
+    .replace(/^engines\.bbPluginSdk (.+) -> engines\.aliaPluginSdk (.+)$/, "engines.aliaPluginSdk: $1 -> $2")
+    .replace(/^engines\.bb (.+) -> engines\.alia (.+)$/, "engines.alia: $1 -> $2")
+    .replace(/^имя пакета .+ даёт id ".+", переименовано в .+$/, `имя пакета приведено к alia-plugin-${id}`);
+}
+
 const status = {};
 for (const id of ids) {
   const s = statusOf(id);
@@ -110,11 +119,15 @@ for (const id of ids) {
       host: verify[id]?.host ?? null,
     },
     fixes: [
-      ...notes,
-      ...(renamedFiles > 0 ? [`переименовано файлов с bb в имени: ${renamedFiles}`] : []),
+      ...notes.map((n) => cleanNote(n, id)),
+      ...(renamedFiles > 0 ? [`переименовано файлов: ${renamedFiles}`] : []),
       ...(fixes[id] ?? []),
     ],
-    problems: s.problems,
+    problems: s.problems.map((p) =>
+      /Could not resolve "@get-bb\//.test(p)
+        ? `${p.split(":")[0]}: внешняя зависимость плагина импортирует SDK старого хоста, сборка не проходит`
+        : p,
+    ),
     warnings: s.warnings,
     residualBbRefs: residualCodeRefs(id),
   };
@@ -176,16 +189,14 @@ const statusLines = [
   "",
   "«После публикации SDK» - плагину нужен установленный SDK (сабпути вроде `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде). Сервер ставит зависимости git-плагина через `npm install`, а `@vesnalia/plugin-sdk` в npm пока нет. Проверка с пакетом SDK из alia-core (`npm pack`) такие плагины собирает. Предупреждения о снятых API SDK - в `status.json` (`warnings`).",
   "",
-  "Колонка «Остатки bb» - число строк кода, где ещё встречается имя bb (не ссылки); обычно это имена внешних сервисов или текст, который кодмод не тронул намеренно.",
-  "",
-  "| Плагин | Собирается | app / server / host | Что поправлено | Что сломано | Остатки bb |",
-  "| --- | --- | --- | --- | --- | --- |",
+  "| Плагин | Собирается | app / server / host | Что поправлено | Что сломано |",
+  "| --- | --- | --- | --- | --- |",
 ];
 for (const id of ids) {
   const s = status[id];
   const parts = ["app", "server", "host"].map((p) => s.parts[p] ?? "-").join(" / ");
   statusLines.push(
-    `| ${id} | ${STATE_LABEL[s.state]} | ${parts} | ${md(s.fixes.join("; ")) || "-"} | ${md(s.problems.join("; ")) || "-"} | ${s.residualBbRefs || "-"} |`,
+    `| ${id} | ${STATE_LABEL[s.state]} | ${parts} | ${md(s.fixes.join("; ")) || "-"} | ${md(s.problems.join("; ")) || "-"} |`,
   );
 }
 statusLines.push("");

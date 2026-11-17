@@ -39,7 +39,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -55,7 +55,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -71,7 +71,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -89,7 +89,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -161,7 +161,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -267,7 +267,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -424,7 +424,7 @@
       "host": "ok"
     },
     "fixes": [
-      "имя пакета alia-antigravity-usage даёт id \"alia-antigravity-usage\", переименовано в alia-plugin-bb-antigravity-usage"
+      "имя пакета приведено к alia-plugin-antigravity-usage"
     ],
     "problems": [],
     "warnings": [],
@@ -460,8 +460,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -610,7 +610,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -686,7 +686,7 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.46.0 <0.47.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
+      "engines.alia: >=0.46.0 <0.47.0 -> >=0.49 (alia-core 0.49.0)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
     "problems": [
@@ -736,8 +736,8 @@
       "host": "ok"
     },
     "fixes": [
-      "имя пакета alia-autoresearch даёт id \"alia-autoresearch\", переименовано в alia-plugin-bb-autoresearch",
-      "переименовано файлов с bb в имени: 1"
+      "имя пакета приведено к alia-plugin-autoresearch",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -815,8 +815,8 @@
       "host": "ok"
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.5.9 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.5.9 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -918,7 +918,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -936,7 +936,7 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-better-latex даёт id \"alia-better-latex\", переименовано в alia-plugin-bb-better-latex"
+      "имя пакета приведено к alia-plugin-better-latex"
     ],
     "problems": [],
     "warnings": [],
@@ -1163,7 +1163,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 5"
+      "переименовано файлов: 5"
     ],
     "problems": [],
     "warnings": [
@@ -1183,7 +1183,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -1216,7 +1216,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -1279,7 +1279,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -1381,8 +1381,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.47.1 <0.48.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "убрана зависимость bb-app (devDependencies)"
+      "engines.alia: >=0.47.1 <0.48.0 -> >=0.49 (alia-core 0.49.0)",
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -1400,7 +1400,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -1446,7 +1446,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -1492,7 +1492,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -1626,8 +1626,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.44 <0.45 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.alia: >=0.44 <0.45 -> >=0.49 (alia-core 0.49.0)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -1657,7 +1657,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 3"
+      "переименовано файлов: 3"
     ],
     "problems": [],
     "warnings": [],
@@ -1687,7 +1687,7 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)"
     ],
     "problems": [],
     "warnings": [],
@@ -1880,7 +1880,7 @@
       "host": "ok"
     },
     "fixes": [
-      "engines.bbPluginSdk >=0.5.9 <0.6 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+      "engines.aliaPluginSdk: >=0.5.9 <0.6 -> >=0.6 (SDK 0.6.143)"
     ],
     "problems": [],
     "warnings": [
@@ -1913,7 +1913,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "имя пакета alia-copilot-usage даёт id \"alia-copilot-usage\", переименовано в alia-plugin-bb-copilot-usage"
+      "имя пакета приведено к alia-plugin-copilot-usage"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -1992,7 +1992,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -2009,7 +2009,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -2069,7 +2069,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -2085,7 +2085,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -2101,7 +2101,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -2269,8 +2269,8 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 2"
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -2286,7 +2286,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -2335,7 +2335,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
     "problems": [
@@ -2396,7 +2396,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -2412,7 +2412,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -2671,8 +2671,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -2724,7 +2724,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 5"
+      "переименовано файлов: 5"
     ],
     "problems": [],
     "warnings": [
@@ -2746,7 +2746,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -2840,7 +2840,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 16"
+      "переименовано файлов: 16"
     ],
     "problems": [],
     "warnings": [],
@@ -2856,7 +2856,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -2906,7 +2906,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -2942,7 +2942,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
     "problems": [
@@ -2961,7 +2961,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -3074,7 +3074,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
     "problems": [
@@ -3225,7 +3225,7 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-github-pr-dashboard даёт id \"alia-github-pr-dashboard\", переименовано в alia-plugin-bb-github-pr-dashboard"
+      "имя пакета приведено к alia-plugin-github-pr-dashboard"
     ],
     "problems": [],
     "warnings": [],
@@ -3314,7 +3314,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -3609,7 +3609,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 3"
+      "переименовано файлов: 3"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -3706,8 +3706,8 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 1"
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -3739,7 +3739,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -3840,7 +3840,7 @@
     },
     "fixes": [],
     "problems": [
-      "app: Build failed with 1 error: node_modules/@danielbachhuber/bb-plugin-component-library/start-thread/start-thread.tsx:14:7: ERROR: Could not resolve \"@get-bb/plugin-sdk/app\""
+      "app: внешняя зависимость плагина импортирует SDK старого хоста, сборка не проходит"
     ],
     "warnings": [],
     "residualBbRefs": 8
@@ -3930,7 +3930,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 4"
+      "переименовано файлов: 4"
     ],
     "problems": [],
     "warnings": [],
@@ -3989,7 +3989,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -4005,7 +4005,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -4089,7 +4089,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -4123,9 +4123,9 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -4185,7 +4185,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -4201,10 +4201,10 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.43.0 <0.44.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "engines.bbPluginSdk >=0.4.84 <0.5.0 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "имя пакета alia-kujo даёт id \"alia-kujo\", переименовано в alia-plugin-bb-kujo",
-      "переименовано файлов с bb в имени: 4"
+      "engines.alia: >=0.43.0 <0.44.0 -> >=0.49 (alia-core 0.49.0)",
+      "engines.aliaPluginSdk: >=0.4.84 <0.5.0 -> >=0.6 (SDK 0.6.143)",
+      "имя пакета приведено к alia-plugin-kujo",
+      "переименовано файлов: 4"
     ],
     "problems": [],
     "warnings": [],
@@ -4262,7 +4262,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -4310,8 +4310,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -4327,7 +4327,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -4419,7 +4419,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -4436,7 +4436,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -4603,8 +4603,8 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-plugin-matt-pocock-skills-for-alia даёт id \"matt-pocock-skills-for-alia\", переименовано в alia-plugin-matt-pocock-skills-for-bb",
-      "переименовано файлов с bb в имени: 1"
+      "имя пакета приведено к alia-plugin-matt-pocock-skills-for-vesnalia",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -4690,7 +4690,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -4720,7 +4720,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -4764,8 +4764,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -4869,7 +4869,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -4913,7 +4913,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -4943,7 +4943,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 4"
+      "переименовано файлов: 4"
     ],
     "problems": [],
     "warnings": [],
@@ -5020,7 +5020,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -5419,9 +5419,9 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -5439,7 +5439,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -5472,7 +5472,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -5578,7 +5578,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -5594,10 +5594,10 @@
       "host": null
     },
     "fixes": [
-      "engines.bb 0.45.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "engines.bbPluginSdk 0.6.15 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "engines.alia: 0.45.0 -> >=0.49 (alia-core 0.49.0)",
+      "engines.aliaPluginSdk: 0.6.15 -> >=0.6 (SDK 0.6.143)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -5699,7 +5699,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -5796,7 +5796,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -5842,7 +5842,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -5918,7 +5918,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
     "problems": [
@@ -5991,7 +5991,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 4"
+      "переименовано файлов: 4"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -6112,8 +6112,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.16 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 1"
+      "engines.aliaPluginSdk: ^0.4.16 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -6205,7 +6205,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -6235,8 +6235,8 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-plugin-pstack-for-alia даёт id \"pstack-for-alia\", переименовано в alia-plugin-pstack-for-bb",
-      "переименовано файлов с bb в имени: 1"
+      "имя пакета приведено к alia-plugin-pstack-for-vesnalia",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -6252,7 +6252,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -6268,7 +6268,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -6406,7 +6406,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -6466,8 +6466,8 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-recap даёт id \"alia-recap\", переименовано в alia-plugin-bb-recap",
-      "переименовано файлов с bb в имени: 1"
+      "имя пакета приведено к alia-plugin-recap",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -6549,7 +6549,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -6644,7 +6644,7 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-rpiv-todo-renderer даёт id \"alia-rpiv-todo-renderer\", переименовано в alia-plugin-bb-rpiv-todo-renderer"
+      "имя пакета приведено к alia-plugin-rpiv-todo-renderer"
     ],
     "problems": [],
     "warnings": [],
@@ -6674,7 +6674,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -6704,7 +6704,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -6902,9 +6902,9 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -6934,7 +6934,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -7089,7 +7089,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -7217,7 +7217,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -7236,7 +7236,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 7"
+      "переименовано файлов: 7"
     ],
     "problems": [],
     "warnings": [
@@ -7324,7 +7324,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -7371,7 +7371,7 @@
       "host": "ok"
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -7401,8 +7401,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.45 <0.46 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.alia: >=0.45 <0.46 -> >=0.49 (alia-core 0.49.0)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -7418,7 +7418,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -7465,7 +7465,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -7483,8 +7483,8 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 1"
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -7582,7 +7582,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 3"
+      "переименовано файлов: 3"
     ],
     "problems": [],
     "warnings": [],
@@ -7640,7 +7640,7 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)"
     ],
     "problems": [],
     "warnings": [
@@ -7772,7 +7772,7 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.48.1 <0.49.0 -> engines.alia >=0.49 (alia-core 0.49.0)"
+      "engines.alia: >=0.48.1 <0.49.0 -> >=0.49 (alia-core 0.49.0)"
     ],
     "problems": [],
     "warnings": [],
@@ -7978,8 +7978,8 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 2"
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -8011,7 +8011,7 @@
       "host": "ok"
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.8 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+      "engines.aliaPluginSdk: ^0.4.8 -> >=0.6 (SDK 0.6.143)"
     ],
     "problems": [],
     "warnings": [],
@@ -8041,8 +8041,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -8076,7 +8076,7 @@
       "host": null
     },
     "fixes": [
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [
@@ -8097,8 +8097,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.47 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.47 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [
@@ -8186,8 +8186,8 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 1"
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -8278,8 +8278,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -8373,8 +8373,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -8390,7 +8390,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -8422,9 +8422,9 @@
       "host": null
     },
     "fixes": [
-      "engines.bb >=0.46.0 <0.47.0 -> engines.alia >=0.49 (alia-core 0.49.0)",
-      "engines.bbPluginSdk 0.6.37 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "убрана зависимость bb-app (devDependencies)"
+      "engines.alia: >=0.46.0 <0.47.0 -> >=0.49 (alia-core 0.49.0)",
+      "engines.aliaPluginSdk: 0.6.37 -> >=0.6 (SDK 0.6.143)",
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [],
@@ -8440,7 +8440,7 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -8476,8 +8476,8 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-plugin-alia-agent-toolbox даёт id \"alia-agent-toolbox\", переименовано в alia-plugin-bb-agent-toolbox",
-      "переименовано файлов с bb в имени: 1"
+      "имя пакета приведено к alia-plugin-vesnalia-agent-toolbox",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -8507,8 +8507,8 @@
       "host": "ok"
     },
     "fixes": [
-      "имя пакета alia-plugin-alia-box даёт id \"alia-box\", переименовано в alia-plugin-bb-box",
-      "переименовано файлов с bb в имени: 34"
+      "имя пакета приведено к alia-plugin-vesnalia-box",
+      "переименовано файлов: 34"
     ],
     "problems": [],
     "warnings": [
@@ -8530,8 +8530,8 @@
       "host": null
     },
     "fixes": [
-      "имя пакета alia-plugin-alia-live даёт id \"alia-live\", переименовано в alia-plugin-bb-live",
-      "переименовано файлов с bb в имени: 1"
+      "имя пакета приведено к alia-plugin-vesnalia-live",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -8547,9 +8547,9 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "имя пакета alia-plugin-alia-office даёт id \"alia-office\", переименовано в alia-plugin-bb-office",
-      "переименовано файлов с bb в имени: 1"
+      "убрана зависимость старого хоста (devDependencies)",
+      "имя пакета приведено к alia-plugin-vesnalia-office",
+      "переименовано файлов: 1"
     ],
     "problems": [],
     "warnings": [],
@@ -8565,9 +8565,9 @@
       "host": "ok"
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
-      "имя пакета alia-plugin-alia-sidebar даёт id \"alia-sidebar\", переименовано в alia-plugin-bb-sidebar",
-      "переименовано файлов с bb в имени: 7"
+      "убрана зависимость старого хоста (devDependencies)",
+      "имя пакета приведено к alia-plugin-vesnalia-sidebar",
+      "переименовано файлов: 7"
     ],
     "problems": [],
     "warnings": [
@@ -8716,9 +8716,9 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "убрана зависимость bb-app (devDependencies)",
-      "переименовано файлов с bb в имени: 2"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "убрана зависимость старого хоста (devDependencies)",
+      "переименовано файлов: 2"
     ],
     "problems": [],
     "warnings": [],
@@ -8768,7 +8768,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -8881,7 +8881,7 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)"
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -8899,8 +8899,8 @@
       "host": null
     },
     "fixes": [
-      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
-      "убрана зависимость bb-app (devDependencies)"
+      "engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143)",
+      "убрана зависимость старого хоста (devDependencies)"
     ],
     "problems": [],
     "warnings": [
@@ -8983,7 +8983,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 2"
+      "переименовано файлов: 2"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -9003,9 +9003,9 @@
       "host": null
     },
     "fixes": [
-      "убрана зависимость bb-app (devDependencies)",
+      "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 1"
+      "переименовано файлов: 1"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
@@ -9024,7 +9024,7 @@
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
-      "переименовано файлов с bb в имени: 3"
+      "переименовано файлов: 3"
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
