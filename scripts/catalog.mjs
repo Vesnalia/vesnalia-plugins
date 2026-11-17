@@ -195,11 +195,11 @@ for (const id of ids) (categories[sources[id].category ?? "other"] ??= []).push(
 const readme = [
   "# vesnalia-plugins",
   "",
-  "Плагины для VesnALIA (движок alia-core), перенесённые из открытого каталога плагинов bb и адаптированные под alia-core. Переносятся только плагины из репозиториев с открытой лицензией (MIT, Apache-2.0, WTFPL, GPL-3.0); авторство и лицензии сохранены.",
+  "Плагины для VesnALIA (движок alia-core), перенесённые из открытых репозиториев авторов и адаптированные под alia-core. Переносятся только плагины с открытой лицензией (MIT, Apache-2.0, WTFPL, GPL-3.0) или с разрешения автора; авторство и лицензии сохранены: автор, исходный репозиторий и лицензия каждого плагина - в `plugins/<id>/NOTICE.md`, сводно - в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).",
   "",
   "## Устройство",
   "",
-  "- `plugins/<id>/` - код плагина из исходного репозитория (каталог subdir на теге из каталога bb), `LICENSE` оригинала и `NOTICE.md` (автор, исходный репозиторий и коммит, лицензия).",
+  "- `plugins/<id>/` - код плагина из исходного репозитория (subdir на теге исходного репозитория), `LICENSE` оригинала и `NOTICE.md` (автор, исходный репозиторий и коммит, лицензия).",
   "- `catalog.json` - записи для магазина VesnALIA по каждому собирающемуся плагину: установка из этого репозитория, `ref` main, `subdir` plugins/<id>.",
   "- `STATUS.md`, `status.json` - собирается ли плагин, что поправлено, что сломано.",
   "- `THIRD_PARTY_NOTICES.md` - авторы и лицензии всех перенесённых плагинов.",
@@ -210,7 +210,7 @@ const readme = [
   "```bash",
   "npm install",
   "node scripts/import.mjs --catalog v2.json --licenses licenses.tsv   # исходники в plugins/",
-  "node scripts/adapt.mjs                                              # кодмод bb -> alia",
+  "node scripts/adapt.mjs                                              # кодмод под alia-core",
   "ALIA_CORE=../alia-core SDK_TGZ=/tmp/vesnalia-plugin-sdk.tgz \\",
   "  node scripts/verify.mjs                                           # сборка сборщиком alia-core",
   "node scripts/catalog.mjs                                            # catalog.json, STATUS.md, README.md",
@@ -220,21 +220,19 @@ const readme = [
   "",
   "## Что меняет кодмод",
   "",
-  "- `package.json`: раздел `bb` -> `alia`, `engines.bb`/`bbPluginSdk` -> `alia`/`aliaPluginSdk` (диапазоны, которые не пускают alia-core 0.49.0 и SDK 0.6.143, прижимаются, исходные - в `data/adapt-report.json`), имя `bb-plugin-*` -> `alia-plugin-*`, ссылки на этот репозиторий.",
-  "- SDK: `@get-bb/plugin-sdk` -> `@vesnalia/plugin-sdk` в импортах; в `package.json` SDK стоит необязательной `peerDependency`. `@vesnalia/plugin-sdk` пока не опубликован в npm, а сервер ставит зависимости git-плагина через `npm install`: зависимость на неопубликованный пакет (даже в devDependencies) роняет установку. Корень SDK и `/app` при сборке даёт хост. Плагинам, которым SDK нужен установленным (сабпути `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде), SDK прописан в `dependencies`: они встанут, когда SDK появится в npm (в STATUS.md - «после публикации SDK»).",
-  "- Имена bb в коде по правилам переименования alia-core: `BbPluginApi` -> `AliaPluginApi`, `useBbNavigate` -> `useAliaNavigate`, `bbThreadId` -> `aliaThreadId`, `BB_*` -> `ALIA_*`, `__bbPluginRuntime` -> `__aliaPluginRuntime`, `data-bb-*`, `--bb-*`, протокол провайдеров `bb/...` -> `alia/...`, каталог `~/.bb` -> `~/.vesnalia`, CLI `bb` -> `alia`.",
-  "- Бренд BB в видимых текстах (строки интерфейса, Markdown, комментарии) -> VesnALIA. Ссылки не меняются.",
+  "`scripts/adapt.mjs` приводит манифест (`package.json`), импорты SDK и имена в коде к API alia-core, бренд в видимых текстах - к VesnALIA. Что поправлено в каждом плагине - в `data/adapt-report.json` и `STATUS.md`.",
+  "",
+  "SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязательной `peerDependency`. В npm он пока не опубликован, а сервер ставит зависимости git-плагина через `npm install`: зависимость на неопубликованный пакет (даже в devDependencies) роняет установку. Корень SDK и `/app` при сборке даёт хост. Плагинам, которым SDK нужен установленным (сабпути `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде), SDK прописан в `dependencies`: они встанут, когда SDK появится в npm (в STATUS.md - «после публикации SDK»).",
   "",
   `## Плагины (${total}: собирается ${ok}, после публикации SDK ${needsSdk})`,
   "",
 ];
 for (const [cat, list] of Object.entries(categories).sort()) {
-  readme.push(`### ${cat}`, "", "| Плагин | Описание | Автор | Лицензия | Сборка |", "| --- | --- | --- | --- | --- |");
+  readme.push(`### ${cat}`, "", "| Плагин | Описание |", "| --- | --- |");
   for (const id of list) {
     const src = sources[id];
-    const author = src.author.github ? `[${md(src.author.name ?? src.author.github)}](https://github.com/${src.author.github})` : md(src.author.name ?? "-");
     readme.push(
-      `| [${md(brandProse(src.displayName).replace(/\u2014/g, "-"))}](plugins/${id}) | ${md(brandProse(src.description).replace(/\u2014/g, "-")).slice(0, 220)}${src.description.length > 220 ? "..." : ""} | ${author} | ${src.license} | ${STATE_LABEL[status[id].state].replace(/\*/g, "")} |`,
+      `| [${md(brandProse(src.displayName).replace(/\u2014/g, "-"))}](plugins/${id}) | ${md(brandProse(src.description).replace(/\u2014/g, "-")).slice(0, 220)}${src.description.length > 220 ? "..." : ""} |`,
     );
   }
   readme.push("");
@@ -243,7 +241,7 @@ const notInList = skipped.length;
 readme.push(
   "## Не перенесены",
   "",
-  `${notInList} плагинов каталога bb: без лицензии в репозитории (NONE, NOASSERTION), с несвободной лицензией, только с npm-источником. Список с причинами - \`data/skipped.json\`; их код в этот репозиторий не копировался.`,
+  `${notInList} плагинов не перенесены: без лицензии в репозитории (NONE, NOASSERTION), с несвободной лицензией, только с npm-источником. Список с причинами - \`data/skipped.json\`; их код в этот репозиторий не копировался.`,
   "",
 );
 await writeFile(join(ROOT, "README.md"), readme.join("\n"));
