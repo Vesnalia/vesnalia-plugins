@@ -133,6 +133,23 @@
       "license": "MIT"
     },
     {
+      "slug": "agent-icons",
+      "displayName": "Agent Icons",
+      "description": "Give each VesnALIA agent provider its own icon and colour: built-in glyphs or your own SVG sets, synced across devices.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/agent-icons/assets/agent-icons.svg",
+      "iconPath": "plugins/agent-icons/assets/agent-icons.svg",
+      "category": "themes-and-appearance",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/agent-icons",
+      "version": "0.2.1",
+      "originalAuthor": {
+        "name": "ponomr",
+        "github": "ponomr"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "agent-lanes",
       "displayName": "Lanes",
       "description": "See which agents are working, waiting for you, or failing across a live timeline. Follow hand-offs between threads, inspect any turn, and approve or reject requests on the block. Open Team lanes beside a thread or run alia lanes now for a text summary. Uses VesnALIA's local thread history, with no external account or API key.",
@@ -394,6 +411,23 @@
         "github": "amrtawfik160"
       },
       "license": "permission"
+    },
+    {
+      "slug": "antigravity-cli",
+      "displayName": "Antigravity CLI [Experimental]",
+      "description": "Code with your Antigravity account inside VesnALIA. Choose CLI-discovered models, switch between Plan and Build, and review tool requests in your thread. Requires a separately installed Antigravity CLI and an eligible account; service quota or charges apply. Tested locally on Windows.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/antigravity-cli/assets/icon.svg",
+      "iconPath": "plugins/antigravity-cli/assets/icon.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/antigravity-cli",
+      "version": "0.1.7",
+      "originalAuthor": {
+        "name": "dionis-d",
+        "github": "dionis-d"
+      },
+      "license": "MIT"
     },
     {
       "slug": "antigravity-usage",
@@ -669,6 +703,22 @@
       "originalAuthor": {
         "name": "Chris Sells",
         "github": "csells"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "auto-router",
+      "displayName": "Model Pilot",
+      "description": "Choose a coding model for each task and see where your tokens go. Route work to Codex or Claude Code, delegate helper tasks, and compare recorded usage with cost estimates. Experimental support targets macOS with VesnALIA 0.46.",
+      "icon": "Workflow",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/auto-router",
+      "version": "0.4.5",
+      "originalAuthor": {
+        "name": "Mahmoud Elsayad",
+        "github": "MahmoudElsayad"
       },
       "license": "MIT"
     },
@@ -1131,6 +1181,22 @@
       "originalAuthor": {
         "name": "Shriya Lolabattu",
         "github": "shriyatheunicorn"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "btrfs-cow",
+      "displayName": "CoW copy",
+      "description": "Start a thread with your installed dependencies, build caches, and uncommitted changes already in place. Each thread gets an independent checkout that shares disk blocks until files change, using Btrfs snapshots or reflink copies. Select Btrfs Cow in the environment picker; the plugin checks filesystem support on the chosen machine. Requires Linux, Git, GNU cp with reflink support, and a compatible filesystem such as Btrfs or XFS; snapshot mode also needs the btrfs command.",
+      "icon": "Copy",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/btrfs-cow",
+      "version": "0.1.2",
+      "originalAuthor": {
+        "name": "Sawyer Hood",
+        "github": "SawyerHood"
       },
       "license": "MIT"
     },
@@ -1746,6 +1812,23 @@
       "license": "permission"
     },
     {
+      "slug": "command-code",
+      "displayName": "Command Code",
+      "description": "Runs VesnALIA threads on any of Command Code's 70 coding models, so a bug has to survive reviewers on Claude, GPT, GLM, Kimi or DeepSeek without leaving VesnALIA. Shell commands, file reads and edits arrive as VesnALIA timeline cards with streamed output and diffs, and reasoning stays separate from the reply. Needs Command Code installed and signed in, plus the adapter this repository ships. Command Code's headless mode cannot prompt per tool call, so writes are one setting rather than a per-call approval.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/command-code/assets/icon.svg",
+      "iconPath": "plugins/command-code/assets/icon.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/command-code",
+      "version": "0.1.2",
+      "originalAuthor": {
+        "name": "Bukhori Muhammad Aqid",
+        "github": "aqidd"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "compact-nav",
       "displayName": "Compact Nav",
       "description": "Make more room for threads with compact, borderless sidebar icons. Keep your saved order and hidden destinations, with controls to rearrange or show them. Hover labels and selected states keep navigation recognizable. Requires VesnALIA 0.42+ and Plugin SDK 0.4.53+, with no extra service or account.",
@@ -1944,6 +2027,22 @@
       "license": "MIT"
     },
     {
+      "slug": "copilot-usage",
+      "displayName": "GitHub Copilot Usage",
+      "description": "See GitHub Copilot AI-credit or premium-request usage beside your other VesnALIA providers. Reads the quota shown by the authenticated Copilot CLI and reports the billing-cycle reset estimate. Requires GitHub Copilot CLI, a Copilot account, and tmux on the VesnALIA host.",
+      "icon": "Github",
+      "category": "token-usage-and-limits",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/copilot-usage",
+      "version": "0.1.2",
+      "originalAuthor": {
+        "name": "defacid",
+        "github": "defacid"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "copy-session-id",
       "displayName": "Copy Session ID",
       "description": "Copy a thread's session ID from its left-sidebar context menu.",
@@ -2024,6 +2123,22 @@
       "originalAuthor": {
         "name": "Juan Bermudez",
         "github": "juanbermudez"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "cursor-sidebar",
+      "displayName": "Cursor Sidebar",
+      "description": "See at a glance which agents are working, which need an answer and which are done, with spawned chats nested under their parent. Group chats by project, last update, status or environment, or draw one flat list, and narrow every grouping to one project from the switcher. With the Projects plugin, a worker opens as a tab of its project lead, so the lead's side panel stays in view. After install the sidebar switches to the Cursor navigation layout, and Compact is one setting away. Give each project a glyph in one of ten colours or an uploaded PNG, filter by status, age, environment or pull request, and spot chats on cloud machines by their cloud mark. Needs VesnALIA 0.49 or newer; no account or external service.",
+      "icon": "PanelLeft",
+      "category": "thread-management",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/cursor-sidebar",
+      "version": "0.3.5",
+      "originalAuthor": {
+        "name": "WYEZ",
+        "github": "wy3z"
       },
       "license": "MIT"
     },
@@ -2125,6 +2240,23 @@
         "github": "qwadrox"
       },
       "license": "MIT"
+    },
+    {
+      "slug": "devin",
+      "displayName": "Devin",
+      "description": "Run coding tasks with Devin from a VesnALIA thread. Devin appears in the provider picker, and VesnALIA discovers models from the local ACP session while rendering responses, tool calls, and file changes. Install the Devin CLI and authenticate it on each VesnALIA host with `devin auth login`.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/devin/icons/devin.svg",
+      "iconPath": "plugins/devin/icons/devin.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/devin",
+      "version": "0.2.7",
+      "originalAuthor": {
+        "name": "Alg0rix",
+        "github": "Alg0rix"
+      },
+      "license": "permission"
     },
     {
       "slug": "diagram-fences",
@@ -2305,6 +2437,23 @@
       "originalAuthor": {
         "name": "Mateo Cerquetella",
         "github": "MateoCerquetella"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "drmanhattan",
+      "displayName": "drmanhattan",
+      "description": "Makes agents in parallel threads take turns on builds and tests, and shows each thread its queued runs. Threads on a machine with drmanhattan, a local job queue, are told to run heavy commands through it, so several agents stop compiling at the same time and slowing each other down. While a thread has runs going, a row above its composer shows each run's slot or place in line against its usual time, with a cancel button and a link to its log; the Info tab lists recent results. A drmanhattan page in VesnALIA's navigation shows the queue on every connected machine, each run linked to the thread that queued it, and archiving a thread stops the dev servers it started. Agents and scripts also get VesnALIA drmanhattan runs, status and cancel. Needs the free, open-source drmanhattan command-line tool on each machine (macOS or Linux); the drmanhattan page installs and starts it with one click, showing the commands first.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/drmanhattan/icons/atom.svg",
+      "iconPath": "plugins/drmanhattan/icons/atom.svg",
+      "category": "command-line",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/drmanhattan",
+      "version": "0.10.1",
+      "originalAuthor": {
+        "name": "Gagandip Singh",
+        "github": "gagansingh"
       },
       "license": "MIT"
     },
@@ -2721,6 +2870,39 @@
       "license": "MIT"
     },
     {
+      "slug": "firstmate-crew",
+      "displayName": "FirstMate Crew",
+      "description": "Hand one agent your to-do list and it runs a crew of worker threads, each in its own git worktree, until the work lands. The first mate is a pinned thread in VesnALIA's own chat that writes each worker's instructions, supervises it, and brings back branches, pull requests, findings and only the decisions that are yours. A FirstMate tab shows the crew as a board of Queued, Working, Blocked, Parked, Done, Failed and Idle, with Steer, Interrupt, Relaunch and End on every card. A built-in watch tells the first mate within about five minutes when a pull request is merged, reviewed or changes check status. Requires VesnALIA 0.47 or later, git, and the logged-in gh CLI for the pull request watch; a capable model such as Claude Sonnet is recommended for the first mate.",
+      "icon": "Ship",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/firstmate-crew",
+      "version": "0.8.0",
+      "originalAuthor": {
+        "name": "Gustavo Ambrozio",
+        "github": "gpambrozio"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "flare",
+      "displayName": "Flare",
+      "description": "Let an agent tell you what it found while it is still working, not only in the message that ends its turn. Agents get a `flare` tool and send a finding, a decision, a progress or status update, a blocker or a summary; the newest one shows in a banner above the message box, and the thread's Flares tab keeps them all, drawn the way VesnALIA draws a reply, so an agent can answer with a chart, a diagram, a table or a snippet instead of describing it. Blockers, and flares the agent marks urgent, send a push notification, so alerts reach you while the work carries on. A child thread's flares appear in its parent's tab, and a child's blocker reaches the parent's agent as a note without starting a turn. The tool returns at once, so the agent never waits, and `alia flare send` works from a terminal or another agent.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/flare/icons/flare.svg",
+      "iconPath": "plugins/flare/icons/flare.svg",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/flare",
+      "version": "0.3.2",
+      "originalAuthor": {
+        "name": "Kalindu De Costa",
+        "github": "kalindudc"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "flexible-worktrees",
       "displayName": "Flexible Worktrees",
       "description": "Turns a pull request, branch, or new task into a ready worktree for the thread, with no Git commands to type. One picker searches open PRs, local and remote branches, and existing checkouts, then says exactly what launching will do. New branches start from the freshly fetched default branch, and PRs, including ones from forks, open as detached review worktrees. Worktrees go where your path template puts them, get their submodules and .worktreeinclude files, and are never deleted. Requires VesnALIA 0.43+ and Git 2.31+ on the selected machine; the GitHub CLI is optional, for listing PRs.",
@@ -2888,6 +3070,23 @@
       "license": "MIT"
     },
     {
+      "slug": "fx",
+      "displayName": "fx",
+      "description": "Run the fx coding agent in VesnALIA threads. Pick models available to your account, follow replies and tool activity, and resume sessions. Requires the fx CLI and an authenticated fx account; model access and charges depend on your provider.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/fx/assets/fx.svg",
+      "iconPath": "plugins/fx/assets/fx.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/fx",
+      "version": "0.3.0",
+      "originalAuthor": {
+        "name": "Mayank Bansal",
+        "github": "MayankBansal12"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "genui",
       "displayName": "Generative UI",
       "description": "Turns agent replies into charts, diagrams, maps, plans and forms you can use, right in the chat. Agents choose from 86 components on their own, with no setup: sliders and filters recompute in the page, and buttons, choices and forms put your answers in your message, which reaches the agent when you send it. Test reports, logs, lint errors and coverage files render as their own components instead of pasted text, and a thread's changes, commits, pull request and workers are read live from VesnALIA. Adds about 6,400 tokens of instructions to sessions whose replies you read, and looks up photos, places and map tiles on Wikimedia Commons, Wikipedia, Photon and OpenStreetMap unless you turn web lookups off. Relies on VesnALIA internals, so a VesnALIA update can show the blocks as code until the plugin catches up.",
@@ -3004,6 +3203,22 @@
       "license": "MIT"
     },
     {
+      "slug": "git-history",
+      "displayName": "Git History",
+      "description": "Shows the complete Git history of a project as a compact commit graph with changed files and per-file diffs.",
+      "icon": "FolderGit",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/git-history",
+      "version": "0.4.5",
+      "originalAuthor": {
+        "name": "Yusuf Akbulut",
+        "github": "yusuf8834"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "git-panel",
       "displayName": "Git worktree",
       "description": "Git for the thread's workspace: stage, AI-commit, branch, and sync without leaving VesnALIA.",
@@ -3019,6 +3234,22 @@
         "github": "diip3sh"
       },
       "license": "MIT"
+    },
+    {
+      "slug": "git-worktrees",
+      "displayName": "Git worktrees",
+      "description": "Pick any existing git worktree for a project and start a thread there in one click. Lists paths from git worktree list on the selected machine, excluding ALIA-managed worktrees. Attaches the picked path with ownsPath: false, so VesnALIA never deletes it when the thread retires. Requires a project checkout and Git on the selected machine.",
+      "icon": "FolderGit",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/git-worktrees",
+      "version": "0.1.2",
+      "originalAuthor": {
+        "name": "Fabricio Ereche",
+        "github": "fabricioereche"
+      },
+      "license": "permission"
     },
     {
       "slug": "gitea",
@@ -3066,6 +3297,22 @@
       "originalAuthor": {
         "name": "grrowl",
         "github": "grrowl"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "github-board",
+      "displayName": "GitHub Board",
+      "description": "See your GitHub issues, pull requests and discussions on one board, and hand any of them to an agent thread. Four columns cover what you wrote, what is open on repositories you own and what is assigned to you, and an issue that a pull request closes folds into that pull request's card. Pull request cards show CI checks and branch status, with an Update branch button wherever you can push. A detail panel shows the body, comments and images, and labels are added or removed from a right-click menu. Send to chat opens VesnALIA's new-thread composer on a card, with a prompt you set per column and per project, in the VesnALIA project that has the repository checked out. Add to chat puts the same prompt, the card's column template with the chat's project override, at the end of a chat's draft without sending it, from a menu of the chats on screen and your recent threads. Requires VesnALIA 0.47 or later, and the GitHub CLI (gh) installed and signed in on the machine running the VesnALIA server.",
+      "icon": "Github",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/github-board",
+      "version": "0.6.1",
+      "originalAuthor": {
+        "name": "Gustavo Ambrozio",
+        "github": "gpambrozio"
       },
       "license": "MIT"
     },
@@ -3218,6 +3465,23 @@
       "license": "MIT"
     },
     {
+      "slug": "google-antigravity-acp",
+      "displayName": "Google Antigravity (ACP)",
+      "description": "Adds Google Antigravity as a VesnALIA agent provider through its official ACP server (agy_acp_server.par), with the same provider bridge as VesnALIA's built-in ACP agents.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/google-antigravity-acp/icons/google-antigravity.svg",
+      "iconPath": "plugins/google-antigravity-acp/icons/google-antigravity.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/google-antigravity-acp",
+      "version": "0.2.5",
+      "originalAuthor": {
+        "name": "rawizhere",
+        "github": "rawizhere"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "graph-studio",
       "displayName": "Graph Studio",
       "description": "Build agent loops that go back when review fails, run them on real VesnALIA threads, and watch every step live. A node spawns a thread rather than calling a model, so workers appear in the sidebar and run on the providers you already have. Describe a flow in the chat and the agent builds and starts it, or open the studio from the command palette; the run shows up as a live card in the thread. 31 templates, human and dialogue nodes, per-attempt token counts, checkpointed runs. The work templates use Matt Pocock's skills, a separate install (npx skills add mattpocock/skills).",
@@ -3250,6 +3514,57 @@
         "github": "ponomr"
       },
       "license": "permission"
+    },
+    {
+      "slug": "graphite-stack",
+      "displayName": "Graphite Stack",
+      "description": "Review stacked changes alongside your VesnALIA threads. Inspect parent-relative diffs and keep local comments before sending them to a linked thread. Review GitHub pull requests and preview stack actions. Requires the Graphite CLI; GitHub review features also require an authenticated GitHub CLI.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/graphite-stack/assets/graphite.svg",
+      "iconPath": "plugins/graphite-stack/assets/graphite.svg",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/graphite-stack",
+      "version": "0.1.2",
+      "originalAuthor": {
+        "name": "Prakash Chokalingam",
+        "github": "prakashchokalingam"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "grok-build-usage",
+      "displayName": "Grok Build Usage",
+      "description": "Adds live Grok Build subscription and weekly credit usage, including reset timing, to VesnALIA's Settings → Usage Limits page.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/grok-build-usage/assets/icons/grok.svg",
+      "iconPath": "plugins/grok-build-usage/assets/icons/grok.svg",
+      "category": "token-usage-and-limits",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/grok-build-usage",
+      "version": "0.1.0",
+      "originalAuthor": {
+        "name": "MacHatter1",
+        "github": "MacHatter1"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "gtd-sidebar",
+      "displayName": "GTD Sidebar",
+      "description": "Replaces the VesnALIA thread list with an inbox that splits threads into Next Action and Waiting, and clears them with snooze and settle.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/gtd-sidebar/assets/icon.svg",
+      "iconPath": "plugins/gtd-sidebar/assets/icon.svg",
+      "category": "thread-management",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/gtd-sidebar",
+      "version": "0.4.2",
+      "originalAuthor": {
+        "name": "Scott Sunarto",
+        "github": "smsunarto"
+      },
+      "license": "MIT"
     },
     {
       "slug": "guest-view",
@@ -3435,6 +3750,23 @@
       "license": "permission"
     },
     {
+      "slug": "herald",
+      "displayName": "Herald",
+      "description": "Hear one spoken sentence when an agent needs you, and see every waiting thread in one list. When a thread asks a question, waits for a plan or a permission to be approved, finishes its turn or fails, the VesnALIA app says which thread it is and what it needs, on whatever page you are on. A Herald page in the sidebar lists every thread waiting on you with its reason and sentence, and the same sentence sits above that thread's composer with a Read again button until you answer. Settings choose which kinds of event are announced, the voice and speed, and where to speak: the desktop app, a browser tab, or the mobile app while it is open. By default the sentence is built from the event itself, with no model or external service; optionally, Claude Code, OpenAI Codex, Gemini CLI or a command of your own, installed and logged in on the Mac running VesnALIA, writes it instead, for one short model turn per announcement. The default voice needs VesnALIA running on a Mac, and elsewhere each device's own browser voice speaks. Requires VesnALIA 0.47 or later.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/herald/icons/megaphone.svg",
+      "iconPath": "plugins/herald/icons/megaphone.svg",
+      "category": "notifications",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/herald",
+      "version": "0.5.1",
+      "originalAuthor": {
+        "name": "Gustavo Ambrozio",
+        "github": "gpambrozio"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "herdr-theme",
       "displayName": "Herdr Theme",
       "description": "Turn VesnALIA into a terminal-style workspace, with framed conversation panes and eleven color palettes in light and dark. Child threads hang from their parent as a connected tree in the sidebar. Turn on branch names to show each project thread's Git branch beneath its title. JetBrains Mono ships inside the plugin, so no font service, account, or API key is needed. Requires VesnALIA 0.43 or later.",
@@ -3498,6 +3830,22 @@
       "originalAuthor": {
         "name": "Fadli Hidayatullah",
         "github": "fadlihdytullah"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "home-hero",
+      "displayName": "Home Hero",
+      "description": "Greets you on VesnALIA's home screen with the time of day and, when you set one, your name. Optionally upload a PNG, JPEG or WebP icon up to 256 KiB; it travels over VesnALIA's existing plugin connection and is stored with the plugin on the VesnALIA server, never in the repository. Without a name or icon the greeting is plain text. Requires VesnALIA 0.49.0+.",
+      "icon": "Sunrise",
+      "category": "themes-and-appearance",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/home-hero",
+      "version": "0.1.3",
+      "originalAuthor": {
+        "name": "Lalit Rao",
+        "github": "lalitjeevanrao"
       },
       "license": "MIT"
     },
@@ -3766,6 +4114,23 @@
       "license": "MIT"
     },
     {
+      "slug": "jetbrains-central",
+      "displayName": "JetBrains Central",
+      "description": "Use work AI subscriptions alongside personal accounts and see shared JetBrains Central credits in VesnALIA. This is an unofficial plugin developed independently by an enthusiast. It is not an official JetBrains product. JetBrains Air is JetBrains' platform for coding agents and team AI access; this plugin connects VesnALIA through JetBrains Central CLI using your JetBrains Account. Choose separate Codex, Claude Code, and Pi providers, or configure additional ACP profiles. Requires VesnALIA 0.48+ with Plugin SDK 0.6.104+, Git, Node.js, Central with a work subscription or organization-provided AI access, and the corresponding agent CLIs; tested on macOS.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/jetbrains-central/icons/jetbrains.svg",
+      "iconPath": "plugins/jetbrains-central/icons/jetbrains.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/jetbrains-central",
+      "version": "0.1.3",
+      "originalAuthor": {
+        "name": "Sergey Zhukov",
+        "github": "SergeyZh"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "jev-please-proceed",
       "displayName": "Jev, Please Proceed",
       "description": "Keep agents moving when they stop only to ask for an unnecessary confirmation. Jev reviews the complete available top-level conversation whenever a thread becomes idle and continues only when its Noul value exceeds 0.95. Before sending `please proceed`, it confirms that the thread is still idle and has no pending interaction or queued message, then stops if the same final response repeats. Use a TypeSafe, Vercel AI Gateway, or OpenRouter API key; conversation text is sent through the selected provider for TypeSafe processing, and usage charges may apply.",
@@ -3876,6 +4241,40 @@
       "originalAuthor": {
         "name": "KERNEL",
         "github": "kernel"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "kilocode",
+      "displayName": "Kilo Code",
+      "description": "First-class Kilo Code provider for VesnALIA.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/kilocode/assets/icon.svg",
+      "iconPath": "plugins/kilocode/assets/icon.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/kilocode",
+      "version": "0.1.4",
+      "originalAuthor": {
+        "name": "Admin",
+        "github": "masked8knights"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "kimi-code",
+      "displayName": "Kimi Code",
+      "description": "Adds Moonshot's Kimi Code as a provider: run its threads from VesnALIA's provider picker, locally and on enrolled remote hosts. Turns stream into the native VesnALIA timeline — replies and tool calls such as file edits and shell commands — with resume and VesnALIA permission modes gating each action. The model picker fills from Kimi Code itself (K3, K3-256k, K2.8 Preview, K2.7 Code Highspeed), with thinking levels and the Default / Plan / Auto / YOLO mode selector. Kimi Code's slash commands (/compact, /status, /usage, and your own skill commands) appear in the composer menu. Requires the Kimi Code CLI and a signed-in account on each host (kimi login); the provider card can install the CLI where it is missing.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/kimi-code/icons/kimi.svg",
+      "iconPath": "plugins/kimi-code/icons/kimi.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/kimi-code",
+      "version": "0.2.18",
+      "originalAuthor": {
+        "name": "Dmitry Polishuk",
+        "github": "dpolishuk"
       },
       "license": "MIT"
     },
@@ -4195,6 +4594,23 @@
       "license": "MIT"
     },
     {
+      "slug": "loom",
+      "displayName": "Loom",
+      "description": "Hand a goal to agents and keep the decisions. A planner turns it into a spec with tickets, acceptance criteria, checks and a merge plan, and a separate agent reviews the spec before you approve it. Workers then build each ticket in its own git worktree, Loom runs your checks, and reviewers on another model approve the work or send findings back. Approved work merges into an integration branch you land as one pull request, or opens as one pull request per ticket that Loom follows through CI. A full-screen Loom page shows what needs you, the board, every attempt and review, the changes before they land, insights on how the project went and a timeline you can rewind.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/loom/icons/loom.svg",
+      "iconPath": "plugins/loom/icons/loom.svg",
+      "category": "tasks-and-workflows",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/loom",
+      "version": "0.34.2",
+      "originalAuthor": {
+        "name": "Kalindu De Costa",
+        "github": "kalindudc"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "mac-watch",
       "displayName": "Mac Watch",
       "description": "Watch the Mac that runs VesnALIA — battery, heat, disk and sleep — from your phone. A macOS-style sidebar page shows CPU, memory pressure, disk, network and power draw with 1, 6 and 24 hour charts, plus the apps that hold the machine awake. Processor, SSD and battery temperatures, macOS thermal pressure, SMART status and kernel panics are read without sudo. Pushes cover only real trouble: battery under 20%, overheating, memory or disk running out, battery-controller faults and an unexpected reboot, with warnings held until morning during quiet hours. macOS on Apple Silicon only; alerts need the push-notifications plugin, sleep and shutdown add a one-time sudoers rule, and the interface is in Russian.",
@@ -4207,6 +4623,23 @@
       "originalAuthor": {
         "name": "Artur Karapetyan",
         "github": "architawr"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "machine-load",
+      "displayName": "Machine Load",
+      "description": "Compare CPU, memory, GPU, network and disk load of all your VesnALIA machines on one shared timeline, with up to 7 days of history. Each machine gets a card with load average, swap, disk usage, disk IO, CPU temperature and every GPU, including Intel integrated graphics and Apple silicon, read without root. Agents check load before a heavy job with VesnALIA machine-load --json. A sidebar badge appears when any machine passes 80% CPU or RAM. Apple silicon temperature and power need macmon, installed separately.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/machine-load/assets/icon.svg",
+      "iconPath": "plugins/machine-load/assets/icon.svg",
+      "category": "utilities",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/machine-load",
+      "version": "0.1.0",
+      "originalAuthor": {
+        "name": "artgas1",
+        "github": "artgas1"
       },
       "license": "MIT"
     },
@@ -4622,6 +5055,23 @@
       "license": "MIT"
     },
     {
+      "slug": "moa-provider",
+      "displayName": "MoA Provider",
+      "description": "Get a second and third opinion on every message before one agent changes your files. Each preset you build becomes a model in the model picker: up to six advisor models answer in parallel, then an aggregator model reads their notes and does the work. A live panel in the thread shows what each advisor is doing and its answer as it streams. Type /moa in any other thread to put a question to the same advisors, or have the aggregator check in with them every few tool calls. Uses the providers you already installed and signed in to; each advisor adds a model turn to every message, and what an advisor reads goes to its model's provider.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/moa-provider/icons/moa.svg",
+      "iconPath": "plugins/moa-provider/icons/moa.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/moa-provider",
+      "version": "0.1.1",
+      "originalAuthor": {
+        "name": "MacHatter1",
+        "github": "MacHatter1"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "model-effort-badges",
       "displayName": "Model & Effort Badges",
       "description": "See each thread’s model and reasoning effort in the VesnALIA sidebar. Hover for the full name.",
@@ -4735,6 +5185,23 @@
       "license": "MIT"
     },
     {
+      "slug": "muse",
+      "displayName": "Muse AI connector",
+      "description": "Runs VesnALIA chats on the Muse personal assistant (muse.ai) through your own signed-in Muse accounts. Tools, MCP servers and skills run on your machine; replies stream into the VesnALIA chat. Several accounts with parallel chats, each account's weekly limit on the settings screen, and one Chrome sign-in copied to every connected machine. Not the Muse Code CLI plugin.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/muse/icons/muse.svg",
+      "iconPath": "plugins/muse/icons/muse.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/muse",
+      "version": "0.3.22",
+      "originalAuthor": {
+        "name": "Kirill Vechkasov",
+        "github": "VKirill"
+      },
+      "license": "permission"
+    },
+    {
       "slug": "my-jira",
       "displayName": "Jira Board",
       "description": "See every Jira ticket assigned to you in one VesnALIA tab, filtered and grouped the way you work, and move it along without opening Jira. Filter by status and type, search by key or words, and group by status, initiative and epic, or the boards that list each ticket. Open a ticket beside the list to read its lineage, description, subtasks and comments, then step to the next one with Previous and Next or the keyboard. Change a status in place from the moves your workflow allows. Needs Jira Cloud with Atlassian's Rovo MCP server allowed for your organization; you sign in with Atlassian in the browser and set up nothing else.",
@@ -4763,6 +5230,23 @@
       "originalAuthor": {
         "name": "Dmitrii Kapustin",
         "github": "dmitriikapustin"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "nanogpt-provider",
+      "displayName": "NanoGPT",
+      "description": "Run alia threads on NanoGPT's models, unlocked by your own API key. Paste the key into a gear in the composer; NanoGPT checks it before VesnALIA stores it, and a rejected key unlocks no models. Answers stream in with a separate reasoning channel, and the agent can call VesnALIA's tools in your project. Needs a NanoGPT account and API key, and NanoGPT bills your usage.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/nanogpt-provider/assets/icon.svg",
+      "iconPath": "plugins/nanogpt-provider/assets/icon.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/nanogpt-provider",
+      "version": "0.1.7",
+      "originalAuthor": {
+        "name": "Oleksander Trybushnyi",
+        "github": "AlllxTry"
       },
       "license": "MIT"
     },
@@ -5144,6 +5628,39 @@
       "license": "MIT"
     },
     {
+      "slug": "opencode2",
+      "displayName": "OpenCode v2",
+      "description": "Run VesnALIA threads on any model you've connected to OpenCode v2, with VesnALIA's rewind, fork, steering, and permission modes intact. Tool calls show as native VesnALIA rows, including live command output and file changes built from OpenCode's own patches. VesnALIA dynamic tools, skills, and the VesnALIA CLI work inside OpenCode sessions. Needs OpenCode v2 (2.0.26 or newer, installed as opencode2) on the host and a model provider connected with opencode2 auth login.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/opencode2/icons/opencode.svg",
+      "iconPath": "plugins/opencode2/icons/opencode.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/opencode2",
+      "version": "1.2.0",
+      "originalAuthor": {
+        "name": "Evan",
+        "github": "iamEvanYT"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "openspec",
+      "displayName": "OpenSpec",
+      "description": "Browse OpenSpec changes and specifications, track task progress, and launch linked agents.",
+      "icon": "ListTodo",
+      "category": "tasks-and-workflows",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/openspec",
+      "version": "0.5.0",
+      "originalAuthor": {
+        "name": "Aleksander Khanteev",
+        "github": "khaale"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "openspec-review",
       "displayName": "OpenSpec Review",
       "description": "Comment on quoted text in OpenSpec proposals, designs and specs, and send the comments to the agent in the chat.",
@@ -5189,6 +5706,23 @@
       "originalAuthor": {
         "name": "pixexid",
         "github": "pixexid"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "orchestrator-mode",
+      "displayName": "Orchestrator Mode",
+      "description": "Keep one thread as the planner and send every unit of work to its own worker thread. A watchdog checks new timeline work at the guard and block levels, records direct work the parent did itself, and sends up to three corrective messages or stops the turn. Toggle a thread from the composer, its + menu or `alia orchestrator-mode`, and switch the mode on for every new thread you start. Workers share the parent's environment and provider, so they need no extra service; requires VesnALIA 0.44 or newer.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/orchestrator-mode/assets/icon.svg",
+      "iconPath": "plugins/orchestrator-mode/assets/icon.svg",
+      "category": "tasks-and-workflows",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/orchestrator-mode",
+      "version": "0.1.4",
+      "originalAuthor": {
+        "name": "MacHatter1",
+        "github": "MacHatter1"
       },
       "license": "MIT"
     },
@@ -5288,6 +5822,22 @@
       "originalAuthor": {
         "name": "Vedran Burojević",
         "github": "vburojevic"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "pi-command-sync",
+      "displayName": "Pi Command Sync",
+      "description": "Run Pi's own slash commands inside a VesnALIA thread instead of paying a model turn for them. The composer menu lists every command the Pi session has loaded, including extension and prompt commands VesnALIA cannot see on its own. /session, /thinking, /model, /name and /reload answer from the addon with no model request, and terminal-only controls such as /login or /resume explain the limitation instead of falling through to the model. Needs a one-time patch to VesnALIA's installed Pi provider bundle, applied with the checked script in the repository, because VesnALIA 0.45.0 has no API for this. Linux hosts only; macOS is untested and Windows is refused.",
+      "icon": "Zap",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/pi-command-sync",
+      "version": "0.2.0",
+      "originalAuthor": {
+        "name": "Diffuzmetall",
+        "github": "Diffuzmetall"
       },
       "license": "MIT"
     },
@@ -5438,6 +5988,23 @@
       "license": "MIT"
     },
     {
+      "slug": "pokecut-theme",
+      "displayName": "Pokecut Theme",
+      "description": "Turns VesnALIA into a soft dashboard: a gray shell, the thread as a raised panel, white cards and a pink-violet accent, light and dark. The composer gets even chips for project, machine and access, a gradient send button and a context line that fills as the window does. Expanded work groups read as one card with right-aligned durations and red error chips, and messages show their time on hover. A footer switch flips light, dark or system, and each chat feature can be turned off in English or Russian settings.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/pokecut-theme/assets/icon.svg",
+      "iconPath": "plugins/pokecut-theme/assets/icon.svg",
+      "category": "themes-and-appearance",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/pokecut-theme",
+      "version": "0.5.43",
+      "originalAuthor": {
+        "name": "Kirill Vechkasov",
+        "github": "VKirill"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "pokemon",
       "displayName": "Pokémon",
       "description": "Build your Pokémon collection as you finish work in VesnALIA. Archive a thread to catch one of 1,025 species, then track your progress and duplicate catches in the Pokédex. Explore each catch’s artwork, types, stats, abilities, and cry. Uses free PokeAPI data and GitHub-hosted media.",
@@ -5468,6 +6035,23 @@
       "originalAuthor": {
         "name": "Mel Stanbery",
         "github": "melindastanbery"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "polza",
+      "displayName": "Polza",
+      "description": "Run alia threads on polza.ai models and pay in rubles from one Polza balance. Sign in with your Polza account; the plugin stores the issued key on the VesnALIA server. Choose which catalog models the picker offers, in your order, with prices and context size shown. The sidebar shows the available balance and the key's remaining spend limit, and each thread shows an estimated spend and cache hit rate above the composer. Polza also works as VesnALIA's AI service for thread titles and commit messages on a small model you choose. Threads run the Claude Code CLI against Polza, so Claude Code's tools, permission modes, plan mode and skills keep working; the plugin installs the CLI when it is missing. Needs a Polza account with balance.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/polza/icons/polza.svg",
+      "iconPath": "plugins/polza/icons/polza.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/polza",
+      "version": "0.1.5",
+      "originalAuthor": {
+        "name": "Polza.AI",
+        "github": "dddoker"
       },
       "license": "MIT"
     },
@@ -5570,6 +6154,40 @@
       "license": "MIT"
     },
     {
+      "slug": "prime-agent-acp",
+      "displayName": "Prime Agent (ACP)",
+      "description": "Runs VesnALIA threads on Prime Agent (by Prime Intellect) through its native ACP protocol, with model discovery and reasoning level support. Installing the provider requires an explicit `alia prime-agent install` command that downloads and installs the official prime-agent binary from Prime Intellect; thread content is processed by Prime Intellect.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/prime-agent-acp/icons/prime-agent.svg",
+      "iconPath": "plugins/prime-agent-acp/icons/prime-agent.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/prime-agent-acp",
+      "version": "0.1.10",
+      "originalAuthor": {
+        "name": "rawizhere",
+        "github": "rawizhere"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "productive",
+      "displayName": "Productive",
+      "description": "Work a Productive.io board without leaving VesnALIA, and hand a ticket to an agent in one click. Kanban lanes group by workflow status or by task list, so the columns match the board you already use, and dragging a card writes the change back to Productive. Start a thread from any ticket, optionally in its own git worktree, with the ticket's fields as context. Agents reach the same board through a `alia productive` command. Needs a Productive.io account and an API token.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/productive/assets/icon.svg",
+      "iconPath": "plugins/productive/assets/icon.svg",
+      "category": "tasks-and-workflows",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/productive",
+      "version": "0.2.0",
+      "originalAuthor": {
+        "name": "Kristof Feys",
+        "github": "kristoffeys"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "progressive-skill",
       "displayName": "Progressive Skill",
       "description": "Smart skill index compaction — usage-ranked, budget-capped skill lists so agents load the right skills.",
@@ -5614,6 +6232,22 @@
       "originalAuthor": {
         "name": "NinjasWeb",
         "github": "ninjasweb"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "project-folders",
+      "displayName": "Projects & Sections",
+      "description": "Organize VesnALIA chats into projects and nested sections that are real folders, so each chat starts in its own working directory. Each project and section can carry AGENTS.md rules from shared or own templates, plus custom rules for files or VesnALIA sessions and a startup instruction for new chats. Style the sidebar tree with 118 icons or any emoji, 12 colors, fills and four presets, per level, per project or per section. Archive finished sections with their files and chats and restore them later, keep working copies on several devices, and move projects or sections without breaking existing chats. Requires VesnALIA 0.43+ and macOS or Linux devices; the interface comes in 11 languages with English by default.",
+      "icon": "Folder",
+      "category": "thread-management",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/project-folders",
+      "version": "0.8.1",
+      "originalAuthor": {
+        "name": "Kirill Vechkasov",
+        "github": "VKirill"
       },
       "license": "MIT"
     },
@@ -5793,6 +6427,23 @@
       "originalAuthor": {
         "name": "Christopher Böbel",
         "github": "ChrBoebel"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "provider-muse",
+      "displayName": "Muse Code",
+      "description": "Adds Meta's Muse Code as a VesnALIA provider over its own session protocol: streamed timeline, approvals, subagents, model picker, health, and the plan's own 5-hour and weekly usage limits as Muse reports them.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/provider-muse/icons/muse.svg",
+      "iconPath": "plugins/provider-muse/icons/muse.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/provider-muse",
+      "version": "0.16.1",
+      "originalAuthor": {
+        "name": "Braedon Saunders",
+        "github": "braedonsaunders"
       },
       "license": "MIT"
     },
@@ -5991,6 +6642,23 @@
       "originalAuthor": {
         "name": "Maros Pekarik",
         "github": "marospekarik"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "qwen-cli",
+      "displayName": "Qwen CLI [Experimental]",
+      "description": "Code with your Qwen account inside VesnALIA. Choose CLI-discovered models, switch between Plan and Build, and review tool requests in your thread. Requires a separately installed Qwen Code CLI and an eligible account; service quota or charges apply.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/qwen-cli/assets/icon.svg",
+      "iconPath": "plugins/qwen-cli/assets/icon.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/qwen-cli",
+      "version": "0.2.4",
+      "originalAuthor": {
+        "name": "dionis-d",
+        "github": "dionis-d"
       },
       "license": "MIT"
     },
@@ -6608,6 +7276,22 @@
       "license": "MIT"
     },
     {
+      "slug": "side-chat-links",
+      "displayName": "Side Chat Links",
+      "description": "Reopen a side chat from the message you started it on, instead of hunting for it. A thread icon appears under every message that has side chats, with a count when there are several. Click it to open a panel tab for that message, with one inner tab for each of its side chats. Rename a side chat by double-clicking its tab. Works with VesnALIA's bundled Side chat plugin, including side chats made before you install it, and needs VesnALIA 0.49 or later.",
+      "icon": "SideChat",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/side-chat-links",
+      "version": "0.1.0",
+      "originalAuthor": {
+        "name": "Rob Dodson",
+        "github": "robdodson"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "sidebar-plus",
       "displayName": "Sidebar Plus",
       "description": "Keep active projects within reach and check thread status without leaving the sidebar. Pin, hide, reorder, and search projects in collapsible sections. Inspect branch and pull request details from thread menus, where you can also open a split, mark threads read or unread, pin, rename, archive, or delete them. Preferences stay in sync across VesnALIA windows.",
@@ -7144,6 +7828,23 @@
       "originalAuthor": {
         "name": "Lev Kovalenko",
         "github": "levkovalenko"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "team",
+      "displayName": "Team",
+      "description": "Agent teams with a shared Beads or built-in task tracker, reusable roles, safe session handoffs, review gates and finite execution budgets. Edit team templates, select approved models and follow task ownership and session status in one panel. Requires VesnALIA 0.49 or newer; Beads mode additionally requires bd 1.3.1.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/team/assets/team.svg",
+      "iconPath": "plugins/team/assets/team.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/team",
+      "version": "0.2.2",
+      "originalAuthor": {
+        "name": "kirei4ik",
+        "github": "kirei4ik"
       },
       "license": "MIT"
     },
@@ -7720,6 +8421,22 @@
       "license": "MIT"
     },
     {
+      "slug": "treehouse",
+      "displayName": "Treehouse",
+      "description": "Review, edit and commit every repository your agents touched, worktrees included, from a split panel beside the thread. Files, diffs and commits open as tabs next to a file tree with git badges, and you can edit a file and save it with Ctrl/⌘+S. Each repository gets staged and unstaged lists, per-hunk staging, and a commit box where Claude can write the message in your repo's style. Compare any branch with main and open a pull request on GitHub, GitLab or Bitbucket, or click a commit in the branch graph to see its diff. Needs git on the thread's machine; the commit-message button also needs an Anthropic API key, an ant login or the claude CLI.",
+      "icon": "Folder02",
+      "category": "code-and-reviews",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/treehouse",
+      "version": "0.3.1",
+      "originalAuthor": {
+        "name": "Redha Juanda",
+        "github": "redhajuanda"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "treelanes",
       "displayName": "Treelanes",
       "description": "Take each coding task from idea to merged pull request in its own Git worktree, with checks before every stage moves. A board shows one card per worktree as agents move it through Design, TDD, Quality Loop, Simplify and PR Watch. A stage moves on only when its worker reports passing checks for the current files. The sidebar lists one main thread per worktree, with its other threads below it. The task map sets the harness, model and effort for each step. Needs an agent harness such as Claude Code or Codex, and the GitHub CLI for pull requests.",
@@ -7966,6 +8683,23 @@
       "license": "MIT"
     },
     {
+      "slug": "usage-forecast",
+      "displayName": "Usage Forecast",
+      "description": "Forecast whether your Claude Code and Codex limits last until reset, and see each thread's context fill above the composer. A band shows every limit window with a pace tick, the context breakdown and a Compact button, and adds a learned forecast once windows have closed. Optional auto-compact, off by default, compacts an idle thread above a threshold you set; each compact runs a turn on the thread's provider and counts against its limits. Limits appear only for providers that report them to VesnALIA, today Claude Code and Codex. The server polls VesnALIA every 2 minutes and calls no provider API.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/usage-forecast/assets/usage-forecast.svg",
+      "iconPath": "plugins/usage-forecast/assets/usage-forecast.svg",
+      "category": "token-usage-and-limits",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/usage-forecast",
+      "version": "0.4.20",
+      "originalAuthor": {
+        "name": "Alex Ponomar",
+        "github": "ponomr"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "usage-limits",
       "displayName": "Usage Limits",
       "description": "See provider quota windows and reset times without leaving your work. View details across connected hosts and refresh on demand. Requires providers that report quota information to VesnALIA.",
@@ -7995,6 +8729,22 @@
       "originalAuthor": {
         "name": "Foma",
         "github": "xMinor-1"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "usage-pace",
+      "displayName": "Usage Pace",
+      "description": "Tells you if your current rate lasts until each quota window resets. In VesnALIA's usage card, each bar gets a tick at even pace, and red shows how far ahead of pace you are. Hover or tap a row to see the difference, when the quota runs out, and how long you will be without quota before the reset. Adds a Grok Build tab, shows a failed provider's error on its own tab only, and hides tabs you do not use, such as Cursor. The Grok tab reads your grok login and asks xAI's billing service for the credit window; everything else uses the data VesnALIA's card already has.",
+      "icon": "ChartColumn",
+      "category": "token-usage-and-limits",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/usage-pace",
+      "version": "0.2.4",
+      "originalAuthor": {
+        "name": "Charles Lee",
+        "github": "chug2k"
       },
       "license": "MIT"
     },
@@ -8557,6 +9307,22 @@
       "license": "MIT"
     },
     {
+      "slug": "xberg",
+      "displayName": "Xberg",
+      "description": "Lets agents read the PDFs, Word files, spreadsheets, slides and images in your project. Documents are converted on the machine that holds the workspace, and the plugin uploads no files, though the extracted text reaches the agent's model. OCR reads text in images, and can be turned on for scanned documents. Long documents come back in pages of 20,000 characters by default, and the agent chooses how many to read. First use downloads the open-source Xberg CLI (50–90 MB) from GitHub; it needs 120–230 MB of disk plus caches, of up to 2 GB for text and no set limit for OCR, and runs only on Apple Silicon macOS and Linux.",
+      "icon": "FileText",
+      "category": "thread-content",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/xberg",
+      "version": "0.1.3",
+      "originalAuthor": {
+        "name": "vidurb",
+        "github": "vidurb"
+      },
+      "license": "MIT"
+    },
+    {
       "slug": "xcode",
       "displayName": "Xcode",
       "description": "Tracks every Xcode build and test on the machine with no per-project configuration — live progress, verdicts, errors with file:line, history and trends — and streams the simulators they run on into the panel with full touch input, a build-aware device picker, SwiftUI preview diffs, and gated agent tools.",
@@ -8571,6 +9337,57 @@
         "github": "vburojevic"
       },
       "license": "MIT"
+    },
+    {
+      "slug": "zcode",
+      "displayName": "ZCode",
+      "description": "Run ZCode coding agents inside VesnALIA, with streamed replies, native tool activity, approvals, and sessions you can resume and rewind. Follow every ZCode tool call in the thread timeline, answer approvals inline, and track background agents and scheduled automations. Dynamic workflows render as causality graphs with live per-agent progress, and a Workflows hub lists run history across threads. Requires VesnALIA 0.46.1, Node.js 24+, and the ZCode CLI installed separately; sessions run under your own Z.ai Coding Plan or API account, billed by Z.ai. Verified on macOS against ZCode CLI 0.16.9-0.17.0; Linux and Windows are unverified.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/zcode/icons/zai-badge.svg",
+      "iconPath": "plugins/zcode/icons/zai-badge.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/zcode",
+      "version": "0.14.1",
+      "originalAuthor": {
+        "name": "Dmitry Polishuk",
+        "github": "dpolishuk"
+      },
+      "license": "MIT"
+    },
+    {
+      "slug": "zcode-acp",
+      "displayName": "ZCode ACP",
+      "description": "Use your ZCode Coding Plan, free Start Plan and personal API models in VesnALIA. Install or update Rust ACP in settings and track each plan's quota separately. Requires VesnALIA 0.49+ and a signed-in ZCode Desktop installation on Windows or macOS. Coding Plan requires a paid subscription; personal API charges follow your provider, while Start Plan depends on an active free grant.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/zcode-acp/icons/zcode.svg",
+      "iconPath": "plugins/zcode-acp/icons/zcode.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/zcode-acp",
+      "version": "0.1.1",
+      "originalAuthor": {
+        "name": "Kirill Vechkasov",
+        "github": "ichinya"
+      },
+      "license": "Apache-2.0"
+    },
+    {
+      "slug": "zcode-provider",
+      "displayName": "ZCode Provider",
+      "description": "Use your Z.ai GLM Coding Plan for coding tasks in VesnALIA on macOS. Choose GLM-5.3 or GLM-5.3-Flash, work with files and terminal tools, and continue saved sessions through your installed ZCode agent. Reuse Desktop sign-in and its shared store, settings and configured MCP servers; VesnALIA sessions, history and logs stay separate. Requires Apple silicon, VesnALIA 0.47.1+, Git, ZCode Desktop, an individual paid Z.ai Coding Plan and Full permissions; unofficial and unaffiliated with Z.ai, ZCode or VesnALIA.",
+      "icon": "https://raw.githubusercontent.com/Vesnalia/vesnalia-plugins/main/plugins/zcode-provider/assets/zcode.svg",
+      "iconPath": "plugins/zcode-provider/assets/zcode.svg",
+      "category": "agents-and-providers",
+      "repoUrl": "https://github.com/Vesnalia/vesnalia-plugins",
+      "ref": "main",
+      "subdir": "plugins/zcode-provider",
+      "version": "0.2.3",
+      "originalAuthor": {
+        "name": "emlevsky777",
+        "github": "emlevsky777"
+      },
+      "license": "Apache-2.0"
     },
     {
       "slug": "zen-koi",

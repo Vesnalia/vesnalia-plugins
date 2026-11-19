@@ -95,17 +95,13 @@
   },
   "agent-icons": {
     "id": "agent-icons",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 2,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 11
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 3
   },
   "agent-lanes": {
     "id": "agent-lanes",
@@ -286,17 +282,13 @@
   },
   "antigravity-cli": {
     "id": "antigravity-cli",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.125' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "antigravity-usage": {
     "id": "antigravity-usage",
@@ -487,20 +479,16 @@
   },
   "auto-router": {
     "id": "auto-router",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.26' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [
-        "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-        "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-      ],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 3
   },
   "automation-groups": {
     "id": "automation-groups",
@@ -803,17 +791,13 @@
   },
   "btrfs-cow": {
     "id": "btrfs-cow",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "bureaucat": {
     "id": "bureaucat",
@@ -1215,17 +1199,13 @@
   },
   "command-code": {
     "id": "command-code",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "compact-nav": {
     "id": "compact-nav",
@@ -1356,17 +1336,13 @@
   },
   "copilot-usage": {
     "id": "copilot-usage",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "copy-session-id": {
     "id": "copy-session-id",
@@ -1425,17 +1401,13 @@
   },
   "cursor-sidebar": {
     "id": "cursor-sidebar",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 2,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 12
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 12
   },
   "dashboard": {
     "id": "dashboard",
@@ -1499,17 +1471,13 @@
   },
   "devin": {
     "id": "devin",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "diagram-fences": {
     "id": "diagram-fences",
@@ -1596,7 +1564,7 @@
     "server": "Build failed with 1 error:\ndiff-viewed/server.ts:10:46: ERROR: Could not resolve \"@danielb/gh-shared/gh\"",
     "host": null,
     "warnings": [],
-    "seconds": 3
+    "seconds": 43
   },
   "diffdad": {
     "id": "diffdad",
@@ -1658,17 +1626,13 @@
   },
   "drmanhattan": {
     "id": "drmanhattan",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "droid": {
     "id": "droid",
@@ -1954,33 +1918,25 @@
   },
   "firstmate-crew": {
     "id": "firstmate-crew",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.94' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [
-        "app.tsx:3: ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-      ],
-      "seconds": 7
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [
+      "app.tsx:3: ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 2
   },
   "flare": {
     "id": "flare",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.104' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "flexible-worktrees": {
     "id": "flexible-worktrees",
@@ -2096,17 +2052,13 @@
   },
   "fx": {
     "id": "fx",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "genui": {
     "id": "genui",
@@ -2193,19 +2145,15 @@
   },
   "git-history": {
     "id": "git-history",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [
-        "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
-      ],
-      "seconds": 13
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
+    ],
+    "seconds": 12
   },
   "git-panel": {
     "id": "git-panel",
@@ -2221,17 +2169,13 @@
   },
   "git-worktrees": {
     "id": "git-worktrees",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "gitea": {
     "id": "gitea",
@@ -2270,17 +2214,13 @@
   },
   "github-board": {
     "id": "github-board",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.104' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 7
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 3
   },
   "github-extended": {
     "id": "github-extended",
@@ -2383,17 +2323,13 @@
   },
   "google-antigravity-acp": {
     "id": "google-antigravity-acp",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "graph-studio": {
     "id": "graph-studio",
@@ -2421,48 +2357,36 @@
   },
   "graphite-stack": {
     "id": "graphite-stack",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.94' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 6
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 4
   },
   "grok-build-usage": {
     "id": "grok-build-usage",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "gtd-sidebar": {
     "id": "gtd-sidebar",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 2,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [
-        "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
-        "components/inbox/thread-card.tsx:6: experimental_useSidebarThreadPullRequest is retired from @vesnalia/plugin-sdk/app. Existing plugins remain supported. Render <experimental_ThreadRowMetadata thread={thread} /> in the row to draw alia's pull request badge, or read pull requests from the GitHub PR Status plugin: experimental_useRpcKeyedQuery({ pluginId: \"alia--github-pr-status\", contract, method: \"pullRequests\", keys: [thread.environment.id] }). See \"Migrating from experimental_useSidebarThreadPullRequest\" in the alia-plugin-authoring skill."
-      ],
-      "seconds": 16
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
+      "components/inbox/thread-card.tsx:6: experimental_useSidebarThreadPullRequest is retired from @vesnalia/plugin-sdk/app. Existing plugins remain supported. Render <experimental_ThreadRowMetadata thread={thread} /> in the row to draw alia's pull request badge, or read pull requests from the GitHub PR Status plugin: experimental_useRpcKeyedQuery({ pluginId: \"alia--github-pr-status\", contract, method: \"pullRequests\", keys: [thread.environment.id] }). See \"Migrating from experimental_useSidebarThreadPullRequest\" in the alia-plugin-authoring skill."
+    ],
+    "seconds": 10
   },
   "guest-view": {
     "id": "guest-view",
@@ -2590,20 +2514,16 @@
   },
   "herald": {
     "id": "herald",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.94' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [
-        "app.tsx:15: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
-        "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-      ],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [
+      "app.tsx:15: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
+      "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 2
   },
   "herdr-theme": {
     "id": "herdr-theme",
@@ -2649,17 +2569,13 @@
   },
   "home-hero": {
     "id": "home-hero",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
   },
   "homepage": {
     "id": "homepage",
@@ -2761,7 +2677,7 @@
     "server": "ok",
     "host": null,
     "warnings": [],
-    "seconds": 16
+    "seconds": 46
   },
   "inbox": {
     "id": "inbox",
@@ -2851,17 +2767,13 @@
   },
   "jetbrains-central": {
     "id": "jetbrains-central",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.104' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "jev-please-proceed": {
     "id": "jev-please-proceed",
@@ -2947,31 +2859,23 @@
   },
   "kilocode": {
     "id": "kilocode",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.15' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "kimi-code": {
     "id": "kimi-code",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.116' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "kimi-quota": {
     "id": "kimi-quota",
@@ -3175,22 +3079,18 @@
   },
   "loom": {
     "id": "loom",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.75' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [
-        "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
-        "loom--sdk/src/alia-port.ts: environments.diffFiles is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"files\", input: { environmentId, target, ignoreWhitespace } }). See alia-plugin-authoring, git-reads.md.",
-        "loom--sdk/src/alia-port.ts: environments.diffPatch is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"patches\", input: { keys } }). See alia-plugin-authoring, git-reads.md.",
-        "loom--sdk/src/rpc-tags.ts: invalidates on RPC contract methods is retired from the alia SDK typings and keeps working only for existing plugins. Delete it and call alia.rpc.experimental_invalidate(tags) in the server code that changes the data, so writes from RPC, the CLI, agent tools and background work each refresh matching reads once. See alia-plugin-authoring, frontend-hooks-and-ui.md#tags-and-invalidation."
-      ],
-      "seconds": 5
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
+      "loom/src/alia-port.ts: environments.diffFiles is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"files\", input: { environmentId, target, ignoreWhitespace } }). See alia-plugin-authoring, git-reads.md.",
+      "loom/src/alia-port.ts: environments.diffPatch is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"patches\", input: { keys } }). See alia-plugin-authoring, git-reads.md.",
+      "loom/src/rpc-tags.ts: invalidates on RPC contract methods is retired from the alia SDK typings and keeps working only for existing plugins. Delete it and call alia.rpc.experimental_invalidate(tags) in the server code that changes the data, so writes from RPC, the CLI, agent tools and background work each refresh matching reads once. See alia-plugin-authoring, frontend-hooks-and-ui.md#tags-and-invalidation."
+    ],
+    "seconds": 2
   },
   "mac-watch": {
     "id": "mac-watch",
@@ -3204,17 +3104,13 @@
   },
   "machine-load": {
     "id": "machine-load",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "machine-monitor": {
     "id": "machine-monitor",
@@ -3468,17 +3364,13 @@
   },
   "moa-provider": {
     "id": "moa-provider",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "model-effort-badges": {
     "id": "model-effort-badges",
@@ -3552,17 +3444,13 @@
   },
   "muse": {
     "id": "muse",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.49' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "my-jira": {
     "id": "my-jira",
@@ -3586,17 +3474,13 @@
   },
   "nanogpt-provider": {
     "id": "nanogpt-provider",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.133' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "nav-rail": {
     "id": "nav-rail",
@@ -3852,45 +3736,33 @@
   },
   "opencode2": {
     "id": "opencode2",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.80' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 20
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "openrouter-inference": {
     "id": "openrouter-inference",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "Build failed with 1 error:\nhost.ts:7:52: ERROR: Could not resolve \"@vesnalia/plugin-sdk/ai-services\"",
-      "warnings": [],
-      "seconds": 25
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "Build failed with 1 error:\nhost.ts:7:52: ERROR: Could not resolve \"@vesnalia/plugin-sdk/ai-services\"",
+    "warnings": [],
+    "seconds": 3
   },
   "openspec": {
     "id": "openspec",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.79' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 28
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "openspec-review": {
     "id": "openspec-review",
@@ -3929,17 +3801,13 @@
   },
   "orchestrator-mode": {
     "id": "orchestrator-mode",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 19
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 3
   },
   "otel": {
     "id": "otel",
@@ -4003,17 +3871,13 @@
   },
   "pi-command-sync": {
     "id": "pi-command-sync",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.15' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 9,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 1
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 1
   },
   "pinch-zoom": {
     "id": "pinch-zoom",
@@ -4109,19 +3973,15 @@
   },
   "pokecut-theme": {
     "id": "pokecut-theme",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 7,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [
-        "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
-      ],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
+    ],
+    "seconds": 3
   },
   "pokemon": {
     "id": "pokemon",
@@ -4147,17 +4007,13 @@
   },
   "polza": {
     "id": "polza",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 5,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 22
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 4
   },
   "pool-usage": {
     "id": "pool-usage",
@@ -4221,35 +4077,27 @@
   },
   "prime-agent-acp": {
     "id": "prime-agent-acp",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 6,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 2
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "productive": {
     "id": "productive",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 5,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [
-        "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
-        "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
-        "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
-      ],
-      "seconds": 17
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header.",
+      "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
+    ],
+    "seconds": 7
   },
   "progressive-skill": {
     "id": "progressive-skill",
@@ -4290,19 +4138,15 @@
   },
   "project-folders": {
     "id": "project-folders",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 7,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [
-        "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
-      ],
-      "seconds": 18
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-button-in-the-thread-header."
+    ],
+    "seconds": 7
   },
   "project-instructions": {
     "id": "project-instructions",
@@ -4421,17 +4265,13 @@
   },
   "provider-muse": {
     "id": "provider-muse",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 8,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 19
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "provider-retry-advanced": {
     "id": "provider-retry-advanced",
@@ -4561,17 +4401,13 @@
   },
   "qwen-cli": {
     "id": "qwen-cli",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 5,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 3
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "rad-binder": {
     "id": "rad-binder",
@@ -4984,17 +4820,13 @@
   },
   "side-chat-links": {
     "id": "side-chat-links",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
   },
   "sidebar-plus": {
     "id": "sidebar-plus",
@@ -5382,17 +5214,13 @@
   },
   "team": {
     "id": "team",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 5
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "telegram-projects": {
     "id": "telegram-projects",
@@ -5760,17 +5588,13 @@
   },
   "treehouse": {
     "id": "treehouse",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 13
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 3
   },
   "treelanes": {
     "id": "treelanes",
@@ -5936,17 +5760,13 @@
   },
   "usage-forecast": {
     "id": "usage-forecast",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": null,
-      "warnings": [],
-      "seconds": 5
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": null,
+    "warnings": [],
+    "seconds": 2
   },
   "usage-limits": {
     "id": "usage-limits",
@@ -5970,17 +5790,13 @@
   },
   "usage-pace": {
     "id": "usage-pace",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 18
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 8
   },
   "usage-page": {
     "id": "usage-page",
@@ -6370,17 +6186,13 @@
   },
   "xberg": {
     "id": "xberg",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.104' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 4
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "xcode": {
     "id": "xcode",
@@ -6404,47 +6216,35 @@
   },
   "zcode": {
     "id": "zcode",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.49' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [
-        "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration."
-      ],
-      "seconds": 9
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [
+      "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration."
+    ],
+    "seconds": 2
   },
   "zcode-acp": {
     "id": "zcode-acp",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.132' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": "ok",
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 5
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": "ok",
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "zcode-provider": {
     "id": "zcode-provider",
-    "install": "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found\nnpm error 404\nnpm error 404  The requested resource '@vesnalia/plugin-sdk@^0.6.79' could not be found or you do not have permission to access it.\nnpm error 404\nnpm error 404 Note that you can also install from a",
-    "seconds": 1,
-    "withPublishedSdk": {
-      "install": "ok",
-      "manifest": "ok",
-      "app": null,
-      "server": "ok",
-      "host": "ok",
-      "warnings": [],
-      "seconds": 6
-    }
+    "install": "ok",
+    "manifest": "ok",
+    "app": null,
+    "server": "ok",
+    "host": "ok",
+    "warnings": [],
+    "seconds": 2
   },
   "zen-koi": {
     "id": "zen-koi",

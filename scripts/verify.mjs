@@ -12,7 +12,7 @@ import { promisify } from "node:util";
 
 const exec = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, "..");
-const ALIA_CORE = process.env.ALIA_CORE ?? resolve(ROOT, "../alia-core");
+const ALIA_CORE = resolve(process.env.ALIA_CORE ?? join(ROOT, "../alia-core"));
 const WORK = process.env.VERIFY_WORK ?? "/tmp/vp-build";
 const args = process.argv.slice(2);
 const ci = args.indexOf("--concurrency");
@@ -33,8 +33,9 @@ function npmError(stderr) {
   return lines.slice(0, 6).join("\n").slice(0, 1200) || stderr.slice(-800);
 }
 
-// Пакет @vesnalia/plugin-sdk (npm pack из alia-core) для второго прохода:
-// как плагин соберётся, когда SDK будет опубликован в npm. В репозиторий не кладётся.
+// Необязательный пакет @vesnalia/plugin-sdk (npm pack из alia-core) для второго прохода:
+// как плагин соберётся с ещё не опубликованной версией SDK. Без SDK_TGZ SDK ставится
+// из npm, как на сервере. В репозиторий не кладётся.
 const SDK_TGZ = process.env.SDK_TGZ ?? null;
 const SDK = "@vesnalia/plugin-sdk";
 

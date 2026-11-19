@@ -127,19 +127,17 @@
   },
   "agent-icons": {
     "id": "agent-icons",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "agent-lanes": {
@@ -373,19 +371,17 @@
   },
   "antigravity-cli": {
     "id": "antigravity-cli",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "antigravity-usage": {
@@ -635,20 +631,18 @@
   },
   "auto-router": {
     "id": "auto-router",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "engines.alia: >=0.46.0 <0.47.0 -> >=0.49 (alia-core 0.49.0)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
       "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
@@ -1049,19 +1043,17 @@
   },
   "btrfs-cow": {
     "id": "btrfs-cow",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "bureaucat": {
@@ -1599,19 +1591,17 @@
   },
   "command-code": {
     "id": "command-code",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "compact-nav": {
@@ -1781,20 +1771,18 @@
   },
   "copilot-usage": {
     "id": "copilot-usage",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "имя пакета приведено к alia-plugin-copilot-usage"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "copy-session-id": {
@@ -1871,20 +1859,18 @@
   },
   "cursor-sidebar": {
     "id": "cursor-sidebar",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 1"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "dashboard": {
@@ -1973,19 +1959,17 @@
   },
   "devin": {
     "id": "devin",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "diagram-fences": {
@@ -2178,20 +2162,18 @@
   },
   "drmanhattan": {
     "id": "drmanhattan",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "droid": {
@@ -2562,39 +2544,35 @@
   },
   "firstmate-crew": {
     "id": "firstmate-crew",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 2"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "app.tsx:3: ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
     ]
   },
   "flare": {
     "id": "flare",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "flexible-worktrees": {
@@ -2747,20 +2725,18 @@
   },
   "fx": {
     "id": "fx",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "genui": {
@@ -2871,20 +2847,18 @@
   },
   "git-history": {
     "id": "git-history",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ]
@@ -2906,19 +2880,17 @@
   },
   "git-worktrees": {
     "id": "git-worktrees",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "gitea": {
@@ -2967,19 +2939,17 @@
   },
   "github-board": {
     "id": "github-board",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "github-extended": {
@@ -3114,19 +3084,17 @@
   },
   "google-antigravity-acp": {
     "id": "google-antigravity-acp",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "graph-studio": {
@@ -3161,53 +3129,47 @@
   },
   "graphite-stack": {
     "id": "graphite-stack",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "grok-build-usage": {
     "id": "grok-build-usage",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "gtd-sidebar": {
     "id": "gtd-sidebar",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
       "components/inbox/thread-card.tsx:6: experimental_useSidebarThreadPullRequest is retired from @vesnalia/plugin-sdk/app. Existing plugins remain supported. Render <experimental_ThreadRowMetadata thread={thread} /> in the row to draw alia's pull request badge, or read pull requests from the GitHub PR S"
@@ -3372,20 +3334,18 @@
   },
   "herald": {
     "id": "herald",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 3"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "app.tsx:15: experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-regist",
       "app.tsx:15: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr"
@@ -3447,19 +3407,17 @@
   },
   "home-hero": {
     "id": "home-hero",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "homepage": {
@@ -3712,19 +3670,17 @@
   },
   "jetbrains-central": {
     "id": "jetbrains-central",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "jev-please-proceed": {
@@ -3838,38 +3794,34 @@
   },
   "kilocode": {
     "id": "kilocode",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "kimi-code": {
     "id": "kimi-code",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 1"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "kimi-quota": {
@@ -4147,25 +4099,23 @@
   },
   "loom": {
     "id": "loom",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 2"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
-      "loom--sdk/src/alia-port.ts: environments.diffFiles is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"files\", input: { environmentId, target, ignoreWhitespace } }). See alia-plugin-a",
-      "loom--sdk/src/alia-port.ts: environments.diffPatch is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"patches\", input: { keys } }). See alia-plugin-authoring, git-reads.md.",
-      "loom--sdk/src/rpc-tags.ts: invalidates on RPC contract methods is retired from the alia SDK typings and keeps working only for existing plugins. Delete it and call alia.rpc.experimental_invalidate(tags) in the server code that changes the data, so writes from RPC, the CLI, agent tools and background"
+      "loom/src/alia-port.ts: environments.diffFiles is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"files\", input: { environmentId, target, ignoreWhitespace } }). See alia-plugin-author",
+      "loom/src/alia-port.ts: environments.diffPatch is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"patches\", input: { keys } }). See alia-plugin-authoring, git-reads.md.",
+      "loom/src/rpc-tags.ts: invalidates on RPC contract methods is retired from the alia SDK typings and keeps working only for existing plugins. Delete it and call alia.rpc.experimental_invalidate(tags) in the server code that changes the data, so writes from RPC, the CLI, agent tools and background work"
     ]
   },
   "mac-watch": {
@@ -4183,19 +4133,17 @@
   },
   "machine-load": {
     "id": "machine-load",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "machine-monitor": {
@@ -4535,19 +4483,17 @@
   },
   "moa-provider": {
     "id": "moa-provider",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "model-effort-badges": {
@@ -4649,19 +4595,17 @@
   },
   "muse": {
     "id": "muse",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "my-jira": {
@@ -4692,20 +4636,18 @@
   },
   "nanogpt-provider": {
     "id": "nanogpt-provider",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 1"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "nav-rail": {
@@ -5031,19 +4973,17 @@
   },
   "opencode2": {
     "id": "opencode2",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "openrouter-inference": {
@@ -5051,36 +4991,33 @@
     "builds": false,
     "state": "broken",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "fail"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
     "problems": [
-      "npm install: npm error code E404 npm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found npm error 404 npm error 404 The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it. npm error 404 npm error 404 Note that you ",
-      "с опубликованным SDK: host: Build failed with 1 error: host.ts:7:52: ERROR: Could not resolve \"@vesnalia/plugin-sdk/ai-services\""
+      "host: Build failed with 1 error: host.ts:7:52: ERROR: Could not resolve \"@vesnalia/plugin-sdk/ai-services\""
     ],
     "warnings": []
   },
   "openspec": {
     "id": "openspec",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 1"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "openspec-review": {
@@ -5133,19 +5070,17 @@
   },
   "orchestrator-mode": {
     "id": "orchestrator-mode",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "otel": {
@@ -5230,12 +5165,12 @@
   },
   "pi-command-sync": {
     "id": "pi-command-sync",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "engines.alia: 0.45.0 -> >=0.49 (alia-core 0.49.0)",
@@ -5243,9 +5178,7 @@
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 1"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "pinch-zoom": {
@@ -5371,19 +5304,17 @@
   },
   "pokecut-theme": {
     "id": "pokecut-theme",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ]
@@ -5418,20 +5349,18 @@
   },
   "polza": {
     "id": "polza",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 2"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "pool-usage": {
@@ -5516,37 +5445,33 @@
   },
   "prime-agent-acp": {
     "id": "prime-agent-acp",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "productive": {
     "id": "productive",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
@@ -5601,20 +5526,18 @@
   },
   "project-folders": {
     "id": "project-folders",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 4"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ]
@@ -5772,19 +5695,17 @@
   },
   "provider-muse": {
     "id": "provider-muse",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "provider-retry-advanced": {
@@ -5960,19 +5881,17 @@
   },
   "qwen-cli": {
     "id": "qwen-cli",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "rad-binder": {
@@ -6516,19 +6435,17 @@
   },
   "side-chat-links": {
     "id": "side-chat-links",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "sidebar-plus": {
@@ -7036,19 +6953,17 @@
   },
   "team": {
     "id": "team",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "telegram-projects": {
@@ -7536,19 +7451,17 @@
   },
   "treehouse": {
     "id": "treehouse",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "treelanes": {
@@ -7771,19 +7684,17 @@
   },
   "usage-forecast": {
     "id": "usage-forecast",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
+      "app": "ok",
+      "server": "ok",
       "host": null
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "usage-limits": {
@@ -7814,19 +7725,17 @@
   },
   "usage-pace": {
     "id": "usage-pace",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "usage-page": {
@@ -8358,19 +8267,17 @@
   },
   "xberg": {
     "id": "xberg",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "xcode": {
@@ -8403,59 +8310,53 @@
   },
   "zcode": {
     "id": "zcode",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 2"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": [
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration."
     ]
   },
   "zcode-acp": {
     "id": "zcode-acp",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
-      "app": null,
-      "server": null,
-      "host": null
+      "app": "ok",
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "убрана зависимость старого хоста (devDependencies)",
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 1"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "zcode-provider": {
     "id": "zcode-provider",
-    "builds": false,
-    "state": "needs-sdk",
+    "builds": true,
+    "state": "ok",
     "parts": {
       "app": null,
-      "server": null,
-      "host": null
+      "server": "ok",
+      "host": "ok"
     },
     "fixes": [
       "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm",
       "переименовано файлов: 3"
     ],
-    "problems": [
-      "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
-    ],
+    "problems": [],
     "warnings": []
   },
   "zen-koi": {

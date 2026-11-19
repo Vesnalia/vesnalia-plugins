@@ -16,20 +16,19 @@ npm install
 node scripts/import.mjs --catalog v2.json --licenses licenses.tsv   # исходники в plugins/
 node scripts/adapt.mjs                                              # кодмод под alia-core
 node scripts/deep-clean.mjs                                         # дочистка имён, lock-файлов, source map
-ALIA_CORE=../alia-core SDK_TGZ=/tmp/vesnalia-plugin-sdk.tgz \
-  node scripts/verify.mjs                                           # сборка сборщиком alia-core
+ALIA_CORE=../alia-core node scripts/verify.mjs                    # сборка сборщиком alia-core
 node scripts/catalog.mjs                                            # catalog.json, STATUS.md, README.md
 ```
 
-`SDK_TGZ` - пакет `@vesnalia/plugin-sdk` (`npm pack` в `alia-core/packages/plugin-sdk`) для второго прохода проверки: как плагин соберётся, когда SDK появится в npm. В репозиторий пакет не кладётся.
+Необязательный `SDK_TGZ` - пакет `@vesnalia/plugin-sdk` (`npm pack` в `alia-core/packages/plugin-sdk`) для второго прохода проверки с неопубликованной версией SDK. Без него SDK ставится из npm, как на сервере.
 
 ## Что меняет кодмод
 
 `scripts/adapt.mjs` приводит манифест (`package.json`), импорты SDK и имена в коде к API alia-core, бренд в видимых текстах - к VesnALIA. Что поправлено в каждом плагине - в `data/adapt-report.json` и `STATUS.md`.
 
-SDK - `@vesnalia/plugin-sdk`, в `package.json` стоит необязательной `peerDependency`. В npm он пока не опубликован, а сервер ставит зависимости git-плагина через `npm install`: зависимость на неопубликованный пакет (даже в devDependencies) роняет установку. Корень SDK и `/app` при сборке даёт хост. Плагинам, которым SDK нужен установленным (сабпути `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде), SDK прописан в `dependencies`: они встанут, когда SDK появится в npm (в STATUS.md - «после публикации SDK»).
+SDK - `@vesnalia/plugin-sdk` (опубликован в npm), в `package.json` стоит необязательной `peerDependency`. Корень SDK и `/app` при сборке даёт хост. Плагинам, которым SDK нужен установленным (сабпути `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде), SDK прописан в `dependencies`: сервер ставит его из npm вместе с остальными зависимостями git-плагина.
 
-## Плагины (576: собирается 523, после публикации SDK 49)
+## Плагины (576: собирается 572)
 
 ### agents-and-providers
 

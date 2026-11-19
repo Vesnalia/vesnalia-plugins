@@ -2,9 +2,9 @@
 
 Проверка: копия плагина, `npm install --omit=dev --ignore-scripts` и сборка app/server/host сборщиком alia-core (`packages/plugin-build`), как сервер делает при установке из git. Скрипт - `scripts/verify.mjs`, сырые результаты - `data/verify.json`, полная таблица - `status.json`.
 
-Всего 576: собирается 523, соберётся после публикации `@vesnalia/plugin-sdk` в npm 49, сломано 4.
+Всего 576: собирается 572, сломано 4.
 
-«После публикации SDK» - плагину нужен установленный SDK (сабпути вроде `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде). Сервер ставит зависимости git-плагина через `npm install`, а `@vesnalia/plugin-sdk` в npm пока нет. Проверка с пакетом SDK из alia-core (`npm pack`) такие плагины собирает. Предупреждения о снятых API SDK - в `status.json` (`warnings`).
+`@vesnalia/plugin-sdk` опубликован в npm: плагинам, которым SDK нужен установленным (сабпути вроде `/provider-bridge`, `/process`, `/host` в серверном или host-коде, корень SDK во фронтенде), он прописан в `dependencies` и при проверке ставится из npm, как на сервере. Предупреждения о снятых API SDK - в `status.json` (`warnings`).
 
 | Плагин | Собирается | app / server / host | Что поправлено | Что сломано |
 | --- | --- | --- | --- | --- |
@@ -16,7 +16,7 @@
 | agent-calendar | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | agent-checklists | да | ok / ok / - | - | - |
 | agent-graph | да | ok / ok / - | - | - |
-| agent-icons | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| agent-icons | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | agent-lanes | да | ok / ok / - | переименовано файлов: 1 | - |
 | agent-plugins | да | ok / ok / ok | - | - |
 | agent-proxy | да | ok / ok / - | - | - |
@@ -33,7 +33,7 @@
 | android-emulator | да | ok / ok / ok | - | - |
 | animation | да | ok / ok / - | - | - |
 | antigravity | да | ok / ok / - | - | - |
-| antigravity-cli | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| antigravity-cli | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | antigravity-usage | да | - / ok / ok | имя пакета приведено к alia-plugin-antigravity-usage | - |
 | app-preview | да | ok / ok / - | - | - |
 | arc-switcher | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143); переименовано файлов: 2 | - |
@@ -51,7 +51,7 @@
 | auto-compact | да | ok / ok / - | - | - |
 | auto-hide-panel | да | ok / ok / - | - | - |
 | auto-pin | да | - / ok / - | - | - |
-| auto-router | после публикации SDK | - / - / - | engines.alia: >=0.46.0 <0.47.0 -> >=0.49 (alia-core 0.49.0); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| auto-router | да | ok / ok / ok | engines.alia: >=0.46.0 <0.47.0 -> >=0.49 (alia-core 0.49.0); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | automation-groups | да | ok / ok / - | - | - |
 | automation-palette | да | ok / ok / - | - | - |
 | autoresearch | да | ok / ok / ok | имя пакета приведено к alia-plugin-autoresearch; переименовано файлов: 1 | - |
@@ -80,7 +80,7 @@
 | browser-session-import | да | ok / ok / ok | - | - |
 | browser-tools | да | - / ok / ok | - | - |
 | browserbase | да | - / ok / - | - | - |
-| btrfs-cow | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| btrfs-cow | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | bureaucat | да | ok / ok / ok | - | - |
 | burn | да | ok / ok / ok | переименовано файлов: 5 | - |
 | cache-watch | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
@@ -118,7 +118,7 @@
 | collapsible-navigation | да | ok / ok / - | - | - |
 | color-swatches | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143) | - |
 | command-center | да | ok / ok / - | - | - |
-| command-code | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| command-code | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | compact-nav | да | ok / ok / - | - | - |
 | compact-panes | да | ok / ok / - | - | - |
 | compact-rail | да | - / ok / - | - | - |
@@ -131,20 +131,20 @@
 | context-meter | да | ok / ok / - | - | - |
 | copilot-aic-usage | да | ok / ok / ok | engines.aliaPluginSdk: >=0.5.9 <0.6 -> >=0.6 (SDK 0.6.143) | - |
 | copilot-session-credits | да | ok / ok / ok | - | - |
-| copilot-usage | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; имя пакета приведено к alia-plugin-copilot-usage | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| copilot-usage | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; имя пакета приведено к alia-plugin-copilot-usage | - |
 | copy-session-id | да | ok / ok / - | - | - |
 | cortado | да | - / ok / - | - | - |
 | crew | да | ok / ok / - | - | - |
 | ctrl-enter-send | да | ok / ok / - | - | - |
 | cua-driver | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies) | - |
-| cursor-sidebar | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| cursor-sidebar | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | - |
 | dashboard | да | ok / ok / - | - | - |
 | decisions | да | ok / ok / - | - | - |
 | deepseek-harness | да | ok / ok / - | - | - |
 | dependabot | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | design-director | да | - / ok / - | переименовано файлов: 2 | - |
 | desktop-browser-agent | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies) | - |
-| devin | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| devin | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | diagram-fences | да | ok / ok / - | - | - |
 | dictation-shortcuts | да | ok / ok / - | - | - |
 | diff-explorer | да | ok / ok / ok | - | - |
@@ -157,7 +157,7 @@
 | disk-usage | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | doc-review | да | ok / ok / - | - | - |
 | dockside | да | ok / ok / - | - | - |
-| drmanhattan | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| drmanhattan | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | droid | да | ok / ok / ok | - | - |
 | dynamic-file-tree | да | ok / ok / - | - | - |
 | e-corp | да | - / ok / - | - | - |
@@ -183,8 +183,8 @@
 | files-editor | да | ok / ok / ok | - | - |
 | finder | да | ok / ok / - | - | - |
 | firstmate | да | ok / ok / - | переименовано файлов: 5 | - |
-| firstmate-crew | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| flare | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| firstmate-crew | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | - |
+| flare | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | flexible-worktrees | да | ok / ok / ok | - | - |
 | flexoki | да | - / ok / - | - | - |
 | floating-notes | да | ok / ok / - | - | - |
@@ -195,7 +195,7 @@
 | followups | да | ok / ok / - | - | - |
 | fonts | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | forage | да | ok / ok / - | - | - |
-| fx | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| fx | да | - / ok / ok | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | genui | да | ok / ok / - | переименовано файлов: 2 | - |
 | gh-copilot | да | ok / ok / - | - | - |
 | gh-projects-board | да | ok / ok / - | - | - |
@@ -203,13 +203,13 @@
 | ghostrunner | да | - / ok / - | - | - |
 | gigaam | да | - / ok / ok | - | - |
 | git-graph | да | ok / ok / - | - | - |
-| git-history | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| git-history | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | git-panel | да | ok / ok / ok | - | - |
-| git-worktrees | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| git-worktrees | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | gitea | да | ok / ok / ok | - | - |
 | github-actions | да | ok / ok / - | - | - |
 | github-app-auth | да | ok / ok / - | - | - |
-| github-board | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| github-board | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | github-extended | да | ok / ok / - | - | - |
 | github-folder | да | ok / ok / - | - | - |
 | github-pr-dashboard | да | ok / ok / - | имя пакета приведено к alia-plugin-github-pr-dashboard | - |
@@ -219,12 +219,12 @@
 | glass | да | ok / ok / - | - | - |
 | goals | да | ok / ok / - | - | - |
 | gone-fishing | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
-| google-antigravity-acp | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| google-antigravity-acp | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | graph-studio | да | ok / ok / - | - | - |
 | graphite-mono | да | - / ok / - | - | - |
-| graphite-stack | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| grok-build-usage | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| gtd-sidebar | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| graphite-stack | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
+| grok-build-usage | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
+| gtd-sidebar | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | guest-view | да | ok / ok / - | - | - |
 | guided-review | да | ok / ok / - | - | - |
 | handoff | да | ok / ok / - | - | - |
@@ -236,12 +236,12 @@
 | haze | да | ok / ok / - | - | - |
 | header-pins | да | ok / ok / - | - | - |
 | headroom | да | - / ok / - | - | - |
-| herald | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 3 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| herald | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 3 | - |
 | herdr-theme | да | ok / ok / - | - | - |
 | hex | да | ok / ok / - | - | - |
 | higgsfield | да | ok / ok / ok | - | - |
 | hmm-floating-terminal | да | ok / ok / - | - | - |
-| home-hero | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| home-hero | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | homepage | да | ok / ok / - | убрана зависимость старого хоста (devDependencies); переименовано файлов: 1 | - |
 | hooks | да | ok / ok / - | - | - |
 | host-monitor | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies) | - |
@@ -259,7 +259,7 @@
 | ios-simulator | да | ok / ok / - | - | - |
 | iris | да | ok / ok / - | переименовано файлов: 4 | - |
 | jb-flow | да | ok / ok / - | - | - |
-| jetbrains-central | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| jetbrains-central | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | jev-please-proceed | да | - / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | jira | да | ok / ok / - | переименовано файлов: 1 | - |
 | jira-boards | да | ok / ok / - | - | - |
@@ -267,8 +267,8 @@
 | kata | да | ok / ok / - | - | - |
 | keep-last-blocks-open | да | ok / ok / - | - | - |
 | kernel-browser | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
-| kilocode | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| kimi-code | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| kilocode | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
+| kimi-code | да | - / ok / ok | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | - |
 | kimi-quota | да | - / ok / - | - | - |
 | kimi-usage | да | - / ok / ok | - | - |
 | kodaforge | да | ok / ok / ok | - | - |
@@ -288,9 +288,9 @@
 | live-markdown | да | ok / ok / - | - | - |
 | lobu | да | ok / ok / - | - | - |
 | lock-area | да | ok / ok / ok | переименовано файлов: 2 | - |
-| loom | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| loom | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | - |
 | mac-watch | да | ok / ok / - | - | - |
-| machine-load | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| machine-load | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | machine-monitor | да | ok / ok / ok | - | - |
 | machine-sidebar | да | ok / ok / - | - | - |
 | machine-status | да | ok / ok / ok | - | - |
@@ -316,7 +316,7 @@
 | minimap | да | ok / ok / - | - | - |
 | minus | да | ok / ok / - | - | - |
 | moa | да | ok / ok / - | - | - |
-| moa-provider | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| moa-provider | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | model-effort-badges | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | model-favicons | да | ok / ok / - | - | - |
 | model-presets | да | ok / ok / - | - | - |
@@ -324,10 +324,10 @@
 | model-visibility | да | ok / ok / - | - | - |
 | monokai | да | - / ok / - | переименовано файлов: 4 | - |
 | multi-repo-git | да | ok / ok / ok | - | - |
-| muse | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| muse | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | my-jira | да | ok / ok / - | - | - |
 | my-tasks | да | ok / ok / ok | - | - |
-| nanogpt-provider | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| nanogpt-provider | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | - |
 | nav-rail | да | ok / ok / - | - | - |
 | nested-sidebar | да | ok / ok / ok | - | - |
 | next-prompt | да | ok / ok / - | - | - |
@@ -351,20 +351,20 @@
 | omp-agents | да | ok / ok / - | - | - |
 | omp-subagents | да | ok / ok / ok | - | - |
 | open-in-window | да | ok / ok / - | - | - |
-| opencode2 | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| openrouter-inference | **нет** | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | npm install: npm error code E404 npm error 404 Not Found - GET https://registry.npmjs.org/@vesnalia%2fplugin-sdk - Not found npm error 404 npm error 404 The requested resource '@vesnalia/plugin-sdk@^0.6.143' could not be found or you do not have permission to access it. npm error 404 npm error 404 Note that you ; с опубликованным SDK: host: Build failed with 1 error: host.ts:7:52: ERROR: Could not resolve "@vesnalia/plugin-sdk/ai-services" |
-| openspec | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| opencode2 | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
+| openrouter-inference | **нет** | ok / ok / fail | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | host: Build failed with 1 error: host.ts:7:52: ERROR: Could not resolve "@vesnalia/plugin-sdk/ai-services" |
+| openspec | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | - |
 | openspec-review | да | ok / ok / ok | переименовано файлов: 1 | - |
 | openui | да | ok / ok / - | - | - |
 | operator-inbox | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
-| orchestrator-mode | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| orchestrator-mode | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | otel | да | - / ok / - | - | - |
 | pad | да | ok / ok / - | - | - |
 | pane-workspaces | да | ok / ok / - | - | - |
 | password-gate | да | ok / ok / - | - | - |
 | peek | да | ok / ok / - | - | - |
 | pets | да | ok / ok / - | переименовано файлов: 2 | - |
-| pi-command-sync | после публикации SDK | - / - / - | engines.alia: 0.45.0 -> >=0.49 (alia-core 0.49.0); engines.aliaPluginSdk: 0.6.15 -> >=0.6 (SDK 0.6.143); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| pi-command-sync | да | - / ok / ok | engines.alia: 0.45.0 -> >=0.49 (alia-core 0.49.0); engines.aliaPluginSdk: 0.6.15 -> >=0.6 (SDK 0.6.143); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | - |
 | pinch-zoom | да | ok / ok / - | - | - |
 | pinned-turns | да | ok / ok / - | - | - |
 | plain-paste | да | ok / ok / - | - | - |
@@ -374,22 +374,22 @@
 | plugin-updates | да | ok / ok / - | переименовано файлов: 2 | - |
 | plugin-vault | да | ok / ok / - | - | - |
 | plugin-workshop | да | ok / ok / - | - | - |
-| pokecut-theme | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| pokecut-theme | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | pokemon | да | ok / ok / - | - | - |
 | pokemon-catcher | да | ok / ok / ok | - | - |
-| polza | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| polza | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | - |
 | pool-usage | да | ok / ok / - | - | - |
 | pr-manager | да | ok / ok / ok | - | - |
 | pr-notes | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | pr-xray | да | ok / ok / - | - | - |
 | preset-buttons | да | ok / ok / - | - | - |
 | preset-sync | да | ok / ok / - | - | - |
-| prime-agent-acp | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| productive | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| prime-agent-acp | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
+| productive | да | ok / ok / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | progressive-skill | да | - / ok / - | - | - |
 | project-colors | да | ok / ok / - | - | - |
 | project-explorer | да | ok / ok / ok | - | - |
-| project-folders | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 4 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| project-folders | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 4 | - |
 | project-instructions | да | ok / ok / - | - | - |
 | project-page | да | ok / ok / - | - | - |
 | project-themes | да | ok / ok / - | - | - |
@@ -401,7 +401,7 @@
 | prompts | да | ok / ok / - | - | - |
 | provider-authentication | да | ok / ok / ok | - | - |
 | provider-brand-marks | да | ok / ok / - | - | - |
-| provider-muse | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| provider-muse | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | provider-retry-advanced | да | - / ok / - | - | - |
 | provider-usage | да | ok / ok / - | переименовано файлов: 1 | - |
 | pstack | да | - / ok / - | - | - |
@@ -414,7 +414,7 @@
 | quick-compose | да | ok / ok / - | - | - |
 | quick-reply | да | ok / ok / - | - | - |
 | quick-thread | да | ok / ok / - | - | - |
-| qwen-cli | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| qwen-cli | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | rad-binder | да | - / ok / - | - | - |
 | radar | да | ok / ok / - | переименовано файлов: 1 | - |
 | radar-sidebar | да | ok / ok / - | - | - |
@@ -452,7 +452,7 @@
 | show-latest-threads | да | ok / ok / - | - | - |
 | shuttle | да | ok / ok / - | переименовано файлов: 2 | - |
 | side-board | да | ok / ok / - | - | - |
-| side-chat-links | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| side-chat-links | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | sidebar-plus | да | ok / ok / - | - | - |
 | sidebar-subtitles | да | ok / ok / - | - | - |
 | simple-sidebar-folders | да | ok / ok / - | - | - |
@@ -486,7 +486,7 @@
 | tabs | да | ok / ok / - | переименовано файлов: 2 | - |
 | taskboard | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies); переименовано файлов: 1 | - |
 | tasks-kanban | да | ok / ok / - | - | - |
-| team | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| team | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | telegram-projects | да | ok / ok / - | - | - |
 | terminal-jobs | да | - / ok / ok | - | - |
 | terminal-toggle | да | ok / ok / - | - | - |
@@ -522,7 +522,7 @@
 | traces | да | ok / ok / ok | engines.aliaPluginSdk: ^0.4.8 -> >=0.6 (SDK 0.6.143) | - |
 | tracing | да | ok / ok / - | - | - |
 | tree-sidebar | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143); переименовано файлов: 2 | - |
-| treehouse | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| treehouse | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | treelanes | да | ok / ok / - | переименовано файлов: 1 | - |
 | triage | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.47 -> >=0.6 (SDK 0.6.143); переименовано файлов: 2 | - |
 | try-it | да | ok / ok / - | - | - |
@@ -538,10 +538,10 @@
 | uptime | да | ok / ok / - | - | - |
 | usage | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143); переименовано файлов: 2 | - |
 | usage-bar | да | ok / ok / - | - | - |
-| usage-forecast | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| usage-forecast | да | ok / ok / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | usage-limits | да | ok / ok / - | - | - |
 | usage-meter | да | ok / ok / - | - | - |
-| usage-pace | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| usage-pace | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | usage-page | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143); переименовано файлов: 2 | - |
 | usage-tracker | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies) | - |
 | vantage | да | ok / ok / ok | - | - |
@@ -576,11 +576,11 @@
 | worktree-setup | да | ok / ok / - | убрана зависимость старого хоста (devDependencies) | - |
 | wterm-terminal-preview | да | ok / ok / - | engines.aliaPluginSdk: ^0.4.1 -> >=0.6 (SDK 0.6.143); убрана зависимость старого хоста (devDependencies) | - |
 | x-viral | да | ok / ok / - | - | - |
-| xberg | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| xberg | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm | - |
 | xcode | да | ok / ok / ok | - | - |
 | xlsx-preview | **нет** | - / - / - | - | invalid manifest (alia): Invalid input: expected object, received undefined |
-| zcode | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| zcode-acp | после публикации SDK | - / - / - | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
-| zcode-provider | после публикации SDK | - / - / - | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 3 | нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается |
+| zcode | да | ok / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 2 | - |
+| zcode-acp | да | ok / ok / ok | убрана зависимость старого хоста (devDependencies); SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 1 | - |
+| zcode-provider | да | - / ok / ok | SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm; переименовано файлов: 3 | - |
 | zen-koi | да | ok / ok / - | - | - |
 | zh-cn | да | ok / ok / - | - | - |
